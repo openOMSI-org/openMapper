@@ -21,7 +21,7 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Linux libraries
@@ -32,7 +32,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --release --locked
@@ -44,7 +44,7 @@ jobs:
       BASE: ${{ github.event.pull_request.base.sha }}
       MAX_BYTES: 1000000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Fetch the base commit
         run: git fetch --no-tags --depth=1 origin "$BASE"
       - name: No large files
