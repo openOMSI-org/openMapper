@@ -45,7 +45,7 @@ gltf = "1.4"
 ufbx = "0.11"
 # satellite imagery, terrain heights and place search (src/geo): a small blocking client
 # the OpenStreetMap map drawn as a picture (src/osm_map.rs): shapes and the street names
-tiny-skia = { version = "0.11", default-features = false, features = ["std", "simd"] }
+tiny-skia = { version = "0.12", default-features = false, features = ["std", "simd"] }
 ab_glyph = "0.2"
 ureq = { version = "3.4", default-features = false, features = ["rustls"] }
 
