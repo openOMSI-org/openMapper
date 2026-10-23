@@ -77,4 +77,4 @@ wgpu-naga-bridge = { git = "https://github.com/openOMSI-Project/wgpu-openomsi", 
 naga = { git = "https://github.com/openOMSI-Project/wgpu-openomsi", rev = "4eb06e5bf8062be2978d93e95556a4dd83f1d3b8" }
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
