@@ -101,8 +101,10 @@ fn commands() -> Vec<Command> {
         // Help
         cmd!(Icon::CheckCircle, "Getting started", "С чего начать", "guide tutorial help учебник помощь", "", |_, _, a| a.push(Action::Guide)),
         cmd!(Icon::Help, "Controls", "Управление", "keys mouse shortcuts клавиши мышь", "", |st, _, _| st.help_open = true),
-        cmd!(Icon::Settings, "Русский язык", "English language", "language interface язык интерфейс", "", |_, _, a| {
-            let other = if crate::i18n::get() == crate::i18n::Lang::Ru { crate::i18n::Lang::En } else { crate::i18n::Lang::Ru };
+        cmd!(Icon::Settings, "Next interface language", "Следующий язык интерфейса", "language interface язык интерфейс", "", |_, _, a| {
+            let choices = crate::i18n::LANGUAGES;
+            let current = choices.iter().position(|(lang, _)| *lang == crate::i18n::get()).unwrap_or(0);
+            let other = choices[(current + 1) % choices.len()].0;
             a.push(Action::SetLang(other))
         }),
         // where features live

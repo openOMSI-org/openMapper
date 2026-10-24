@@ -43,7 +43,7 @@ pub struct Prefs {
     /// The OMSI 2 folder chosen by hand (empty: found by itself).
     #[serde(default)]
     pub omsi_root: String,
-    /// "en" or "ru" (empty: the system's language).
+    /// "en", "ru", "pt-BR" or "pt-PT" (empty: the system's language).
     #[serde(default)]
     pub language: String,
     /// Maps opened lately, newest first (global.cfg paths).

@@ -478,7 +478,7 @@ fn menu_item(ui: &mut egui::Ui, icon: Option<Icon>, text: &str, shortcut: &str, 
 
 fn lang_menu(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
     ui.menu_button(tr("Language", "Язык"), |ui| {
-        for (l, n) in [(Lang::En, "English"), (Lang::Ru, "Русский")] {
+        for (l, n) in crate::i18n::LANGUAGES {
             if radio(ui, i18n::get() == l, n).clicked() {
                 actions.push(Action::SetLang(l));
             }
