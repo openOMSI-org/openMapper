@@ -13,7 +13,7 @@
   <a href="https://discord.gg/VG2EKVafYG"><img alt="Discord" src="https://img.shields.io/badge/discord-join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
   <a href="https://buymeacoffee.com/usonskyyy"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-support-ffdd00?style=for-the-badge&logo=buymeacoffee&logoColor=black"></a>
   <a href="https://ko-fi.com/usonance"><img alt="Ko-fi" src="https://img.shields.io/badge/ko--fi-support-29abe0?style=for-the-badge&logo=kofi&logoColor=white"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-2e86ff?style=for-the-badge"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--only-2e86ff?style=for-the-badge"></a>
 </p>
 
 > [!WARNING]
@@ -116,6 +116,9 @@ questions and chat are on [Discord](https://discord.gg/VG2EKVafYG).
 
 ## License
 
-[MIT](LICENSE). The logo is set in [Inter](https://rsms.me/inter/) (SIL Open Font License, in
+[GNU AGPL v3 only](LICENSE) (`AGPL-3.0-only`), matching openOMSI.
+Copyright (c) 2026 openOMSI contributors. Files carrying their own license notices retain those licenses.
+
+The logo is set in [Inter](https://rsms.me/inter/) (SIL Open Font License, in
 `assets/fonts`); the icons are Google's [Material Symbols](https://fonts.google.com/icons)
 (Apache 2.0).
