@@ -3,7 +3,7 @@ name = "openmapper-mesh"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-license = "MIT"
+license = "AGPL-3.0-only"
 description = "openMapper's polygon meshes: primitives, booleans, modifiers, UV unwrapping, baking and export"
 publish = false
 
