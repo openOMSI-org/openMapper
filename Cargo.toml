@@ -35,7 +35,7 @@ openmapper-mesh = { path = "crates/mesh" }
 openmapper-collab = { path = "crates/collab" }
 omsi-net = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
 bytemuck = { version = "1", features = ["derive"] }
-pollster = "0.4"
+pollster = "1.0"
 anyhow = "1"
 log = "0.4"
 env_logger = "0.11"
