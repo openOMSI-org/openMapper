@@ -34,7 +34,7 @@ pub struct Gpu {
 
 impl Gpu {
     pub fn new(window: Arc<Window>) -> anyhow::Result<Gpu> {
-        // (the first way that gives an adapter wins: every backend, then GL alone, then the
+        // (the first way that opens a device wins: every backend, then GL alone, then the
         // software adapter; an old driver that fails one of them still starts the editor)
         let attempts = [(wgpu::Backends::PRIMARY | wgpu::Backends::GL, false), (wgpu::Backends::GL, false), (wgpu::Backends::PRIMARY | wgpu::Backends::GL, true)];
         let mut found = None;
@@ -57,9 +57,24 @@ impl Gpu {
                 force_fallback_adapter: fallback,
                 ..Default::default()
             })) {
-                Ok(a) => {
-                    found = Some((surface, a));
-                    break;
+                Ok(adapter) => {
+                    match pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+                        label: Some("openMapper"),
+                        required_features: wgpu::Features::empty(),
+                        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+                        // (big maps: blocks are not set aside beyond what is used)
+                        memory_hints: wgpu::MemoryHints::MemoryUsage,
+                        ..Default::default()
+                    })) {
+                        Ok((device, queue)) => {
+                            found = Some((surface, adapter, device, queue));
+                            break;
+                        }
+                        Err(e) => {
+                            log::warn!("graphics {backends:?} (software {fallback}): no device: {e}");
+                            last = e.into();
+                        }
+                    }
                 }
                 Err(e) => {
                     log::warn!("graphics {backends:?} (software {fallback}): no adapter: {e}");
@@ -67,17 +82,9 @@ impl Gpu {
                 }
             }
         }
-        let Some((surface, adapter)) = found else { return Err(last) };
+        let Some((surface, adapter, device, queue)) = found else { return Err(last) };
         let info = adapter.get_info();
         log::info!("GPU: {} ({:?})", info.name, info.backend);
-        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            label: Some("openMapper"),
-            required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-            // (big maps: blocks are not set aside beyond what is used)
-            memory_hints: wgpu::MemoryHints::MemoryUsage,
-            ..Default::default()
-        }))?;
         // (running out of graphics memory is not a reason to close the editor: the renderer
         // frees what it can make again; any other error is fatal, as wgpu has it by default)
         device.on_uncaptured_error(Arc::new(|e: wgpu::Error| match e {
