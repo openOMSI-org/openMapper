@@ -4,6 +4,18 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## Unreleased
+
+### Added
+- **A Settings window** (File > Settings…, or the command search): General (language, interface size, camera style, OMSI 2's controls, how many tiles are loaded at once), Graphics, Camera, Keys and Mouse in tabs.
+- **Camera speeds and sensitivities**: flying speed, keyboard speed over the map, what Shift multiplies it by, the speed of turning with Q / E, looking round, orbiting, panning, the wheel's step, the up-and-down and wheel inversions, and whether flying builds up speed. They are kept, and one button puts them back.
+- **The graphics API can be chosen** (Settings > Graphics, or View > Graphics API): Auto, DirectX 12, Vulkan, Metal or OpenGL, as far as the system has them. A choice that cannot start falls back to Auto; `OPENMAPPER_BACKEND=dx12` sets it for one run. Takes effect after a restart.
+- The key list in Settings can be searched by command or by key.
+- A spline can be started from the end of a kerb, a wall or a footpath (the ends of splines that no road joins were never offered).
+
+### Fixed
+- Clicking an object made of many materials (a merged lamp, for instance) no longer widens the properties panel with the long texture names, which slid the map view away under the click.
+
 ## 0.1.18 - 2026-10-29
 
 URGENT UPDATE: IMPORTANT FIXES

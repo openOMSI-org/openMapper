@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Хуткія клавішы з іншых праграм
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Клавішы Blender: G перамяшчае вылучанае, Shift+S маштабуе, X выдаляе, Tab правіць меш, Shift+A дадае аб'ект, Shift+D дубліруе, F3 шукае. W A S D і Q E рухаюць камеру, як заўсёды
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G перамяшчае вылучанае, Shift+S маштабуе, X выдаляе, Tab правіць меш, Shift+A дадае аб'ект, Shift+D дубліруе, F3 шукае, Num 7 глядзіць уніз. W A S D і Q E рухаюць камеру, як заўсёды; мыш — як у openMapper
+The graphics API changes the next time openMapper starts	Графічны API зменіцца пры наступным запуску openMapper
+Settings…	Налады…
+Graphics API	Графічны API
+Automatic	Аўтаматычна
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 — звычайны выбар у Windows; калі выбраны API не запускаецца, openMapper пераходзіць на аўтаматычны. Дзейнічае пасля перазапуску (OPENMAPPER_BACKEND=dx12 для аднаго запуску).
+Settings	Налады
+General	Агульныя
+Graphics	Графіка
+Find	Пошук
+a command or a key	каманды або клавішы
+Interface	Інтэрфейс
+Camera and mouse	Камера і мыш
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Рэдактар карты: правая кнопка паварочвае погляд, колца набліжае да курсора, перацягванне рухае карту
+Big maps	Вялікія карты
+Load a part of the tiles at a time (like OMSI 2's editor)	Загружаць частку тайлаў за раз (як у рэдактары OMSI 2)
+Auto (the best the system has)	Аўта (лепшы з даступных у сістэме)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Дзейнічае пасля перазапуску. Калі выбраны API не запускаецца, openMapper пераходзіць на Аўта. OPENMAPPER_BACKEND=dx12 задае яго для аднаго запуску.
+Quality	Якасць
+Camera speed	Хуткасць камеры
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Правая кнопка і W A S D (м/с); колца змяняе яе падчас руху
+Keys over the map	Клавішы над картай
+W A S D and the arrows without the right button	W A S D і стрэлкі без правай кнопкі
+Shift makes it	Shift робіць яе
+How many times faster the camera is with Shift held	У колькі разоў камера хутчэйшая пры ўтрыманні Shift
+Turning with Q / E	Паварот клавішамі Q / E
+Degrees a second	Градусаў за секунду
+Looking round	Агляд
+Sensitivity of the right button	Адчувальнасць правай кнопкі
+Orbiting	Аблёт
+Sensitivity of Alt + left button and of the trackpad	Адчувальнасць Alt + левай кнопкі і трэкпада
+Panning	Панарама
+Sensitivity of the middle button and of dragging the map	Адчувальнасць сярэдняй кнопкі і перацягвання карты
+Zoom (wheel)	Маштаб (колца)
+How far one wheel step goes	Наколькі зрушвае адзін крок колца
+Invert looking up and down	Інвертаваць погляд уверх і ўніз
+Invert orbiting up and down	Інвертаваць аблёт уверх і ўніз
+Invert the wheel	Інвертаваць колца
+Flying builds up speed the longer the keys are held	Палёт набірае хуткасць, чым даўжэй утрымліваюцца клавішы
+Reset the camera	Скінуць камеру

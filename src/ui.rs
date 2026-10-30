@@ -118,6 +118,8 @@ pub enum Action {
     SetAlpha(String, usize, String, i32, u8),
     /// How the mouse moves the camera ("map" or "fly").
     SetCamera(String),
+    SetCamTune(crate::camera::Tuning),
+    SetGraphicsApi(crate::gpu::Api),
     SetOmsiControls(bool),
     /// The set of keys to start from (openMapper's, OMSI 2's editor's or Blender's).
     SetKeySet(crate::controls::Preset),
@@ -230,6 +232,10 @@ pub struct UiState {
     pub help_open: bool,
     /// The command whose key is being chosen (the next key pressed becomes it).
     pub key_capture: Option<crate::controls::Cmd>,
+    /// The words the key list in Settings is cut down to.
+    pub key_filter: String,
+    /// The tab of the Settings window.
+    pub settings_tab: u8,
     pub about_open: bool,
     pub texture_picker: Option<String>,
     /// What the texture picker chooses for: a ground layer's texture or detail texture
@@ -309,6 +315,8 @@ impl Default for UiState {
             new_map: None,
             help_open: false,
             key_capture: None,
+            key_filter: String::new(),
+            settings_tab: 0,
             about_open: false,
             texture_picker: None,
             texture_pick_for: None,
@@ -560,7 +568,7 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
                 if menu_item(ui, Some(Icon::Open), tr("Open map…", "Открыть карту…"), "", omsi.is_some()) {
                     actions.push(Action::OpenDialog);
                 }
-                if menu_item(ui, Some(Icon::Help), tr("Controls…", "Управление…"), "", true) {
+                if menu_item(ui, Some(Icon::Help), tr("Settings…", "Настройки…"), "Ctrl+,", true) {
                     st.help_open = true;
                 }
                 if menu_item(ui, Some(Icon::Import), tr("Import assets…", "Импорт ассетов…"), "", omsi.is_some()) {
@@ -1081,6 +1089,16 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetSeason(f));
                         }
                     }
+                });
+                ui.menu_button(tr("Graphics API", "Графический API"), |ui| {
+                    let now = crate::gpu::Api::of(&prefs.graphics_api);
+                    for a in crate::gpu::Api::ALL.into_iter().filter(|a| a.here()) {
+                        let name = if a == crate::gpu::Api::Auto { tr("Automatic", "Автоматически") } else { a.label() };
+                        if radio(ui, now == a, name).clicked() && now != a {
+                            actions.push(Action::SetGraphicsApi(a));
+                        }
+                    }
+                    ui.label(RichText::new(tr("DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).", "DirectX 12 обычно лучший выбор на Windows; если выбранный API не запустится, openMapper вернётся к автоматическому. Применяется после перезапуска (OPENMAPPER_BACKEND=dx12 на один запуск).")).small().color(TEXT_DIM));
                 });
                 ui.menu_button(tr("Graphics quality", "Качество графики"), |ui| {
                     let now = crate::render::quality::Quality::from_code(&prefs.graphics);
@@ -2387,8 +2405,10 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         for (pi, piece) in info.pieces.iter().enumerate() {
                             egui::CollapsingHeader::new(RichText::new(format!("{} {} · {} {}", tr("Part", "Часть"), pi + 1, piece.triangles, tr("triangles", "треугольников"))).small()).id_salt(("piece", pi)).show(ui, |ui| {
                                 for (mi, (tex, index, alpha)) in piece.materials.iter().enumerate() {
-                                    ui.horizontal(|ui| {
-                                        ui.label(RichText::new(if tex.is_empty() { tr("colour only", "только цвет") } else { tex }).small());
+                                    // (a texture's long name stays in the panel: it was wider than the panel's range
+                                    // for a model made of many, and the map view slid away under the click)
+                                    ui.vertical(|ui| {
+                                        long_label(ui, if tex.is_empty() { tr("colour only", "только цвет") } else { tex }, egui::TextStyle::Small, ui.visuals().text_color());
                                         let names = [tr("opaque", "непрозрачный"), tr("cut out", "вырезной"), tr("blended", "полупрозрачный")];
                                         let mut v = (*alpha).min(2);
                                         ui.add_enabled_ui(imported && !tex.is_empty(), |ui| {
@@ -2407,12 +2427,11 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         }
                         ui.label(RichText::new(tr("Textures", "Текстуры")).color(TEXT_DIM));
                         for (name, pbr) in &info.textures {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new(name).small());
-                                if *pbr {
-                                    ui.label(RichText::new("PBR").small().color(ACCENT));
-                                }
-                            });
+                            if *pbr {
+                                long_label(ui, &format!("{name} · PBR"), egui::TextStyle::Small, ACCENT);
+                            } else {
+                                long_label(ui, name, egui::TextStyle::Small, ui.visuals().text_color());
+                            }
                         }
                     });
                 }
@@ -3013,8 +3032,21 @@ fn texture_picker(ctx: &egui::Context, st: &mut UiState, files: &[String], swatc
 
 fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut Vec<Action>) {
     let mut open = st.help_open;
-    egui::Window::new(tr("Controls", "Управление")).open(&mut open).collapsible(false).default_height(560.0).show(ctx, |ui| {
+    egui::Window::new(tr("Settings", "Настройки")).open(&mut open).collapsible(false).default_height(600.0).default_width(520.0).show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            for (i, name) in [tr("General", "Общие"), tr("Graphics", "Графика"), tr("Camera", "Камера"), tr("Keys", "Клавиши"), tr("Mouse", "Мышь")].into_iter().enumerate() {
+                if ui.add(egui::Button::new(name).selected(st.settings_tab == i as u8).min_size(Vec2::new(0.0, 24.0))).clicked() {
+                    st.settings_tab = i as u8;
+                }
+            }
+        });
+        ui.separator();
         egui::ScrollArea::vertical().auto_shrink([true, false]).show(ui, |ui| {
+        match st.settings_tab {
+            0 => settings_general(ui, prefs, actions),
+            1 => settings_graphics(ui, prefs, actions),
+            2 => camera_tuning(ui, prefs, actions),
+            3 => {
         ui.label(RichText::new(tr("Keyboard", "Клавиатура")).strong().color(ACCENT));
         let preset = crate::controls::Preset::of(&prefs.keys_set, prefs.omsi_controls);
         ui.horizontal(|ui| {
@@ -3034,8 +3066,17 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
         });
         ui.label(RichText::new(tr("Click a key, then press the new one (Esc: leave it). A key already in use is taken from its command.", "Нажмите на клавишу, затем новую (Esc: оставить). Занятая клавиша отбирается у своей команды.")).small().color(TEXT_DIM));
         let map = crate::controls::Keymap::of(&prefs.keys, preset);
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(tr("Find", "Найти")).color(TEXT_DIM));
+            ui.add(egui::TextEdit::singleline(&mut st.key_filter).desired_width(160.0).hint_text(tr("a command or a key", "команда или клавиша")));
+        });
+        let filter = st.key_filter.trim().to_lowercase();
         egui::Grid::new("key bindings").striped(true).num_columns(3).show(ui, |ui| {
             for cmd in crate::controls::ALL {
+                let key_text = map.chord(*cmd).map(|k| k.text()).unwrap_or_default();
+                if !filter.is_empty() && !cmd.label().to_lowercase().contains(&filter) && !key_text.to_lowercase().contains(&filter) {
+                    continue;
+                }
                 ui.label(cmd.label());
                 let waiting = st.key_capture == Some(*cmd);
                 let text = if waiting { tr("press a key…", "нажмите клавишу…").to_string() } else { map.chord(*cmd).map(|k| k.text()).unwrap_or_else(|| "—".into()) };
@@ -3057,6 +3098,8 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
             actions.push(Action::ResetKeys);
         }
         ui.add_space(8.0);
+            }
+            _ => {
         let rows: &[(&str, &str)] = &[
             (tr("Mouse", "Мышь"), ""),
             (tr("Right button held", "Правая кнопка зажата"), tr("look round; W A S D fly, Q / E down / up, Shift faster, wheel: speed", "оглядываться; W A S D: полёт, Q / E: вниз / вверх, Shift: быстрее, колесо: скорость")),
@@ -3092,9 +3135,119 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
                 ui.end_row();
             }
         });
+
+            }
+        }
         });
     });
     st.help_open = open;
+}
+
+/// Settings > General: language, interface size, how the camera and tiles behave.
+fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
+    ui.label(RichText::new(tr("Interface", "Интерфейс")).strong().color(ACCENT));
+    ui.horizontal(|ui| {
+        ui.label(tr("Language", "Язык"));
+        egui::ComboBox::from_id_salt("settings language").selected_text(i18n::LANGUAGES.iter().find(|l| l.lang == i18n::get()).map(|l| l.name).unwrap_or("")).height(420.0).show_ui(ui, |ui| {
+            for lg in i18n::LANGUAGES {
+                if ui.selectable_label(i18n::get() == lg.lang, lg.name).clicked() {
+                    actions.push(Action::SetLang(lg.lang));
+                }
+            }
+        });
+    });
+    let mut zoom = ui.ctx().zoom_factor();
+    ui.horizontal(|ui| {
+        ui.label(tr("Interface size", "Размер интерфейса"));
+        if ui.add(egui::Slider::new(&mut zoom, 0.6..=2.0).step_by(0.05).custom_formatter(|v, _| format!("{:.0} %", v * 100.0))).drag_stopped() {
+            actions.push(Action::SetScale(zoom));
+        }
+    });
+    ui.add_space(8.0);
+    ui.label(RichText::new(tr("Camera and mouse", "Камера и мышь")).strong().color(ACCENT));
+    let unity = prefs.camera != "map";
+    if radio(ui, unity, tr("Unity: right button looks round and W A S D fly, middle pans, Alt orbits", "Unity: правая кнопка оглядывает и W A S D летят, средняя двигает, Alt вращает")).clicked() {
+        actions.push(Action::SetCamera("fly".into()));
+    }
+    if radio(ui, !unity, tr("Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map", "Редактор карт: правая кнопка оглядывает, колесо приближает к курсору, перетаскивание двигает карту")).clicked() {
+        actions.push(Action::SetCamera("map".into()));
+    }
+    let mut omsi = prefs.omsi_controls;
+    if ui.checkbox(&mut omsi, tr("OMSI 2's editor: mouse and keys", "Редактор OMSI 2: мышь и клавиши")).clicked() {
+        actions.push(Action::SetOmsiControls(omsi));
+    }
+    ui.add_space(8.0);
+    ui.label(RichText::new(tr("Big maps", "Большие карты")).strong().color(ACCENT));
+    let mut streaming = prefs.tile_streaming == Some(true);
+    if ui.checkbox(&mut streaming, tr("Load a part of the tiles at a time (like OMSI 2's editor)", "Загружать часть тайлов (как в редакторе OMSI 2)")).clicked() {
+        actions.push(Action::SetTileStreaming(streaming));
+    }
+    let now = if prefs.stream_tiles == 0 { 100 } else { prefs.stream_tiles };
+    ui.add_enabled_ui(streaming, |ui| {
+        ui.horizontal(|ui| {
+            ui.label(tr("Tiles loaded at once", "Тайлов загружено сразу"));
+            for n in [9u32, 25, 49, 100, 225] {
+                if ui.selectable_label(now == n, n.to_string()).clicked() {
+                    actions.push(Action::SetStreamTiles(n));
+                }
+            }
+        });
+    });
+}
+
+/// Settings > Graphics: the graphics API and the quality.
+fn settings_graphics(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
+    ui.label(RichText::new(tr("Graphics API", "Графический API")).strong().color(ACCENT));
+    let now = crate::gpu::Api::of(&prefs.graphics_api);
+    for a in crate::gpu::Api::ALL.into_iter().filter(|a| a.here()) {
+        let name = if a == crate::gpu::Api::Auto { tr("Auto (the best the system has)", "Авто (лучший из доступных)") } else { a.label() };
+        if radio(ui, now == a, name).clicked() && now != a {
+            actions.push(Action::SetGraphicsApi(a));
+        }
+    }
+    ui.label(RichText::new(tr("Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.", "Применяется после перезапуска. Если выбранный API не запустится, openMapper вернётся к Авто. OPENMAPPER_BACKEND=dx12 задаёт его на один запуск.")).small().color(TEXT_DIM));
+    ui.add_space(8.0);
+    ui.label(RichText::new(tr("Quality", "Качество")).strong().color(ACCENT));
+    let q = crate::render::quality::Quality::from_code(&prefs.graphics);
+    for c in crate::render::quality::Quality::ALL {
+        if radio(ui, q == c, c.label()).clicked() {
+            actions.push(Action::SetGraphics(c));
+        }
+    }
+}
+
+/// The camera's speeds and sensitivities (View > Controls).
+fn camera_tuning(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
+    ui.label(RichText::new(tr("Camera speed", "Скорость камеры")).strong().color(ACCENT));
+    let mut t = prefs.cam_tune;
+    let mut changed = false;
+    let mut row = |ui: &mut egui::Ui, name: &str, hint: &str, slider: egui::Slider<'_>| {
+        ui.label(name);
+        let r = ui.add(slider);
+        changed |= r.changed();
+        r.on_hover_text(hint);
+        ui.end_row();
+    };
+    egui::Grid::new("camera tuning").num_columns(2).show(ui, |ui| {
+        row(ui, tr("Flying speed", "Скорость полёта"), tr("Right button held and W A S D (m/s); the wheel changes it meanwhile", "Правая кнопка и W A S D (м/с); колесо меняет её на лету"), egui::Slider::new(&mut t.fly_speed, 2.0..=2000.0).logarithmic(true).suffix(" m/s"));
+        row(ui, tr("Keys over the map", "Клавиши над картой"), tr("W A S D and the arrows without the right button", "W A S D и стрелки без правой кнопки"), egui::Slider::new(&mut t.move_speed, 0.1..=5.0).logarithmic(true).suffix("×"));
+        row(ui, tr("Shift makes it", "Shift ускоряет в"), tr("How many times faster the camera is with Shift held", "Во сколько раз быстрее камера с зажатым Shift"), egui::Slider::new(&mut t.fast, 1.0..=10.0).suffix("×"));
+        row(ui, tr("Turning with Q / E", "Поворот на Q / E"), tr("Degrees a second", "Градусов в секунду"), egui::Slider::new(&mut t.turn_speed, 10.0..=360.0).suffix("°/s"));
+        row(ui, tr("Looking round", "Обзор мышью"), tr("Sensitivity of the right button", "Чувствительность правой кнопки"), egui::Slider::new(&mut t.look, 0.1..=3.0).logarithmic(true).suffix("×"));
+        row(ui, tr("Orbiting", "Вращение вида"), tr("Sensitivity of Alt + left button and of the trackpad", "Чувствительность Alt + левая кнопка и трекпада"), egui::Slider::new(&mut t.orbit, 0.1..=3.0).logarithmic(true).suffix("×"));
+        row(ui, tr("Panning", "Сдвиг вида"), tr("Sensitivity of the middle button and of dragging the map", "Чувствительность средней кнопки и перетаскивания карты"), egui::Slider::new(&mut t.pan, 0.1..=3.0).logarithmic(true).suffix("×"));
+        row(ui, tr("Zoom (wheel)", "Приближение (колесо)"), tr("How far one wheel step goes", "Как далеко уходит один щелчок колеса"), egui::Slider::new(&mut t.zoom, 0.1..=3.0).logarithmic(true).suffix("×"));
+    });
+    changed |= ui.checkbox(&mut t.invert_look_y, tr("Invert looking up and down", "Инвертировать взгляд вверх-вниз")).changed();
+    changed |= ui.checkbox(&mut t.invert_orbit_y, tr("Invert orbiting up and down", "Инвертировать вращение вверх-вниз")).changed();
+    changed |= ui.checkbox(&mut t.invert_wheel, tr("Invert the wheel", "Инвертировать колесо")).changed();
+    changed |= ui.checkbox(&mut t.accelerate, tr("Flying builds up speed the longer the keys are held", "Полёт разгоняется, пока клавиши зажаты")).changed();
+    if changed {
+        actions.push(Action::SetCamTune(t));
+    }
+    if ui.button(tr("Reset the camera", "Сбросить камеру")).clicked() {
+        actions.push(Action::SetCamTune(Default::default()));
+    }
 }
 
 /// A row of buttons at the right of a window, one line high (a right-to-left layout opened
