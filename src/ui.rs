@@ -605,6 +605,8 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
             };
         });
     });
+    // (the settings open here too, before any map is chosen)
+    controls(&root.ctx().clone(), st, prefs, actions);
     egui::CentralPanel::default().frame(Frame::new().fill(Color32::from_rgb(30, 31, 34))).show(root, |ui| {
         ui.vertical_centered(|ui| {
             ui.add_space((ui.available_height() * 0.5 - 230.0).max(20.0));

@@ -1072,10 +1072,18 @@ pub fn layout_plate(assets: &mut Assets, arms: &[PlateArm], tex_dir: Option<&Pat
 }
 
 impl Plate {
-    /// The plate's triangles seen from above, each with whether it is the roadway (else a kerb
-    /// or footway): for drawing it.
-    pub fn flat(&self) -> Vec<([DVec2; 3], bool)> {
-        self.mesh.tris.iter().map(|(t, mat)| ([0, 1, 2].map(|i| DVec2::new(self.mesh.verts[t[i]].0[0], self.mesh.verts[t[i]].0[1])), *mat == 0)).collect()
+    /// The plate's triangles seen from above for drawing them with their pictures: each with
+    /// its texture (None: the roadway, which the drawing paints flat), and the uv at its corners.
+    pub fn flat_textured(&self) -> Vec<([DVec2; 3], Option<PathBuf>, [[f32; 2]; 3])> {
+        self.mesh
+            .tris
+            .iter()
+            .map(|(t, mat)| {
+                let v = |i: usize| &self.mesh.verts[t[i]];
+                let tex = self.mesh.textures.get(*mat).cloned().flatten();
+                ([0, 1, 2].map(|i| DVec2::new(v(i).0[0], v(i).0[1])), tex, [0, 1, 2].map(|i| [v(i).2[0] as f32, v(i).2[1] as f32]))
+            })
+            .collect()
     }
 
     /// The plate as a mesh of an editable object: its materials added to `materials`, its

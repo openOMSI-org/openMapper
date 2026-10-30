@@ -4,7 +4,7 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
-## Unreleased
+## 0.1.19 - 2026-10-30
 
 ### Added
 - **A Settings window** (File > Settings…, or the command search): General (language, interface size, camera style, OMSI 2's controls, how many tiles are loaded at once), Graphics, Camera, Keys and Mouse in tabs.
@@ -14,6 +14,8 @@ version from this file.
 - A spline can be started from the end of a kerb, a wall or a footpath (the ends of splines that no road joins were never offered).
 
 ### Fixed
+- The complex junction editor draws a junction's plate as the map does: the roadway in its asphalt, the kerbs and footways with their own textures, and no bristling fans at the corners.
+- Settings open from the start page too, before a map is chosen.
 - Clicking an object made of many materials (a merged lamp, for instance) no longer widens the properties panel with the long texture names, which slid the map view away under the click.
 
 ## 0.1.18 - 2026-10-29
