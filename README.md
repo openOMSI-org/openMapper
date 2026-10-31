@@ -40,9 +40,9 @@ page, built by GitHub Actions for each system and processor:
 
 | Platform | Intel / AMD (x64) | ARM64 |
 | --- | --- | --- |
-| Windows 10 / 11 | `openMapper-0.1.18-windows-x64-setup.exe` or `-windows-x64.zip` | `openMapper-0.1.18-windows-arm64-setup.exe` or `-windows-arm64.zip` |
-| macOS 11 or newer | `openMapper-0.1.18-macos-x64.dmg` or `-macos-x64.zip` | `openMapper-0.1.18-macos-arm64.dmg` or `-macos-arm64.zip` (Apple silicon) |
-| Linux | `openMapper-0.1.18-linux-x64.tar.gz` | `openMapper-0.1.18-linux-arm64.tar.gz` |
+| Windows 10 / 11 | `openMapper-0.1.19-windows-x64-setup.exe` or `-windows-x64.zip` | `openMapper-0.1.19-windows-arm64-setup.exe` or `-windows-arm64.zip` |
+| macOS 11 or newer | `openMapper-0.1.19-macos-x64.dmg` or `-macos-x64.zip` | `openMapper-0.1.19-macos-arm64.dmg` or `-macos-arm64.zip` (Apple silicon) |
+| Linux | `openMapper-0.1.19-linux-x64.tar.gz` | `openMapper-0.1.19-linux-arm64.tar.gz` |
 
 * **Windows:** run the `-setup.exe`: it installs for you alone (no administrator rights), adds
   a Start menu entry and a desktop shortcut, and `Settings > Apps` removes it again. Or unpack the zip
