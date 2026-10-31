@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and help
-    url: https://discord.gg/VG2EKVafYG
+    url: https://discord.gg/openomsi
     about: How do I...? Setting up, maps, mods, or a chat with other map makers - ask on our Discord server.
   - name: Security problem
     url: https://github.com/openOMSI-org/openMapper/security/advisories/new

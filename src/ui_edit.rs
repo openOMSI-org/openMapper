@@ -518,6 +518,14 @@ pub(crate) fn rule_name(kind: &str) -> &'static str {
     }
 }
 
+/// `bus` only opens a path to buses; it is `no_cars` that shuts it to the cars. "Buses only"
+/// therefore needs both rules on the path, as OMSI 2's editor writes them.
+pub(crate) fn close_path_to_cars(rules: &mut Vec<omsi_map::MapRule>, path: i32) {
+    if !rules.iter().any(|r| r.path_index == path && r.kind == "no_cars" && !r.kill) {
+        rules.push(omsi_map::MapRule { path_index: path, kind: "no_cars".into(), value: 0.0, extra: 0.0, kill: false });
+    }
+}
+
 /// The rules of a road's (or an object's) paths, as OMSI 2's editor sets them: a speed
 /// limit, the traffic density, priority, trucks, cars and buses, each for one path.
 pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
@@ -535,6 +543,7 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
             ui.label(RichText::new(tr("For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers", "Для ИИ и игрока на одном пути (полосе), считая от 0: их номера видны в окне вида")).small().color(TEXT_DIM));
             numbered = true;
             let mut remove = None;
+            let mut close_to_cars = None;
             for (i, r) in rules.iter_mut().enumerate().filter(|(_, r)| !r.kill) {
                 ui.horizontal(|ui| {
                     changed |= ui.add(egui::DragValue::new(&mut r.path_index).range(0..=64).prefix("#")).on_hover_text(tr("Path (lane) number", "Номер пути (полосы)")).changed();
@@ -546,6 +555,9 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
                     });
                     if r.kind != before {
                         changed = true;
+                        if r.kind == "bus" {
+                            close_to_cars = Some(r.path_index);
+                        }
                         r.value = match r.kind.as_str() {
                             "speedlimit" => 50.0,
                             "trafficdensity" => 1.0,
@@ -563,6 +575,9 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
             if let Some(i) = remove {
                 rules.remove(i);
                 changed = true;
+            }
+            if let Some(path) = close_to_cars {
+                close_path_to_cars(&mut rules, path);
             }
             if ui.button(icons::labelled(Icon::Add, tr("Add a rule", "Добавить правило"))).clicked() {
                 rules.push(omsi_map::MapRule { path_index: 0, kind: "speedlimit".into(), value: 50.0, extra: 0.0, kill: false });
@@ -1231,4 +1246,19 @@ pub fn end_junction_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, a
             }
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn buses_only_shuts_the_path_to_cars_once() {
+        let mut rules = vec![omsi_map::MapRule { path_index: 1, kind: "bus".into(), value: 0.0, extra: 0.0, kill: false }];
+        close_path_to_cars(&mut rules, 1);
+        close_path_to_cars(&mut rules, 1);
+        assert_eq!(rules.iter().filter(|r| r.kind == "no_cars" && r.path_index == 1).count(), 1);
+        close_path_to_cars(&mut rules, 2);
+        assert!(rules.iter().any(|r| r.kind == "no_cars" && r.path_index == 2));
+    }
 }

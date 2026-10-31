@@ -10,7 +10,7 @@
   <img alt="Platforms" src="https://img.shields.io/badge/windows%20%C2%B7%20linux%20%C2%B7%20macos-x64%20%7C%20arm64-2d3138?style=for-the-badge">
   <img alt="Rust" src="https://img.shields.io/badge/rust-2024-2d3138?style=for-the-badge&logo=rust&logoColor=white">
   <a href="https://openomsi.org/"><img alt="Docs" src="https://img.shields.io/badge/openOMSI-website-2d3138?style=for-the-badge"></a>
-  <a href="https://discord.gg/VG2EKVafYG"><img alt="Discord" src="https://img.shields.io/badge/discord-join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
+  <a href="https://discord.gg/openomsi"><img alt="Discord" src="https://img.shields.io/badge/discord-join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
   <a href="https://buymeacoffee.com/usonskyyy"><img alt="Buy me a coffee" src="https://img.shields.io/badge/buy%20me%20a%20coffee-support-ffdd00?style=for-the-badge&logo=buymeacoffee&logoColor=black"></a>
   <a href="https://ko-fi.com/usonance"><img alt="Ko-fi" src="https://img.shields.io/badge/ko--fi-support-29abe0?style=for-the-badge&logo=kofi&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--only-2e86ff?style=for-the-badge"></a>
@@ -20,7 +20,7 @@
 > **Early release. Expect bugs.** openMapper is in an early stage of development: things may be
 > missing, broken or change between versions. Please report problems in
 > [Issues](https://github.com/openOMSI-org/openMapper/issues) or on our
-> [Discord server](https://discord.gg/VG2EKVafYG). Keep a copy of a map you care about: saving
+> [Discord server](https://discord.gg/openomsi). Keep a copy of a map you care about: saving
 > keeps the last ten versions, but a copy is cheaper than a regret.
 
 **openMapper** is a simple map editor for [openOMSI](https://openomsi.org/). Draw roads with a
@@ -116,7 +116,7 @@ are reported privately, see [SECURITY.md](SECURITY.md). What is planned is in
 
 openMapper is made by volunteers. If it helps you, you can support the work on
 [Buy Me a Coffee](https://buymeacoffee.com/usonskyyy) or [Ko-fi](https://ko-fi.com/usonance);
-questions and chat are on [Discord](https://discord.gg/VG2EKVafYG).
+questions and chat are on [Discord](https://discord.gg/openomsi).
 
 ## License
 

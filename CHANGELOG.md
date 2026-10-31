@@ -16,6 +16,9 @@ version from this file.
 ### Fixed
 - The complex junction editor draws a junction's plate as the map does: the roadway in its asphalt, the kerbs and footways with their own textures, and no bristling fans at the corners.
 - Settings open from the start page too, before a map is chosen.
+- **"Buses only" on a path now keeps the cars off it**: it also writes `no_cars` for that path (`bus` alone only opens a path to buses), as OMSI 2's editor does.
+- **Invisible streets and AI paths are seen with the editor's switch** (what the game does not show), and the join of two free ends of an AI path.
+- The Discord links in the README and the issue template point to the right server.
 - Clicking an object made of many materials (a merged lamp, for instance) no longer widens the properties panel with the long texture names, which slid the map view away under the click.
 
 ## 0.1.18 - 2026-10-29
