@@ -159,6 +159,23 @@ pub struct Anchor {
     /// A point in the middle of a road: the new road joins it there and the road is cut in
     /// two at that point (tile, id, distance along it, its half width).
     pub mid: Option<((i32, i32), i64, f64, f64)>,
+    /// When set, `pos` is the middle of the spline's drawn profiles (a kerb with no AI path),
+    /// not the centre line; [`Anchor::on_centre_line`] puts it back for placement and linking.
+    pub profile_x: Option<f64>,
+}
+
+impl Anchor {
+    /// The centre-line place that belongs with this snap (unchanged when `profile_x` is none).
+    pub fn on_centre_line(self) -> Anchor {
+        let Some(px) = self.profile_x else {
+            return self;
+        };
+        let at_end = self.spline.map(|(_, _, e)| e).unwrap_or(true);
+        // at the start end, travel along the existing spline is opposite the outward heading
+        let travel = if at_end { self.heading } else { norm_deg(self.heading + 180.0) };
+        let r = right(travel);
+        Anchor { pos: self.pos - DVec3::new(r.x * px, r.y * px, 0.0), profile_x: None, ..self }
+    }
 }
 
 /// The road the user is drawing, from its start to the cursor.
@@ -257,5 +274,30 @@ mod tests {
         assert!(parts.len() >= 4);
         let last = parts.last().unwrap();
         assert!((last.end() - a.end()).length() < 1e-6);
+    }
+
+    #[test]
+    fn a_profile_snap_goes_back_to_the_centre_line() {
+        // travelling north, profile middle 0.55 m to the right of the end
+        let node = Anchor {
+            pos: DVec3::new(0.55, 10.0, 0.0),
+            heading: 0.0,
+            spline: Some(((0, 0), 1, true)),
+            profile_x: Some(0.55),
+            ..Default::default()
+        };
+        let c = node.on_centre_line();
+        assert!((c.pos.truncate() - DVec2::new(0.0, 10.0)).length() < 1e-9);
+        assert!(c.profile_x.is_none());
+        // at the start end, travel along the spline is opposite the outward heading
+        let node = Anchor {
+            pos: DVec3::new(0.55, 0.0, 0.0),
+            heading: 180.0,
+            spline: Some(((0, 0), 1, false)),
+            profile_x: Some(0.55),
+            ..Default::default()
+        };
+        let c = node.on_centre_line();
+        assert!((c.pos.truncate() - DVec2::ZERO).length() < 1e-9);
     }
 }

@@ -2157,15 +2157,33 @@ impl Editor {
                 if (DVec2::new(org.x + s.pos[0], org.y + s.pos[1]) - p).length() > s.length + within {
                     continue;
                 }
-                if !assets.spline(&s.file).map(|m| m.joinable()).unwrap_or(false) {
+                let Some(m) = assets.spline(&s.file) else { continue };
+                if !m.snappable() {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                if s.prev_id == 0 && (c.point_at(0.0).truncate() - p).length() < within {
-                    out.push(Anchor { pos: c.point_at(0.0), heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), mid: None });
+                let px = m.profile_snap_offset().map(|x| x as f64);
+                if s.prev_id == 0 {
+                    let travel = s.heading;
+                    let mut pos = c.point_at(0.0);
+                    if let Some(x) = px {
+                        let r = roads::right(travel);
+                        pos += DVec3::new(r.x * x, r.y * x, 0.0);
+                    }
+                    if (pos.truncate() - p).length() < within {
+                        out.push(Anchor { pos, heading: roads::norm_deg(travel + 180.0), spline: Some((*k, s.id, false)), profile_x: px, ..Default::default() });
+                    }
                 }
-                if s.next_id == 0 && (c.end_point().truncate() - p).length() < within {
-                    out.push(Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), mid: None });
+                if s.next_id == 0 {
+                    let travel = c.heading_at(s.length);
+                    let mut pos = c.end_point();
+                    if let Some(x) = px {
+                        let r = roads::right(travel);
+                        pos += DVec3::new(r.x * x, r.y * x, 0.0);
+                    }
+                    if (pos.truncate() - p).length() < within {
+                        out.push(Anchor { pos, heading: roads::norm_deg(travel), spline: Some((*k, s.id, true)), profile_x: px, ..Default::default() });
+                    }
                 }
             }
             // the helper points of junction pieces already on the map (not those a road
@@ -2180,7 +2198,7 @@ impl Editor {
                 for (h, _) in &model.helpers {
                     let q = world + m.transform_point3(Vec3::new(h[0], h[1], h[2])).as_dvec3();
                     if (q.truncate() - p).length() < within && !taken.iter().any(|t| (t.truncate() - q.truncate()).length() < 1.0) {
-                        out.push(Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), spline: None, mid: None });
+                        out.push(Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), ..Default::default() });
                     }
                 }
             }
@@ -2712,17 +2730,33 @@ impl Editor {
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
-                if assets.spline(&s.file).map(|m| !m.joinable() || m.is_track() != track).unwrap_or(true) {
+                let Some(m) = assets.spline(&s.file) else { continue };
+                if !m.snappable() || m.is_track() != track {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                if s.prev_id == 0 && !at_plate(c.point_at(0.0)) {
-                    let a = c.point_at(0.0);
-                    consider((a.truncate() - p).length(), Anchor { pos: a, heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), mid: None }, &s.file);
+                let px = m.profile_snap_offset().map(|x| x as f64);
+                if s.prev_id == 0 {
+                    let travel = s.heading;
+                    let mut a = c.point_at(0.0);
+                    if let Some(x) = px {
+                        let r = roads::right(travel);
+                        a += DVec3::new(r.x * x, r.y * x, 0.0);
+                    }
+                    if !at_plate(a) {
+                        consider((a.truncate() - p).length(), Anchor { pos: a, heading: roads::norm_deg(travel + 180.0), spline: Some((*k, s.id, false)), profile_x: px, ..Default::default() }, &s.file);
+                    }
                 }
-                if s.next_id == 0 && !at_plate(c.end_point()) {
-                    let e = c.end_point();
-                    consider((e.truncate() - p).length(), Anchor { pos: e, heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), mid: None }, &s.file);
+                if s.next_id == 0 {
+                    let travel = c.heading_at(s.length);
+                    let mut e = c.end_point();
+                    if let Some(x) = px {
+                        let r = roads::right(travel);
+                        e += DVec3::new(r.x * x, r.y * x, 0.0);
+                    }
+                    if !at_plate(e) {
+                        consider((e.truncate() - p).length(), Anchor { pos: e, heading: roads::norm_deg(travel), spline: Some((*k, s.id, true)), profile_x: px, ..Default::default() }, &s.file);
+                    }
                 }
             }
             for o in &t.tile.objects {
@@ -2741,7 +2775,7 @@ impl Editor {
                     if d < within && self.spline_end_at(assets, q.truncate()) {
                         continue;
                     }
-                    consider(d, Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), spline: None, mid: None }, file);
+                    consider(d, Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), ..Default::default() }, file);
                 }
             }
         }
@@ -2779,7 +2813,7 @@ impl Editor {
                     let q = c.point_at(at);
                     let d = (q.truncate() - p).length();
                     if d < hw + 2.0 && mid.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        mid = Some((d, Anchor { pos: q, heading: roads::norm_deg(c.heading_at(at) + 90.0), spline: None, mid: Some((*k, s.id, at, hw)) }, s.file.clone()));
+                        mid = Some((d, Anchor { pos: q, heading: roads::norm_deg(c.heading_at(at) + 90.0), mid: Some((*k, s.id, at, hw)), ..Default::default() }, s.file.clone()));
                     }
                 }
             }
@@ -2809,13 +2843,14 @@ impl Editor {
     /// The type being drawn is a track (rails meet in switches, not junctions).
     /// The road drawn is joined to what is near: its ends take the ends of roads and the places
     /// of junction pieces, a junction plate takes it as an arm, junctions are made where it meets
-    /// roads. Not for a cable, a fence or a footpath (nothing drives on them: they only lie where
-    /// they are drawn), not with the option off and not while Ctrl is held.
+    /// roads. A kerb or marking without AI paths snaps too (its profile middle is the node). Not
+    /// for a cable, a fence or a wall (nothing drives on them), not with the option off and not
+    /// while Ctrl is held.
     fn joins(&self, assets: &mut Assets) -> bool {
         if !self.snap_roads || self.ctrl_held {
             return false;
         }
-        self.drawing_paths() || self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| m.joinable()).unwrap_or(true)
+        self.drawing_paths() || self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| m.snappable()).unwrap_or(true)
     }
 
     fn drawing_track(&self, assets: &mut Assets) -> bool {
@@ -2888,7 +2923,7 @@ impl Editor {
             .filter(|(d, _)| *d < 4.0)
             .min_by(|a, b| a.0.total_cmp(&b.0));
         if let Some((_, e)) = end {
-            return Some((Anchor { pos: e.pos, heading: e.heading, spline: None, mid: None }, file));
+            return Some((Anchor { pos: e.pos, heading: e.heading, ..Default::default() }, file));
         }
         let along = lanes
             .iter()
@@ -2901,7 +2936,7 @@ impl Editor {
             // (on a spline's lane: the spline is cut there when the path is built, so the lane
             // has an end there for the path to join - openOMSI joins lanes only end to end)
             let mid = sp.zip(at).filter(|((_, _, len), at)| *at > 0.6 && *at < len - 0.6).map(|((k, id, _), at)| (k, id, at, 0.0));
-            (Anchor { pos: q, heading: roads::norm_deg(if starting { flow } else { flow + 180.0 }), spline: None, mid }, file)
+            (Anchor { pos: q, heading: roads::norm_deg(if starting { flow } else { flow + 180.0 }), mid, ..Default::default() }, file)
         })
     }
 
@@ -2992,7 +3027,8 @@ impl Editor {
             let d = target - start.pos.truncate();
             target = start.pos.truncate() + roads::dir(snap_deg(roads::heading_of(d), self.angle_step)) * d.length();
         }
-        let mut end_anchor = snap;
+        // (preview magnet stays on the profile middle; the planned road meets the centre line)
+        let mut end_anchor = snap.map(|a| a.on_centre_line());
         // into a junction plate: to its centre (it is cut back to the edge and becomes an arm)
         self.road_plate_end = None;
         if snap.is_none() && !self.drawing_paths() && joins {
@@ -3033,12 +3069,12 @@ impl Editor {
                     match self.switch_plan(assets, a.pos, open, left) {
                         Some((plan, (pos, heading))) => {
                             target = pos.truncate();
-                            end_anchor = Some(Anchor { pos, heading, spline: None, mid: None });
+                            end_anchor = Some(Anchor { pos, heading, ..Default::default() });
                             self.switch_plans.push(plan);
                         }
                         None => {
                             target = a.pos.truncate();
-                            end_anchor = Some(Anchor { pos: a.pos, heading: open, spline: None, mid: None });
+                            end_anchor = Some(Anchor { pos: a.pos, heading: open, ..Default::default() });
                         }
                     }
                 }
@@ -3100,7 +3136,8 @@ impl Editor {
             match self.road_snap {
                 // (from the middle of a road the heading is free)
                 Some(a) if a.mid.is_some() && !self.drawing_paths() => self.road_start = Some((a, false)),
-                Some(a) => self.road_start = Some((a, true)),
+                // (a kerb's snap sits on its profile middle: the piece is laid on the centre line)
+                Some(a) => self.road_start = Some((a.on_centre_line(), true)),
                 None => {
                     // from inside a junction plate: from its centre, as a new arm of it
                     self.road_plate_start = if self.joins(assets) { self.plate_at(assets, c.truncate()) } else { None };
@@ -3119,9 +3156,10 @@ impl Editor {
         let (start, _) = self.road_start.unwrap();
         let half = assets.spline(&rel).map(|m| m.half_width).unwrap_or(4.0);
         // a road met in its middle is cut in two there: the joint is where a junction goes
+        let end = end.map(|e| e.on_centre_line());
         let mids: Vec<_> = [start.mid, end.and_then(|e| e.mid)].into_iter().flatten().collect();
         let end_link = end.filter(|e| e.mid.is_none());
-        let start_link = if start.mid.is_some() { Anchor { spline: None, ..start } } else { start };
+        let start_link = if start.mid.is_some() { Anchor { spline: None, ..start } } else { start.on_centre_line() };
         let made = self.build_road(&rel, &segs, z0, z1, start_link, end_link, half as f64);
         let mut last = made.as_ref().and_then(|m| m.last().copied());
         if let Some(made) = &made {
@@ -3190,7 +3228,7 @@ impl Editor {
                 let doc = self.doc.as_ref().unwrap();
                 if let Some(s) = doc.spline(k, id) {
                     let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
-                    self.road_start = Some((Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((k, id, true)), mid: None }, true));
+                    self.road_start = Some((Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((k, id, true)), ..Default::default() }, true));
                 }
             }
             _ => {
@@ -3449,7 +3487,7 @@ impl Editor {
                         let left = towards.dot(roads::right(travel)) < 0.0;
                         match self.switch_plan(assets, a.pos, travel, left) {
                             Some((plan, (pos, heading))) => {
-                                start_heel = Some(Anchor { pos, heading, spline: None, mid: None });
+                                start_heel = Some(Anchor { pos, heading, ..Default::default() });
                                 plans.push(plan);
                             }
                             None => track_mids.push(m),
@@ -3465,7 +3503,7 @@ impl Editor {
                         let left = from.dot(roads::right(open)) < 0.0;
                         match self.switch_plan(assets, a.pos, open, left) {
                             Some((plan, (pos, heading))) => {
-                                end_heel = Some(Anchor { pos, heading, spline: None, mid: None });
+                                end_heel = Some(Anchor { pos, heading, ..Default::default() });
                                 plans.push(plan);
                             }
                             None => track_mids.push(m),
@@ -3499,7 +3537,7 @@ impl Editor {
                     all.extend(mid_segs);
                     if let Some(h) = end_heel {
                         let last = *all.last().unwrap();
-                        let from = Anchor { pos: DVec3::new(last.end().x, last.end().y, 0.0), heading: last.curve().heading_at(last.length), spline: None, mid: None };
+                        let from = Anchor { pos: DVec3::new(last.end().x, last.end().y, 0.0), heading: last.curve().heading_at(last.length), ..Default::default() };
                         all.extend(roads::plan(&from, true, h.pos.truncate(), Some(&h)).unwrap_or_default());
                     }
                     if !all.is_empty() {
@@ -10602,7 +10640,7 @@ mod tests {
         ed.history.touch_tile(d, (0, 0));
         add_spline(d, (0, 0), 7, 50.0, 100.0, 0.0, 30.0, 0, 0);
         ed.history.commit();
-        ed.road_start = Some((Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 7, true)), mid: None }, true));
+        ed.road_start = Some((Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 7, true)), ..Default::default() }, true));
         ed.undo();
         assert!(ed.doc.as_ref().unwrap().spline((0, 0), 7).is_none());
         assert!(ed.road_start.is_none());
@@ -10644,7 +10682,7 @@ mod tests {
         let mut ed = editor();
         ed.follow_ground = false;
         let seg = roads::straight(DVec2::new(50.0, 130.0), DVec2::new(50.0, 160.0)).unwrap();
-        let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), mid: None };
+        let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), ..Default::default() };
         let made = ed.build_road("Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
         ed.history.commit();
         let (k, id) = made[0];

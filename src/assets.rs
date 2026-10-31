@@ -144,6 +144,42 @@ impl SplineModel {
             || (self.def.profiles.iter().any(|p| p.points.iter().any(|q| q.x.abs() < 0.05)) && self.half_width > 2.5);
         drawn && (self.def.paths.iter().any(|q| q.kind == 0) || across)
     }
+
+    /// Middle of every profile point's lateral offset (m). A kerb drawn beside its line has
+    /// this away from zero; a road drawn across its line has it near zero.
+    pub fn profile_mid_x(&self) -> f32 {
+        let mut min = f32::INFINITY;
+        let mut max = f32::NEG_INFINITY;
+        let mut any = false;
+        for q in self.def.profiles.iter().flat_map(|p| p.points.iter()) {
+            any = true;
+            min = min.min(q.x);
+            max = max.max(q.x);
+        }
+        if any { (min + max) * 0.5 } else { 0.0 }
+    }
+
+    /// A snap node for a drawn spline that has no street lane of its own: the middle of its
+    /// profiles (see openMapper issue #55). Roads with AI paths keep [`Self::joinable`]; walls
+    /// and fences that stand up from the line are left out (nothing drives onto them).
+    pub fn profile_snap_offset(&self) -> Option<f32> {
+        if self.joinable() || self.is_ai_path() || self.is_track() || self.def.only_editor {
+            return None;
+        }
+        if !self.def.profiles.iter().any(|p| p.points.len() >= 2) {
+            return None;
+        }
+        if self.top() > 0.5 {
+            return None;
+        }
+        Some(self.profile_mid_x())
+    }
+
+    /// Ends one can snap a new spline onto: a joinable road, or a kerb / marking that offers
+    /// its profile middle as the node.
+    pub fn snappable(&self) -> bool {
+        self.joinable() || self.profile_snap_offset().is_some()
+    }
 }
 
 /// A tree's picture reduced to *where it is solid*: a click on a tree goes by the picture, as
@@ -930,6 +966,12 @@ mod tests {
         let road = load("road.sli", "[profile]\n0\n[profilepnt]\n-3.5\n0.0\n0\n0.3\n[profilepnt]\n3.5\n0.0\n1\n0.3\n");
         assert_eq!(road.top(), 0.0, "a road lies on its line");
         assert_eq!(road.half_width, 3.5, "and is as wide as it is drawn");
+        // (a kerb beside its line, no AI path: its profile middle is the snap node, #55)
+        let kerb = load("kerb.sli", "[profile]\n0\n[profilepnt]\n0.4\n0.0\n0\n0.3\n[profilepnt]\n0.7\n0.15\n1\n0.3\n");
+        assert!(kerb.profile_snap_offset().is_some(), "a kerb without lanes offers a profile node");
+        assert!((kerb.profile_mid_x() - 0.55).abs() < 1e-5, "midway between the profile's sides");
+        assert!(kerb.snappable() && !kerb.joinable(), "snappable for joining ends, not a carriageway");
+        assert!(wall.profile_snap_offset().is_none(), "a wall standing up is not a snap node");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
