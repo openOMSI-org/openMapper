@@ -2784,7 +2784,33 @@ impl Editor {
                 }
             }
         }
-        mid.map(|m| (m.1, Some(m.2)))
+        if let Some(m) = mid {
+            return Some((m.1, Some(m.2)));
+        }
+        // nothing a road joins: the ends of the other splines one sees (a kerb, a wall, a
+        // footpath) are still places to start from, the point only, nothing joined to it
+        let mut end: Option<(f64, Anchor, String)> = None;
+        for (k, t) in &doc.tiles {
+            let org = tile_origin(*k);
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+                if (start - p).length() > s.length + within {
+                    continue;
+                }
+                let Some(m) = assets.spline(&s.file) else { continue };
+                if m.joinable() || m.def.only_editor || m.is_track() != track {
+                    continue;
+                }
+                let c = omsi_geometry::SplineCurve::from_map(s, org);
+                for (q, heading) in [(c.point_at(0.0), roads::norm_deg(s.heading + 180.0)), (c.end_point(), roads::norm_deg(c.heading_at(s.length)))] {
+                    let d = (q.truncate() - p).length();
+                    if d < within && end.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                        end = Some((d, Anchor { pos: q, heading, spline: None, mid: None }, s.file.clone()));
+                    }
+                }
+            }
+        }
+        end.map(|m| (m.1, Some(m.2)))
     }
 
     /// A road's end (either) lies within a metre of `p`.

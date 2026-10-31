@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	다른 프로그램의 단축키
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender 키: G는 선택 항목 이동, Shift+S는 크기 조절, X는 삭제, Tab은 메시 편집, Shift+A는 오브젝트 추가, Shift+D는 복제, F3은 검색. W A S D와 Q E는 늘 그렇듯 카메라를 움직입니다
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G는 선택 항목 이동, Shift+S는 크기 조절, X는 삭제, Tab은 메시 편집, Shift+A는 오브젝트 추가, Shift+D는 복제, F3은 검색, Num 7은 아래를 봅니다. W A S D와 Q E는 늘 그렇듯 카메라를 움직입니다. 마우스는 openMapper 그대로
+The graphics API changes the next time openMapper starts	그래픽 API는 openMapper를 다음에 시작할 때 바뀝니다
+Settings…	설정…
+Graphics API	그래픽 API
+Automatic	자동
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Windows에서는 보통 DirectX 12를 선택합니다. 선택한 API를 시작할 수 없으면 openMapper가 자동으로 전환합니다. 다시 시작한 후 적용됩니다(한 번만 쓰려면 OPENMAPPER_BACKEND=dx12).
+Settings	설정
+General	일반
+Graphics	그래픽
+Find	찾기
+a command or a key	명령 또는 키
+Interface	인터페이스
+Camera and mouse	카메라와 마우스
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	맵 에디터: 오른쪽 버튼으로 둘러보기, 휠로 커서 위치 확대/축소, 드래그로 맵 이동
+Big maps	큰 맵
+Load a part of the tiles at a time (like OMSI 2's editor)	한 번에 타일 일부만 불러오기(OMSI 2 에디터와 같음)
+Auto (the best the system has)	자동(시스템에서 가장 좋은 것)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	다시 시작한 후 적용됩니다. 선택한 API를 시작할 수 없으면 openMapper가 자동으로 전환합니다. OPENMAPPER_BACKEND=dx12로 한 번만 지정할 수 있습니다.
+Quality	품질
+Camera speed	카메라 속도
+Right button held and W A S D (m/s); the wheel changes it meanwhile	오른쪽 버튼을 누른 채 W A S D(m/s). 그동안 휠로 조절할 수 있습니다
+Keys over the map	맵 위의 키
+W A S D and the arrows without the right button	오른쪽 버튼 없이 W A S D와 방향키
+Shift makes it	Shift 배율
+How many times faster the camera is with Shift held	Shift를 누르면 카메라가 몇 배 빨라지는지
+Turning with Q / E	Q / E로 회전
+Degrees a second	초당 각도
+Looking round	둘러보기
+Sensitivity of the right button	오른쪽 버튼 감도
+Orbiting	궤도 회전
+Sensitivity of Alt + left button and of the trackpad	Alt + 왼쪽 버튼 및 트랙패드 감도
+Panning	이동
+Sensitivity of the middle button and of dragging the map	가운데 버튼 및 맵 드래그 감도
+Zoom (wheel)	확대/축소(휠)
+How far one wheel step goes	휠 한 칸당 이동 거리
+Invert looking up and down	위아래 둘러보기 반전
+Invert orbiting up and down	위아래 궤도 회전 반전
+Invert the wheel	휠 반전
+Flying builds up speed the longer the keys are held	키를 오래 누를수록 비행 속도가 올라갑니다
+Reset the camera	카메라 초기화

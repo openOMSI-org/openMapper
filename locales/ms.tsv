@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Pintasan kekunci daripada program lain
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Kekunci Blender: G menggerakkan pilihan, Shift+S mengubah saiznya, X memadam, Tab menyunting mesh, Shift+A menambah objek, Shift+D menduplikasi, F3 mencari. W A S D dan Q E menggerakkan kamera seperti biasa
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G menggerakkan pilihan, Shift+S mengubah saiznya, X memadam, Tab menyunting mesh, Shift+A menambah objek, Shift+D menduplikasi, F3 mencari, Num 7 memandang ke bawah. W A S D dan Q E menggerakkan kamera seperti biasa; tetikus seperti openMapper
+The graphics API changes the next time openMapper starts	API grafik berubah apabila openMapper dimulakan seterusnya
+Settings…	Tetapan…
+Graphics API	API grafik
+Automatic	Automatik
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 ialah pilihan biasa pada Windows; jika API yang dipilih tidak dapat dimulakan, openMapper kembali ke pilihan automatik. Berkuat kuasa selepas dimulakan semula (OPENMAPPER_BACKEND=dx12 untuk sekali jalan).
+Settings	Tetapan
+General	Umum
+Graphics	Grafik
+Find	Cari
+a command or a key	perintah atau kekunci
+Interface	Antara muka
+Camera and mouse	Kamera dan tetikus
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Editor peta: butang kanan melihat sekeliling, roda zum ke kursor, seret menggerakkan peta
+Big maps	Peta besar
+Load a part of the tiles at a time (like OMSI 2's editor)	Muatkan sebahagian jubin pada satu masa (seperti editor OMSI 2)
+Auto (the best the system has)	Auto (yang terbaik pada sistem)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Berkuat kuasa selepas dimulakan semula. Jika API yang dipilih tidak dapat dimulakan, openMapper kembali ke Auto. OPENMAPPER_BACKEND=dx12 menetapkannya untuk sekali jalan.
+Quality	Kualiti
+Camera speed	Kelajuan kamera
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Butang kanan ditahan dan W A S D (m/s); roda mengubahnya ketika itu
+Keys over the map	Kekunci di atas peta
+W A S D and the arrows without the right button	W A S D dan anak panah tanpa butang kanan
+Shift makes it	Shift menjadikannya
+How many times faster the camera is with Shift held	Berapa kali lebih laju kamera apabila Shift ditahan
+Turning with Q / E	Berpusing dengan Q / E
+Degrees a second	Darjah sesaat
+Looking round	Melihat sekeliling
+Sensitivity of the right button	Kepekaan butang kanan
+Orbiting	Mengorbit
+Sensitivity of Alt + left button and of the trackpad	Kepekaan Alt + butang kiri dan pad jejak
+Panning	Menyorong
+Sensitivity of the middle button and of dragging the map	Kepekaan butang tengah dan seretan peta
+Zoom (wheel)	Zum (roda)
+How far one wheel step goes	Sejauh mana satu langkah roda bergerak
+Invert looking up and down	Songsangkan melihat atas dan bawah
+Invert orbiting up and down	Songsangkan mengorbit atas dan bawah
+Invert the wheel	Songsangkan roda
+Flying builds up speed the longer the keys are held	Terbang bertambah laju selagi kekunci ditahan
+Reset the camera	Tetap semula kamera

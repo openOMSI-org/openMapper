@@ -2576,3 +2576,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Atalhos de outros programas
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Teclas do Blender: G move a seleção, Shift+S redimensiona-a, X elimina, Tab edita a malha, Shift+A adiciona um objeto, Shift+D duplica, F3 procura. W A S D e Q E movem a câmara como sempre
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G move a seleção, Shift+S redimensiona-a, X elimina, Tab edita a malha, Shift+A adiciona um objeto, Shift+D duplica, F3 procura, Num 7 olha para baixo. W A S D e Q E movem a câmara como sempre; o rato como no openMapper
+The graphics API changes the next time openMapper starts	A API gráfica muda na próxima vez que o openMapper arrancar
+Settings…	Definições…
+Graphics API	API gráfica
+Automatic	Automática
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	O DirectX 12 é a escolha habitual no Windows; se a API escolhida não conseguir arrancar, o openMapper recorre à automática. Aplica-se após reiniciar (OPENMAPPER_BACKEND=dx12 para uma só execução).
+Settings	Definições
+General	Geral
+Graphics	Gráficos
+Find	Procurar
+a command or a key	um comando ou uma tecla
+Interface	Interface
+Camera and mouse	Câmara e rato
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Editor de mapas: o botão direito olha à volta, a roda aproxima ao cursor, arrastar move o mapa
+Big maps	Mapas grandes
+Load a part of the tiles at a time (like OMSI 2's editor)	Carregar apenas uma parte dos mosaicos de cada vez (como o editor do OMSI 2)
+Auto (the best the system has)	Auto (o melhor que o sistema tem)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Aplica-se após reiniciar. Se a API escolhida não conseguir arrancar, o openMapper recorre ao Auto. OPENMAPPER_BACKEND=dx12 define-o para uma só execução.
+Quality	Qualidade
+Camera speed	Velocidade da câmara
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Botão direito premido e W A S D (m/s); a roda altera-a entretanto
+Keys over the map	Teclas sobre o mapa
+W A S D and the arrows without the right button	W A S D e as setas sem o botão direito
+Shift makes it	Shift torna-a
+How many times faster the camera is with Shift held	Quantas vezes a câmara fica mais rápida com Shift premido
+Turning with Q / E	Rodar com Q / E
+Degrees a second	Graus por segundo
+Looking round	Olhar à volta
+Sensitivity of the right button	Sensibilidade do botão direito
+Orbiting	Orbitar
+Sensitivity of Alt + left button and of the trackpad	Sensibilidade de Alt + botão esquerdo e do trackpad
+Panning	Deslocar
+Sensitivity of the middle button and of dragging the map	Sensibilidade do botão do meio e de arrastar o mapa
+Zoom (wheel)	Zoom (roda)
+How far one wheel step goes	Quanto avança cada passo da roda
+Invert looking up and down	Inverter o olhar para cima e para baixo
+Invert orbiting up and down	Inverter a órbita para cima e para baixo
+Invert the wheel	Inverter a roda
+Flying builds up speed the longer the keys are held	O voo ganha velocidade quanto mais tempo as teclas forem premidas
+Reset the camera	Repor a câmara

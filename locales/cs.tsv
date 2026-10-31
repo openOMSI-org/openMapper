@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Zkratky z jiných programů
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Klávesy Blenderu: G přesouvá výběr, Shift+S mění velikost, X maže, Tab upravuje síť, Shift+A přidá objekt, Shift+D duplikuje, F3 hledá. W A S D a Q E pohybují kamerou jako vždy
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G přesouvá výběr, Shift+S mění velikost, X maže, Tab upravuje síť, Shift+A přidá objekt, Shift+D duplikuje, F3 hledá, Num 7 hledí dolů. W A S D a Q E pohybují kamerou jako vždy; myš jako v openMapperu
+The graphics API changes the next time openMapper starts	Grafické API se změní při příštím spuštění openMapperu
+Settings…	Nastavení…
+Graphics API	Grafické API
+Automatic	Automaticky
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 je ve Windows obvyklá volba; pokud se zvolené API nespustí, openMapper přejde na automatické. Projeví se po restartu (OPENMAPPER_BACKEND=dx12 pro jedno spuštění).
+Settings	Nastavení
+General	Obecné
+Graphics	Grafika
+Find	Hledat
+a command or a key	příkaz nebo klávesu
+Interface	Rozhraní
+Camera and mouse	Kamera a myš
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Editor mapy: pravé tlačítko rozhlíží, kolečko přibližuje ke kurzoru, tažení posouvá mapu
+Big maps	Velké mapy
+Load a part of the tiles at a time (like OMSI 2's editor)	Načítat najednou jen část dlaždic (jako editor OMSI 2)
+Auto (the best the system has)	Auto (to nejlepší, co systém má)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Projeví se po restartu. Pokud se zvolené API nespustí, openMapper přejde na Auto. OPENMAPPER_BACKEND=dx12 ho nastaví pro jedno spuštění.
+Quality	Kvalita
+Camera speed	Rychlost kamery
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Pravé tlačítko podržené a W A S D (m/s); kolečko ji mezitím mění
+Keys over the map	Klávesy nad mapou
+W A S D and the arrows without the right button	W A S D a šipky bez pravého tlačítka
+Shift makes it	Shift ji zrychlí
+How many times faster the camera is with Shift held	Kolikrát je kamera rychlejší s podrženým Shiftem
+Turning with Q / E	Otáčení klávesami Q / E
+Degrees a second	Stupňů za sekundu
+Looking round	Rozhlížení
+Sensitivity of the right button	Citlivost pravého tlačítka
+Orbiting	Orbitování
+Sensitivity of Alt + left button and of the trackpad	Citlivost Alt + levého tlačítka a trackpadu
+Panning	Posouvání
+Sensitivity of the middle button and of dragging the map	Citlivost prostředního tlačítka a tažení mapy
+Zoom (wheel)	Zoom (kolečko)
+How far one wheel step goes	Jak daleko postoupí jeden krok kolečka
+Invert looking up and down	Obrátit pohled nahoru a dolů
+Invert orbiting up and down	Obrátit orbitování nahoru a dolů
+Invert the wheel	Obrátit kolečko
+Flying builds up speed the longer the keys are held	Let nabírá rychlost, čím déle jsou klávesy drženy
+Reset the camera	Obnovit kameru

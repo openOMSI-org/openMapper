@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	ปุ่มลัดจากโปรแกรมอื่น
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	ปุ่มของ Blender: G เลื่อนสิ่งที่เลือก, Shift+S ย่อขยาย, X ลบ, Tab แก้ไขเมช, Shift+A เพิ่มวัตถุ, Shift+D ทำสำเนา, F3 ค้นหา W A S D และ Q E เลื่อนกล้องเหมือนเดิม
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G เลื่อนสิ่งที่เลือก, Shift+S ย่อขยาย, X ลบ, Tab แก้ไขเมช, Shift+A เพิ่มวัตถุ, Shift+D ทำสำเนา, F3 ค้นหา, Num 7 มองลง W A S D และ Q E เลื่อนกล้องเหมือนเดิม เมาส์เหมือน openMapper
+The graphics API changes the next time openMapper starts	API กราฟิกจะเปลี่ยนเมื่อเปิด openMapper ครั้งถัดไป
+Settings…	การตั้งค่า…
+Graphics API	API กราฟิก
+Automatic	อัตโนมัติ
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 เป็นตัวเลือกที่ใช้กันทั่วไปบน Windows หากเริ่มต้น API ที่เลือกไม่ได้ openMapper จะใช้แบบอัตโนมัติแทน มีผลหลังรีสตาร์ท (OPENMAPPER_BACKEND=dx12 สำหรับการรันครั้งเดียว)
+Settings	การตั้งค่า
+General	ทั่วไป
+Graphics	กราฟิก
+Find	ค้นหา
+a command or a key	คำสั่งหรือปุ่ม
+Interface	อินเทอร์เฟซ
+Camera and mouse	กล้องและเมาส์
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	ตัวแก้ไขแผนที่: ปุ่มขวามองไปรอบ ๆ ล้อเลื่อนซูมเข้าหาเคอร์เซอร์ ลากเพื่อเลื่อนแผนที่
+Big maps	แผนที่ขนาดใหญ่
+Load a part of the tiles at a time (like OMSI 2's editor)	โหลดไทล์ครั้งละบางส่วน (เหมือนตัวแก้ไขของ OMSI 2)
+Auto (the best the system has)	อัตโนมัติ (ดีที่สุดเท่าที่ระบบมี)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	มีผลหลังรีสตาร์ท หากเริ่มต้น API ที่เลือกไม่ได้ openMapper จะใช้ Auto แทน OPENMAPPER_BACKEND=dx12 ตั้งค่าสำหรับการรันครั้งเดียว
+Quality	คุณภาพ
+Camera speed	ความเร็วกล้อง
+Right button held and W A S D (m/s); the wheel changes it meanwhile	กดปุ่มขวาค้างไว้และ W A S D (m/s) ล้อเลื่อนปรับค่านี้ได้ในระหว่างนั้น
+Keys over the map	ปุ่มเหนือแผนที่
+W A S D and the arrows without the right button	W A S D และปุ่มลูกศรโดยไม่ต้องกดปุ่มขวา
+Shift makes it	Shift ทำให้เร็วขึ้น
+How many times faster the camera is with Shift held	กล้องเร็วขึ้นกี่เท่าเมื่อกด Shift ค้างไว้
+Turning with Q / E	หมุนด้วย Q / E
+Degrees a second	องศาต่อวินาที
+Looking round	การมองไปรอบ ๆ
+Sensitivity of the right button	ความไวของปุ่มขวา
+Orbiting	การหมุนวนรอบ
+Sensitivity of Alt + left button and of the trackpad	ความไวของ Alt + ปุ่มซ้าย และของทัชแพด
+Panning	การเลื่อน
+Sensitivity of the middle button and of dragging the map	ความไวของปุ่มกลางและการลากแผนที่
+Zoom (wheel)	ซูม (ล้อเลื่อน)
+How far one wheel step goes	ล้อเลื่อนหนึ่งขั้นไปไกลแค่ไหน
+Invert looking up and down	กลับด้านการมองขึ้นลง
+Invert orbiting up and down	กลับด้านการหมุนวนรอบขึ้นลง
+Invert the wheel	กลับด้านล้อเลื่อน
+Flying builds up speed the longer the keys are held	การบินเร่งความเร็วขึ้นยิ่งกดปุ่มค้างนาน
+Reset the camera	รีเซ็ตกล้อง

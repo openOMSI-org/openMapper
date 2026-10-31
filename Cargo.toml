@@ -1,6 +1,6 @@
 [package]
 name = "openmapper"
-version = "0.1.18"
+version = "0.1.19"
 edition = "2024"
 rust-version = "1.93"
 license = "AGPL-3.0-only"

@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Басқа бағдарламалардың пернелері
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender пернелері: G таңдауды жылжытады, Shift+S өлшемін өзгертеді, X жояды, Tab торды өңдейді, Shift+A нысан қосады, Shift+D көшіреді, F3 іздейді. W A S D және Q E камераны әдеттегідей жылжытады
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G таңдауды жылжытады, Shift+S өлшемін өзгертеді, X жояды, Tab торды өңдейді, Shift+A нысан қосады, Shift+D көшіреді, F3 іздейді, Num 7 төмен қарайды. W A S D және Q E камераны әдеттегідей жылжытады; тінтуір openMapper сияқты
+The graphics API changes the next time openMapper starts	Графикалық API openMapper келесі рет іске қосылғанда өзгереді
+Settings…	Параметрлер…
+Graphics API	Графикалық API
+Automatic	Автоматты
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Windows жүйесінде әдетте DirectX 12 таңдалады; таңдалған API іске қосылмаса, openMapper автоматты түрге ауысады. Қайта іске қосқаннан кейін күшіне енеді (бір реттік іске қосу үшін OPENMAPPER_BACKEND=dx12).
+Settings	Параметрлер
+General	Жалпы
+Graphics	Графика
+Find	Іздеу
+a command or a key	команда немесе перне
+Interface	Интерфейс
+Camera and mouse	Камера және тінтуір
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Карта редакторы: оң батырма айналаға қарайды, дөңгелек курсорға жақындатады, сүйреу картаны жылжытады
+Big maps	Үлкен карталар
+Load a part of the tiles at a time (like OMSI 2's editor)	Тайлдардың бір бөлігін ғана жүктеу (OMSI 2 редакторы сияқты)
+Auto (the best the system has)	Авто (жүйедегі ең жақсысы)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Қайта іске қосқаннан кейін күшіне енеді. Таңдалған API іске қосылмаса, openMapper Авто түріне ауысады. OPENMAPPER_BACKEND=dx12 оны бір реттік іске қосуға орнатады.
+Quality	Сапа
+Camera speed	Камера жылдамдығы
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Оң батырма басулы кезде W A S D (м/с); осы кезде дөңгелек оны өзгертеді
+Keys over the map	Карта үстіндегі пернелер
+W A S D and the arrows without the right button	Оң батырмасыз W A S D және көрсеткілер
+Shift makes it	Shift көбейтеді
+How many times faster the camera is with Shift held	Shift басулы кезде камера неше есе жылдам болады
+Turning with Q / E	Q / E арқылы бұру
+Degrees a second	Секундына градус
+Looking round	Айналаға қарау
+Sensitivity of the right button	Оң батырманың сезімталдығы
+Orbiting	Айналдыру
+Sensitivity of Alt + left button and of the trackpad	Alt + сол батырма мен трекпад сезімталдығы
+Panning	Жылжыту
+Sensitivity of the middle button and of dragging the map	Ортаңғы батырма мен картаны сүйреу сезімталдығы
+Zoom (wheel)	Масштаб (дөңгелек)
+How far one wheel step goes	Дөңгелектің бір қадамы қаншаға жылжытады
+Invert looking up and down	Жоғары-төмен қарауды кері бұру
+Invert orbiting up and down	Жоғары-төмен айналдыруды кері бұру
+Invert the wheel	Дөңгелекті кері бұру
+Flying builds up speed the longer the keys are held	Пернелер ұзағырақ басылған сайын ұшу жылдамдығы артады
+Reset the camera	Камераны тастау

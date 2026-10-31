@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Phím tắt của chương trình khác
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Phím của Blender: G di chuyển vùng chọn, Shift+S đổi kích thước, X xóa, Tab sửa lưới, Shift+A thêm đối tượng, Shift+D nhân bản, F3 tìm kiếm. W A S D và Q E di chuyển camera như thường lệ
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G di chuyển vùng chọn, Shift+S đổi kích thước, X xóa, Tab sửa lưới, Shift+A thêm đối tượng, Shift+D nhân bản, F3 tìm kiếm, Num 7 nhìn thẳng xuống. W A S D và Q E di chuyển camera như thường lệ; chuột như của openMapper
+The graphics API changes the next time openMapper starts	API đồ họa sẽ thay đổi vào lần khởi động openMapper tiếp theo
+Settings…	Cài đặt…
+Graphics API	API đồ họa
+Automatic	Tự động
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 là lựa chọn thông thường trên Windows; nếu API đã chọn không khởi động được, openMapper sẽ quay về chế độ tự động. Có hiệu lực sau khi khởi động lại (OPENMAPPER_BACKEND=dx12 cho một lần chạy).
+Settings	Cài đặt
+General	Chung
+Graphics	Đồ họa
+Find	Tìm
+a command or a key	một lệnh hoặc một phím
+Interface	Giao diện
+Camera and mouse	Camera và chuột
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Trình chỉnh sửa bản đồ: nút phải để nhìn quanh, con lăn phóng to tới con trỏ, kéo để di chuyển bản đồ
+Big maps	Bản đồ lớn
+Load a part of the tiles at a time (like OMSI 2's editor)	Mỗi lần chỉ tải một phần các ô (như trình chỉnh sửa của OMSI 2)
+Auto (the best the system has)	Tự động (tốt nhất mà hệ thống có)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Có hiệu lực sau khi khởi động lại. Nếu API đã chọn không khởi động được, openMapper sẽ quay về Tự động. OPENMAPPER_BACKEND=dx12 đặt nó cho một lần chạy.
+Quality	Chất lượng
+Camera speed	Tốc độ camera
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Giữ nút phải và W A S D (m/s); con lăn chỉnh tốc độ trong lúc đó
+Keys over the map	Phím trên bản đồ
+W A S D and the arrows without the right button	W A S D và các phím mũi tên không cần nút phải
+Shift makes it	Shift làm cho nó
+How many times faster the camera is with Shift held	Camera nhanh hơn bao nhiêu lần khi giữ Shift
+Turning with Q / E	Xoay bằng Q / E
+Degrees a second	Độ mỗi giây
+Looking round	Nhìn quanh
+Sensitivity of the right button	Độ nhạy của nút phải
+Orbiting	Xoay quanh
+Sensitivity of Alt + left button and of the trackpad	Độ nhạy của Alt + nút trái và của bàn di chuột
+Panning	Kéo di chuyển
+Sensitivity of the middle button and of dragging the map	Độ nhạy của nút giữa và của việc kéo bản đồ
+Zoom (wheel)	Thu phóng (con lăn)
+How far one wheel step goes	Một nấc con lăn đi xa bao nhiêu
+Invert looking up and down	Đảo chiều nhìn lên và xuống
+Invert orbiting up and down	Đảo chiều xoay quanh lên và xuống
+Invert the wheel	Đảo chiều con lăn
+Flying builds up speed the longer the keys are held	Bay sẽ tăng tốc càng lâu khi các phím được giữ
+Reset the camera	Đặt lại camera

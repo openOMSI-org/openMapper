@@ -2536,3 +2536,42 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	ほかのアプリのショートカット
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender のキー: G で選択を移動、Shift+S で拡大縮小、X で削除、Tab でメッシュを編集、Shift+A でオブジェクトを追加、Shift+D で複製、F3 で検索。W A S D と Q E はこれまでどおりカメラを動かします
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G で選択を移動、Shift+S で拡大縮小、X で削除、Tab でメッシュを編集、Shift+A でオブジェクトを追加、Shift+D で複製、F3 で検索、Num 7 で真下を見ます。W A S D と Q E はこれまでどおりカメラを動かします。マウスは openMapper のまま
+The graphics API changes the next time openMapper starts	グラフィックスAPIはopenMapperの次回起動時に変わります
+Settings…	設定…
+Graphics API	グラフィックスAPI
+Automatic	自動
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Windowsでは通常DirectX 12を選びます。選んだAPIが起動できない場合、openMapperは自動に切り替わります。再起動後に有効になります（1回だけならOPENMAPPER_BACKEND=dx12）。
+Settings	設定
+General	一般
+Graphics	グラフィックス
+Find	検索
+a command or a key	コマンドまたはキー
+Interface	インターフェース
+Camera and mouse	カメラとマウス
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	マップエディター：右ボタンで見回し、ホイールでカーソル位置へズーム、ドラッグでマップを移動
+Big maps	大きなマップ
+Load a part of the tiles at a time (like OMSI 2's editor)	一度にタイルの一部だけを読み込む（OMSI 2のエディターと同様）
+Auto (the best the system has)	自動（システムで最良のもの）
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	再起動後に有効になります。選んだAPIが起動できない場合、openMapperは自動に切り替わります。OPENMAPPER_BACKEND=dx12 なら1回だけ指定できます。
+Quality	品質
+Camera speed	カメラ速度
+Right button held and W A S D (m/s); the wheel changes it meanwhile	右ボタンを押しながら W A S D（m/s）。その間はホイールで変更できます
+Keys over the map	マップ上のキー
+W A S D and the arrows without the right button	右ボタンなしの W A S D と矢印キー
+Shift makes it	Shiftで倍率
+How many times faster the camera is with Shift held	Shiftを押したときカメラが何倍速くなるか
+Turning with Q / E	Q / E で回転
+Degrees a second	1秒あたりの角度
+Looking round	見回し
+Sensitivity of the right button	右ボタンの感度
+Orbiting	旋回
+Sensitivity of Alt + left button and of the trackpad	Alt＋左ボタンとトラックパッドの感度
+Panning	パン
+Sensitivity of the middle button and of dragging the map	中ボタンとマップのドラッグの感度
+Zoom (wheel)	ズーム（ホイール）
+How far one wheel step goes	ホイール1段あたりの移動距離
+Invert looking up and down	上下の見回しを反転
+Invert orbiting up and down	上下の旋回を反転
+Invert the wheel	ホイールを反転
+Flying builds up speed the longer the keys are held	キーを押し続けるほど飛行速度が上がります
+Reset the camera	カメラをリセット

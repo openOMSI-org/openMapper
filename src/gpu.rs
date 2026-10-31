@@ -32,11 +32,89 @@ pub struct Gpu {
     pub max_samples: u32,
 }
 
+/// The graphics API the editor asks for (View > Graphics API; `OPENMAPPER_BACKEND` says it
+/// for one run). Anything but `Auto` is tried first; if it cannot open a device, the
+/// automatic ways below follow, so a choice the system cannot do never keeps the editor shut.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Api {
+    Auto,
+    Dx12,
+    Vulkan,
+    Metal,
+    Gl,
+}
+
+impl Api {
+    pub const ALL: [Api; 5] = [Api::Auto, Api::Dx12, Api::Vulkan, Api::Metal, Api::Gl];
+
+    pub fn of(code: &str) -> Api {
+        match code.trim().to_ascii_lowercase().as_str() {
+            "dx12" | "d3d12" | "directx12" | "directx 12" => Api::Dx12,
+            "vulkan" | "vk" => Api::Vulkan,
+            "metal" => Api::Metal,
+            "gl" | "gles" | "opengl" => Api::Gl,
+            _ => Api::Auto,
+        }
+    }
+
+    pub fn code(self) -> &'static str {
+        match self {
+            Api::Auto => "",
+            Api::Dx12 => "dx12",
+            Api::Vulkan => "vulkan",
+            Api::Metal => "metal",
+            Api::Gl => "gl",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Api::Auto => "Automatic",
+            Api::Dx12 => "DirectX 12",
+            Api::Vulkan => "Vulkan",
+            Api::Metal => "Metal",
+            Api::Gl => "OpenGL",
+        }
+    }
+
+    /// Whether this system has the API at all (what is offered in the menu).
+    pub fn here(self) -> bool {
+        match self {
+            Api::Auto | Api::Gl => true,
+            Api::Dx12 => cfg!(windows),
+            Api::Vulkan => cfg!(any(windows, target_os = "linux", target_os = "android")),
+            Api::Metal => cfg!(target_vendor = "apple"),
+        }
+    }
+
+    fn backends(self) -> Option<wgpu::Backends> {
+        match self {
+            Api::Auto => None,
+            Api::Dx12 => Some(wgpu::Backends::DX12),
+            Api::Vulkan => Some(wgpu::Backends::VULKAN),
+            Api::Metal => Some(wgpu::Backends::METAL),
+            Api::Gl => Some(wgpu::Backends::GL),
+        }
+    }
+}
+
+/// The ways to open a device, in order: the API asked for, then every backend, then GL
+/// alone, then the software adapter (an old driver that fails one still starts the editor).
+fn attempts(api: Api) -> Vec<(wgpu::Backends, bool)> {
+    let all = wgpu::Backends::PRIMARY | wgpu::Backends::GL;
+    let mut v = Vec::new();
+    if let Some(b) = api.backends().filter(|_| api.here()) {
+        v.push((b, false));
+    }
+    v.extend([(all, false), (wgpu::Backends::GL, false), (all, true)]);
+    v
+}
+
 impl Gpu {
-    pub fn new(window: Arc<Window>) -> anyhow::Result<Gpu> {
-        // (the first way that opens a device wins: every backend, then GL alone, then the
-        // software adapter; an old driver that fails one of them still starts the editor)
-        let attempts = [(wgpu::Backends::PRIMARY | wgpu::Backends::GL, false), (wgpu::Backends::GL, false), (wgpu::Backends::PRIMARY | wgpu::Backends::GL, true)];
+    pub fn new(window: Arc<Window>, api: Api) -> anyhow::Result<Gpu> {
+        // OPENMAPPER_BACKEND=dx12|vulkan|metal|gl: this run only, over the setting
+        let api = std::env::var("OPENMAPPER_BACKEND").ok().map(|c| Api::of(&c)).unwrap_or(api);
+        let attempts = attempts(api);
         let mut found = None;
         let mut last = anyhow::anyhow!("no graphics adapter");
         for (backends, fallback) in attempts {
@@ -184,4 +262,27 @@ fn targets(device: &wgpu::Device, c: &wgpu::SurfaceConfiguration, scene_format: 
         view_formats: &[],
     });
     (depth.create_view(&Default::default()), msaa.create_view(&Default::default()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_api_asked_for_is_tried_first_and_the_rest_follow() {
+        assert_eq!(attempts(Api::Auto).len(), 3);
+        assert_eq!(Api::of("DX12"), Api::Dx12);
+        assert_eq!(Api::of("d3d12"), Api::Dx12);
+        assert_eq!(Api::of("nonsense"), Api::Auto);
+        for a in Api::ALL {
+            assert_eq!(Api::of(a.code()), a);
+        }
+        let gl = attempts(Api::Gl);
+        assert_eq!(gl[0], (wgpu::Backends::GL, false));
+        assert_eq!(gl.len(), 4);
+        // (DirectX 12 where there is none is just the automatic way)
+        if !cfg!(windows) {
+            assert_eq!(attempts(Api::Dx12).len(), 3);
+        }
+    }
 }

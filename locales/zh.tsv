@@ -2533,3 +2533,42 @@ Blender's keys	Blender 的按键
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G 移动选取、Shift+S 缩放、X 删除、Tab 编辑网格、Shift+A 添加对象、Shift+D 复制、F3 搜索、Num 7 从上往下看。W A S D 和 Q E 照常移动画面；鼠标同 openMapper 本身
 Grab	抓取
 X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	X / Y / Z：鎖定軸向，數字：距離，Enter 或點擊：完成，Esc：取消
+The graphics API changes the next time openMapper starts	图形 API 将在下次启动 openMapper 时更改
+Settings…	设置…
+Graphics API	图形 API
+Automatic	自动
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	在 Windows 上通常选择 DirectX 12；如果所选的 API 无法启动，openMapper 会回退到自动模式。重启后生效（单次运行可用 OPENMAPPER_BACKEND=dx12）。
+Settings	设置
+General	常规
+Graphics	图形
+Find	查找
+a command or a key	命令或按键
+Interface	界面
+Camera and mouse	相机和鼠标
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	地图编辑器：按住右键环顾四周，滚轮朝光标缩放，拖动移动地图
+Big maps	大型地图
+Load a part of the tiles at a time (like OMSI 2's editor)	每次只加载部分图块（类似 OMSI 2 的编辑器）
+Auto (the best the system has)	自动（系统可用的最佳选项）
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	重启后生效。如果所选的 API 无法启动，openMapper 会回退到自动。OPENMAPPER_BACKEND=dx12 可用于单次运行。
+Quality	质量
+Camera speed	相机速度
+Right button held and W A S D (m/s); the wheel changes it meanwhile	按住右键并使用 W A S D（m/s）；期间滚轮可调整速度
+Keys over the map	地图上方的按键
+W A S D and the arrows without the right button	不按右键时使用 W A S D 和方向键
+Shift makes it	按住 Shift 时加速
+How many times faster the camera is with Shift held	按住 Shift 时相机快多少倍
+Turning with Q / E	用 Q / E 旋转
+Degrees a second	每秒度数
+Looking round	环顾
+Sensitivity of the right button	右键的灵敏度
+Orbiting	环绕
+Sensitivity of Alt + left button and of the trackpad	Alt + 左键和触控板的灵敏度
+Panning	平移
+Sensitivity of the middle button and of dragging the map	中键和拖动地图的灵敏度
+Zoom (wheel)	缩放（滚轮）
+How far one wheel step goes	滚轮每一格移动的距离
+Invert looking up and down	反转上下环顾
+Invert orbiting up and down	反转上下环绕
+Invert the wheel	反转滚轮
+Flying builds up speed the longer the keys are held	按键按住越久，飞行速度越快
+Reset the camera	重置相机
