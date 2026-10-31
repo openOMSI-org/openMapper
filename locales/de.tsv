@@ -2543,3 +2543,42 @@ Path connected	Pfad verbunden
 Connect the path	Pfad verbinden
 There is no tile there	Dort liegt keine Kachel
 Click the other point	Den anderen Punkt anklicken
+The graphics API changes the next time openMapper starts	Die Grafik-API ändert sich beim nächsten Start von openMapper
+Settings…	Einstellungen…
+Graphics API	Grafik-API
+Automatic	Automatisch
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 ist unter Windows die übliche Wahl; lässt sich die gewählte API nicht starten, nutzt openMapper die automatische. Gilt nach einem Neustart (OPENMAPPER_BACKEND=dx12 für einen Start).
+Settings	Einstellungen
+General	Allgemein
+Graphics	Grafik
+Find	Suchen
+a command or a key	einen Befehl oder eine Taste
+Interface	Oberfläche
+Camera and mouse	Kamera und Maus
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Karteneditor: Rechte Taste dreht den Blick, das Rad zoomt zum Cursor, Ziehen verschiebt die Karte
+Big maps	Große Karten
+Load a part of the tiles at a time (like OMSI 2's editor)	Nur einen Teil der Kacheln auf einmal laden (wie im Editor von OMSI 2)
+Auto (the best the system has)	Auto (das Beste, was das System hat)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Gilt nach einem Neustart. Lässt sich die gewählte API nicht starten, nutzt openMapper Auto. OPENMAPPER_BACKEND=dx12 setzt sie für einen Start.
+Quality	Qualität
+Camera speed	Kamerageschwindigkeit
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Rechte Taste gehalten und W A S D (m/s); währenddessen ändert das Rad sie
+Keys over the map	Tasten über der Karte
+W A S D and the arrows without the right button	W A S D und die Pfeile ohne die rechte Taste
+Shift makes it	Shift macht es
+How many times faster the camera is with Shift held	Wie viel schneller die Kamera bei gehaltener Shift-Taste ist
+Turning with Q / E	Drehen mit Q / E
+Degrees a second	Grad pro Sekunde
+Looking round	Umsehen
+Sensitivity of the right button	Empfindlichkeit der rechten Taste
+Orbiting	Umkreisen
+Sensitivity of Alt + left button and of the trackpad	Empfindlichkeit von Alt + linker Taste und des Trackpads
+Panning	Verschieben
+Sensitivity of the middle button and of dragging the map	Empfindlichkeit der mittleren Taste und des Ziehens der Karte
+Zoom (wheel)	Zoom (Rad)
+How far one wheel step goes	Wie weit ein Radschritt geht
+Invert looking up and down	Blick nach oben/unten umkehren
+Invert orbiting up and down	Umkreisen nach oben/unten umkehren
+Invert the wheel	Rad umkehren
+Flying builds up speed the longer the keys are held	Der Flug wird schneller, je länger die Tasten gehalten werden
+Reset the camera	Kamera zurücksetzen

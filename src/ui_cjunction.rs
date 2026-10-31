@@ -94,7 +94,7 @@ pub struct ComplexJunctions {
     /// The drawing's junctions as drawn: the pieces and build they were made for, the pieces cut back, the plates' triangles.
     /// Junctions the drawing has room for none of (see `Resolved::skipped`).
     skipped: usize,
-    plate: Option<(Vec<Piece>, crate::cjunction::AutoBuild, Vec<Piece>, Vec<([DVec2; 3], bool)>, Vec<(Seg, i32, i32)>)>,
+    plate: Option<(Vec<Piece>, crate::cjunction::AutoBuild, Vec<Piece>, Vec<([DVec2; 3], Option<std::path::PathBuf>, [[f32; 2]; 3])>, Vec<(Seg, i32, i32)>)>,
     /// Steps back and forward; the drawing as it was last frame, and whether it is being
     /// changed (a drag changes it every frame: one step).
     undo: Vec<Layout>,
@@ -942,9 +942,12 @@ impl ComplexJunctions {
         // the junctions as the Roads tool makes them (made again only when the drawing changes)
         let stale = self.plate.as_ref().map(|p| p.0 != self.layout.pieces || p.1 != self.layout.build).unwrap_or(true);
         if stale {
+            // (the roadway's asphalt is cut as it is for the map, into a folder of its own, so that the drawing shows it)
+            let preview_dir = std::env::temp_dir().join("openmapper-junction-preview");
+            let _ = std::fs::create_dir_all(&preview_dir);
             let resolved = self.layout.resolve(&|f| is_road(lib, f), &|f| half_of(lib, f));
             self.skipped = resolved.skipped;
-            let plates: Option<Vec<_>> = resolved.plates.iter().map(|arms| assets.as_deref_mut().and_then(|a| crate::junction::layout_plate(a, arms, None, None)).map(|p| (p.flat(), p.lanes))).collect();
+            let plates: Option<Vec<_>> = resolved.plates.iter().map(|arms| assets.as_deref_mut().and_then(|a| crate::junction::layout_plate(a, arms, Some(&preview_dir), None)).map(|p| (p.flat_textured(), p.lanes))).collect();
             // (a road type not loaded yet: made again next frame)
             self.plate = plates.map(|pl| {
                 let lanes = pl.iter().flat_map(|p| p.1.iter().copied()).collect();
@@ -953,9 +956,32 @@ impl ComplexJunctions {
         }
         let shown: Vec<Piece> = self.plate.as_ref().map(|p| p.2.clone()).unwrap_or_else(|| self.layout.pieces.clone());
         if let Some((_, _, _, tris, _)) = &self.plate {
-            for (t, core) in tris {
-                let col = if *core { Color32::from_rgb(74, 76, 82) } else { Color32::from_rgb(150, 150, 146) };
-                painter.add(egui::Shape::convex_polygon(t.iter().map(|p| to_screen(*p)).collect(), col, Stroke::new(0.6, col)));
+            // (the roadway flat, the kerbs and footways with their pictures: one mesh each, with
+            // no outline round the triangles, which made the fans at the corners bristle)
+            let mut flat = egui::epaint::Mesh::default();
+            let mut by_tex: Vec<(egui::TextureId, egui::epaint::Mesh)> = Vec::new();
+            for (t, tex, uv) in tris {
+                let id = tex.as_ref().and_then(|f| self.pics.get(&ctx, f));
+                let m = match id {
+                    Some(id) => match by_tex.iter().position(|(i, _)| *i == id) {
+                        Some(k) => &mut by_tex[k].1,
+                        None => {
+                            by_tex.push((id, egui::epaint::Mesh::with_texture(id)));
+                            &mut by_tex.last_mut().unwrap().1
+                        }
+                    },
+                    None => &mut flat,
+                };
+                let col = if id.is_some() { Color32::WHITE } else { Color32::from_rgb(74, 76, 82) };
+                let base = m.vertices.len() as u32;
+                for (p, uv) in t.iter().zip(uv) {
+                    m.vertices.push(egui::epaint::Vertex { pos: to_screen(*p), uv: if id.is_some() { Pos2::new(uv[0], uv[1]) } else { egui::epaint::WHITE_UV }, color: col });
+                }
+                m.indices.extend([base, base + 1, base + 2]);
+            }
+            painter.add(egui::Shape::mesh(flat));
+            for (_, m) in by_tex {
+                painter.add(egui::Shape::mesh(m));
             }
         }
         // the pieces, first drawn lowest

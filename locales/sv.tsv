@@ -2585,3 +2585,42 @@ Path connected	Banan kopplad
 Connect the path	Koppla banan
 There is no tile there	Där finns ingen ruta
 Click the other point	Klicka den andra punkten
+The graphics API changes the next time openMapper starts	Grafik-API:et ändras nästa gång openMapper startar
+Settings…	Inställningar…
+Graphics API	Grafik-API
+Automatic	Automatiskt
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 är det vanliga valet i Windows; om det valda API:et inte kan starta faller openMapper tillbaka på det automatiska. Gäller efter omstart (OPENMAPPER_BACKEND=dx12 för en körning).
+Settings	Inställningar
+General	Allmänt
+Graphics	Grafik
+Find	Sök
+a command or a key	ett kommando eller en tangent
+Interface	Gränssnitt
+Camera and mouse	Kamera och mus
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Kartredigerare: högerknappen tittar runt, hjulet zoomar mot markören, dra flyttar kartan
+Big maps	Stora kartor
+Load a part of the tiles at a time (like OMSI 2's editor)	Läs in en del av kartrutorna åt gången (som OMSI 2:s redigerare)
+Auto (the best the system has)	Auto (det bästa systemet har)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Gäller efter omstart. Om det valda API:et inte kan starta faller openMapper tillbaka på Auto. OPENMAPPER_BACKEND=dx12 anger det för en körning.
+Quality	Kvalitet
+Camera speed	Kamerahastighet
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Högerknappen hållen och W A S D (m/s); hjulet ändrar den under tiden
+Keys over the map	Tangenter över kartan
+W A S D and the arrows without the right button	W A S D och piltangenterna utan högerknappen
+Shift makes it	Shift gör den
+How many times faster the camera is with Shift held	Hur många gånger snabbare kameran är med Shift nedtryckt
+Turning with Q / E	Vridning med Q / E
+Degrees a second	Grader per sekund
+Looking round	Titta runt
+Sensitivity of the right button	Känslighet för högerknappen
+Orbiting	Orbitering
+Sensitivity of Alt + left button and of the trackpad	Känslighet för Alt + vänsterknapp och pekplattan
+Panning	Panorering
+Sensitivity of the middle button and of dragging the map	Känslighet för mittknappen och för att dra kartan
+Zoom (wheel)	Zoom (hjul)
+How far one wheel step goes	Hur långt ett hjulsteg går
+Invert looking up and down	Invertera att titta upp och ned
+Invert orbiting up and down	Invertera orbitering upp och ned
+Invert the wheel	Invertera hjulet
+Flying builds up speed the longer the keys are held	Flygningen ökar i fart ju längre tangenterna hålls nere
+Reset the camera	Återställ kameran

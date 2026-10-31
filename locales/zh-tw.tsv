@@ -2542,3 +2542,42 @@ Path connected	路徑已連接
 Connect the path	連接路徑
 There is no tile there	那裡沒有圖塊
 Click the other point	請點另一個點
+The graphics API changes the next time openMapper starts	圖形 API 將在下次啟動 openMapper 時變更
+Settings…	設定…
+Graphics API	圖形 API
+Automatic	自動
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	在 Windows 上通常選擇 DirectX 12；若所選的 API 無法啟動，openMapper 會退回自動模式。重新啟動後生效（單次執行可用 OPENMAPPER_BACKEND=dx12）。
+Settings	設定
+General	一般
+Graphics	圖形
+Find	尋找
+a command or a key	指令或按鍵
+Interface	介面
+Camera and mouse	攝影機與滑鼠
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	地圖編輯器：按住右鍵環顧四周，滾輪朝游標縮放，拖曳移動地圖
+Big maps	大型地圖
+Load a part of the tiles at a time (like OMSI 2's editor)	每次只載入部分圖塊（如同 OMSI 2 的編輯器）
+Auto (the best the system has)	自動（系統可用的最佳選項）
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	重新啟動後生效。若所選的 API 無法啟動，openMapper 會退回自動。OPENMAPPER_BACKEND=dx12 可於單次執行時設定。
+Quality	品質
+Camera speed	攝影機速度
+Right button held and W A S D (m/s); the wheel changes it meanwhile	按住右鍵並使用 W A S D（m/s）；期間滾輪可調整速度
+Keys over the map	地圖上方的按鍵
+W A S D and the arrows without the right button	不按右鍵時使用 W A S D 與方向鍵
+Shift makes it	按住 Shift 時加速
+How many times faster the camera is with Shift held	按住 Shift 時攝影機快多少倍
+Turning with Q / E	以 Q / E 旋轉
+Degrees a second	每秒度數
+Looking round	環顧
+Sensitivity of the right button	右鍵的靈敏度
+Orbiting	環繞
+Sensitivity of Alt + left button and of the trackpad	Alt + 左鍵與觸控板的靈敏度
+Panning	平移
+Sensitivity of the middle button and of dragging the map	中鍵與拖曳地圖的靈敏度
+Zoom (wheel)	縮放（滾輪）
+How far one wheel step goes	滾輪每一格移動的距離
+Invert looking up and down	反轉上下環顧
+Invert orbiting up and down	反轉上下環繞
+Invert the wheel	反轉滾輪
+Flying builds up speed the longer the keys are held	按住按鍵越久，飛行速度越快
+Reset the camera	重設攝影機

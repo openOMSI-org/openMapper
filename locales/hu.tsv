@@ -2545,3 +2545,42 @@ Path connected	Út összekötve
 Connect the path	Út összekötése
 There is no tile there	Ott nincs csempe
 Click the other point	Kattintson a másik pontra
+The graphics API changes the next time openMapper starts	A grafikai API az openMapper következő indításakor változik
+Settings…	Beállítások…
+Graphics API	Grafikai API
+Automatic	Automatikus
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Windowson általában a DirectX 12 a jó választás; ha a kiválasztott API nem indul el, az openMapper az automatikusra vált vissza. Újraindítás után lép életbe (egy futtatásra: OPENMAPPER_BACKEND=dx12).
+Settings	Beállítások
+General	Általános
+Graphics	Grafika
+Find	Keresés
+a command or a key	parancs vagy billentyű
+Interface	Felület
+Camera and mouse	Kamera és egér
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Térképszerkesztő: a jobb gomb körbenéz, a görgő a kurzorra nagyít, húzással mozog a térkép
+Big maps	Nagy térképek
+Load a part of the tiles at a time (like OMSI 2's editor)	A csempék egy részének betöltése egyszerre (mint az OMSI 2 szerkesztőjében)
+Auto (the best the system has)	Auto (a rendszer legjobbja)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Újraindítás után lép életbe. Ha a kiválasztott API nem indul el, az openMapper Autóra vált vissza. Az OPENMAPPER_BACKEND=dx12 egy futtatásra beállítja.
+Quality	Minőség
+Camera speed	Kamerasebesség
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Jobb gomb nyomva tartva és W A S D (m/s); közben a görgő módosítja
+Keys over the map	Billentyűk a térkép felett
+W A S D and the arrows without the right button	W A S D és a nyilak jobb gomb nélkül
+Shift makes it	A Shift gyorsít
+How many times faster the camera is with Shift held	Hányszor gyorsabb a kamera nyomva tartott Shiftnél
+Turning with Q / E	Forgás Q / E-vel
+Degrees a second	Fok másodpercenként
+Looking round	Körbenézés
+Sensitivity of the right button	A jobb gomb érzékenysége
+Orbiting	Keringés
+Sensitivity of Alt + left button and of the trackpad	Az Alt + bal gomb és a trackpad érzékenysége
+Panning	Eltolás
+Sensitivity of the middle button and of dragging the map	A középső gomb és a térkép húzásának érzékenysége
+Zoom (wheel)	Nagyítás (görgő)
+How far one wheel step goes	Egy görgőlépés mekkora távot tesz meg
+Invert looking up and down	Fel-le nézés megfordítása
+Invert orbiting up and down	Fel-le keringés megfordítása
+Invert the wheel	Görgő megfordítása
+Flying builds up speed the longer the keys are held	A repülés annál gyorsabb, minél tovább tartod nyomva a billentyűket
+Reset the camera	Kamera visszaállítása

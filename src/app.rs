@@ -251,6 +251,7 @@ impl App {
         }
         if std::env::var_os("OPENMAPPER_HELP").is_some() {
             app.ui.help_open = true;
+            app.ui.settings_tab = 3;
         }
         app
     }
@@ -295,7 +296,9 @@ impl App {
         crate::logging::stage("creating the window");
         let window = Arc::new(el.create_window(attrs)?);
         crate::logging::stage("starting the graphics card");
-        let mut gpu = Gpu::new(window.clone())?;
+        self.cam.tune = self.prefs.cam_tune.sane();
+        self.cam.fly_speed = self.cam.tune.fly_speed;
+        let mut gpu = Gpu::new(window.clone(), crate::gpu::Api::of(&self.prefs.graphics_api))?;
         crate::logging::stage("first frames");
         let quality = crate::render::quality::Quality::from_code(&self.prefs.graphics);
         gpu.set_samples(quality.samples());
@@ -1653,6 +1656,18 @@ impl App {
                     Preset::Blender => tr("Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do", "Клавиши Blender: G двигает выделенное, Shift+S масштабирует, X удаляет, Tab правит меш, Shift+A добавляет объект, Shift+D дублирует, F3 ищет. W A S D и Q E двигают камеру, как всегда"),
                     _ => tr("The keys as in View → Controls", "Клавиши как в «Вид → Управление»"),
                 }.to_string());
+            }
+            Action::SetCamTune(t) => {
+                let t = t.sane();
+                self.cam.fly_speed = t.fly_speed;
+                self.cam.tune = t;
+                self.prefs.cam_tune = t;
+                self.prefs.save();
+            }
+            Action::SetGraphicsApi(a) => {
+                self.prefs.graphics_api = a.code().to_string();
+                self.prefs.save();
+                self.ed.toast(tr("The graphics API changes the next time openMapper starts", "Графический API сменится при следующем запуске openMapper").to_string());
             }
             Action::SetCamera(c) => {
                 self.prefs.camera = c;
@@ -3350,6 +3365,7 @@ impl ApplicationHandler for App {
                     // (flying: the wheel sets the speed)
                     MouseScrollDelta::LineDelta(_, y) if self.mouse.right => {
                         self.cam.fly_faster(y);
+                        self.prefs.cam_tune.fly_speed = self.cam.fly_speed;
                         self.ed.toast(format!("{} {:.0} m/s", tr("Flying speed", "Скорость полёта"), self.cam.fly_speed));
                         return;
                     }

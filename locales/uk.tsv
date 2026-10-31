@@ -2543,3 +2543,42 @@ Path connected	Шлях з'єднано
 Connect the path	З'єднати шлях
 There is no tile there	Там немає клітини
 Click the other point	Клацніть іншу точку
+The graphics API changes the next time openMapper starts	Графічний API зміниться під час наступного запуску openMapper
+Settings…	Налаштування…
+Graphics API	Графічний API
+Automatic	Автоматично
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 — звичайний вибір у Windows; якщо обраний API не запускається, openMapper повертається до автоматичного. Набирає чинності після перезапуску (OPENMAPPER_BACKEND=dx12 для одного запуску).
+Settings	Налаштування
+General	Загальні
+Graphics	Графіка
+Find	Знайти
+a command or a key	команду або клавішу
+Interface	Інтерфейс
+Camera and mouse	Камера і миша
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Редактор карти: права кнопка — озиратися, колесо — масштабувати до курсора, перетягування — рухати карту
+Big maps	Великі карти
+Load a part of the tiles at a time (like OMSI 2's editor)	Завантажувати по частині тайлів (як у редакторі OMSI 2)
+Auto (the best the system has)	Авто (найкраще, що є в системі)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Набирає чинності після перезапуску. Якщо обраний API не запускається, openMapper повертається до Авто. OPENMAPPER_BACKEND=dx12 задає його для одного запуску.
+Quality	Якість
+Camera speed	Швидкість камери
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Права кнопка затиснута і W A S D (м/с); колесо змінює її тим часом
+Keys over the map	Клавіші над картою
+W A S D and the arrows without the right button	W A S D і стрілки без правої кнопки
+Shift makes it	Shift робить її
+How many times faster the camera is with Shift held	У скільки разів камера швидша із затиснутим Shift
+Turning with Q / E	Повороти клавішами Q / E
+Degrees a second	Градусів на секунду
+Looking round	Огляд
+Sensitivity of the right button	Чутливість правої кнопки
+Orbiting	Обертання навколо
+Sensitivity of Alt + left button and of the trackpad	Чутливість Alt + лівої кнопки та трекпада
+Panning	Панорамування
+Sensitivity of the middle button and of dragging the map	Чутливість середньої кнопки та перетягування карти
+Zoom (wheel)	Масштаб (колесо)
+How far one wheel step goes	Наскільки далеко йде один крок колеса
+Invert looking up and down	Інвертувати огляд угору і вниз
+Invert orbiting up and down	Інвертувати обертання навколо угору і вниз
+Invert the wheel	Інвертувати колесо
+Flying builds up speed the longer the keys are held	Політ набирає швидкість, чим довше утримуються клавіші
+Reset the camera	Скинути камеру

@@ -2545,3 +2545,42 @@ Path connected	Yol bağlandı
 Connect the path	Yolu bağla
 There is no tile there	Orada karo yok
 Click the other point	Diğer noktaya tıklayın
+The graphics API changes the next time openMapper starts	Grafik API'si openMapper bir sonraki başlatıldığında değişir
+Settings…	Ayarlar…
+Graphics API	Grafik API'si
+Automatic	Otomatik
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Windows'ta genellikle DirectX 12 seçilir; seçilen API başlatılamazsa openMapper otomatik olana geri döner. Yeniden başlatmadan sonra geçerli olur (tek çalıştırma için OPENMAPPER_BACKEND=dx12).
+Settings	Ayarlar
+General	Genel
+Graphics	Grafik
+Find	Bul
+a command or a key	bir komut veya tuş
+Interface	Arayüz
+Camera and mouse	Kamera ve fare
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Harita düzenleyici: sağ tuş etrafa bakar, tekerlek imlece doğru yakınlaştırır, sürükleme haritayı kaydırır
+Big maps	Büyük haritalar
+Load a part of the tiles at a time (like OMSI 2's editor)	Karoların bir kısmını her seferinde yükle (OMSI 2'nin düzenleyicisi gibi)
+Auto (the best the system has)	Otomatik (sistemdeki en iyisi)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Yeniden başlatmadan sonra geçerli olur. Seçilen API başlatılamazsa openMapper Otomatik'e geri döner. OPENMAPPER_BACKEND=dx12 bunu tek çalıştırma için ayarlar.
+Quality	Kalite
+Camera speed	Kamera hızı
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Sağ tuş basılıyken ve W A S D (m/s); bu sırada tekerlek hızı değiştirir
+Keys over the map	Harita üzerinde tuşlar
+W A S D and the arrows without the right button	Sağ tuş olmadan W A S D ve ok tuşları
+Shift makes it	Shift şunu yapar
+How many times faster the camera is with Shift held	Shift basılıyken kameranın kaç kat daha hızlı olduğu
+Turning with Q / E	Q / E ile dönme
+Degrees a second	Saniyede derece
+Looking round	Etrafa bakma
+Sensitivity of the right button	Sağ tuşun hassasiyeti
+Orbiting	Yörüngede dönme
+Sensitivity of Alt + left button and of the trackpad	Alt + sol tuşun ve izleme dörtgeninin hassasiyeti
+Panning	Kaydırma
+Sensitivity of the middle button and of dragging the map	Orta tuşun ve haritayı sürüklemenin hassasiyeti
+Zoom (wheel)	Yakınlaştırma (tekerlek)
+How far one wheel step goes	Tekerleğin bir adımının ne kadar ilerlediği
+Invert looking up and down	Yukarı ve aşağı bakmayı ters çevir
+Invert orbiting up and down	Yukarı ve aşağı yörüngede dönmeyi ters çevir
+Invert the wheel	Tekerleği ters çevir
+Flying builds up speed the longer the keys are held	Uçuş, tuşlar ne kadar uzun basılı tutulursa o kadar hız kazanır
+Reset the camera	Kamerayı sıfırla

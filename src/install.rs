@@ -84,6 +84,13 @@ pub struct Prefs {
     /// How many tiles one window of streaming holds (0: 100).
     #[serde(default)]
     pub stream_tiles: u32,
+    /// How fast and sensitive the camera is (View > Controls).
+    #[serde(default)]
+    pub cam_tune: crate::camera::Tuning,
+    /// The graphics API: "" (the best the system has), "dx12", "vulkan", "metal" or "gl"
+    /// (`crate::gpu::Api`). A choice that cannot start falls back to the automatic one.
+    #[serde(default)]
+    pub graphics_api: String,
     /// Graphics quality: "low", "medium", "high" (empty: high).
     #[serde(default)]
     pub graphics: String,

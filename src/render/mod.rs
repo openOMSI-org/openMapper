@@ -328,8 +328,6 @@ struct SplineEntry {
     instance: u32,
     /// Drawn as part of its tile's chunk (then it has no mesh of its own on the GPU).
     in_chunk: bool,
-    /// An AI path: seen as the lanes' lines, never as a mesh.
-    ai_path: bool,
 }
 
 /// A tile's splines in one mesh, a draw per material: thousands of splines become a few
@@ -1704,7 +1702,7 @@ impl Renderer {
                     }
                 }
                 if let Some(e) = self.splines.get_mut(&(*k, s.id)) {
-                    e.hidden = e.technical && !extras.show_technical || extras.hide[2] || e.ai_path;
+                    e.hidden = spline_hidden(e.technical, extras);
                     e.instance = spline_instances.len() as u32;
                     spline_instances.push(Instance::new(Mat4::from_translation(corner), tint).surface(SURF_SPLINE));
                 }
@@ -1734,7 +1732,7 @@ impl Renderer {
                 m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
                 let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
                 let mesh = Some(upload_mesh(device, &m));
-                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false, ai_path: false });
+                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false });
                 self.warm_pending = true;
             }
             if let Some(e) = self.splines.get_mut(&key) {
@@ -2796,6 +2794,15 @@ pub fn hidden_layer(model: &ObjectModel, extras: &FrameExtras) -> bool {
     !model.technical && if model.tree.is_some() { extras.hide[0] } else { extras.hide[1] }
 }
 
+/// The spline is left out of the view: `[onlyeditor]` ones - invisible streets, AI paths,
+/// flight paths - are what Omsi.exe's editor draws and the game does not, so they go by the
+/// same switch as the rest of "what the game does not show". They are no different from a
+/// road once that switch is on: `invis_street.sli` has a profile (a 3 m strip of
+/// `helper_path_cars_1.bmp`), and exactly that strip is what the editor shows.
+pub fn spline_hidden(technical: bool, extras: &FrameExtras) -> bool {
+    technical && !extras.show_technical || extras.hide[2]
+}
+
 /// (`editor`: the meshes seen in the editor only are drawn too)
 fn push_object(groups: &mut Groups, key: &str, model: &Arc<ObjectModel>, label: Option<&String>, m: Mat4, tint: [f32; 4], sel: Option<Sel>, editor: bool) {
     if !m.is_finite() {
@@ -3070,5 +3077,22 @@ mod tests {
             assert_eq!(one % 2 == 1, blend, "the blended pipeline is the odd one");
         }
         assert_eq!([pipeline_index(false, false), pipeline_index(false, true), pipeline_index(true, false), pipeline_index(true, true)], [0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn an_editor_only_spline_is_seen_with_the_switch_on() {
+        // (`invis_street.sli` is `[onlyeditor]` with a 3 m profile and AI paths: `technical`.
+        // Its strip is drawn by Omsi.exe's editor and never by the game, so it has to go by
+        // the "what the game does not show" switch - and be seen at all with it on.)
+        let mut extras = FrameExtras::default();
+        assert!(spline_hidden(true, &extras), "an invisible street is out of the view by default");
+        extras.show_technical = true;
+        assert!(!spline_hidden(true, &extras), "and is drawn with the editor's switch on");
+        // (the roads' own layer still takes it away, as it takes every spline)
+        extras.hide[2] = true;
+        assert!(spline_hidden(true, &extras));
+        assert!(spline_hidden(false, &extras), "the roads' layer hides ordinary roads too");
+        // (an ordinary road is never held back by the editor switch)
+        assert!(!spline_hidden(false, &FrameExtras::default()));
     }
 }

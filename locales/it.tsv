@@ -2545,3 +2545,42 @@ Path connected	Percorso collegato
 Connect the path	Collega il percorso
 There is no tile there	Lì non c'è una tessera
 Click the other point	Fai clic sull'altro punto
+The graphics API changes the next time openMapper starts	L'API grafica cambia al prossimo avvio di openMapper
+Settings…	Impostazioni…
+Graphics API	API grafica
+Automatic	Automatica
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 è la scelta abituale su Windows; se l'API scelta non si avvia, openMapper passa a quella automatica. Ha effetto dopo il riavvio (OPENMAPPER_BACKEND=dx12 per una sola esecuzione).
+Settings	Impostazioni
+General	Generale
+Graphics	Grafica
+Find	Trova
+a command or a key	un comando o un tasto
+Interface	Interfaccia
+Camera and mouse	Camera e mouse
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Editor della mappa: il tasto destro guarda intorno, la rotella zooma verso il cursore, trascinando si sposta la mappa
+Big maps	Mappe grandi
+Load a part of the tiles at a time (like OMSI 2's editor)	Carica una parte dei tile alla volta (come l'editor di OMSI 2)
+Auto (the best the system has)	Auto (il meglio che offre il sistema)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Ha effetto dopo il riavvio. Se l'API scelta non si avvia, openMapper passa ad Auto. OPENMAPPER_BACKEND=dx12 la imposta per una sola esecuzione.
+Quality	Qualità
+Camera speed	Velocità della camera
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Tasto destro premuto e W A S D (m/s); intanto la rotella la modifica
+Keys over the map	Tasti sulla mappa
+W A S D and the arrows without the right button	W A S D e le frecce senza il tasto destro
+Shift makes it	Shift accelera
+How many times faster the camera is with Shift held	Quante volte più veloce è la camera con Shift premuto
+Turning with Q / E	Rotazione con Q / E
+Degrees a second	Gradi al secondo
+Looking round	Guardarsi intorno
+Sensitivity of the right button	Sensibilità del tasto destro
+Orbiting	Orbita
+Sensitivity of Alt + left button and of the trackpad	Sensibilità di Alt + tasto sinistro e del trackpad
+Panning	Spostamento
+Sensitivity of the middle button and of dragging the map	Sensibilità del tasto centrale e del trascinamento della mappa
+Zoom (wheel)	Zoom (rotella)
+How far one wheel step goes	Quanto va lontano uno scatto della rotella
+Invert looking up and down	Inverti guardare su e giù
+Invert orbiting up and down	Inverti l'orbita su e giù
+Invert the wheel	Inverti la rotella
+Flying builds up speed the longer the keys are held	Il volo accelera più a lungo si tengono premuti i tasti
+Reset the camera	Reimposta la camera

@@ -6,6 +6,55 @@
 //! It is kept as a point looked at (the pivot) and the eye's distance and angles from it.
 
 use glam::{DVec2, DVec3, Mat4, Vec3, Vec4};
+use serde::{Deserialize, Serialize};
+
+/// How fast and how sensitive the camera is (View > Controls > Camera). Every number is a
+/// multiplier of the built-in behaviour (1 = as it was) except where a unit is said.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Tuning {
+    /// Flying speed with the right button held (m/s); the wheel changes it meanwhile.
+    pub fly_speed: f64,
+    /// Keys over the map and the arrows.
+    pub move_speed: f32,
+    /// What Shift multiplies the keyboard speed by.
+    pub fast: f32,
+    /// Turning with Q / E over the map (degrees a second).
+    pub turn_speed: f32,
+    /// Looking round (right button) and orbiting (Alt, middle button in OMSI 2's controls).
+    pub look: f32,
+    pub orbit: f32,
+    pub pan: f32,
+    /// The wheel, pinch and Alt + right drag.
+    pub zoom: f32,
+    pub invert_look_y: bool,
+    pub invert_orbit_y: bool,
+    pub invert_wheel: bool,
+    /// Flying builds its speed up the longer the keys are held.
+    pub accelerate: bool,
+}
+
+impl Default for Tuning {
+    fn default() -> Self {
+        Tuning { fly_speed: 30.0, move_speed: 1.0, fast: 3.0, turn_speed: 90.0, look: 1.0, orbit: 1.0, pan: 1.0, zoom: 1.0, invert_look_y: false, invert_orbit_y: false, invert_wheel: false, accelerate: true }
+    }
+}
+
+impl Tuning {
+    /// Brings values read from the settings back into what the camera can use.
+    pub fn sane(mut self) -> Tuning {
+        let m = |v: f32, lo: f32, hi: f32, d: f32| if v.is_finite() { v.clamp(lo, hi) } else { d };
+        self.fly_speed = if self.fly_speed.is_finite() { self.fly_speed.clamp(2.0, 2000.0) } else { 30.0 };
+        self.move_speed = m(self.move_speed, 0.1, 10.0, 1.0);
+        self.fast = m(self.fast, 1.0, 20.0, 3.0);
+        self.turn_speed = m(self.turn_speed, 10.0, 360.0, 90.0);
+        self.look = m(self.look, 0.1, 5.0, 1.0);
+        self.orbit = m(self.orbit, 0.1, 5.0, 1.0);
+        self.pan = m(self.pan, 0.1, 5.0, 1.0);
+        self.zoom = m(self.zoom, 0.1, 5.0, 1.0);
+        self
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Camera {
@@ -21,6 +70,8 @@ pub struct Camera {
     pub plan: bool,
     /// Flying speed with the right button held (m/s).
     pub fly_speed: f64,
+    /// The speeds and sensitivities chosen in the settings.
+    pub tune: Tuning,
     /// Smoothed state the view follows.
     smooth_target: DVec3,
     smooth_distance: f64,
@@ -31,7 +82,7 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         let t = DVec3::new(150.0, 150.0, 0.0);
-        Camera { target: t, yaw: 20.0, pitch: 45.0, distance: 260.0, fov_y: 50f32.to_radians(), plan: false, fly_speed: 30.0, smooth_target: t, smooth_distance: 260.0, smooth_yaw: 20.0, smooth_pitch: 45.0 }
+        Camera { target: t, yaw: 20.0, pitch: 45.0, distance: 260.0, fov_y: 50f32.to_radians(), plan: false, fly_speed: 30.0, tune: Tuning::default(), smooth_target: t, smooth_distance: 260.0, smooth_yaw: 20.0, smooth_pitch: 45.0 }
     }
 }
 
@@ -105,8 +156,9 @@ impl Camera {
             return;
         }
         let eye = self.wanted_eye();
-        self.yaw += dx as f64 * 0.25;
-        self.pitch = (self.pitch + dy as f64 * 0.25).clamp(-85.0, 89.5);
+        let k = 0.25 * self.tune.look as f64;
+        self.yaw += dx as f64 * k;
+        self.pitch = (self.pitch + dy as f64 * k * if self.tune.invert_look_y { -1.0 } else { 1.0 }).clamp(-85.0, 89.5);
         self.target = eye - Self::back(self.yaw, self.pitch) * self.distance;
         self.snap();
     }
@@ -115,8 +167,8 @@ impl Camera {
     /// `held`: seconds the keys have been held (the speed builds up, as in Unity).
     pub fn fly(&mut self, fwd: f64, side: f64, up: f64, fast: bool, dt: f64, held: f64) {
         let (f, r, _) = self.axes();
-        let accel = 1.0 + (held * 1.5).min(3.0);
-        let m = (f * fwd + r * side + DVec3::Z * up) * self.fly_speed * accel * if fast { 3.0 } else { 1.0 } * dt;
+        let accel = if self.tune.accelerate { 1.0 + (held * 1.5).min(3.0) } else { 1.0 };
+        let m = (f * fwd + r * side + DVec3::Z * up) * self.fly_speed * accel * if fast { self.tune.fast as f64 } else { 1.0 } * dt;
         self.target += m;
         self.snap();
     }
@@ -124,6 +176,7 @@ impl Camera {
     /// The wheel with the right button held: faster or slower flying.
     pub fn fly_faster(&mut self, steps: f32) {
         self.fly_speed = (self.fly_speed * 1.25f64.powf(steps as f64)).clamp(2.0, 2000.0);
+        self.tune.fly_speed = self.fly_speed;
     }
 
     /// Turn round a new pivot from here on (Alt + left button: the point under the cursor),
@@ -202,7 +255,7 @@ impl Camera {
     /// ground): the view slides across the screen, the point grabbed staying under the cursor
     /// at the pivot's distance. Looking down steeply it slides over the ground.
     pub fn pan_pixels(&mut self, dx: f32, dy: f32, h: f32) {
-        let scale = self.distance * (self.fov_y as f64 / 2.0).tan() * 2.0 / h as f64;
+        let scale = self.distance * (self.fov_y as f64 / 2.0).tan() * 2.0 / h as f64 * self.tune.pan as f64;
         let (f, r, u) = self.axes();
         // (over the ground when the view looks down: forward along it, so the map follows the
         // hand; looking level, up and down)
@@ -235,7 +288,7 @@ impl Camera {
     /// Pan in the screen's plane by pixels (the middle button, as in Unity: what is under
     /// the cursor at the pivot's distance follows the hand).
     pub fn pan_screen(&mut self, dx: f32, dy: f32, h: f32) {
-        let scale = self.distance * (self.fov_y as f64 / 2.0).tan() * 2.0 / h as f64;
+        let scale = self.distance * (self.fov_y as f64 / 2.0).tan() * 2.0 / h as f64 * self.tune.pan as f64;
         let (_, r, u) = self.axes();
         self.target += (-r * dx as f64 + u * dy as f64) * scale;
         self.snap();
@@ -243,6 +296,7 @@ impl Camera {
 
     /// Dolly towards the pivot (the wheel, Alt + right drag), at once.
     pub fn dolly(&mut self, steps: f32) {
+        let steps = self.zoom_steps(steps);
         self.distance = (self.distance * (0.85f64).powf(steps as f64)).clamp(0.5, 8000.0);
         self.snap();
     }
@@ -253,13 +307,15 @@ impl Camera {
             return;
         }
         // (yaw is kept unwrapped so the smoothing never spins the long way round)
-        self.yaw += dx as f64 * 0.35;
-        self.pitch = (self.pitch + dy as f64 * 0.3).clamp(-85.0, 89.5);
+        let k = self.tune.orbit as f64;
+        self.yaw += dx as f64 * 0.35 * k;
+        self.pitch = (self.pitch + dy as f64 * 0.3 * k * if self.tune.invert_orbit_y { -1.0 } else { 1.0 }).clamp(-85.0, 89.5);
         self.snap();
     }
 
     /// Move towards a point (the wheel: towards the cursor), by wheel steps.
     pub fn zoom(&mut self, steps: f32, toward: Option<DVec3>) {
+        let steps = self.zoom_steps(steps);
         let old = self.distance;
         self.distance = (self.distance * (0.85f64).powf(steps as f64)).clamp(1.0, 8000.0);
         if let Some(p) = toward {
@@ -268,17 +324,22 @@ impl Camera {
         }
     }
 
+    /// Wheel steps as the settings have them: faster or slower, the other way round.
+    fn zoom_steps(&self, steps: f32) -> f32 {
+        steps * self.tune.zoom * if self.tune.invert_wheel { -1.0 } else { 1.0 }
+    }
+
     /// Keyboard movement without the right button: over the map, `fwd`, `side` in -1..1,
     /// `turn` in -1..1, per second.
     pub fn drive(&mut self, fwd: f64, side: f64, turn: f64, fast: bool, dt: f64) {
         let h = self.yaw.to_radians();
         let f = DVec2::new(h.sin(), h.cos());
         let r = DVec2::new(f.y, -f.x);
-        let speed = (self.distance * 1.2).max(30.0) * if fast { 3.0 } else { 1.0 };
+        let speed = (self.distance * 1.2).max(30.0) * self.tune.move_speed as f64 * if fast { self.tune.fast as f64 } else { 1.0 };
         let m = (f * fwd + r * side) * speed * dt;
         self.target.x += m.x;
         self.target.y += m.y;
-        self.yaw += turn * 90.0 * dt;
+        self.yaw += turn * self.tune.turn_speed as f64 * dt;
     }
 }
 
@@ -308,6 +369,30 @@ mod tests {
         c.fly(1.0, 0.0, 0.0, false, 1.0, 0.0);
         let d = c.wanted_eye() - eye;
         assert!(d.y > 29.0 && d.x.abs() < 1e-6 && d.z.abs() < 1e-6, "{d:?}");
+    }
+
+    #[test]
+    fn the_settings_change_the_speed_and_the_direction() {
+        let mut c = Camera::default();
+        c.yaw = 0.0;
+        c.pitch = 0.0;
+        c.snap();
+        c.tune.fly_speed = 60.0;
+        c.fly_speed = 60.0;
+        c.tune.fast = 2.0;
+        let eye = c.wanted_eye();
+        c.fly(1.0, 0.0, 0.0, true, 1.0, 0.0);
+        assert!(((c.wanted_eye() - eye).y - 120.0).abs() < 1e-6);
+        let d = c.distance;
+        c.zoom(1.0, None);
+        let in_d = c.distance;
+        c.distance = d;
+        c.tune.invert_wheel = true;
+        c.zoom(1.0, None);
+        assert!(in_d < d && c.distance > d);
+        // (the settings file may hold anything)
+        let t = Tuning { look: f32::NAN, fast: 0.0, fly_speed: 1e9, ..Tuning::default() }.sane();
+        assert_eq!((t.look, t.fast, t.fly_speed), (1.0, 1.0, 2000.0));
     }
 
     #[test]

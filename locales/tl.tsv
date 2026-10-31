@@ -2545,3 +2545,42 @@ Path connected	Nakonekta ang landas
 Connect the path	Ikonekta ang landas
 There is no tile there	Walang tile doon
 Click the other point	I-click ang isa pang punto
+The graphics API changes the next time openMapper starts	Magbabago ang graphics API sa susunod na pagsisimula ng openMapper
+Settings…	Mga Setting…
+Graphics API	Graphics API
+Automatic	Awtomatiko
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	Ang DirectX 12 ang karaniwang pinipili sa Windows; kung hindi makapagsimula ang napiling API, babalik ang openMapper sa awtomatiko. Magkakabisa pagkatapos ng restart (OPENMAPPER_BACKEND=dx12 para sa isang takbo).
+Settings	Mga Setting
+General	Pangkalahatan
+Graphics	Graphics
+Find	Hanapin
+a command or a key	isang command o key
+Interface	Interface
+Camera and mouse	Kamera at mouse
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Map editor: ang kanang button ay para tumingin sa paligid, ang wheel ay nagza-zoom sa cursor, ang pag-drag ay naglilipat ng mapa
+Big maps	Malalaking mapa
+Load a part of the tiles at a time (like OMSI 2's editor)	Mag-load ng bahagi ng mga tile sa bawat pagkakataon (tulad ng editor ng OMSI 2)
+Auto (the best the system has)	Auto (ang pinakamahusay na mayroon ang system)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Magkakabisa pagkatapos ng restart. Kung hindi makapagsimula ang napiling API, babalik ang openMapper sa Auto. Itinatakda ng OPENMAPPER_BACKEND=dx12 ito para sa isang takbo.
+Quality	Kalidad
+Camera speed	Bilis ng kamera
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Hawak ang kanang button at W A S D (m/s); binabago ito ng wheel habang ginagawa iyon
+Keys over the map	Mga key sa ibabaw ng mapa
+W A S D and the arrows without the right button	W A S D at ang mga arrow nang walang kanang button
+Shift makes it	Pinabibilis ng Shift ito
+How many times faster the camera is with Shift held	Ilang beses na mas mabilis ang kamera kapag hawak ang Shift
+Turning with Q / E	Pag-ikot gamit ang Q / E
+Degrees a second	Digri bawat segundo
+Looking round	Pagtingin sa paligid
+Sensitivity of the right button	Sensitivity ng kanang button
+Orbiting	Pag-orbit
+Sensitivity of Alt + left button and of the trackpad	Sensitivity ng Alt + kaliwang button at ng trackpad
+Panning	Pag-pan
+Sensitivity of the middle button and of dragging the map	Sensitivity ng gitnang button at ng pag-drag ng mapa
+Zoom (wheel)	Zoom (wheel)
+How far one wheel step goes	Gaano kalayo ang isang hakbang ng wheel
+Invert looking up and down	Baligtarin ang pagtingin pataas at pababa
+Invert orbiting up and down	Baligtarin ang pag-orbit pataas at pababa
+Invert the wheel	Baligtarin ang wheel
+Flying builds up speed the longer the keys are held	Bumibilis ang paglipad habang tumatagal ang pagpindot sa mga key
+Reset the camera	I-reset ang kamera

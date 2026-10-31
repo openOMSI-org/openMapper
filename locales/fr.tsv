@@ -2543,3 +2543,42 @@ Path connected	Chemin relié
 Connect the path	Relier le chemin
 There is no tile there	Il n'y a pas de dalle là
 Click the other point	Cliquez l'autre point
+The graphics API changes the next time openMapper starts	L'API graphique change au prochain démarrage d'openMapper
+Settings…	Réglages…
+Graphics API	API graphique
+Automatic	Automatique
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 est le choix habituel sous Windows ; si l'API choisie ne peut pas démarrer, openMapper revient à l'API automatique. Prend effet après un redémarrage (OPENMAPPER_BACKEND=dx12 pour une seule exécution).
+Settings	Réglages
+General	Général
+Graphics	Graphismes
+Find	Rechercher
+a command or a key	une commande ou une touche
+Interface	Interface
+Camera and mouse	Caméra et souris
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Éditeur de carte : le bouton droit oriente la vue, la molette zoome vers le curseur, le glissement déplace la carte
+Big maps	Grandes cartes
+Load a part of the tiles at a time (like OMSI 2's editor)	Charger une partie des tuiles à la fois (comme l'éditeur d'OMSI 2)
+Auto (the best the system has)	Auto (le meilleur disponible sur le système)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Prend effet après un redémarrage. Si l'API choisie ne peut pas démarrer, openMapper revient à Auto. OPENMAPPER_BACKEND=dx12 la définit pour une seule exécution.
+Quality	Qualité
+Camera speed	Vitesse de la caméra
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Bouton droit maintenu et W A S D (m/s) ; la molette la modifie pendant ce temps
+Keys over the map	Touches sur la carte
+W A S D and the arrows without the right button	W A S D et les flèches sans le bouton droit
+Shift makes it	Shift multiplie la vitesse
+How many times faster the camera is with Shift held	Combien de fois la caméra est plus rapide avec Shift maintenu
+Turning with Q / E	Rotation avec Q / E
+Degrees a second	Degrés par seconde
+Looking round	Regarder autour
+Sensitivity of the right button	Sensibilité du bouton droit
+Orbiting	Orbite
+Sensitivity of Alt + left button and of the trackpad	Sensibilité d'Alt + bouton gauche et du pavé tactile
+Panning	Déplacement latéral
+Sensitivity of the middle button and of dragging the map	Sensibilité du bouton central et du glissement de la carte
+Zoom (wheel)	Zoom (molette)
+How far one wheel step goes	Distance parcourue par un cran de molette
+Invert looking up and down	Inverser le regard haut/bas
+Invert orbiting up and down	Inverser l'orbite haut/bas
+Invert the wheel	Inverser la molette
+Flying builds up speed the longer the keys are held	Le vol accélère progressivement tant que les touches restent enfoncées
+Reset the camera	Réinitialiser la caméra

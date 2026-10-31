@@ -2545,3 +2545,42 @@ Path connected	Camí connectat
 Connect the path	Connectar el camí
 There is no tile there	Allà no hi ha cap peça
 Click the other point	Feu clic a l'altre punt
+The graphics API changes the next time openMapper starts	L'API gràfica canviarà la propera vegada que s'iniciï openMapper
+Settings…	Configuració…
+Graphics API	API gràfica
+Automatic	Automàtica
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 és l'opció habitual a Windows; si l'API triada no pot iniciar-se, openMapper recorre a l'automàtica. Té efecte després de reiniciar (OPENMAPPER_BACKEND=dx12 per a una sola execució).
+Settings	Configuració
+General	General
+Graphics	Gràfics
+Find	Cerca
+a command or a key	una ordre o una tecla
+Interface	Interfície
+Camera and mouse	Càmera i ratolí
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Editor de mapes: el botó dret mira al voltant, la roda fa zoom al cursor, arrossegar mou el mapa
+Big maps	Mapes grans
+Load a part of the tiles at a time (like OMSI 2's editor)	Carrega una part de les tessel·les alhora (com l'editor d'OMSI 2)
+Auto (the best the system has)	Auto (el millor que té el sistema)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Té efecte després de reiniciar. Si l'API triada no pot iniciar-se, openMapper recorre a Auto. OPENMAPPER_BACKEND=dx12 l'estableix per a una sola execució.
+Quality	Qualitat
+Camera speed	Velocitat de la càmera
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Botó dret premut i W A S D (m/s); la roda la canvia mentrestant
+Keys over the map	Tecles sobre el mapa
+W A S D and the arrows without the right button	W A S D i les fletxes sense el botó dret
+Shift makes it	Shift la fa
+How many times faster the camera is with Shift held	Quantes vegades més ràpida és la càmera amb Shift premut
+Turning with Q / E	Gir amb Q / E
+Degrees a second	Graus per segon
+Looking round	Mirar al voltant
+Sensitivity of the right button	Sensibilitat del botó dret
+Orbiting	Òrbita
+Sensitivity of Alt + left button and of the trackpad	Sensibilitat d'Alt + botó esquerre i del trackpad
+Panning	Desplaçament
+Sensitivity of the middle button and of dragging the map	Sensibilitat del botó del mig i de l'arrossegament del mapa
+Zoom (wheel)	Zoom (roda)
+How far one wheel step goes	Quant avança un pas de la roda
+Invert looking up and down	Inverteix mirar amunt i avall
+Invert orbiting up and down	Inverteix l'òrbita amunt i avall
+Invert the wheel	Inverteix la roda
+Flying builds up speed the longer the keys are held	El vol agafa velocitat com més temps es mantenen premudes les tecles
+Reset the camera	Restableix la càmera

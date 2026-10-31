@@ -2585,3 +2585,42 @@ Path connected	Pad verbonden
 Connect the path	Pad verbinden
 There is no tile there	Daar ligt geen tegel
 Click the other point	Klik het andere punt
+The graphics API changes the next time openMapper starts	De grafische API verandert bij de volgende start van openMapper
+Settings…	Instellingen…
+Graphics API	Grafische API
+Automatic	Automatisch
+DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).	DirectX 12 is de gebruikelijke keuze op Windows; als de gekozen API niet kan starten, valt openMapper terug op de automatische. Werkt na een herstart (OPENMAPPER_BACKEND=dx12 voor één keer).
+Settings	Instellingen
+General	Algemeen
+Graphics	Grafisch
+Find	Zoeken
+a command or a key	een opdracht of een toets
+Interface	Interface
+Camera and mouse	Camera en muis
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	Kaarteditor: rechterknop kijkt rond, het wiel zoomt naar de cursor, slepen verplaatst de kaart
+Big maps	Grote kaarten
+Load a part of the tiles at a time (like OMSI 2's editor)	Laad telkens een deel van de tegels (zoals de editor van OMSI 2)
+Auto (the best the system has)	Auto (het beste dat het systeem heeft)
+Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.	Werkt na een herstart. Als de gekozen API niet kan starten, valt openMapper terug op Auto. OPENMAPPER_BACKEND=dx12 stelt het in voor één keer.
+Quality	Kwaliteit
+Camera speed	Camerasnelheid
+Right button held and W A S D (m/s); the wheel changes it meanwhile	Rechterknop ingedrukt en W A S D (m/s); het wiel past het dan aan
+Keys over the map	Toetsen boven de kaart
+W A S D and the arrows without the right button	W A S D en de pijltjes zonder de rechterknop
+Shift makes it	Shift maakt het
+How many times faster the camera is with Shift held	Hoeveel keer sneller de camera is met Shift ingedrukt
+Turning with Q / E	Draaien met Q / E
+Degrees a second	Graden per seconde
+Looking round	Rondkijken
+Sensitivity of the right button	Gevoeligheid van de rechterknop
+Orbiting	Draaien om een punt
+Sensitivity of Alt + left button and of the trackpad	Gevoeligheid van Alt + linkerknop en van het trackpad
+Panning	Pannen
+Sensitivity of the middle button and of dragging the map	Gevoeligheid van de middelste knop en van het slepen van de kaart
+Zoom (wheel)	Zoom (wiel)
+How far one wheel step goes	Hoe ver één stap van het wiel gaat
+Invert looking up and down	Omhoog en omlaag kijken omkeren
+Invert orbiting up and down	Omhoog en omlaag draaien omkeren
+Invert the wheel	Wiel omkeren
+Flying builds up speed the longer the keys are held	Vliegen bouwt snelheid op naarmate de toetsen langer ingedrukt zijn
+Reset the camera	Camera resetten
