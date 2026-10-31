@@ -2534,6 +2534,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Сполучення клавіш з інших програм
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Клавіші Blender: G переміщує вибране, Shift+S масштабує, X видаляє, Tab редагує сітку, Shift+A додає об'єкт, Shift+D дублює, F3 шукає. W A S D і Q E рухають камеру, як завжди
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G переміщує вибране, Shift+S масштабує, X видаляє, Tab редагує сітку, Shift+A додає об'єкт, Shift+D дублює, F3 шукає, Num 7 дивиться вниз. W A S D і Q E рухають камеру, як завжди; миша — як в openMapper
+Connect to	З'єднати з
+Click the other point (Esc cancels)	Клацніть іншу точку (Esc скасовує)
+Pick an end point of a path first	Спершу виберіть кінцеву точку шляху
+That point is already joined	Ця точка вже з'єднана
+Click an end point of a path	Клацніть кінцеву точку шляху
+Path connected	Шлях з'єднано
+Connect the path	З'єднати шлях
+There is no tile there	Там немає клітини
+Click the other point	Клацніть іншу точку
 The graphics API changes the next time openMapper starts	Графічний API зміниться під час наступного запуску openMapper
 Settings…	Налаштування…
 Graphics API	Графічний API

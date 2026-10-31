@@ -1550,6 +1550,11 @@ fn logic_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libra
             });
             if ed.path_edit {
                 ui.label(RichText::new(tr("Click a path to pick it: every point is a dot to drag (the small ones in the middle of a piece bend it). Double-click the path to put a point in. Click a dot, then Del, to take that point out; Del with no dot picked deletes the whole path (Ctrl+Z brings it back). Lanes of roads and junctions belong to their road type: use Edit its AI lanes on the road.", "Клик по пути выбирает его: каждая точка это кружок, который можно тянуть (маленькие в середине куска изгибают его). Двойной клик по пути ставит точку. Клик по кружку, затем Del: убрать эту точку; Del без выбранной точки удаляет весь путь (Ctrl+Z вернёт). Полосы дорог и перекрёстков принадлежат типу дороги: используйте «Править полосы ИИ» у дороги.")).small().color(TEXT_DIM));
+                let armed = ed.path_connect_on();
+                let label = if armed { tr("Click the other point (Esc cancels)", "Щёлкните другую точку (Esc отменяет)") } else { tr("Connect to", "Соединить с") };
+                if ui.add(egui::Button::new(icons::labelled(Icon::Route, label)).selected(armed)).clicked() {
+                    ed.arm_path_connect();
+                }
             }
             // the two everyone needs, at the top
             ui.horizontal(|ui| {

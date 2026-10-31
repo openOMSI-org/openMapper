@@ -2576,6 +2576,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Sneltoetsen van andere programma's
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender-toetsen: G verplaatst de selectie, Shift+S schaalt hem, X verwijdert, Tab bewerkt de mesh, Shift+A voegt een object toe, Shift+D dupliceert, F3 zoekt. W A S D en Q E bewegen de camera zoals altijd
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G verplaatst de selectie, Shift+S schaalt hem, X verwijdert, Tab bewerkt de mesh, Shift+A voegt een object toe, Shift+D dupliceert, F3 zoekt, Num 7 kijkt recht naar beneden. W A S D en Q E bewegen de camera zoals altijd; de muis als in openMapper
+Connect to	Verbinden met
+Click the other point (Esc cancels)	Klik het andere punt (Esc annuleert)
+Pick an end point of a path first	Kies eerst een eindpunt van een pad
+That point is already joined	Dat punt is al verbonden
+Click an end point of a path	Klik een eindpunt van een pad
+Path connected	Pad verbonden
+Connect the path	Pad verbinden
+There is no tile there	Daar ligt geen tegel
+Click the other point	Klik het andere punt
 The graphics API changes the next time openMapper starts	De grafische API verandert bij de volgende start van openMapper
 Settings…	Instellingen…
 Graphics API	Grafische API

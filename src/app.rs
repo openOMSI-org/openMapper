@@ -1881,6 +1881,8 @@ impl App {
                 // (only the knife goes, the selection stays)
             } else if self.ed.link_pick.take().is_some() {
                 // (only the linking is called off, the object stays selected)
+            } else if self.ed.take_path_connect() {
+                // (only the path connect is called off, the point stays picked)
             } else if self.ed.tool != Tool::Select && !self.ed_has_pending() {
                 self.ed.set_tool(Tool::Select);
             } else {

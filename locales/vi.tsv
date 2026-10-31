@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Phím tắt của chương trình khác
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Phím của Blender: G di chuyển vùng chọn, Shift+S đổi kích thước, X xóa, Tab sửa lưới, Shift+A thêm đối tượng, Shift+D nhân bản, F3 tìm kiếm. W A S D và Q E di chuyển camera như thường lệ
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G di chuyển vùng chọn, Shift+S đổi kích thước, X xóa, Tab sửa lưới, Shift+A thêm đối tượng, Shift+D nhân bản, F3 tìm kiếm, Num 7 nhìn thẳng xuống. W A S D và Q E di chuyển camera như thường lệ; chuột như của openMapper
+Connect to	Nối tới
+Click the other point (Esc cancels)	Nhấn điểm kia (Esc hủy)
+Pick an end point of a path first	Hãy chọn một đầu đường trước
+That point is already joined	Điểm đó đã được nối
+Click an end point of a path	Nhấn một đầu đường
+Path connected	Đã nối đường
+Connect the path	Nối đường
+There is no tile there	Ở đó không có ô
+Click the other point	Nhấn điểm kia
 The graphics API changes the next time openMapper starts	API đồ họa sẽ thay đổi vào lần khởi động openMapper tiếp theo
 Settings…	Cài đặt…
 Graphics API	API đồ họa

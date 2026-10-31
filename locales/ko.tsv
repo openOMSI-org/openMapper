@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	다른 프로그램의 단축키
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender 키: G는 선택 항목 이동, Shift+S는 크기 조절, X는 삭제, Tab은 메시 편집, Shift+A는 오브젝트 추가, Shift+D는 복제, F3은 검색. W A S D와 Q E는 늘 그렇듯 카메라를 움직입니다
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G는 선택 항목 이동, Shift+S는 크기 조절, X는 삭제, Tab은 메시 편집, Shift+A는 오브젝트 추가, Shift+D는 복제, F3은 검색, Num 7은 아래를 봅니다. W A S D와 Q E는 늘 그렇듯 카메라를 움직입니다. 마우스는 openMapper 그대로
+Connect to	연결
+Click the other point (Esc cancels)	다른 점을 클릭 (Esc 는 취소)
+Pick an end point of a path first	먼저 경로의 끝점을 고르세요
+That point is already joined	그 점은 이미 연결되어 있습니다
+Click an end point of a path	경로의 끝점을 클릭
+Path connected	경로가 연결됨
+Connect the path	경로 연결
+There is no tile there	거기에는 타일이 없습니다
+Click the other point	다른 점을 클릭
 The graphics API changes the next time openMapper starts	그래픽 API는 openMapper를 다음에 시작할 때 바뀝니다
 Settings…	설정…
 Graphics API	그래픽 API

@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	ほかのアプリのショートカット
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender のキー: G で選択を移動、Shift+S で拡大縮小、X で削除、Tab でメッシュを編集、Shift+A でオブジェクトを追加、Shift+D で複製、F3 で検索。W A S D と Q E はこれまでどおりカメラを動かします
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G で選択を移動、Shift+S で拡大縮小、X で削除、Tab でメッシュを編集、Shift+A でオブジェクトを追加、Shift+D で複製、F3 で検索、Num 7 で真下を見ます。W A S D と Q E はこれまでどおりカメラを動かします。マウスは openMapper のまま
+Connect to	接続先
+Click the other point (Esc cancels)	もう一方の点をクリック（Esc で中止）
+Pick an end point of a path first	先に経路の端の点を選んでください
+That point is already joined	その点は既につながっています
+Click an end point of a path	経路の端の点をクリック
+Path connected	経路を接続しました
+Connect the path	経路を接続
+There is no tile there	そこにタイルがありません
+Click the other point	もう一方の点をクリック
 The graphics API changes the next time openMapper starts	グラフィックスAPIはopenMapperの次回起動時に変わります
 Settings…	設定…
 Graphics API	グラフィックスAPI

@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Billentyűkészletek más programokból
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender billentyűi: G mozgatja a kijelölést, Shift+S méretezi, X töröl, Tab a hálót szerkeszti, Shift+A objektumot ad hozzá, Shift+D másol, F3 keres. W A S D és Q E a kamerát mozgatja, mint mindig
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G mozgatja a kijelölést, Shift+S méretezi, X töröl, Tab a hálót szerkeszti, Shift+A objektumot ad hozzá, Shift+D másol, F3 keres, Num 7 lenéz. W A S D és Q E a kamerát mozgatja, mint mindig; az egér mint az openMapperben
+Connect to	Összekötés ezzel
+Click the other point (Esc cancels)	Kattintson a másik pontra (Esc megszakítja)
+Pick an end point of a path first	Először válasszon egy út végpontját
+That point is already joined	Ez a pont már össze van kötve
+Click an end point of a path	Kattintson egy út végpontjára
+Path connected	Út összekötve
+Connect the path	Út összekötése
+There is no tile there	Ott nincs csempe
+Click the other point	Kattintson a másik pontra
 The graphics API changes the next time openMapper starts	A grafikai API az openMapper következő indításakor változik
 Settings…	Beállítások…
 Graphics API	Grafikai API

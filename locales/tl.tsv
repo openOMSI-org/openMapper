@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Mga shortcut mula sa ibang programa
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Mga key ng Blender: G naglilipat ng pinili, Shift+S nagbabago ng sukat, X nagbubura, Tab nag-e-edit ng mesh, Shift+A nagdadagdag ng bagay, Shift+D nagduduplicate, F3 naghahanap. W A S D at Q E naglilipat ng kamera gaya ng dati
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G naglilipat ng pinili, Shift+S nagbabago ng sukat, X nagbubura, Tab nag-e-edit ng mesh, Shift+A nagdadagdag ng bagay, Shift+D nagduduplicate, F3 naghahanap, Num 7 tumitingin pababa. W A S D at Q E naglilipat ng kamera gaya ng dati; ang mouse gaya ng sa openMapper
+Connect to	Ikonekta sa
+Click the other point (Esc cancels)	I-click ang isa pang punto (Esc ay kansela)
+Pick an end point of a path first	Pumili muna ng dulo ng isang landas
+That point is already joined	Konekta na ang puntong iyon
+Click an end point of a path	I-click ang dulo ng isang landas
+Path connected	Nakonekta ang landas
+Connect the path	Ikonekta ang landas
+There is no tile there	Walang tile doon
+Click the other point	I-click ang isa pang punto
 The graphics API changes the next time openMapper starts	Magbabago ang graphics API sa susunod na pagsisimula ng openMapper
 Settings…	Mga Setting…
 Graphics API	Graphics API

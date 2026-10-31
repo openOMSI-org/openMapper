@@ -2533,6 +2533,15 @@ Blender's keys	Blender 的按鍵
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G 移動選取、Shift+S 縮放、X 刪除、Tab 編輯網格、Shift+A 新增物件、Shift+D 複製、F3 搜尋、Num 7 由上往下看。W A S D 與 Q E 和平常一樣移動畫面；滑鼠同 openMapper 本身
 Grab	抓取
 X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	X / Y / Z：鎖定軸向，數字：距離，Enter 或點擊：完成，Esc：取消
+Connect to	連到
+Click the other point (Esc cancels)	點另一個點（Esc 取消）
+Pick an end point of a path first	請先選路徑的端點
+That point is already joined	這個點已經接上了
+Click an end point of a path	請點路徑的端點
+Path connected	路徑已連接
+Connect the path	連接路徑
+There is no tile there	那裡沒有圖塊
+Click the other point	請點另一個點
 The graphics API changes the next time openMapper starts	圖形 API 將在下次啟動 openMapper 時變更
 Settings…	設定…
 Graphics API	圖形 API

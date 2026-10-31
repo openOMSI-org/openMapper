@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Zkratky z jiných programů
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Klávesy Blenderu: G přesouvá výběr, Shift+S mění velikost, X maže, Tab upravuje síť, Shift+A přidá objekt, Shift+D duplikuje, F3 hledá. W A S D a Q E pohybují kamerou jako vždy
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G přesouvá výběr, Shift+S mění velikost, X maže, Tab upravuje síť, Shift+A přidá objekt, Shift+D duplikuje, F3 hledá, Num 7 hledí dolů. W A S D a Q E pohybují kamerou jako vždy; myš jako v openMapperu
+Connect to	Spojit s
+Click the other point (Esc cancels)	Klikněte na druhý bod (Esc zruší)
+Pick an end point of a path first	Nejprve vyberte koncový bod cesty
+That point is already joined	Tento bod je už spojen
+Click an end point of a path	Klikněte na koncový bod cesty
+Path connected	Cesta spojena
+Connect the path	Spojit cestu
+There is no tile there	Tam není dlaždice
+Click the other point	Klikněte na druhý bod
 The graphics API changes the next time openMapper starts	Grafické API se změní při příštím spuštění openMapperu
 Settings…	Nastavení…
 Graphics API	Grafické API

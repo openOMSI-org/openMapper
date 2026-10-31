@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	दूसरे प्रोग्रामों के शॉर्टकट
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender की कुंजियाँ: G चयन को हिलाता है, Shift+S उसका आकार बदलता है, X मिटाता है, Tab मेश संपादित करता है, Shift+A ऑब्जेक्ट जोड़ता है, Shift+D नकल बनाता है, F3 खोजता है। W A S D और Q E कैमरा हमेशा की तरह हिलाते हैं
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G चयन को हिलाता है, Shift+S उसका आकार बदलता है, X मिटाता है, Tab मेश संपादित करता है, Shift+A ऑब्जेक्ट जोड़ता है, Shift+D नकल बनाता है, F3 खोजता है, Num 7 नीचे देखता है। W A S D और Q E कैमरा हमेशा की तरह हिलाते हैं; माउस openMapper जैसा
+Connect to	इससे जोड़ें
+Click the other point (Esc cancels)	दूसरा बिंदु चुनें (Esc रद्द करता है)
+Pick an end point of a path first	पहले पथ का एक छोर चुनें
+That point is already joined	यह बिंदु पहले से जुड़ा है
+Click an end point of a path	पथ का एक छोर चुनें
+Path connected	पथ जुड़ गया
+Connect the path	पथ जोड़ें
+There is no tile there	वहाँ कोई टाइल नहीं है
+Click the other point	दूसरा बिंदु चुनें
 The graphics API changes the next time openMapper starts	ग्राफ़िक्स API openMapper के अगली बार शुरू होने पर बदलेगा
 Settings…	सेटिंग…
 Graphics API	ग्राफ़िक्स API

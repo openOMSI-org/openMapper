@@ -2576,6 +2576,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Kortkommandon från andra program
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blenders tangenter: G flyttar markeringen, Shift+S skalar den, X tar bort, Tab redigerar nätet, Shift+A lägger till ett objekt, Shift+D duplicerar, F3 söker. W A S D och Q E flyttar kameran som vanligt
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G flyttar markeringen, Shift+S skalar den, X tar bort, Tab redigerar nätet, Shift+A lägger till ett objekt, Shift+D duplicerar, F3 söker, Num 7 tittar rakt ner. W A S D och Q E flyttar kameran som vanligt; musen som i openMapper
+Connect to	Koppla till
+Click the other point (Esc cancels)	Klicka den andra punkten (Esc avbryter)
+Pick an end point of a path first	Välj först en ändpunkt på en bana
+That point is already joined	Den punkten är redan kopplad
+Click an end point of a path	Klicka en ändpunkt på en bana
+Path connected	Banan kopplad
+Connect the path	Koppla banan
+There is no tile there	Där finns ingen ruta
+Click the other point	Klicka den andra punkten
 The graphics API changes the next time openMapper starts	Grafik-API:et ändras nästa gång openMapper startar
 Settings…	Inställningar…
 Graphics API	Grafik-API

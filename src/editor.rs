@@ -448,6 +448,8 @@ pub struct Editor {
     /// the app to make the lanes editable (it has the folders) and pick the one clicked.
     pub lane_detach_request: Option<(Vec<(TileKey, i64)>, DVec2)>,
     path_point: Option<((TileKey, i64), Handle)>,
+    /// "Connect to" is waiting for the other end of a path (Esc calls it off).
+    path_connect: Option<((TileKey, i64), Handle)>,
     pub water_depth: f32,
     pub water_shape: WaterShape,
     /// A river's width and the banks' reach out from the shore (m).
@@ -661,6 +663,7 @@ impl Default for Editor {
             hover_handle_of: None,
             lane_detach_request: None,
             path_point: None,
+            path_connect: None,
             water_depth: 1.5,
             water_shape: WaterShape::Lake,
             river_width: 14.0,
@@ -1105,6 +1108,7 @@ impl Editor {
         self.ramp_start = None;
         self.water_pts.clear();
         self.link_pick = None;
+        self.path_connect = None;
         self.cutting = false;
         if let Some(doc) = &mut self.doc {
             self.history.commit();
@@ -1747,6 +1751,17 @@ impl Editor {
 
     pub fn left_press(&mut self, assets: &mut Assets, lib: &Library, shift: bool) {
         if self.doc.is_none() {
+            return;
+        }
+        // "Connect to": the next click is the other end of the path, not a new selection
+        if self.path_connect.is_some() && self.editing_paths() {
+            match (self.hover_handle, self.hover_handle_of) {
+                (Some(h), Some(to)) => {
+                    let from = self.path_connect.take().unwrap();
+                    self.connect_path_points(from, (to, h));
+                }
+                _ => self.toast(tr("Click an end point of a path", "Щёлкните конечную точку пути")),
+            }
             return;
         }
         if let (Some((k, id)), Tool::Select) = (self.link_pick, self.tool) {
@@ -4861,6 +4876,7 @@ impl Editor {
     pub fn select(&mut self, s: Option<Sel>) {
         self.selected = s;
         self.path_point = None;
+        self.path_connect = None;
         self.also.clear();
     }
 
@@ -4868,6 +4884,7 @@ impl Editor {
         let mut v = v.into_iter();
         self.selected = v.next();
         self.path_point = None;
+        self.path_connect = None;
         let rest: Vec<Sel> = v.collect();
         // (deduplicated here once, so every read of the selection is a copy and nothing more:
         // the windows and the view read it several times a frame, and a selection of a
@@ -4891,6 +4908,7 @@ impl Editor {
         let mut v = v.into_iter();
         self.selected = v.next();
         self.path_point = None;
+        self.path_connect = None;
         self.also.clear();
         self.also.extend(v);
     }
@@ -5563,6 +5581,169 @@ impl Editor {
         self.history.commit();
         self.select_path_pieces(k, id);
         self.toast(tr("Point added: drag the dot where the pieces meet", "Точка добавлена: тяните кружок на стыке"));
+    }
+
+    /// "Connect to" is waiting for the second point.
+    pub fn path_connect_on(&self) -> bool {
+        self.path_connect.is_some()
+    }
+
+    /// Esc: only the connect is called off.
+    pub fn take_path_connect(&mut self) -> bool {
+        self.path_connect.take().is_some()
+    }
+
+    /// The picked path point is one end. The next click on another end joins the two paths
+    /// (a gap between them gets a piece of the same type). Clicking the button again calls it off.
+    pub fn arm_path_connect(&mut self) {
+        if self.path_connect.take().is_some() {
+            return;
+        }
+        let Some((sp, h)) = self.path_point else {
+            self.toast(tr("Pick an end point of a path first", "Сначала выберите конечную точку пути"));
+            return;
+        };
+        if h == Handle::Mid || !self.path_end_free(sp, h) {
+            self.toast(if h == Handle::Mid {
+                tr("Pick an end point of a path first", "Сначала выберите конечную точку пути")
+            } else {
+                tr("That point is already joined", "Эта точка уже соединена")
+            });
+            return;
+        }
+        self.path_connect = Some((sp, h));
+    }
+
+    /// Where a path's end is, and the heading of travel there (degrees, the way the piece runs).
+    fn path_end_at(&self, sp: (TileKey, i64), h: Handle) -> Option<(DVec3, f64)> {
+        let doc = self.doc.as_ref()?;
+        let s = doc.spline(sp.0, sp.1)?;
+        let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(sp.0));
+        Some(match h {
+            Handle::Start => (c.point_at(0.0), c.heading_at(0.0)),
+            Handle::End => (c.end_point(), c.heading_at(s.length)),
+            Handle::Mid => return None,
+        })
+    }
+
+    fn path_end_free(&self, sp: (TileKey, i64), h: Handle) -> bool {
+        let Some(s) = self.doc.as_ref().and_then(|d| d.spline(sp.0, sp.1)) else { return false };
+        match h {
+            Handle::Start => s.prev_id == 0,
+            Handle::End => s.next_id == 0,
+            Handle::Mid => false,
+        }
+    }
+
+    /// Join two free ends of AI paths so one runs on into the other. A gap gets a piece of the
+    /// first path's type. An end that faces the wrong way is turned round first, the whole
+    /// path it belongs to with it, so traffic keeps one direction.
+    fn connect_path_points(&mut self, a: ((TileKey, i64), Handle), b: ((TileKey, i64), Handle)) {
+        if a.1 == Handle::Mid || b.1 == Handle::Mid {
+            self.toast(tr("Click an end point of a path", "Щёлкните конечную точку пути"));
+            return;
+        }
+        if a.0 == b.0 && a.1 == b.1 {
+            self.toast(tr("Click the other point", "Щёлкните другую точку"));
+            return;
+        }
+        if !self.path_end_free(a.0, a.1) || !self.path_end_free(b.0, b.1) {
+            self.toast(tr("That point is already joined", "Эта точка уже соединена"));
+            return;
+        }
+        let Some((pa, ha)) = self.path_end_at(a.0, a.1) else { return };
+        let Some((pb, hb)) = self.path_end_at(b.0, b.1) else { return };
+        let (chain_a, same, chain_b) = {
+            let Some(doc) = self.doc.as_ref() else { return };
+            let chain_a = path_chain(doc, a.0.1);
+            let same = chain_a.iter().any(|p| p.1 == b.0.1);
+            let chain_b = if !same && b.1 == Handle::End { path_chain(doc, b.0.1) } else { Vec::new() };
+            (chain_a, same, chain_b)
+        };
+        // (the piece the new stretch leaves, and the one it arrives at)
+        let (from, to, from_pos, to_pos, leave, arrive, turn) = if same {
+            let (hk, hid) = chain_a[0];
+            let (tk, tid) = *chain_a.last().unwrap();
+            let (Some((fp, fl)), Some((tp, ta))) = (self.path_end_at((tk, tid), Handle::End), self.path_end_at((hk, hid), Handle::Start)) else { return };
+            ((tk, tid), (hk, hid), fp, tp, fl, ta, Vec::new())
+        } else {
+            let leave = if a.1 == Handle::End { ha } else { roads::norm_deg(ha + 180.0) };
+            let arrive = if b.1 == Handle::Start { hb } else { roads::norm_deg(hb + 180.0) };
+            let mut turn = Vec::new();
+            if a.1 == Handle::Start {
+                turn.extend(chain_a);
+            }
+            if b.1 == Handle::End {
+                turn.extend(chain_b);
+            }
+            (a.0, b.0, pa, pb, leave, arrive, turn)
+        };
+        let Some(doc) = self.doc.as_ref() else { return };
+        let file = doc.spline(from.0, from.1).map(|s| s.file.clone()).unwrap_or_default();
+        let mirror = doc.spline(from.0, from.1).map(|s| s.mirror).unwrap_or(false);
+        let gap = (from_pos.truncate() - to_pos.truncate()).length();
+        let segs = if gap <= 1.5 {
+            Vec::new()
+        } else {
+            match reshape::fit(reshape::End { pos: from_pos.truncate(), heading: Some(leave) }, reshape::End { pos: to_pos.truncate(), heading: Some(arrive) })
+                .or_else(|| reshape::fit(reshape::End { pos: from_pos.truncate(), heading: None }, reshape::End { pos: to_pos.truncate(), heading: None }))
+            {
+                Some(s) => s,
+                None => {
+                    self.error(tr("That bend is too sharp", "Слишком крутой поворот"));
+                    return;
+                }
+            }
+        };
+        for p in &segs {
+            if !doc.tiles.contains_key(&tile_of(p.start)) {
+                self.toast(tr("There is no tile there", "Там нет клетки"));
+                return;
+            }
+        }
+        if turn.iter().any(|(k, id)| chain_has_rows(doc, &[(*k, *id)])) {
+            self.error(tr("Remove the rows of objects along it first (they are measured from its start)", "Сначала уберите ряды объектов вдоль неё (они отмеряются от её начала)"));
+            return;
+        }
+        self.history.begin(tr("Connect the path", "Соединить путь"));
+        let doc = self.doc.as_ref().unwrap();
+        self.history.touch_global(doc);
+        let mut tiles: Vec<TileKey> = turn.iter().map(|p| p.0).chain([from.0, to.0]).chain(segs.iter().map(|p| tile_of(p.start))).collect();
+        tiles.sort();
+        tiles.dedup();
+        for k in &tiles {
+            self.history.touch_tile(doc, *k);
+        }
+        let doc = self.doc.as_mut().unwrap();
+        if !turn.is_empty() {
+            reverse_path(doc, &turn);
+        }
+        let ids: Vec<i64> = segs.iter().map(|_| doc.new_id()).collect();
+        if !segs.is_empty() {
+            let profile = even_profile(&segs, from_pos.z, to_pos.z);
+            for (i, p) in segs.iter().enumerate() {
+                let k = tile_of(p.start);
+                let mut sp = piece_spline(&file, p, &profile, i, tile_origin(k));
+                sp.id = ids[i];
+                sp.prev_id = if i == 0 { from.1 } else { ids[i - 1] };
+                sp.next_id = if i + 1 == ids.len() { to.1 } else { ids[i + 1] };
+                sp.mirror = mirror;
+                let t = doc.tiles.get_mut(&k).unwrap();
+                t.tile.splines.push(sp);
+                t.touch_content();
+            }
+        }
+        let (next, prev) = if ids.is_empty() { (to.1, from.1) } else { (ids[0], *ids.last().unwrap()) };
+        if from.1 == to.1 {
+            set_path_link(doc, from.0, from.1, Some(next), Some(prev));
+        } else {
+            set_path_link(doc, from.0, from.1, Some(next), None);
+            set_path_link(doc, to.0, to.1, None, Some(prev));
+        }
+        self.history.commit();
+        self.path_point = None;
+        self.select_path_pieces(from.0, from.1);
+        self.toast(tr("Path connected", "Путь соединён"));
     }
 
     /// The button let go after dragging a grip: the new shape goes in.
@@ -7677,6 +7858,19 @@ impl Editor {
                 let (c, r) = self.grip(assets, sp, h, p, (p - eye).length());
                 ball(&mut x.overlay_depth, c, r, if picked { ORANGE } else if on { GREEN } else { WHITE });
             }
+            if let Some((sp, h)) = self.path_connect {
+                if let Some(s) = doc.spline(sp.0, sp.1) {
+                    let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(sp.0));
+                    let p = match h {
+                        Handle::Start => c.point_at(0.0),
+                        Handle::End => c.end_point(),
+                        Handle::Mid => c.point_at(s.length * 0.5),
+                    };
+                    if let Some(cur) = self.cursor {
+                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, w, ORANGE);
+                    }
+                }
+            }
         }
         for plan in &self.carry_preview {
             for mut s in reshape::preview(doc, plan) {
@@ -8132,6 +8326,83 @@ fn rejoin_track(doc: &mut Document, end: (TileKey, i64, bool), heel: (DVec3, f64
     }
 }
 
+/// Every piece of the path that holds `id`, from its free start along to its free end.
+fn path_chain(doc: &Document, id: i64) -> Vec<(TileKey, i64)> {
+    let mut head = id;
+    let mut seen = std::collections::HashSet::new();
+    for _ in 0..5000 {
+        if !seen.insert(head) {
+            break;
+        }
+        let Some((_, s)) = doc.find_spline(head) else { break };
+        if s.prev_id == 0 || s.prev_id == head {
+            break;
+        }
+        let Some((_, p)) = doc.find_spline(s.prev_id) else { break };
+        if p.next_id != head && p.prev_id != head {
+            break;
+        }
+        head = s.prev_id;
+    }
+    let mut out = Vec::new();
+    let mut id = head;
+    let mut seen = std::collections::HashSet::new();
+    for _ in 0..5000 {
+        if !seen.insert(id) {
+            break;
+        }
+        let Some((k, s)) = doc.find_spline(id) else { break };
+        let next = s.next_id;
+        out.push((k, id));
+        if next == 0 || next == id {
+            break;
+        }
+        id = next;
+    }
+    out
+}
+
+fn chain_has_rows(doc: &Document, chain: &[(TileKey, i64)]) -> bool {
+    chain.iter().any(|(k, id)| {
+        let Some(t) = doc.tiles.get(k) else { return false };
+        let Some(idx) = t.tile.splines.iter().position(|s| s.id == *id && !s.deleted) else { return false };
+        t.tile.spline_attachments.iter().any(|a| a.spline_index == idx as i32)
+    })
+}
+
+/// Each piece turned round, so the path runs the other way and its links stay a chain.
+fn reverse_path(doc: &mut Document, chain: &[(TileKey, i64)]) {
+    let snaps: Vec<(TileKey, MapSpline)> = chain
+        .iter()
+        .filter_map(|(k, id)| {
+            let s = doc.spline(*k, *id)?;
+            Some((*k, reshape::reversed(s, tile_origin(*k), s.tex_offset)))
+        })
+        .collect();
+    for (k, s) in snaps {
+        if let Some(t) = doc.tiles.get_mut(&k) {
+            if let Some(x) = t.tile.splines.iter_mut().find(|x| x.id == s.id && !x.deleted) {
+                *x = s;
+            }
+            t.touch_content();
+        }
+    }
+}
+
+fn set_path_link(doc: &mut Document, k: TileKey, id: i64, next: Option<i64>, prev: Option<i64>) {
+    if let Some(t) = doc.tiles.get_mut(&k) {
+        if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == id && !s.deleted) {
+            if let Some(n) = next {
+                s.next_id = n;
+            }
+            if let Some(p) = prev {
+                s.prev_id = p;
+            }
+        }
+        t.touch_content();
+    }
+}
+
 fn piece_spline(rel: &str, p: &Seg, profile: &[(f64, f64)], i: usize, org: DVec2) -> MapSpline {
     let (za, ga) = profile[i];
     let (zb, gb) = profile[i + 1];
@@ -8416,6 +8687,47 @@ fn rolls(p: DVec2) -> f64 {
 mod tests {
     use super::*;
     use crate::selection::tests::{add_object, add_spline, flat_map};
+
+    #[test]
+    fn two_path_ends_join_and_a_gap_gets_a_piece() {
+        let spline = |ed: &Editor, id: i64| ed.doc.as_ref().unwrap().find_spline(id).unwrap().1.clone();
+        let open = |a: (f64, f64, f64, f64), b: (f64, f64, f64, f64)| {
+            let mut doc = flat_map(1);
+            add_spline(&mut doc, (0, 0), 1, a.0, a.1, a.2, a.3, 0, 0);
+            add_spline(&mut doc, (0, 0), 2, b.0, b.1, b.2, b.3, 0, 0);
+            let mut ed = Editor::default();
+            ed.open(doc);
+            ed
+        };
+        // ends a hand's width apart: joined, and no extra piece
+        let mut ed = open((20.0, 20.0, 0.0, 20.0), (20.0, 40.4, 0.0, 20.0));
+        ed.connect_path_points((((0, 0), 1), Handle::End), (((0, 0), 2), Handle::Start));
+        assert_eq!(spline(&ed, 1).next_id, 2, "the end runs on into the other path");
+        assert_eq!(spline(&ed, 2).prev_id, 1);
+        assert_eq!(ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile.splines.iter().filter(|s| !s.deleted).count(), 2);
+        ed.undo();
+        assert_eq!(spline(&ed, 1).next_id, 0, "undo takes the join away");
+        // twenty metres of gap: a piece is laid between them
+        let mut ed = open((20.0, 20.0, 0.0, 20.0), (20.0, 60.0, 0.0, 20.0));
+        ed.connect_path_points((((0, 0), 1), Handle::End), (((0, 0), 2), Handle::Start));
+        let n = ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile.splines.iter().filter(|s| !s.deleted).count();
+        assert!(n >= 3, "the gap is a piece");
+        let mut id = spline(&ed, 1).next_id;
+        let mut steps = 0;
+        while id != 2 && id != 0 && steps < 6 {
+            id = spline(&ed, id).next_id;
+            steps += 1;
+        }
+        assert_eq!(id, 2, "the new piece runs on into the other path");
+        assert!(steps >= 1);
+        // the other path arrives at this one's end, facing the other way: it is turned round
+        let mut ed = open((20.0, 20.0, 0.0, 20.0), (20.0, 60.0, 180.0, 20.0));
+        ed.connect_path_points((((0, 0), 1), Handle::End), (((0, 0), 2), Handle::End));
+        assert_eq!(spline(&ed, 1).next_id, 2);
+        assert_eq!(spline(&ed, 2).prev_id, 1);
+        let b = spline(&ed, 2);
+        assert!((b.pos[1] - 40.0).abs() < 0.5, "it now starts where the first ends, at y {:.1}", b.pos[1]);
+    }
 
     /// A click gives what the camera is looking at.
     ///

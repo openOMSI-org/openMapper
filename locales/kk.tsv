@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Басқа бағдарламалардың пернелері
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender пернелері: G таңдауды жылжытады, Shift+S өлшемін өзгертеді, X жояды, Tab торды өңдейді, Shift+A нысан қосады, Shift+D көшіреді, F3 іздейді. W A S D және Q E камераны әдеттегідей жылжытады
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G таңдауды жылжытады, Shift+S өлшемін өзгертеді, X жояды, Tab торды өңдейді, Shift+A нысан қосады, Shift+D көшіреді, F3 іздейді, Num 7 төмен қарайды. W A S D және Q E камераны әдеттегідей жылжытады; тінтуір openMapper сияқты
+Connect to	Қосу
+Click the other point (Esc cancels)	Басқа нүктені басыңыз (Esc болғызбайды)
+Pick an end point of a path first	Алдымен жолдың шеткі нүктесін таңдаңыз
+That point is already joined	Бұл нүкте әлдеқашан қосылған
+Click an end point of a path	Жолдың шеткі нүктесін басыңыз
+Path connected	Жол қосылды
+Connect the path	Жолды қосу
+There is no tile there	Онда тақта жоқ
+Click the other point	Басқа нүктені басыңыз
 The graphics API changes the next time openMapper starts	Графикалық API openMapper келесі рет іске қосылғанда өзгереді
 Settings…	Параметрлер…
 Graphics API	Графикалық API

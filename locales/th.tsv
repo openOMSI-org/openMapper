@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	ปุ่มลัดจากโปรแกรมอื่น
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	ปุ่มของ Blender: G เลื่อนสิ่งที่เลือก, Shift+S ย่อขยาย, X ลบ, Tab แก้ไขเมช, Shift+A เพิ่มวัตถุ, Shift+D ทำสำเนา, F3 ค้นหา W A S D และ Q E เลื่อนกล้องเหมือนเดิม
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G เลื่อนสิ่งที่เลือก, Shift+S ย่อขยาย, X ลบ, Tab แก้ไขเมช, Shift+A เพิ่มวัตถุ, Shift+D ทำสำเนา, F3 ค้นหา, Num 7 มองลง W A S D และ Q E เลื่อนกล้องเหมือนเดิม เมาส์เหมือน openMapper
+Connect to	เชื่อมไป
+Click the other point (Esc cancels)	คลิกจุดอีกจุด (Esc ยกเลิก)
+Pick an end point of a path first	เลือกจุดปลายของเส้นทางก่อน
+That point is already joined	จุดนั้นเชื่อมอยู่แล้ว
+Click an end point of a path	คลิกจุดปลายของเส้นทาง
+Path connected	เชื่อมเส้นทางแล้ว
+Connect the path	เชื่อมเส้นทาง
+There is no tile there	ตรงนั้นไม่มีแผ่น
+Click the other point	คลิกจุดอีกจุด
 The graphics API changes the next time openMapper starts	API กราฟิกจะเปลี่ยนเมื่อเปิด openMapper ครั้งถัดไป
 Settings…	การตั้งค่า…
 Graphics API	API กราฟิก

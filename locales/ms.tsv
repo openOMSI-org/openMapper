@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Pintasan kekunci daripada program lain
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Kekunci Blender: G menggerakkan pilihan, Shift+S mengubah saiznya, X memadam, Tab menyunting mesh, Shift+A menambah objek, Shift+D menduplikasi, F3 mencari. W A S D dan Q E menggerakkan kamera seperti biasa
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G menggerakkan pilihan, Shift+S mengubah saiznya, X memadam, Tab menyunting mesh, Shift+A menambah objek, Shift+D menduplikasi, F3 mencari, Num 7 memandang ke bawah. W A S D dan Q E menggerakkan kamera seperti biasa; tetikus seperti openMapper
+Connect to	Sambung ke
+Click the other point (Esc cancels)	Klik titik yang satu lagi (Esc membatalkan)
+Pick an end point of a path first	Pilih dahulu titik hujung satu laluan
+That point is already joined	Titik itu sudah disambung
+Click an end point of a path	Klik titik hujung satu laluan
+Path connected	Laluan disambung
+Connect the path	Sambung laluan
+There is no tile there	Tiada jubin di situ
+Click the other point	Klik titik yang satu lagi
 The graphics API changes the next time openMapper starts	API grafik berubah apabila openMapper dimulakan seterusnya
 Settings…	Tetapan…
 Graphics API	API grafik

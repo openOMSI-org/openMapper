@@ -2534,6 +2534,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Tastenkürzel aus anderen Programmen
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Tasten wie in Blender: G verschiebt die Auswahl, Shift+S skaliert sie, X löscht, Tab bearbeitet das Mesh, Shift+A fügt ein Objekt hinzu, Shift+D dupliziert, F3 sucht. W A S D und Q E bewegen die Kamera wie immer
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G verschiebt die Auswahl, Shift+S skaliert sie, X löscht, Tab bearbeitet das Mesh, Shift+A fügt ein Objekt hinzu, Shift+D dupliziert, F3 sucht, Num 7 blickt nach unten. W A S D und Q E bewegen die Kamera wie immer; die Maus wie in openMapper
+Connect to	Verbinden mit
+Click the other point (Esc cancels)	Klicken Sie den anderen Punkt (Esc bricht ab)
+Pick an end point of a path first	Zuerst einen Endpunkt eines Pfades wählen
+That point is already joined	Dieser Punkt ist schon verbunden
+Click an end point of a path	Einen Endpunkt eines Pfades anklicken
+Path connected	Pfad verbunden
+Connect the path	Pfad verbinden
+There is no tile there	Dort liegt keine Kachel
+Click the other point	Den anderen Punkt anklicken
 The graphics API changes the next time openMapper starts	Die Grafik-API ändert sich beim nächsten Start von openMapper
 Settings…	Einstellungen…
 Graphics API	Grafik-API

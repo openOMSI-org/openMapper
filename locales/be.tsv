@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Хуткія клавішы з іншых праграм
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Клавішы Blender: G перамяшчае вылучанае, Shift+S маштабуе, X выдаляе, Tab правіць меш, Shift+A дадае аб'ект, Shift+D дубліруе, F3 шукае. W A S D і Q E рухаюць камеру, як заўсёды
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G перамяшчае вылучанае, Shift+S маштабуе, X выдаляе, Tab правіць меш, Shift+A дадае аб'ект, Shift+D дубліруе, F3 шукае, Num 7 глядзіць уніз. W A S D і Q E рухаюць камеру, як заўсёды; мыш — як у openMapper
+Connect to	Злучыць з
+Click the other point (Esc cancels)	Пстрыкніце іншую кропку (Esc адмяняе)
+Pick an end point of a path first	Спачатку абярыце канцавую кропку шляху
+That point is already joined	Гэтая кропка ўжо злучана
+Click an end point of a path	Пстрыкніце канцавую кропку шляху
+Path connected	Шлях злучаны
+Connect the path	Злучыць шлях
+There is no tile there	Там няма клеткі
+Click the other point	Пстрыкніце іншую кропку
 The graphics API changes the next time openMapper starts	Графічны API зменіцца пры наступным запуску openMapper
 Settings…	Налады…
 Graphics API	Графічны API

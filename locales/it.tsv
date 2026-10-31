@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Scorciatoie da altri programmi
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Tasti di Blender: G sposta la selezione, Shift+S la scala, X elimina, Tab modifica la mesh, Shift+A aggiunge un oggetto, Shift+D duplica, F3 cerca. W A S D e Q E muovono la camera come sempre
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G sposta la selezione, Shift+S la scala, X elimina, Tab modifica la mesh, Shift+A aggiunge un oggetto, Shift+D duplica, F3 cerca, Num 7 guarda in basso. W A S D e Q E muovono la camera come sempre; il mouse come in openMapper
+Connect to	Collega a
+Click the other point (Esc cancels)	Fai clic sull'altro punto (Esc annulla)
+Pick an end point of a path first	Prima scegli un estremo di un percorso
+That point is already joined	Quel punto è già collegato
+Click an end point of a path	Fai clic su un estremo di un percorso
+Path connected	Percorso collegato
+Connect the path	Collega il percorso
+There is no tile there	Lì non c'è una tessera
+Click the other point	Fai clic sull'altro punto
 The graphics API changes the next time openMapper starts	L'API grafica cambia al prossimo avvio di openMapper
 Settings…	Impostazioni…
 Graphics API	API grafica

@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Diğer programların kısayolları
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Blender tuşları: G seçimi taşır, Shift+S ölçekler, X siler, Tab ağı düzenler, Shift+A nesne ekler, Shift+D çoğaltır, F3 arar. W A S D ve Q E kamerayı her zamanki gibi hareket ettirir
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G seçimi taşır, Shift+S ölçekler, X siler, Tab ağı düzenler, Shift+A nesne ekler, Shift+D çoğaltır, F3 arar, Num 7 aşağı bakar. W A S D ve Q E kamerayı her zamanki gibi hareket ettirir; fare openMapper'daki gibi
+Connect to	Şuna bağla
+Click the other point (Esc cancels)	Diğer noktaya tıklayın (Esc iptal eder)
+Pick an end point of a path first	Önce bir yolun uç noktasını seçin
+That point is already joined	Bu nokta zaten bağlı
+Click an end point of a path	Bir yolun uç noktasına tıklayın
+Path connected	Yol bağlandı
+Connect the path	Yolu bağla
+There is no tile there	Orada karo yok
+Click the other point	Diğer noktaya tıklayın
 The graphics API changes the next time openMapper starts	Grafik API'si openMapper bir sonraki başlatıldığında değişir
 Settings…	Ayarlar…
 Graphics API	Grafik API'si

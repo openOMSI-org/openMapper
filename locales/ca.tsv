@@ -2536,6 +2536,15 @@ X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel	
 Preset Key Shortcut (from other applications)	Dreceres de tecles d'altres programes
 Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do	Tecles del Blender: G mou la selecció, Shift+S l'escala, X esborra, Tab edita la malla, Shift+A afegeix un objecte, Shift+D duplica, F3 cerca. W A S D i Q E mouen la càmera com sempre
 G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches, Numpad 7 looks straight down. W A S D and Q E move the camera as they always do; the mouse as openMapper's own	G mou la selecció, Shift+S l'escala, X esborra, Tab edita la malla, Shift+A afegeix un objecte, Shift+D duplica, F3 cerca, Num 7 mira cap avall. W A S D i Q E mouen la càmera com sempre; el ratolí, com el de l'openMapper
+Connect to	Connecta a
+Click the other point (Esc cancels)	Feu clic a l'altre punt (Esc cancel·la)
+Pick an end point of a path first	Primer trieu un punt final d'un camí
+That point is already joined	Aquest punt ja està unit
+Click an end point of a path	Feu clic a un punt final d'un camí
+Path connected	Camí connectat
+Connect the path	Connectar el camí
+There is no tile there	Allà no hi ha cap peça
+Click the other point	Feu clic a l'altre punt
 The graphics API changes the next time openMapper starts	L'API gràfica canviarà la propera vegada que s'iniciï openMapper
 Settings…	Configuració…
 Graphics API	API gràfica
