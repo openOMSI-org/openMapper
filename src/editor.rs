@@ -906,6 +906,54 @@ fn ray_wall_piece(o: DVec3, d: DVec3, a: DVec3, b: DVec3, top: f64) -> Option<(f
     Some((lat, along))
 }
 
+/// Where a ray meets the ribbon drawn from `x0` to `x1` metres to the right of the piece
+/// `a`..`b` (the same side a profile's x is drawn on). `(how far it falls outside that
+/// ribbon, how far along the ray)`; inside, the first is 0. This is the road's, kerb's or
+/// marking's own surface, not its centre line: a slanted aim meets the surface where it
+/// crosses that height, which is not where it passes the line.
+fn ray_on_ribbon(o: DVec3, d: DVec3, a: DVec3, b: DVec3, x0: f64, x1: f64) -> Option<(f64, f64)> {
+    let u = b - a;
+    let flat = u.truncate();
+    let fu = flat.length_squared();
+    if fu < 1e-12 {
+        return None;
+    }
+    let right = DVec2::new(flat.y, -flat.x) / fu.sqrt();
+    let orel = o - a;
+    let flat_o = orel.truncate();
+    let flat_d = d.truncate();
+    let uz = u.z / fu;
+    let coeff = d.z - uz * flat_d.dot(flat);
+    let t = if coeff.abs() < 1e-8 {
+        // (a level aim along a level road: where it comes nearest the piece)
+        let (lat, along) = ray_near_piece(o, d, a, b)?;
+        let hit = o + d * along;
+        let s = (hit - a).truncate().dot(flat) / fu;
+        if !(-0.02..=1.02).contains(&s) {
+            return None;
+        }
+        let _ = lat;
+        along
+    } else {
+        let rhs = uz * flat_o.dot(flat) - orel.z;
+        let t = rhs / coeff;
+        if t <= 0.0 {
+            return None;
+        }
+        t
+    };
+    let hit = o + d * t;
+    let s = (hit - a).truncate().dot(flat) / fu;
+    if !(-0.02..=1.02).contains(&s) {
+        return None;
+    }
+    let on = a + u * s.clamp(0.0, 1.0);
+    let lateral = (hit - on).truncate().dot(right);
+    let (lo, hi) = (x0.min(x1), x0.max(x1));
+    let outside = if lateral < lo { lo - lateral } else if lateral > hi { lateral - hi } else { 0.0 };
+    Some((outside, t))
+}
+
 fn ray_near_piece(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64)> {
     let u = b - a;
     let au = u.length_squared();
@@ -1440,7 +1488,7 @@ impl Editor {
         // `limit` is as far as an object is taken: what the ray meets after it has met the
         // ground is behind the hillside, not under the cursor.
         let limit = gdist + 2.0;
-        let mut sbest: Option<(f64, f64, Sel)> = None;
+        let mut sbest: Option<(f64, f64, f64, Sel)> = None;
         for (k, t) in doc.tiles.iter().filter(|_| !self.hide[2] || paths_only) {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
@@ -1453,17 +1501,12 @@ impl Editor {
                 if ai && !paths_only && !(self.show_lanes || self.show_technical) {
                     continue;
                 }
-                // (an AI path has no width of its own: a metre and a half either side)
-                //
-                // (something standing up from its line is a *face*, and a face has no
-                // thickness: a railing drawn on a line of no width is met by an aim that meets
-                // it, not by one that passes a quarter of a metre to the side of it. Something
-                // lying on its line - a road, a marking, a kerb - keeps a hand's width of
-                // tolerance, so that a line a hand's width wide can be clicked at all)
-                let top = model.as_ref().map(|m| m.top() as f64).unwrap_or(0.0).max(0.0);
-                let standing = top > 0.05;
-                let slack = if standing { 0.06 } else { 0.25 };
-                let hw = if ai { 1.5 } else { model.as_ref().map(|m| m.half_width as f64).unwrap_or(3.0).max(slack) };
+                // (the drawn surface, not the centre line: a kerb sits beside its line, a road
+                // fills the metres either side of it. A wall or a fence is the face at that
+                // offset. Mirrored, the profile flips across the line, as the mesh does.)
+                let (sx0, sx1, top, standing) = model.as_ref().map(|m| m.surface_span()).unwrap_or((-3.0, 3.0, 0.0, false));
+                let (x0, x1) = if s.mirror { (-sx1 as f64, -sx0 as f64) } else { (sx0 as f64, sx1 as f64) };
+                let hw = x0.abs().max(x1.abs()).max(0.25);
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
                 // (the box round the whole road first: a map of this size has tens of thousands
                 // of splines, and every mouse move looks at all of them)
@@ -1493,29 +1536,41 @@ impl Editor {
                 // (a thing standing up from its line is met as the face it is drawn as, over
                 // the height it is drawn to; a road, a marking, a kerb lies on the line and is
                 // met where the aim crosses its height)
+                let width = (x1 - x0).abs();
                 let mut nearest: Option<(f64, f64, Sel)> = None;
                 let mut prev = c.point_at(0.0);
                 for i in 1..=n {
                     let next = c.point_at(s.length * i as f64 / n as f64);
-                    let met = if standing { ray_wall_piece(o, d, prev, next, top) } else { ray_near_piece(o, d, prev, next) };
+                    let met = if standing {
+                        let mid = (x0 + x1) * 0.5;
+                        let flat = (next - prev).truncate();
+                        let len = flat.length();
+                        if len < 1e-9 {
+                            None
+                        } else {
+                            let right = DVec3::new(flat.y / len, -flat.x / len, 0.0) * mid;
+                            ray_wall_piece(o, d, prev + right, next + right, top as f64).filter(|(lat, _)| *lat <= width * 0.5 + 0.06)
+                        }
+                    } else {
+                        let lift = DVec3::Z * top as f64;
+                        ray_on_ribbon(o, d, prev + lift, next + lift, x0, x1).filter(|(out, _)| *out <= 0.05)
+                    };
                     if let Some((lat, cross)) = met {
-                        if lat <= hw && cross > 0.0 && cross <= limit && nearest.map(|b| lat < b.0 || (lat == b.0 && cross < b.1)).unwrap_or(true) {
+                        if cross > 0.0 && cross <= limit && nearest.map(|b| cross < b.1 - 1e-4 || ((cross - b.1).abs() <= 1e-4 && lat < b.0)).unwrap_or(true) {
                             nearest = Some((lat, cross, Sel::Spline(*k, s.id)));
                         }
                     }
                     prev = next;
                 }
                 if let Some((lat, t, sel)) = nearest {
-                    // (the nearest of two roads at the same place, not the first in the map: a
-                    // painted line, a kerb and a pavement run side by side at one height, and a
-                    // vertical aim meets all of them at the same distance - so the one the aim
-                    // is really over is the one it passes closest to)
+                    // (the surface the aim meets first. Two at the same place - a painted line
+                    // on a road, a kerb beside it - the narrower one is the one under the cursor)
                     let better = match sbest {
-                        Some((bt, blat, _)) => t < bt - 1e-3 || ((t - bt).abs() <= 1e-3 && lat < blat),
+                        Some((bt, blat, bw, _)) => t < bt - 1e-3 || ((t - bt).abs() <= 1e-3 && (lat < blat - 1e-3 || ((lat - blat).abs() <= 1e-3 && width < bw))),
                         None => true,
                     };
                     if better {
-                        sbest = Some((t, lat, sel));
+                        sbest = Some((t, lat, width, sel));
                     }
                 }
             }
@@ -1526,13 +1581,13 @@ impl Editor {
         // foot, so the aim meets the road that much further along than the object's own face -
         // an object clicked over the road it stands on keeps the click)
         match (best, sbest) {
-            (Some((a, sel)), Some((b, _, ssel))) => {
+            (Some((a, sel)), Some((b, _, _, ssel))) => {
                 let foot = (o + d * a).truncate();
                 let under = (o + d * b).truncate();
                 Some(if a <= b + 0.4 || (foot - under).length() <= ON_THE_ROAD { sel } else { ssel })
             }
             (Some((_, sel)), None) => Some(sel),
-            (None, s) => s.map(|b| b.2),
+            (None, s) => s.map(|b| b.3),
         }
     }
 
@@ -8687,6 +8742,26 @@ fn rolls(p: DVec2) -> f64 {
 mod tests {
     use super::*;
     use crate::selection::tests::{add_object, add_spline, flat_map};
+
+    #[test]
+    fn a_click_on_the_drawn_surface_meets_it_and_the_centre_line_does_not() {
+        // a piece running north. +x of a profile is east, the same side the mesh is drawn on.
+        let a = DVec3::ZERO;
+        let b = DVec3::new(0.0, 10.0, 0.0);
+        let down = DVec3::new(0.0, 0.0, -1.0);
+        // a 7 m road: the aim two metres off the line is on the surface
+        let on = ray_on_ribbon(DVec3::new(2.0, 5.0, 20.0), down, a, b, -3.5, 3.5).expect("on the road");
+        assert!(on.0 <= 0.05, "inside the ribbon");
+        // and so is a slanted aim that crosses the surface there, not the line
+        let eye = DVec3::new(8.0, 5.0, 8.0);
+        let dir = (DVec3::new(2.0, 5.0, 0.0) - eye).normalize();
+        let slant = ray_on_ribbon(eye, dir, a, b, -3.5, 3.5).expect("the slant meets the surface");
+        assert!(slant.0 <= 0.05);
+        // a kerb drawn from 1.8 to 2.1 m east: the line itself is not the kerb
+        assert!(ray_on_ribbon(DVec3::new(0.0, 5.0, 20.0), down, a, b, 1.8, 2.1).unwrap().0 > 0.5, "the centre line misses the kerb");
+        let kerb = ray_on_ribbon(DVec3::new(2.0, 5.0, 20.0), down, a, b, 1.8, 2.1).expect("on the kerb");
+        assert!(kerb.0 <= 0.05, "the kerb's own surface");
+    }
 
     #[test]
     fn two_path_ends_join_and_a_gap_gets_a_piece() {

@@ -138,6 +138,34 @@ impl SplineModel {
         self.def.profiles.iter().flat_map(|p| p.points.iter()).map(|q| q.z).fold(0.0, f32::max).max(0.0)
     }
 
+    /// Where the spline is drawn, in metres to the right of its line (`x0`..`x1`) and how far
+    /// it stands up. A road, a kerb or a marking is the ribbon between its profile points; a
+    /// wall or a fence (`standing`) is the face there. A line thinner than a hand is widened
+    /// so it can be clicked at all. Nothing drawn: a metre and a half either side, as an AI path.
+    pub fn surface_span(&self) -> (f32, f32, f32, bool) {
+        let mut x0 = f32::INFINITY;
+        let mut x1 = f32::NEG_INFINITY;
+        let mut any = false;
+        for q in self.def.profiles.iter().flat_map(|p| p.points.iter()) {
+            any = true;
+            x0 = x0.min(q.x);
+            x1 = x1.max(q.x);
+        }
+        let top = self.top();
+        if !any {
+            return (-1.5, 1.5, 0.0, false);
+        }
+        let standing = top > 0.5;
+        let slack = if standing { 0.06 } else { 0.2 };
+        if x1 - x0 < slack {
+            let mid = (x0 + x1) * 0.5;
+            let half = slack * 0.5;
+            x0 = mid - half;
+            x1 = mid + half;
+        }
+        (x0, x1, top, standing)
+    }
+
     pub fn joinable(&self) -> bool {
         let drawn = !self.def.only_editor && self.def.profiles.iter().any(|p| p.points.len() >= 2);
         let across = self.def.profiles.iter().any(|p| p.points.iter().any(|q| q.x < -0.5) && p.points.iter().any(|q| q.x > 0.5))
@@ -930,6 +958,11 @@ mod tests {
         let road = load("road.sli", "[profile]\n0\n[profilepnt]\n-3.5\n0.0\n0\n0.3\n[profilepnt]\n3.5\n0.0\n1\n0.3\n");
         assert_eq!(road.top(), 0.0, "a road lies on its line");
         assert_eq!(road.half_width, 3.5, "and is as wide as it is drawn");
+        assert_eq!(road.surface_span(), (-3.5, 3.5, 0.0, false), "a click anywhere on the drawn road");
+        let kerb_face = load("kerb_face.sli", "[profile]\n0\n[profilepnt]\n1.8\n0.0\n0\n0.3\n[profilepnt]\n2.1\n0.15\n1\n0.3\n");
+        let (a, b, _, up) = kerb_face.surface_span();
+        assert!(!up, "a kerb lies on the ground");
+        assert!(a > 1.0 && b < 2.5 && a < 2.0 && b > 2.0, "its surface is beside the line, not on it: {a}..{b}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
