@@ -1729,7 +1729,7 @@ impl Editor {
                 if let Some(a) = &lane {
                     p = a.pos.truncate();
                 }
-                let joined = self.helper_anchors(assets);
+                let joined = self.helper_anchors(assets, c.truncate(), f64::MAX);
                 let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
                 let Some(doc) = self.doc.as_ref() else { return };
                 let ground = |q: DVec2| doc.ground(q);
@@ -2161,6 +2161,11 @@ impl Editor {
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+                // (an end more than a metre from a helper is not what `taken` is for)
+                if !roads::can_reach(start, s.length, p, within + 1.0) {
+                    continue;
+                }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
                 taken.push(c.point_at(0.0));
                 taken.push(c.end_point());
@@ -2169,7 +2174,7 @@ impl Editor {
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted && (s.prev_id == 0 || s.next_id == 0)) {
-                if (DVec2::new(org.x + s.pos[0], org.y + s.pos[1]) - p).length() > s.length + within {
+                if !roads::can_reach(DVec2::new(org.x + s.pos[0], org.y + s.pos[1]), s.length, p, within) {
                     continue;
                 }
                 if !assets.spline(&s.file).map(|m| m.joinable()).unwrap_or(false) {
@@ -2185,6 +2190,9 @@ impl Editor {
             }
             // the helper points of junction pieces already on the map (not those a road
             // already ends at): a piece can be set against another piece too
+            if !roads::tile_near(org, tile_size(), p, within + roads::HELPER_REACH) {
+                continue;
+            }
             for o in &t.tile.objects {
                 let Some(model) = assets.object(&o.file) else { continue };
                 if model.helpers.is_empty() {
@@ -2716,6 +2724,9 @@ impl Editor {
         // plate itself, as a new arm)
         let mut plate_edges: Vec<DVec2> = Vec::new();
         for (k, t) in &doc.tiles {
+            if !roads::tile_near(tile_origin(*k), tile_size(), p, within + roads::HELPER_REACH) {
+                continue;
+            }
             for o in t.tile.objects.iter().filter(|o| is_own_junction(&o.file)) {
                 let Some(model) = assets.object(&o.file) else { continue };
                 let world = doc.object_world(*k, o, model.abs_height);
@@ -2727,6 +2738,10 @@ impl Editor {
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+                if !roads::can_reach(start, s.length, p, within + 5.0) {
+                    continue;
+                }
                 if assets.spline(&s.file).map(|m| !m.joinable() || m.is_track() != track).unwrap_or(true) {
                     continue;
                 }
@@ -2739,6 +2754,9 @@ impl Editor {
                     let e = c.end_point();
                     consider((e.truncate() - p).length(), Anchor { pos: e, heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), mid: None }, &s.file);
                 }
+            }
+            if !roads::tile_near(org, tile_size(), p, within + roads::HELPER_REACH) {
+                continue;
             }
             for o in &t.tile.objects {
                 let Some(model) = assets.object(&o.file) else { continue };
@@ -2835,7 +2853,7 @@ impl Editor {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-                if (start - p).length() > s.length + 2.0 || assets.spline(&s.file).map(|m| !m.joinable()).unwrap_or(true) {
+                if !roads::can_reach(start, s.length, p, 2.0) || assets.spline(&s.file).map(|m| !m.joinable()).unwrap_or(true) {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
@@ -4397,10 +4415,13 @@ impl Editor {
 
     /// The brush, ghosts and lines this frame shows.
     /// The points junction objects offer roads to join them (their `[splinehelper]`s).
-    fn helper_anchors(&self, assets: &mut Assets) -> Vec<DVec3> {
+    fn helper_anchors(&self, assets: &mut Assets, centre: DVec2, radius: f64) -> Vec<DVec3> {
         let Some(doc) = self.doc.as_ref() else { return Vec::new() };
         let mut out = Vec::new();
         for (k, t) in &doc.tiles {
+            if !roads::tile_near(tile_origin(*k), tile_size(), centre, radius + roads::HELPER_REACH) {
+                continue;
+            }
             for o in &t.tile.objects {
                 let Some(model) = assets.object(&o.file) else { continue };
                 if model.helpers.is_empty() {
@@ -4636,19 +4657,32 @@ impl Editor {
                 if let Some((s, _)) = &self.road_start {
                     disc(&mut x.overlay, cam, s.pos, dw * 3.0, GREEN);
                 }
-                // every free end, so the user sees where roads connect (not those that
-                // already join a junction object)
-                let joined = if self.drawing_paths() { Vec::new() } else { self.helper_anchors(assets) };
+                // free ends near the camera, so the user sees where roads connect (not those
+                // that already join a junction object). Not the whole map: a map of tens of
+                // thousands of splines was a curve and a dot for every one of them, every frame.
+                let focus = self.cursor.filter(|_| self.cursor_in_view).map(|c| c.truncate()).unwrap_or_else(|| cam.target.truncate());
+                let reach = roads::end_marks_reach(cam.distance);
+                let joined = if self.drawing_paths() { Vec::new() } else { self.helper_anchors(assets, focus, reach) };
                 let free = |p: DVec3| !joined.iter().any(|j| (j.truncate() - p.truncate()).length() < 0.6);
                 for (k, t) in doc.tiles.iter().filter(|_| !self.drawing_paths()) {
                     let org = tile_origin(*k);
-                    for s in t.tile.splines.iter().filter(|s| !s.deleted) {
-                        let c = omsi_geometry::SplineCurve::from_map(s, org);
-                        if s.prev_id == 0 && free(c.point_at(0.0)) {
-                            disc(&mut x.overlay, cam, c.point_at(0.0), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                    for s in t.tile.splines.iter().filter(|s| !s.deleted && (s.prev_id == 0 || s.next_id == 0)) {
+                        let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+                        if !roads::can_reach(start, s.length, focus, reach) {
+                            continue;
                         }
-                        if s.next_id == 0 && free(c.end_point()) {
-                            disc(&mut x.overlay, cam, c.end_point(), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                        let c = omsi_geometry::SplineCurve::from_map(s, org);
+                        if s.prev_id == 0 {
+                            let a = c.point_at(0.0);
+                            if (a.truncate() - focus).length() <= reach && free(a) {
+                                disc(&mut x.overlay, cam, a, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                            }
+                        }
+                        if s.next_id == 0 {
+                            let b = c.end_point();
+                            if (b.truncate() - focus).length() <= reach && free(b) {
+                                disc(&mut x.overlay, cam, b, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                            }
                         }
                     }
                 }
@@ -6978,7 +7012,7 @@ impl Editor {
     /// A road's length and radius by numbers: its start stays, the road joined at its end
     /// follows, tangent, its far end kept.
     fn set_spline_shape(&mut self, assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
-        let joined = self.helper_anchors(assets);
+        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
         let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
         let Some(doc) = self.doc.as_ref() else { return };
         let Some(s) = doc.spline(k, id).cloned() else { return };
