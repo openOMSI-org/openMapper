@@ -153,7 +153,7 @@ pub fn paint_cut(ctx: &egui::Context, ed: &Editor, cam: &crate::camera::Camera, 
 }
 
 /// How many of the status bar's snapping units there are (see `snap_unit`).
-const SNAP_UNITS: usize = 9;
+const SNAP_UNITS: usize = 10;
 
 /// The width a snapping unit takes in the status bar (its toggles are as wide as their text).
 fn snap_unit_width(ui: &egui::Ui, i: usize) -> f32 {
@@ -171,6 +171,7 @@ fn snap_unit_width(ui: &egui::Ui, i: usize) -> f32 {
         5 => toggle(tr("Auto-Switch", "Авто-стрелки")),
         6 => toggle(tr("Auto-Junction", "Авто-перекрёсток")),
         7 => toggle(tr("Auto-Adapt", "Авто-переход")),
+        8 => toggle(tr("Surface", "Поверхность")),
         _ => toggle(tr("Auto-Align", "Авто-выравнивание")),
     }
 }
@@ -218,6 +219,10 @@ fn snap_unit(ui: &mut egui::Ui, ed: &mut Editor, i: usize) {
         }
         7 => {
             check(ui, &mut ed.auto_adapt, RichText::new(tr("Auto-Adapt", "Авто-переход")).small()).on_hover_text(tr("Where roads of different width meet, a plate tapers one into the other", "Где встречаются дороги разной ширины, между ними плавный переход"));
+        }
+        8 => {
+            check(ui, &mut ed.snap_surface, RichText::new(tr("Surface", "Поверхность")).small())
+                .on_hover_text(tr("A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).", "Дорога или конец сплайна, наведённые на дорогу, ложатся на её край (земля рядом тоже считается, чтобы за край было легко взяться) и на её высоту; над объектом - на его грань (бордюр, тротуар, настил моста, платформа; место отмечено кольцом)."));
         }
         _ => {
             check(ui, &mut ed.align_to_road, RichText::new(tr("Auto-Align", "Авто-выравнивание")).small()).on_hover_text(tr("Line objects up with the nearest road (Shift: put it freely)", "Выравнивать объекты по ближайшей дороге (Shift: ставить свободно)"));
@@ -448,25 +453,32 @@ pub struct EndsEdit {
     even: Option<f64>,
     /// (at the end rather than the start, new cant)
     cant: Option<(bool, f64)>,
+    /// (at the end rather than the start, new heading, degrees clockwise from north)
+    heading: Option<(bool, f64)>,
 }
 
 /// A road's heights and gradients at its two ends.
-pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id: i64) -> EndsEdit {
+pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id: i64, shown: Option<(bool, f64)>) -> EndsEdit {
     let mut out = EndsEdit::default();
     let Some(s) = doc.spline(k, id) else { return out };
     let c = omsi_geometry::SplineCurve::from_map(s, crate::doc::tile_origin(k));
     let (mut z0, mut z1) = (c.point_at(0.0).z, c.end_point().z);
     let (mut g0, mut g1) = (c.slope_at(0.0) * 100.0, c.slope_at(s.length) * 100.0);
     let (mut c0, mut c1) = (s.cant_start, s.cant_end);
+    let (mut h0, mut h1) = (crate::roads::norm_deg(c.heading_at(0.0)), crate::roads::norm_deg(c.heading_at(s.length)));
+    if let Some((at_end, h)) = shown {
+        if at_end { h1 = h } else { h0 = h }
+    }
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Ends (joined roads follow)", "Концы (соседние дороги следуют)")).strong());
-    egui::Grid::new("spline ends").num_columns(4).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
+    egui::Grid::new("spline ends").num_columns(5).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
         ui.label("");
         ui.label(RichText::new(tr("height", "высота")).small().color(TEXT_DIM));
         ui.label(RichText::new(tr("gradient", "уклон")).small().color(TEXT_DIM));
         ui.label(RichText::new(tr("cant", "вираж")).small().color(TEXT_DIM)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
+        ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(TEXT_DIM)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
         ui.end_row();
-        for (at_end, z, g, cant, name) in [(false, &mut z0, &mut g0, &mut c0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, tr("End", "Конец"))] {
+        for (at_end, z, g, cant, h, name) in [(false, &mut z0, &mut g0, &mut c0, &mut h0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, &mut h1, tr("End", "Конец"))] {
             prop_row(ui, name, |ui| {
                 if ui.add(egui::DragValue::new(z).speed(0.02).max_decimals(2).suffix(" m")).changed() {
                     out.change = Some((at_end, Some(*z), None));
@@ -477,6 +489,9 @@ pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id
                 }
                 if ui.add(egui::DragValue::new(cant).speed(0.05).range(-100.0..=100.0).max_decimals(2).suffix(" %")).changed() {
                     out.cant = Some((at_end, *cant));
+                }
+                if ui.add(egui::DragValue::new(h).speed(0.4).max_decimals(1).suffix("°")).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним.")).changed() {
+                    out.heading = Some((at_end, *h));
                 }
             });
         }
@@ -495,6 +510,11 @@ pub fn apply_ends(ed: &mut Editor, ctx: &egui::Context, k: TileKey, id: i64, e: 
     }
     if let Some((at_end, c)) = e.cant {
         ed.set_spline_cant(k, id, at_end, c);
+        return;
+    }
+    if let Some((at_end, h)) = e.heading {
+        ed.heading_shown = Some((k, id, at_end, h));
+        ed.heading_request = Some((k, id, at_end, h));
         return;
     }
     match e.change {
@@ -918,6 +938,7 @@ pub fn road_options(ui: &mut egui::Ui, ed: &mut Editor) {
     r.on_hover_text(tr("A one-way ring of the chosen road type (pick a one-way road); roads inside are cut back to it and joined with junctions", "Одностороннее кольцо выбранного типа дороги (выберите одностороннюю); дороги внутри обрезаются по кольцу и соединяются перекрёстками"));
     let r = check(ui, &mut ed.keep_height, tr("Keep the height (bridge, embankment)", "Держать высоту (мост, насыпь)"));
     r.on_hover_text(tr("An even gradient from end to end, the ground left as it is; the rise to the end can be typed while drawing. Pillars: select the road and put them along it as objects.", "Ровный уклон от начала до конца, земля не меняется; подъём к концу можно ввести при рисовании. Опоры: выберите дорогу и расставьте их вдоль неё как объекты."));
+    check(ui, &mut ed.snap_surface, tr("Snap to road edges and surfaces", "Привязка к краям дорог и поверхностям")).on_hover_text(tr("What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height", "Что рисуется рядом с дорогой, начинается на её краю; над объектом - на его грани, на её высоте"));
 }
 
 /// The Roads tool's bus pocket tool: with the box ticked a click on a road lays a pocket

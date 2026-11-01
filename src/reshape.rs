@@ -157,6 +157,27 @@ pub fn drag_end_aligned(doc: &Document, k: TileKey, id: i64, at_end: bool, p: DV
     carry_end(doc, k, id, at_end, p, arrive, ground(p) - ground(old.truncate()), locked)
 }
 
+/// Drag a spline's end to `p` and put it at the height `zp`: the place and height a face of an
+/// object was met at under the cursor (a bridge's deck, a platform, a ramp), rather than the
+/// ground's height plus the height the end kept above it.
+pub fn drag_end_at(doc: &Document, k: TileKey, id: i64, at_end: bool, p: DVec2, zp: f64, locked: &dyn Fn(DVec2) -> bool) -> Result<Plan, &'static str> {
+    end_to(doc, k, id, at_end, p, None, zp, locked)
+}
+
+/// Turn a spline's end (`at_end`, else its start) so the road runs heading `heading` there
+/// (degrees, clockwise from north, the way the road itself runs). The end stays where it
+/// is; the road bends to the new direction. A spline linked at that end follows, tangent
+/// at the joint, its far end kept.
+pub fn turn_end(doc: &Document, k: TileKey, id: i64, at_end: bool, heading: f64, locked: &dyn Fn(DVec2) -> bool) -> Result<Plan, &'static str> {
+    let s = doc.spline(k, id).ok_or("gone")?;
+    let e = ends_of(s, k);
+    let (p, z, now, arrive) = if at_end { (e.b.truncate(), e.b.z, e.hb, roads::norm_deg(heading)) } else { (e.a.truncate(), e.a.z, e.ha, roads::norm_deg(heading + 180.0)) };
+    if angle_off(now, heading) < 0.05 {
+        return Ok(Plan::default());
+    }
+    end_to(doc, k, id, at_end, p, Some(arrive), z, locked)
+}
+
 /// Carry a road's end along with what it is joined to (a junction moved or turned): to
 /// `p`, arriving there heading `arrive` (the way along the road towards that end), its height
 /// changed by `dz`.
@@ -605,6 +626,23 @@ mod tests {
         assert!((a.point_at(0.0).truncate() - DVec2::new(95.0, 90.0)).length() < 1e-6);
         assert!((b.end_point().truncate() - DVec2::new(100.0, 140.0)).length() < 1e-6);
         assert!(angle_off(b.heading_at(b.length), 0.0) < 1e-6, "the end keeps its heading");
+    }
+
+    #[test]
+    fn turning_an_end_keeps_it_put_and_the_next_road_follows() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 100.0, 140.0, 0.0, 40.0, 1, 0);
+        let plan = turn_end(&doc, (0, 0), 1, true, 20.0, &|_| false).unwrap();
+        apply(&mut doc, &plan);
+        let (a, b, _) = span(&doc, 1);
+        assert!((a.point_at(0.0).truncate() - DVec2::new(100.0, 100.0)).length() < 1e-4, "the start stays");
+        assert!(a.heading_at(0.0).abs() < 1.0, "the start keeps its direction");
+        assert!((b.end_point().truncate() - DVec2::new(100.0, 140.0)).length() < 1e-3, "the end stays put");
+        assert!(angle_off(b.heading_at(b.length), 20.0) < 1.0, "the end turns to the heading asked for");
+        let n = curve(&doc, 2);
+        assert!(angle_off(n.heading_at(0.0), 20.0) < 1.0, "the road joined there leaves along the same direction");
+        assert!((n.end_point().truncate() - DVec2::new(100.0, 180.0)).length() < 1e-3, "that road's far end stays");
     }
 
     #[test]

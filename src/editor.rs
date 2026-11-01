@@ -343,6 +343,14 @@ pub struct Editor {
     /// A length and radius typed for a road, put in at the next tick (where the junctions
     /// its neighbour may end at are known).
     pub shape_request: Option<(TileKey, i64, f64, f64)>,
+    /// A heading typed for one end of a road, put in at the next tick.
+    pub heading_request: Option<(TileKey, i64, bool, f64)>,
+    /// The heading a drag is showing, before the road has been bent to it: `(tile, id, at the
+    /// end, degrees)`.
+    pub heading_shown: Option<(TileKey, i64, bool, f64)>,
+    /// The roads as they were when that drag began, so each move of the number is fitted again
+    /// from there (fitting twice would cut the road into ever smaller pieces).
+    heading_drag: Option<HeadingDrag>,
     /// GPS tracks shown to trace over (world metres; Map > GPS tracks to trace).
     pub trace_lines: Vec<Vec<DVec2>>,
     /// The camera asked to go over this point (a window's "go there").
@@ -426,6 +434,11 @@ pub struct Editor {
     pub snap_angle: bool,
     /// The angle snapping's step, and what R turns by (degrees).
     pub angle_step: f64,
+    /// A spline's end dragged (or a road drawn) onto an object's face takes that face's place
+    /// and height: over a bridge's deck, a platform, a ramp or a shed.
+    pub snap_surface: bool,
+    /// Where the cursor meets the surface of an object this frame (the nearest face it draws).
+    pub surface: Option<DVec3>,
     /// The open history step is the properties panel's.
     panel_step: bool,
     pub cursor: Option<DVec3>,
@@ -608,6 +621,9 @@ impl Default for Editor {
             xform_value: 0.0,
             carry_preview: Vec::new(),
             shape_request: None,
+            heading_request: None,
+            heading_shown: None,
+            heading_drag: None,
             trace_lines: Vec::new(),
             look_request: None,
             level_request: false,
@@ -651,6 +667,8 @@ impl Default for Editor {
             grid_step: 1.0,
             snap_angle: false,
             angle_step: 15.0,
+            snap_surface: false,
+            surface: None,
             panel_step: false,
             cursor: None,
             cursor_in_view: false,
@@ -740,6 +758,13 @@ const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 0.9];
 const GREEN: [f32; 4] = [0.35, 0.85, 0.45, 1.0];
 /// Links between objects (`[varparent]`).
 const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.9];
+/// The face of an object a spline's end would be laid on (surface snapping).
+const SURFACE: [f32; 4] = [0.98, 0.84, 0.25, 0.9];
+/// How far beside a road's own edge the cursor still takes hold of it (m): where a kerb, a
+/// pavement or another line is laid along the road.
+const EDGE_REACH: f64 = 0.6;
+/// A cursor this near (m) a road's edge is on it; further in, it is on the road's surface.
+const EDGE_BAND: f64 = 1.0;
 /// How near a road's own place a hit has to be to be that thing standing on the road: an
 /// object stands *on* the road, so its foot and the road's surface are the same place, though
 /// the aim meets the road's surface a few metres further along than the object's own face.
@@ -977,6 +1002,17 @@ fn ray_near_piece(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64)> 
     let lat = (rel - d * along).length();
     let cross = if d.z.abs() > 0.1 { rel.z / d.z } else { along };
     Some((lat, cross))
+}
+
+/// One drag of an end's heading: the roads as they were, and the last bend that fitted.
+struct HeadingDrag {
+    key: TileKey,
+    id: i64,
+    at_end: bool,
+    tiles: Vec<(TileKey, Vec<omsi_map::MapSpline>)>,
+    /// The piece that holds the turned end now.
+    end_id: i64,
+    last: reshape::Plan,
 }
 
 impl Editor {
@@ -1349,6 +1385,142 @@ impl Editor {
         None
     }
 
+    /// Where the cursor meets a drawn surface: an object's own face (its meshes, never its box
+    /// or a tree's cards), or a road's own drawn ribbon - **its edge** when the cursor is beside
+    /// one (the ground beside the road is taken in, so an edge is easy to hold), the road's
+    /// surface at the road's height when it is over the middle of it. That is what a spline's end
+    /// laid on it takes: a bridge's deck, a platform, a ramp, the edge of the road beside it.
+    /// Objects seen only in the editor and those hidden are passed by, and so is what stands
+    /// behind the ground (`ground`, where the ray meets it). Nothing drawn there: None.
+    pub fn surface_hit(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>) -> Option<DVec3> {
+        let doc = self.doc.as_ref()?;
+        // (relative to the ray's origin: f32 world positions far from the map's origin are
+        // half a metre coarse)
+        let ov = glam::Vec3::ZERO;
+        let dv = d.as_vec3();
+        let limit = ground.map(|g| (g - o).length()).unwrap_or(f64::MAX) + 2.0;
+        let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
+        let mut best: Option<(f64, DVec3)> = None;
+        for (k, t) in doc.tiles.iter() {
+            for ob in &t.tile.objects {
+                let Some(model) = assets.object(&ob.file) else { continue };
+                if model.parts.is_empty() || model.technical && !extras.show_technical || crate::render::hidden_layer(&model, &extras) {
+                    continue;
+                }
+                let world = doc.object_world(*k, ob, model.abs_height);
+                let m = object_matrix(world - o, ob.rot);
+                let c = m.transform_point3(model.centre());
+                let r = model.radius().max(1.0);
+                if !omsi_geometry::ray_near_sphere(ov, dv, c, r) {
+                    continue;
+                }
+                let hit = model.parts.iter().filter_map(|p| omsi_geometry::ray_mesh(ov, dv, &p.mesh, &m)).reduce(f32::min);
+                if let Some(h) = hit {
+                    let h = h as f64;
+                    if h <= limit && best.map(|b| h < b.0).unwrap_or(true) {
+                        best = Some((h, o + d * h));
+                    }
+                }
+            }
+        }
+        if let Some((t, p)) = self.road_edge_at(assets, o, d, limit) {
+            if best.map(|b| t < b.0).unwrap_or(true) {
+                best = Some((t, p));
+            }
+        }
+        best.map(|b| b.1)
+    }
+
+    /// The edge of a road's drawn ribbon nearest the cursor, at the road's own height there:
+    /// `(how far along the ray, where on the edge)`. Only a road that is drawn (an AI path has
+    /// no ribbon), and only its flat ribbon (a wall or a fence stands up from its line and has
+    /// no edge to lay anything along). `limit` is as far as it is looked for.
+    fn road_edge_at(&self, assets: &mut Assets, o: DVec3, d: DVec3, limit: f64) -> Option<(f64, DVec3)> {
+        let doc = self.doc.as_ref()?;
+        if self.hide[2] {
+            return None;
+        }
+        // (the road whose end is being dragged, and the pieces it is joined to, keep their own
+        // places: taking hold of an end must not throw it sideways onto its own edge)
+        let skip = self.dragged_splines();
+        let ov = glam::Vec3::ZERO;
+        let dv = d.as_vec3();
+        let mut best: Option<(f64, DVec3)> = None;
+        for (k, t) in doc.tiles.iter() {
+            let org = tile_origin(*k);
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                if skip.contains(&(*k, s.id)) {
+                    continue;
+                }
+                let Some(model) = assets.spline(&s.file) else { continue };
+                if model.is_ai_path() {
+                    continue;
+                }
+                let (sx0, sx1, top, standing) = model.surface_span();
+                if standing {
+                    continue;
+                }
+                let (x0, x1) = if s.mirror { (-(sx1 as f64), -(sx0 as f64)) } else { (sx0 as f64, sx1 as f64) };
+                let c = omsi_geometry::SplineCurve::from_map(s, org);
+                let centre = (c.point_at(s.length * 0.5) - o).as_vec3();
+                let reach = (s.length * 0.5 + x0.abs().max(x1.abs()) + EDGE_REACH + 1.0) as f32;
+                if !omsi_geometry::ray_near_sphere(ov, dv, centre, reach) {
+                    continue;
+                }
+                // (a metre's samples, as `pick` uses: the ribbon's own surface, met as finely
+                // as the road is wide)
+                let n = (s.length / 1.0).ceil().max(2.0) as usize;
+                let lift = DVec3::Z * top as f64;
+                let mut from = c.point_at(0.0);
+                for i in 1..=n {
+                    let to = c.point_at(s.length * i as f64 / n as f64);
+                    let u = to - from;
+                    let flat = u.truncate();
+                    let fu = flat.length_squared();
+                    if fu > 1e-12 {
+                        // (the ribbon widened by `EDGE_REACH` either side: the ground just beside
+                        // a road takes hold of its edge, which is where a kerb or a pavement is laid)
+                        if let Some((out, cross)) = ray_on_ribbon(o, d, from + lift, to + lift, x0 - EDGE_REACH, x1 + EDGE_REACH) {
+                            if out <= 0.0 && cross > 0.0 && cross <= limit {
+                                let hit = o + d * cross;
+                                let sfrac = ((hit - from).truncate().dot(flat) / fu).clamp(0.0, 1.0);
+                                let on = from + u * sfrac;
+                                let right = DVec2::new(flat.y, -flat.x) / fu.sqrt();
+                                let lat = (hit - on).truncate().dot(right);
+                                // (beside an edge, its own edge, which is where a kerb or a
+                                // pavement is laid; otherwise the road's surface under the aim,
+                                // as high as the road is there)
+                                let edge = if (lat - x0).abs() <= (lat - x1).abs() { x0 } else { x1 };
+                                let across = if (lat - edge).abs() <= EDGE_BAND { edge } else { lat.clamp(x0.min(x1), x0.max(x1)) };
+                                let p = on + DVec3::new(right.x, right.y, 0.0) * across + lift;
+                                if best.map(|b| cross < b.0).unwrap_or(true) {
+                                    best = Some((cross, p));
+                                }
+                            }
+                        }
+                    }
+                    from = to;
+                }
+            }
+        }
+        best
+    }
+
+    /// The road whose end is being dragged, and the pieces it is joined to at that end: the
+    /// ones whose edges are its own place, and so are not snapped to.
+    fn dragged_splines(&self) -> Vec<(TileKey, i64)> {
+        let Drag::Reshape(k, id, _) = self.drag else { return Vec::new() };
+        let mut out = vec![(k, id)];
+        if let Some(s) = self.doc.as_ref().and_then(|d| d.spline(k, id)) {
+            for n in [s.prev_id, s.next_id] {
+                if n != 0 && !out.iter().any(|(_, o)| *o == n) {
+                    out.push((k, n));
+                }
+            }
+        }
+        out
+    }
+
     /// The object or spline under a ray.
     pub fn pick(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>) -> Option<Sel> {
         let doc = self.doc.as_ref()?;
@@ -1600,6 +1772,9 @@ impl Editor {
         }
         let g = self.ground_hit(o, d);
         self.cursor = g;
+        // (the face of an object, or the edge of a road, under the cursor: where a spline's end
+        // goes if it is laid on it)
+        self.surface = if self.snap_surface { self.surface_hit(assets, o, d, g) } else { None };
         self.hover = None;
         self.hover_tile = None;
         match self.acts_as() {
@@ -1644,6 +1819,8 @@ impl Editor {
     pub fn hover_point(&mut self, assets: &mut Assets, _lib: &Library, p: DVec3) {
         self.cursor = Some(p);
         self.cursor_in_view = true;
+        // (no ray is given: there is no face to read under the cursor)
+        self.surface = None;
         match self.acts_as() {
             Tool::Roads => self.plan_road(assets),
             Tool::Objects => self.plan_object(assets, _lib),
@@ -1657,6 +1834,9 @@ impl Editor {
         self.learn(assets);
         if let Some((k, id, length, radius)) = self.shape_request.take() {
             self.set_spline_shape(assets, k, id, length, radius);
+        }
+        if let Some((k, id, at_end, heading)) = self.heading_request.take() {
+            self.set_spline_heading(assets, k, id, at_end, heading);
         }
         // (once the objects' models are there: their outlines are needed)
         if self.level_request {
@@ -1784,14 +1964,25 @@ impl Editor {
                 if let Some(a) = &lane {
                     p = a.pos.truncate();
                 }
+                // (the face of an object under the cursor: the end laid on a bridge's deck, a
+                // platform or a ramp, at that face's height. A junction plate or the end of a
+                // lane it is to join comes first.)
+                let surf = match (h, self.snap_surface, self.reshape_plate, &lane) {
+                    (Handle::Start | Handle::End, true, None, None) => self.surface,
+                    _ => None,
+                };
+                if let Some(q) = surf {
+                    p = q.truncate();
+                }
                 let joined = self.helper_anchors(assets, c.truncate(), f64::MAX);
                 let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
                 let Some(doc) = self.doc.as_ref() else { return };
                 let ground = |q: DVec2| doc.ground(q);
                 self.reshape = Some(match h {
-                    Handle::Start | Handle::End => match &lane {
-                        Some(a) => reshape::drag_end_aligned(doc, k, id, h == Handle::End, p, roads::norm_deg(a.heading + 180.0), &ground, &|_| false).or_else(|_| reshape::drag_end(doc, k, id, h == Handle::End, p, &ground, &locked)),
-                        None => reshape::drag_end(doc, k, id, h == Handle::End, p, &ground, &locked),
+                    Handle::Start | Handle::End => match (&lane, surf) {
+                        (Some(a), _) => reshape::drag_end_aligned(doc, k, id, h == Handle::End, p, roads::norm_deg(a.heading + 180.0), &ground, &|_| false).or_else(|_| reshape::drag_end(doc, k, id, h == Handle::End, p, &ground, &locked)),
+                        (None, Some(q)) => reshape::drag_end_at(doc, k, id, h == Handle::End, q.truncate(), q.z, &locked),
+                        (None, None) => reshape::drag_end(doc, k, id, h == Handle::End, p, &ground, &locked),
                     },
                     // (an AI path bent in the middle keeps the way it leaves and meets the lanes it is joined to)
                     Handle::Mid if ai => reshape::drag_mid(doc, k, id, p, &|_| true).or_else(|_| reshape::drag_mid(doc, k, id, p, &locked)),
@@ -2237,10 +2428,10 @@ impl Editor {
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
                 if s.prev_id == 0 && (c.point_at(0.0).truncate() - p).length() < within {
-                    out.push(Anchor { pos: c.point_at(0.0), heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), mid: None });
+                    out.push(Anchor { pos: c.point_at(0.0), heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), ..Default::default() });
                 }
                 if s.next_id == 0 && (c.end_point().truncate() - p).length() < within {
-                    out.push(Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), mid: None });
+                    out.push(Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), ..Default::default() });
                 }
             }
             // the helper points of junction pieces already on the map (not those a road
@@ -2258,7 +2449,7 @@ impl Editor {
                 for (h, _) in &model.helpers {
                     let q = world + m.transform_point3(Vec3::new(h[0], h[1], h[2])).as_dvec3();
                     if (q.truncate() - p).length() < within && !taken.iter().any(|t| (t.truncate() - q.truncate()).length() < 1.0) {
-                        out.push(Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), spline: None, mid: None });
+                        out.push(Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), ..Default::default() });
                     }
                 }
             }
@@ -2803,11 +2994,11 @@ impl Editor {
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
                 if s.prev_id == 0 && !at_plate(c.point_at(0.0)) {
                     let a = c.point_at(0.0);
-                    consider((a.truncate() - p).length(), Anchor { pos: a, heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), mid: None }, &s.file);
+                    consider((a.truncate() - p).length(), Anchor { pos: a, heading: roads::norm_deg(s.heading + 180.0), spline: Some((*k, s.id, false)), ..Default::default() }, &s.file);
                 }
                 if s.next_id == 0 && !at_plate(c.end_point()) {
                     let e = c.end_point();
-                    consider((e.truncate() - p).length(), Anchor { pos: e, heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), mid: None }, &s.file);
+                    consider((e.truncate() - p).length(), Anchor { pos: e, heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((*k, s.id, true)), ..Default::default() }, &s.file);
                 }
             }
             if !roads::tile_near(org, tile_size(), p, within + roads::HELPER_REACH) {
@@ -2829,7 +3020,7 @@ impl Editor {
                     if d < within && self.spline_end_at(assets, q.truncate()) {
                         continue;
                     }
-                    consider(d, Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), spline: None, mid: None }, file);
+                    consider(d, Anchor { pos: q, heading: roads::norm_deg(h[3] as f64 + o.rot[0]), ..Default::default() }, file);
                 }
             }
         }
@@ -2867,7 +3058,7 @@ impl Editor {
                     let q = c.point_at(at);
                     let d = (q.truncate() - p).length();
                     if d < hw + 2.0 && mid.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        mid = Some((d, Anchor { pos: q, heading: roads::norm_deg(c.heading_at(at) + 90.0), spline: None, mid: Some((*k, s.id, at, hw)) }, s.file.clone()));
+                        mid = Some((d, Anchor { pos: q, heading: roads::norm_deg(c.heading_at(at) + 90.0), mid: Some((*k, s.id, at, hw)), ..Default::default() }, s.file.clone()));
                     }
                 }
             }
@@ -2920,11 +3111,10 @@ impl Editor {
         false
     }
 
-    /// The type being drawn is a track (rails meet in switches, not junctions).
     /// The road drawn is joined to what is near: its ends take the ends of roads and the places
     /// of junction pieces, a junction plate takes it as an arm, junctions are made where it meets
-    /// roads. Not for a cable, a fence or a footpath (nothing drives on them: they only lie where
-    /// they are drawn), not with the option off and not while Ctrl is held.
+    /// roads. Not for a cable, a fence or a wall (nothing drives on them), not with the option
+    /// off and not while Ctrl is held.
     fn joins(&self, assets: &mut Assets) -> bool {
         if !self.snap_roads || self.ctrl_held {
             return false;
@@ -2932,6 +3122,7 @@ impl Editor {
         self.drawing_paths() || self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| m.joinable()).unwrap_or(true)
     }
 
+    /// The type being drawn is a track (rails meet in switches, not junctions).
     fn drawing_track(&self, assets: &mut Assets) -> bool {
         !self.drawing_paths() && self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| m.is_track()).unwrap_or(false)
     }
@@ -3002,7 +3193,7 @@ impl Editor {
             .filter(|(d, _)| *d < 4.0)
             .min_by(|a, b| a.0.total_cmp(&b.0));
         if let Some((_, e)) = end {
-            return Some((Anchor { pos: e.pos, heading: e.heading, spline: None, mid: None }, file));
+            return Some((Anchor { pos: e.pos, heading: e.heading, ..Default::default() }, file));
         }
         let along = lanes
             .iter()
@@ -3015,7 +3206,7 @@ impl Editor {
             // (on a spline's lane: the spline is cut there when the path is built, so the lane
             // has an end there for the path to join - openOMSI joins lanes only end to end)
             let mid = sp.zip(at).filter(|((_, _, len), at)| *at > 0.6 && *at < len - 0.6).map(|((k, id, _), at)| (k, id, at, 0.0));
-            (Anchor { pos: q, heading: roads::norm_deg(if starting { flow } else { flow + 180.0 }), spline: None, mid }, file)
+            (Anchor { pos: q, heading: roads::norm_deg(if starting { flow } else { flow + 180.0 }), mid, ..Default::default() }, file)
         })
     }
 
@@ -3100,9 +3291,17 @@ impl Editor {
         let snap = snap.filter(|a| self.road_start.as_ref().map(|(s, _)| (s.pos - a.pos).length() > 1.0).unwrap_or(true));
         self.road_snap = snap;
         let Some((mut start, fixed)) = self.road_start else { return };
-        let mut target = if snap.is_some() { c.truncate() } else { self.snap_point(c.truncate()) };
+        // (the face of an object under the cursor: a road laid over a bridge's deck, a platform
+        // or a ramp takes its height there, and the face its edge. A road end or a junction it
+        // is to join comes first.)
+        let surface = (self.snap_surface && snap.is_none()).then_some(self.surface).flatten();
+        let mut target = match (snap.is_some(), surface) {
+            (true, _) => c.truncate(),
+            (false, Some(q)) => q.truncate(),
+            (false, None) => self.snap_point(c.truncate()),
+        };
         // a straight from a free start: its heading to whole steps
-        if !fixed && snap.is_none() && self.snap_angle {
+        if !fixed && snap.is_none() && surface.is_none() && self.snap_angle {
             let d = target - start.pos.truncate();
             target = start.pos.truncate() + roads::dir(snap_deg(roads::heading_of(d), self.angle_step)) * d.length();
         }
@@ -3147,12 +3346,12 @@ impl Editor {
                     match self.switch_plan(assets, a.pos, open, left) {
                         Some((plan, (pos, heading))) => {
                             target = pos.truncate();
-                            end_anchor = Some(Anchor { pos, heading, spline: None, mid: None });
+                            end_anchor = Some(Anchor { pos, heading, ..Default::default() });
                             self.switch_plans.push(plan);
                         }
                         None => {
                             target = a.pos.truncate();
-                            end_anchor = Some(Anchor { pos: a.pos, heading: open, spline: None, mid: None });
+                            end_anchor = Some(Anchor { pos: a.pos, heading: open, ..Default::default() });
                         }
                     }
                 }
@@ -3189,6 +3388,7 @@ impl Editor {
         let z1 = match snap {
             _ if self.road_plate_end.is_some() => self.road_plate_end.unwrap().1.z,
             Some(a) => a.pos.z,
+            None if surface.is_some() => surface.unwrap().z,
             None if self.keep_height => z0 + self.typed_rise(),
             None if !self.auto_terrain => z0,
             None => c.z,
@@ -3218,8 +3418,15 @@ impl Editor {
                 None => {
                     // from inside a junction plate: from its centre, as a new arm of it
                     self.road_plate_start = if self.joins(assets) { self.plate_at(assets, c.truncate()) } else { None };
-                    let q = self.snap_point(c.truncate());
-                    let z = self.doc.as_ref().map(|d| d.ground(q)).unwrap_or(c.z);
+                    // (on a face of an object: the road starts on it, at its height)
+                    let on_face = (self.snap_surface && self.road_plate_start.is_none()).then_some(self.surface).flatten();
+                    let (q, z) = match on_face {
+                        Some(q) => (q.truncate(), q.z),
+                        None => {
+                            let q = self.snap_point(c.truncate());
+                            (q, self.doc.as_ref().map(|d| d.ground(q)).unwrap_or(c.z))
+                        }
+                    };
                     let pos = self.road_plate_start.map(|p| p.1).unwrap_or(DVec3::new(q.x, q.y, z));
                     self.road_start = Some((Anchor { pos, ..Default::default() }, false));
                 }
@@ -3304,7 +3511,7 @@ impl Editor {
                 let doc = self.doc.as_ref().unwrap();
                 if let Some(s) = doc.spline(k, id) {
                     let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
-                    self.road_start = Some((Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((k, id, true)), mid: None }, true));
+                    self.road_start = Some((Anchor { pos: c.end_point(), heading: roads::norm_deg(c.heading_at(s.length)), spline: Some((k, id, true)), ..Default::default() }, true));
                 }
             }
             _ => {
@@ -3563,7 +3770,7 @@ impl Editor {
                         let left = towards.dot(roads::right(travel)) < 0.0;
                         match self.switch_plan(assets, a.pos, travel, left) {
                             Some((plan, (pos, heading))) => {
-                                start_heel = Some(Anchor { pos, heading, spline: None, mid: None });
+                                start_heel = Some(Anchor { pos, heading, ..Default::default() });
                                 plans.push(plan);
                             }
                             None => track_mids.push(m),
@@ -3579,7 +3786,7 @@ impl Editor {
                         let left = from.dot(roads::right(open)) < 0.0;
                         match self.switch_plan(assets, a.pos, open, left) {
                             Some((plan, (pos, heading))) => {
-                                end_heel = Some(Anchor { pos, heading, spline: None, mid: None });
+                                end_heel = Some(Anchor { pos, heading, ..Default::default() });
                                 plans.push(plan);
                             }
                             None => track_mids.push(m),
@@ -3613,7 +3820,7 @@ impl Editor {
                     all.extend(mid_segs);
                     if let Some(h) = end_heel {
                         let last = *all.last().unwrap();
-                        let from = Anchor { pos: DVec3::new(last.end().x, last.end().y, 0.0), heading: last.curve().heading_at(last.length), spline: None, mid: None };
+                        let from = Anchor { pos: DVec3::new(last.end().x, last.end().y, 0.0), heading: last.curve().heading_at(last.length), ..Default::default() };
                         all.extend(roads::plan(&from, true, h.pos.truncate(), Some(&h)).unwrap_or_default());
                     }
                     if !all.is_empty() {
@@ -6120,6 +6327,13 @@ impl Editor {
     pub fn end_panel_step_if_idle(&mut self, ctx: &egui::Context) {
         if self.panel_step && self.drag == Drag::None && !ctx.egui_is_using_pointer() && !ctx.egui_wants_keyboard_input() {
             self.panel_step = false;
+            // (the end that was turned may now be a later piece of the bend: show that one)
+            if let Some(d) = self.heading_drag.take() {
+                if d.end_id != d.id {
+                    self.select(Some(Sel::Spline(d.key, d.end_id)));
+                }
+            }
+            self.heading_shown = None;
             self.history.commit();
         }
     }
@@ -7058,6 +7272,8 @@ impl Editor {
     /// Height and gradient at one end of a spline (the properties); the neighbour linked
     /// there follows. Kept open as one step while a number is dragged.
     pub fn set_spline_end(&mut self, k: TileKey, id: i64, at_end: bool, z: Option<f64>, g: Option<f64>) {
+        self.heading_drag = None;
+        self.heading_shown = None;
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         let Some(doc) = self.doc.as_mut() else { return };
         selection::touch_spline(&mut self.history, doc, k, id);
@@ -7067,6 +7283,8 @@ impl Editor {
     /// A road's length and radius by numbers: its start stays, the road joined at its end
     /// follows, tangent, its far end kept.
     fn set_spline_shape(&mut self, assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
+        self.heading_drag = None;
+        self.heading_shown = None;
         let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
         let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
         let Some(doc) = self.doc.as_ref() else { return };
@@ -7120,8 +7338,90 @@ impl Editor {
         t.touch_content();
     }
 
+    /// Turn one end of a road so it runs at `heading` (degrees, clockwise from north). The end
+    /// stays where it is and the road bends to it; the road joined there follows. Each move of
+    /// the number is fitted from the road as the drag began.
+    fn set_spline_heading(&mut self, assets: &mut Assets, k: TileKey, id: i64, at_end: bool, heading: f64) {
+        let continuing = self.panel_step && self.history.is_open() && self.heading_drag.as_ref().is_some_and(|d| d.key == k && d.id == id && d.at_end == at_end);
+        if continuing {
+            self.restore_heading_drag();
+        } else {
+            self.heading_drag = None;
+        }
+        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
+        let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
+        let Some(doc) = self.doc.as_ref() else { return };
+        let turned = reshape::turn_end(doc, k, id, at_end, heading, &locked);
+        let plan = match turned {
+            Ok(p) => p,
+            Err(e) => {
+                self.toast(e);
+                if let Some(plan) = self.heading_drag.as_ref().map(|d| d.last.clone()) {
+                    self.begin_panel_step(tr("Edit road", "Изменение дороги"));
+                    self.apply_plan(&plan);
+                }
+                return;
+            }
+        };
+        if plan.pieces.is_empty() {
+            return;
+        }
+        let link = doc.spline(k, id).map(|s| if at_end { s.next_id } else { s.prev_id }).unwrap_or(0);
+        if self.heading_drag.is_none() {
+            let tiles = reshape::tiles_of(doc, &plan);
+            let saved: Vec<(TileKey, Vec<omsi_map::MapSpline>)> = tiles.iter().filter_map(|t| doc.tiles.get(t).map(|tile| (*t, tile.tile.splines.clone()))).collect();
+            self.heading_drag = Some(HeadingDrag { key: k, id, at_end, tiles: saved, end_id: id, last: plan.clone() });
+        }
+        self.begin_panel_step(tr("Edit road", "Изменение дороги"));
+        self.apply_plan(&plan);
+        let end_id = self.heading_piece(k, id, at_end, link);
+        if let Some(d) = &mut self.heading_drag {
+            d.end_id = end_id;
+            d.last = plan;
+        }
+    }
+
+    /// Put back the roads a heading drag started from.
+    fn restore_heading_drag(&mut self) {
+        let Some(drag) = &self.heading_drag else { return };
+        let tiles = drag.tiles.clone();
+        let Some(doc) = self.doc.as_mut() else { return };
+        for (k, splines) in tiles {
+            if let Some(t) = doc.tiles.get_mut(&k) {
+                t.tile.splines = splines;
+                t.touch_content();
+            }
+        }
+    }
+
+    /// The piece of a bend that now holds the end that was turned (`link`: what was joined
+    /// there before the bend was cut into pieces).
+    fn heading_piece(&self, k: TileKey, id: i64, at_end: bool, link: i64) -> i64 {
+        let Some(doc) = self.doc.as_ref() else { return id };
+        let mut cur = id;
+        for _ in 0..64 {
+            let Some(s) = doc.spline(k, cur) else { break };
+            let n = if at_end { s.next_id } else { s.prev_id };
+            if n == 0 || n == link {
+                break;
+            }
+            let Some((nk, next)) = doc.find_spline(n) else { break };
+            if nk != k {
+                break;
+            }
+            let back = if at_end { next.prev_id } else { next.next_id };
+            if back != cur {
+                break;
+            }
+            cur = n;
+        }
+        cur
+    }
+
     /// A road's cant (%) at one end; the road joined there follows.
     pub fn set_spline_cant(&mut self, k: TileKey, id: i64, at_end: bool, cant: f64) {
+        self.heading_drag = None;
+        self.heading_shown = None;
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         let Some(doc) = self.doc.as_mut() else { return };
         selection::touch_spline(&mut self.history, doc, k, id);
@@ -7960,6 +8260,11 @@ impl Editor {
                     }
                 }
             }
+        }
+        // (the face of an object under the cursor a spline's end would be laid on: a ring on it)
+        if let (true, Some(q)) = (self.snap_surface, self.surface) {
+            disc(&mut x.overlay, cam, q, (w * 2.5).max(0.18), SURFACE);
+            disc(&mut x.overlay, cam, q, (w * 1.2).max(0.09), WHITE);
         }
         for plan in &self.carry_preview {
             for mut s in reshape::preview(doc, plan) {
@@ -9176,6 +9481,126 @@ mod tests {
         // The building's box starts five metres nearer, and it used to take the click.)
         let got = ed.pick(&mut assets, DVec3::new(102.0, 85.0, 2.0), DVec3::Y, Some(DVec3::new(102.0, 100.0, 0.0)));
         assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the building took the click from what is drawn in front of it");
+    }
+
+    /// The face of an object under the cursor is found where the object draws it, at its own
+    /// height: a spline's end laid there is on the deck, not on the ground beneath it - and the
+    /// object's box (which reaches from the ground up) is no face.
+    #[test]
+    fn a_spline_end_is_laid_on_the_face_under_the_cursor() {
+        use glam::Vec3;
+        let mut doc = flat_map(1);
+        // (a road running north from (100, 100) to (100, 160))
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        // (a platform's deck: a flat face 5 m up, its box reaching down to the ground)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(omsi_map::MapObject { file: "Sceneryobjects\\deck.sco".into(), id: 10, pos: [100.0, 170.0, 0.0], ..Default::default() });
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        ed.select(Some(Sel::Spline((0, 0), 1)));
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let deck = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(-10.0, -10.0, 5.0), Vec3::new(10.0, -10.0, 5.0), Vec3::new(10.0, 10.0, 5.0), Vec3::new(-10.0, 10.0, 5.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let model = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: deck, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-10.0, -10.0, 0.0),
+            hi: Vec3::new(10.0, 10.0, 5.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\deck.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let lib = crate::library::Library::default();
+        ed.snap_surface = true;
+        // (aimed down at the deck, from 60 m over it)
+        let from = DVec3::new(100.0, 170.0, 60.0);
+        ed.hover_ray(&mut assets, &lib, from, -DVec3::Z);
+        let face = ed.surface.expect("the deck was not found under the cursor");
+        assert!((face.z - 5.0).abs() < 1e-6, "{face:?}");
+        // (its end dragged there: it goes onto the deck, 5 m up, not onto the ground)
+        ed.drag = Drag::Reshape((0, 0), 1, Handle::End);
+        ed.tick(&mut assets, 0.016, true);
+        ed.tick(&mut assets, 0.0, false);
+        let doc = ed.doc.as_ref().unwrap();
+        // (the road is cut into pieces, each 50 m at most: the last one ends on the deck)
+        let mut last = doc.spline((0, 0), 1).unwrap().clone();
+        while last.next_id != 0 {
+            last = doc.spline((0, 0), last.next_id).unwrap().clone();
+        }
+        let c = omsi_geometry::SplineCurve::from_map(&last, tile_origin((0, 0)));
+        assert!((c.end_point().z - 5.0).abs() < 0.01, "{:?}", c.end_point());
+        assert!((c.end_point().truncate() - DVec2::new(100.0, 170.0)).length() < 0.05, "{:?}", c.end_point());
+        // (with snapping off it goes back to the ground's height)
+        ed.snap_surface = false;
+        ed.hover_ray(&mut assets, &lib, from, -DVec3::Z);
+        assert!(ed.surface.is_none());
+    }
+
+    /// A road's own edge is where a spline's end laid beside it goes: the side of its drawn
+    /// ribbon, at the road's height there - not the ground beside it. A spline road is as good
+    /// as an object's mesh for this.
+    #[test]
+    fn a_spline_end_is_laid_on_the_edge_of_the_road_beside_it() {
+        let mut doc = flat_map(1);
+        // (a road running north from (100, 100) to (100, 160))
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        ed.snap_surface = true;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // (a road 8 m wide: its own edges 4 m either side of its line)
+        let model = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let lib = crate::library::Library::default();
+        // (aimed at the asphalt a little outside its right edge)
+        let from = DVec3::new(104.4, 130.0, 40.0);
+        ed.hover_ray(&mut assets, &lib, from, -DVec3::Z);
+        let edge = ed.surface.expect("the road's edge was not found under the cursor");
+        assert!((edge - DVec3::new(104.0, 130.0, 0.0)).length() < 0.05, "{edge:?}");
+        // (aimed 5.5 m out - further than the edge is taken hold of - nothing is snapped to)
+        ed.hover_ray(&mut assets, &lib, DVec3::new(105.9, 130.0, 40.0), -DVec3::Z);
+        assert!(ed.surface.is_none());
+        // (over the middle of it: the road's own surface, at the road's height there, not an edge)
+        ed.hover_ray(&mut assets, &lib, DVec3::new(101.0, 130.0, 40.0), -DVec3::Z);
+        let middle = ed.surface.expect("the road's surface was not found under the cursor");
+        assert!((middle - DVec3::new(101.0, 130.0, 0.0)).length() < 0.05, "{middle:?}");
+        // (its own edge is not a snap: taking hold of an end must not throw it sideways)
+        ed.select(Some(Sel::Spline((0, 0), 1)));
+        ed.drag = Drag::Reshape((0, 0), 1, Handle::End);
+        ed.hover_ray(&mut assets, &lib, from, -DVec3::Z);
+        assert!(ed.surface.is_none(), "the end was thrown onto its own edge");
+        ed.drag = Drag::None;
+        // (its end dragged there: it goes onto the edge, not onto the ground beside it)
+        ed.hover_ray(&mut assets, &lib, from, -DVec3::Z);
+        ed.select(Some(Sel::Spline((0, 0), 1)));
+        ed.drag = Drag::Reshape((0, 0), 1, Handle::End);
+        ed.tick(&mut assets, 0.016, true);
+        ed.tick(&mut assets, 0.0, false);
+        let doc = ed.doc.as_ref().unwrap();
+        let mut last = doc.spline((0, 0), 1).unwrap().clone();
+        while last.next_id != 0 {
+            last = doc.spline((0, 0), last.next_id).unwrap().clone();
+        }
+        let c = omsi_geometry::SplineCurve::from_map(&last, tile_origin((0, 0)));
+        assert!((c.end_point().truncate() - DVec2::new(104.0, 130.0)).length() < 0.05, "{:?}", c.end_point());
     }
 
     /// A record standing on its own road is its own thing, clicked from any side: the road was
@@ -11049,7 +11474,7 @@ mod tests {
         ed.history.touch_tile(d, (0, 0));
         add_spline(d, (0, 0), 7, 50.0, 100.0, 0.0, 30.0, 0, 0);
         ed.history.commit();
-        ed.road_start = Some((Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 7, true)), mid: None }, true));
+        ed.road_start = Some((Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 7, true)), ..Default::default() }, true));
         ed.undo();
         assert!(ed.doc.as_ref().unwrap().spline((0, 0), 7).is_none());
         assert!(ed.road_start.is_none());
@@ -11091,7 +11516,7 @@ mod tests {
         let mut ed = editor();
         ed.follow_ground = false;
         let seg = roads::straight(DVec2::new(50.0, 130.0), DVec2::new(50.0, 160.0)).unwrap();
-        let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), mid: None };
+        let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), ..Default::default() };
         let made = ed.build_road("Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
         ed.history.commit();
         let (k, id) = made[0];

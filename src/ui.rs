@@ -2544,7 +2544,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         join_next = true;
                     }
                 });
-                ends = crate::ui_edit::spline_ends(ui, doc, k, id);
+                let shown = ed.heading_shown.filter(|(kk, iid, _, _)| *kk == k && *iid == id).map(|(_, _, at, h)| (at, h));
+                ends = crate::ui_edit::spline_ends(ui, doc, k, id, shown);
                 if let Some(rt) = &ed.road_type {
                     if !rt.eq_ignore_ascii_case(&s.file) {
                         let n = lib.find(rt).map(|a| a.name.clone()).unwrap_or_else(|| rt.clone());
