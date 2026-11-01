@@ -2584,3 +2584,8 @@ Invert orbiting up and down	Yukarı ve aşağı yörüngede dönmeyi ters çevir
 Invert the wheel	Tekerleği ters çevir
 Flying builds up speed the longer the keys are held	Uçuş, tuşlar ne kadar uzun basılı tutulursa o kadar hız kazanır
 Reset the camera	Kamerayı sıfırla
+Surface	Yüzey
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Çizilen bir yol ya da bir yolun üzerine sürüklenen spline ucu, yolun kenarına oturur (hemen yanındaki zemin de sayılır, kenarı tutmak kolay olsun) ve o yolun yüksekliğine; bir nesnenin üzerinde nesnenin kendi yüzüne oturur (bordür, kaldırım, köprü tabliyesi, peron — yeri bir halka gösterir).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Yolun bu uçta gittiği yön, derece olarak. Sürüklemek ucu döndürür; oraya bağlı yol da onunla döner.
+Snap to road edges and surfaces	Yol kenarlarına ve yüzeylere yapıştır
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Bir yolun yanında çizilen şey kenarında başlar; bir nesnenin üzerinde nesnenin kendi yüzünde, o yükseklikte başlar

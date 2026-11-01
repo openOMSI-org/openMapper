@@ -2624,3 +2624,8 @@ Invert orbiting up and down	Inverter a órbita para cima e para baixo
 Invert the wheel	Inverter a roda
 Flying builds up speed the longer the keys are held	O voo ganha velocidade quanto mais tempo as teclas ficam pressionadas
 Reset the camera	Redefinir a câmera
+Surface	Superfície
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Uma estrada desenhada ou a extremidade de uma spline arrastada para uma estrada cai na borda (o chão logo ao lado também conta, para a borda ser fácil de segurar) e na altura dessa estrada; sobre um objeto cai na face do próprio objeto (um meio-fio, uma calçada, o tabuleiro de uma ponte, uma plataforma — um anel marca o lugar).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	A direção em que a estrada segue nesta extremidade, em graus. Arrastar gira a extremidade; a estrada ligada ali gira junto.
+Snap to road edges and surfaces	Ajustar às bordas da estrada e às superfícies
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	O que é desenhado ao lado de uma estrada começa na borda; sobre um objeto começa na face do próprio objeto, nessa altura

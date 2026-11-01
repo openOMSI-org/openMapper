@@ -2584,3 +2584,8 @@ Invert orbiting up and down	Songsangkan mengorbit atas dan bawah
 Invert the wheel	Songsangkan roda
 Flying builds up speed the longer the keys are held	Terbang bertambah laju selagi kekunci ditahan
 Reset the camera	Tetap semula kamera
+Surface	Permukaan
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Jalan yang dilukis atau hujung spline yang diseret ke atas jalan jatuh di tepinya (tanah betul-betul di sebelahnya dikira, supaya tepi mudah dipegang) dan pada ketinggian jalan itu; di atas objek ia jatuh pada muka objek itu sendiri (kerb, kaki lima, dek jambatan, platform — satu gelang menanda tempatnya).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Arah jalan di hujung ini, dalam darjah. Menyeretnya memutar hujung itu; jalan yang bersambung di situ ikut berpusing.
+Snap to road edges and surfaces	Lekat ke tepi jalan dan permukaan
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Yang dilukis di sebelah jalan bermula di tepinya; di atas objek ia bermula pada muka objek itu sendiri, pada ketinggian itu

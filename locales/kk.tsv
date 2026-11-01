@@ -2584,3 +2584,8 @@ Invert orbiting up and down	Жоғары-төмен айналдыруды ке�
 Invert the wheel	Дөңгелекті кері бұру
 Flying builds up speed the longer the keys are held	Пернелер ұзағырақ басылған сайын ұшу жылдамдығы артады
 Reset the camera	Камераны тастау
+Surface	Бет
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Сызлған жол немесе жолға сүйреген сплайн ұшы оның жиегіне түседі (жанындағы жер де есептеледі, жиекті ұстау оңай болсын) және сол жолдың биіктігіне; нысанның үстінде нысанның өз бетіне түседі (жиек тас, жаяу жол, көпір төсемі, платформа — орынды сақина белгілейді).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Осы ұшта жолдың бағыты, градуспен. Сүйреу ұшты бұрады; сонда жалғанған жол бірге бұрылады.
+Snap to road edges and surfaces	Жол жиегі мен беттерге жабыстыру
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Жолдың жанында салынғаны оның жиегінен басталады; нысанның үстінде нысанның өз бетінен, сол биіктіктен басталады
