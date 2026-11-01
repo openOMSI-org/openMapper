@@ -765,10 +765,6 @@ const SURFACE: [f32; 4] = [0.98, 0.84, 0.25, 0.9];
 const EDGE_REACH: f64 = 0.6;
 /// A cursor this near (m) a road's edge is on it; further in, it is on the road's surface.
 const EDGE_BAND: f64 = 1.0;
-/// How near a road's own place a hit has to be to be that thing standing on the road: an
-/// object stands *on* the road, so its foot and the road's surface are the same place, though
-/// the aim meets the road's surface a few metres further along than the object's own face.
-const ON_THE_ROAD: f64 = 1.5;
 
 /// Where a ray enters a model's own box, seen through `m` (None: it does not pass through it).
 ///
@@ -1747,17 +1743,13 @@ impl Editor {
                 }
             }
         }
-        // (whichever the ray reaches first: an object used to win over every spline, however far
-        // behind it, so the road inside a tunnel of objects or under a canopy could not be picked)
-        // (an object standing on a road is its own thing: the road's surface lies *under* its
-        // foot, so the aim meets the road that much further along than the object's own face -
-        // an object clicked over the road it stands on keeps the click)
+        // (whichever the ray reaches first. An object used to win over every spline at the same
+        // place on the ground, however far behind it, so a spline drawn in front of a building
+        // could not be picked until the building was moved off the ray. An object standing on
+        // a road is still its own thing: the road lies under its foot, so the aim meets the
+        // road only a little further along, and that little is allowed for here.)
         match (best, sbest) {
-            (Some((a, sel)), Some((b, _, _, ssel))) => {
-                let foot = (o + d * a).truncate();
-                let under = (o + d * b).truncate();
-                Some(if a <= b + 0.4 || (foot - under).length() <= ON_THE_ROAD { sel } else { ssel })
-            }
+            (Some((a, sel)), Some((b, _, _, ssel))) => Some(if a <= b + 0.4 { sel } else { ssel }),
             (Some((_, sel)), None) => Some(sel),
             (None, s) => s.map(|b| b.3),
         }
@@ -2948,6 +2940,42 @@ impl Editor {
 
     // ---------------------------------------------------------------- roads
 
+    /// A free end near `p` for a spline that is not joined into a road (a footpath, a fence, a
+    /// cable). Another of that kind is linked on, so the two run on as one; a road's end is the
+    /// place only, and the road keeps its own link.
+    fn snap_end_point(&self, assets: &mut Assets, p: DVec2, within: f64) -> Option<(Anchor, Option<String>)> {
+        let doc = self.doc.as_ref()?;
+        let mut best: Option<(f64, Anchor, String)> = None;
+        for (k, t) in &doc.tiles {
+            let org = tile_origin(*k);
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+                if !roads::can_reach(start, s.length, p, within) {
+                    continue;
+                }
+                if assets.spline(&s.file).map(|m| m.def.only_editor).unwrap_or(false) {
+                    continue;
+                }
+                let link = assets.spline(&s.file).map(|m| !m.joinable()).unwrap_or(false);
+                let c = omsi_geometry::SplineCurve::from_map(s, org);
+                for (free, at_end, q, heading) in [
+                    (s.prev_id == 0, false, c.point_at(0.0), roads::norm_deg(s.heading + 180.0)),
+                    (s.next_id == 0, true, c.end_point(), roads::norm_deg(c.heading_at(s.length))),
+                ] {
+                    if !free {
+                        continue;
+                    }
+                    let d = (q.truncate() - p).length();
+                    if d < within && best.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                        let spline = link.then_some((*k, s.id, at_end));
+                        best = Some((d, Anchor { pos: q, heading, spline, ..Default::default() }, s.file.clone()));
+                    }
+                }
+            }
+        }
+        best.map(|b| (b.1, Some(b.2)))
+    }
+
     /// Free spline ends and junction connectors near a point.
     /// (and the spline type that is there, which a road started from it goes on with)
     fn snap_anchor(&self, assets: &mut Assets, p: DVec2, within: f64) -> Option<(Anchor, Option<String>)> {
@@ -3284,7 +3312,18 @@ impl Editor {
             self.follow_lane_kind(assets, c.truncate());
         }
         let joins = self.joins(assets);
-        let found = if self.drawing_paths() { self.snap_lane(assets, c.truncate(), self.road_start.is_none()) } else if joins { self.snap_anchor(assets, c.truncate(), 5.0) } else { None };
+        // (a cable, a fence or a footpath is not joined into a road, but with the option on its
+        // end still goes to a free end near the cursor: another of its own kind is linked, a
+        // road's end is only the place)
+        let found = if self.drawing_paths() {
+            self.snap_lane(assets, c.truncate(), self.road_start.is_none())
+        } else if joins {
+            self.snap_anchor(assets, c.truncate(), 5.0)
+        } else if self.snap_roads && !self.ctrl_held {
+            self.snap_end_point(assets, c.truncate(), 5.0)
+        } else {
+            None
+        };
         self.road_snap_file = found.as_ref().and_then(|f| f.1.clone());
         let snap = found.map(|f| f.0);
         // (the start end itself is not a target)
@@ -3295,17 +3334,25 @@ impl Editor {
         // or a ramp takes its height there, and the face its edge. A road end or a junction it
         // is to join comes first.)
         let surface = (self.snap_surface && snap.is_none()).then_some(self.surface).flatten();
-        let mut target = match (snap.is_some(), surface) {
-            (true, _) => c.truncate(),
-            (false, Some(q)) => q.truncate(),
-            (false, None) => self.snap_point(c.truncate()),
+        // (not joined into the road: the end is the place the new one is drawn to. One of its
+        // own kind keeps that end's direction and is linked; a road's end does not, so the new
+        // one is not bent round onto the road and does not take the road's link)
+        let laid_on = snap.filter(|_| !joins && !self.drawing_paths() && snap.is_some_and(|a| a.spline.is_none()));
+        let mut target = if let Some(a) = laid_on {
+            a.pos.truncate()
+        } else {
+            match (snap.is_some(), surface) {
+                (true, _) => c.truncate(),
+                (false, Some(q)) => q.truncate(),
+                (false, None) => self.snap_point(c.truncate()),
+            }
         };
         // a straight from a free start: its heading to whole steps
         if !fixed && snap.is_none() && surface.is_none() && self.snap_angle {
             let d = target - start.pos.truncate();
             target = start.pos.truncate() + roads::dir(snap_deg(roads::heading_of(d), self.angle_step)) * d.length();
         }
-        let mut end_anchor = snap;
+        let mut end_anchor = if laid_on.is_some() { None } else { snap };
         // into a junction plate: to its centre (it is cut back to the edge and becomes an arm)
         self.road_plate_end = None;
         if snap.is_none() && !self.drawing_paths() && joins {
@@ -9349,6 +9396,82 @@ mod tests {
         assert_eq!(got, Some(Sel::Spline((0, 0), 2)), "the flyover from below");
     }
 
+    /// A spline drawn in front of an object is the one a click gives, even though the two
+    /// meet the ground within a metre and a half of each other. The object keeps the click
+    /// when it is the thing in front, as a lamp standing on the road is.
+    #[test]
+    fn a_spline_in_front_of_an_object_is_picked_and_an_object_on_the_road_keeps_its_click() {
+        use glam::Vec3;
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].pos[2] = 2.0;
+        // (a wall a metre behind the spline's line, so one ray meets the spline first and the
+        // wall just after, at almost the same place on the ground)
+        add_object(&mut doc, (0, 0), 9, 101.2, 130.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\wall.sco".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        let quad = |z0: f32, z1: f32| omsi_geometry::MeshData {
+            positions: vec![Vec3::new(0.0, -4.0, z0), Vec3::new(0.0, 4.0, z0), Vec3::new(0.0, 4.0, z1), Vec3::new(0.0, -4.0, z1)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let wall = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: quad(0.0, 4.0), materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.1, -4.0, 0.0),
+            hi: Vec3::new(0.1, 4.0, 4.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\wall.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(wall)));
+        // (from the west, a little above the spline, through it and on into the wall)
+        let from = DVec3::new(80.0, 130.0, 4.0);
+        let at = DVec3::new(100.0, 130.0, 2.0);
+        let got = ed.pick(&mut assets, from, (at - from).normalize(), None);
+        assert_eq!(got, Some(Sel::Spline((0, 0), 1)), "the spline in front, not the wall behind it");
+        // (a lamp standing on the road: the ray meets the lamp and then the road under it)
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        add_object(&mut doc, (0, 0), 9, 100.0, 130.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\lamp.sco".into();
+        ed.open(doc);
+        let deck = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(-0.4, -0.4, 2.0), Vec3::new(0.4, -0.4, 2.0), Vec3::new(0.4, 0.4, 2.0), Vec3::new(-0.4, 0.4, 2.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let lamp = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: deck, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.4, -0.4, 0.0),
+            hi: Vec3::new(0.4, 0.4, 2.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\lamp.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(lamp)));
+        let got = ed.pick(&mut assets, DVec3::new(100.0, 130.0, 20.0), -DVec3::Z, Some(DVec3::new(100.0, 130.0, 0.0)));
+        assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the lamp on the road, not the road under it");
+    }
 
     /// A click on an object standing along a road picks that road: the lamps, rails and bays a
     /// map lays along a spline (`[spline_att]`) are drawn with no selection of their own, so a
@@ -9450,6 +9573,77 @@ mod tests {
         let from = crown + DVec3::new(18.0, -18.0, 18.0);
         let got = ed.pick(&mut assets, from, (crown - from).normalize(), Some(DVec3::new(p.x, p.y, 0.0)));
         assert_eq!(got, Some(Sel::Attached((0, 0), 5)));
+    }
+
+    /// A footpath is not joined into a road, but with the option on it is still drawn to a free
+    /// end near the cursor. A road's end is only the place (the road keeps its link); another
+    /// footpath's end is linked, so the two run on as one.
+    #[test]
+    fn a_footpath_is_drawn_to_a_free_end_without_joining_the_road() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 0);
+        add_spline(&mut doc, (0, 0), 2, 200.0, 100.0, 0.0, 40.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[1].file = "Splines\\foot.sli".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        ed.road_type = Some("Splines\\foot.sli".into());
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        let foot = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -0.2, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 0.2, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 0.2,
+        };
+        assert!(!foot.joinable());
+        assert!(road.joinable());
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        assets.splines.insert("splines\\foot.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(foot)));
+        let lib = crate::library::Library::default();
+        // (beside the road's far end: the footpath is drawn to it, and the road stays free)
+        ed.road_start = Some((Anchor { pos: DVec3::new(80.0, 140.0, 0.0), ..Default::default() }, false));
+        ed.hover_point(&mut assets, &lib, DVec3::new(103.0, 138.0, 0.0));
+        let snap = ed.road_snap.expect("the road's end was not a place to draw to");
+        assert!(snap.spline.is_none(), "a footpath does not take a road's link");
+        assert!((snap.pos.truncate() - DVec2::new(100.0, 140.0)).length() < 0.05, "{:?}", snap.pos);
+        ed.left_press(&mut assets, &lib, false);
+        let d = ed.doc.as_ref().unwrap();
+        assert_eq!(d.spline((0, 0), 1).unwrap().next_id, 0, "the road's end stays free");
+        let made = d.tiles[&(0, 0)].tile.splines.iter().find(|s| s.id != 1 && s.id != 2).expect("the footpath was not built");
+        let end = omsi_geometry::SplineCurve::from_map(made, tile_origin((0, 0))).end_point();
+        assert!((end.truncate() - DVec2::new(100.0, 140.0)).length() < 0.05, "{end:?}");
+        // (another footpath's end is linked, so the two run on as one)
+        ed.road_start = Some((Anchor { pos: DVec3::new(180.0, 140.0, 0.0), ..Default::default() }, false));
+        ed.hover_point(&mut assets, &lib, DVec3::new(202.0, 138.0, 0.0));
+        let snap = ed.road_snap.expect("the other footpath's end was not found");
+        assert_eq!(snap.spline, Some(((0, 0), 2, true)));
+        ed.left_press(&mut assets, &lib, false);
+        let d = ed.doc.as_ref().unwrap();
+        let linked = d.spline((0, 0), 2).unwrap().next_id;
+        assert_ne!(linked, 0, "the two footpaths were not linked");
+        assert_eq!(d.find_spline(linked).unwrap().1.next_id, 2);
     }
 
     /// A building is what it draws, not the box it was measured with: its box holds its
