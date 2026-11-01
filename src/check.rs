@@ -318,7 +318,15 @@ fn snapshot(doc: &Document, lib: &Library) -> Snapshot {
         map_dir: src,
         tiles: present,
         parents: doc.tiles.values().flat_map(|t| t.tile.attach_objects.iter().filter_map(|a| a.parent_id)).collect(),
-        var_links: doc.tiles.iter().flat_map(|(k, t)| t.tile.objects.iter().chain(&t.tile.attach_objects).filter_map(move |o| o.var_parent.map(|p| (*k, o.id, tile_origin(*k) + DVec2::new(o.pos[0], o.pos[1]), p)))).collect(),
+        var_links: doc.tiles.iter().flat_map(|(k, t)| {
+            let org = tile_origin(*k);
+            t.tile
+                .objects
+                .iter()
+                .chain(&t.tile.attach_objects)
+                .filter_map(move |o| o.var_parent.map(|p| (*k, o.id, org + DVec2::new(o.pos[0], o.pos[1]), p)))
+                .chain(t.tile.spline_attachments.iter().filter_map(move |a| a.var_parent.map(|p| (*k, a.id, org, p))))
+        }).collect(),
         object_ids: doc.tiles.values().flat_map(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).map(|o| o.id).chain(t.tile.spline_attachments.iter().map(|a| a.id)).chain(t.chrono.iter().flat_map(|c| c.objects.iter().chain(&c.attach_objects).map(|o| o.id)))).collect(),
         stops: doc.tiles.iter().flat_map(|(k, t)| t.tile.objects.iter().filter(|o| o.flag == 7 && o.extra.len() >= 4).map(move |o| (*k, crate::stops::Found { id: o.id, name: o.extra[0].clone(), at: tile_origin(*k) + DVec2::new(o.pos[0], o.pos[1]) }))).collect(),
         tt_doc: (!doc.timetable.lines.is_empty() || !doc.timetable.trips.is_empty() || !doc.traffic.veh_groups.is_empty()).then(|| doc.for_reading()),
@@ -978,14 +986,17 @@ pub fn apply(ed: &mut Editor, fix: &Fix) -> bool {
         }
         Fix::DropVarParent(k, id) => {
             ed.history.touch_tile(doc, *k);
-            match crate::selection::any_object_mut(doc, *k, *id) {
-                Some(o) if o.var_parent.is_some() => {
-                    o.var_parent = None;
-                    doc.tiles.get_mut(k).map(|t| t.touch_content());
-                    true
-                }
-                _ => false,
+            let cleared = if let Some(o) = crate::selection::any_object_mut(doc, *k, *id) {
+                o.var_parent.take().is_some()
+            } else if let Some(a) = doc.attachment_mut(*k, *id) {
+                a.var_parent.take().is_some()
+            } else {
+                false
+            };
+            if cleared {
+                doc.tiles.get_mut(k).map(|t| t.touch_content());
             }
+            cleared
         }
         Fix::UniqueStopName(k, id) => {
             let stops = crate::stops::all(doc);
