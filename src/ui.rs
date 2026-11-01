@@ -2142,7 +2142,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         return;
     };
     if ed.selection().len() > 1 {
-        crate::ui_edit::group_properties(ui, ed, lib, actions);
+        crate::ui_edit::group_properties(ui, ed, lib, st.parent_lights.as_ref(), actions);
         let objects = ed.selection().iter().filter(|s| !matches!(s, Sel::Spline(..))).count();
         let splines = ed.selection().len() - objects;
         Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| crate::ui_mesh::many_panel(ui, &mut st.keep_cutters, objects, splines, actions));
@@ -2741,6 +2741,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
             if has_paths {
                 crate::ui_edit::rules_section(ui, ed, sel);
             }
+            crate::ui_edit::link_section(ui, ed, lib, k, id, obj_info.as_ref(), parent_lights.as_ref());
             if attach_points > 0 {
                 crate::ui_edit::attach_section(ui, ed, lib, k, id, attach_points);
             }

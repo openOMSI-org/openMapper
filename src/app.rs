@@ -2258,12 +2258,17 @@ impl App {
                 });
             }
         }
-        // (the program of the object the selected one takes its state from)
-        self.ui.parent_lights = match (self.ed.selected, &self.ed.doc, self.assets.as_mut()) {
-            (Some(Sel::Object(k, id)), Some(doc), Some(a)) => crate::selection::any_object(doc, k, id)
-                .and_then(|o| o.var_parent)
-                .and_then(|p| crate::selection::object_by_id(doc, p))
-                .and_then(|(_, p)| a.object(&p.file).map(|m| (p.file.clone(), m.light_names()))),
+        // (the program of the crossing the selection takes its light from: one head, or several
+        // that all take it from the same crossing)
+        self.ui.parent_lights = match (&self.ed.doc, self.assets.as_mut()) {
+            (Some(doc), Some(a)) => crate::ui_edit::shared_signal_heads(&self.ed, &self.lib)
+                .map(|(p, _)| p)
+                .or_else(|| match self.ed.selected {
+                    Some(Sel::Object(k, id) | Sel::Attached(k, id)) => crate::selection::state_holder(doc, k, id).and_then(|(_, p, _)| p),
+                    _ => None,
+                })
+                .and_then(|p| crate::selection::file_by_id(doc, p))
+                .and_then(|f| a.object(&f).map(|m| (f, m.light_names()))),
             _ => None,
         };
         // (the overview map stays out of the map's picture)

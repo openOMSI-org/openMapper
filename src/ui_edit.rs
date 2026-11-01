@@ -289,7 +289,7 @@ pub fn snap_controls(ui: &mut egui::Ui, ed: &mut Editor, room: f32) {
 }
 
 /// The right panel with more than one thing selected.
-pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, actions: &mut Vec<crate::ui::Action>) {
+pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, parent_lights: Option<&(String, Vec<String>)>, actions: &mut Vec<crate::ui::Action>) {
     let sels = ed.selection();
     let objects = sels.iter().filter(|s| !matches!(s, Sel::Spline(..))).count();
     let splines = sels.len() - objects;
@@ -297,6 +297,32 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, actio
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         ui.label(RichText::new(format!("{} {}", tr("Selected:", "Выбрано:"), sels.len())).strong().color(Color32::WHITE));
         ui.label(RichText::new(format!("{} {objects} · {} {splines}", tr("objects", "объектов"), tr("splines", "сплайнов"))).small().color(TEXT_DIM));
+        let shared = shared_signal_heads(ed, lib);
+        if let (Some((_, lights)), Some((_, heads))) = (parent_lights, shared.as_ref()) {
+            if heads.len() > 1 && !lights.is_empty() {
+                ui.add_space(6.0);
+                let common = ed.doc.as_ref().and_then(|doc| {
+                    let mut it = heads.iter().map(|(k, id)| crate::selection::state_holder(doc, *k, *id).and_then(|(_, _, extra)| extra.first().and_then(|l| l.trim().parse().ok())));
+                    let first = it.next()?;
+                    it.all(|l| l == first).then_some(first).flatten()
+                });
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(tr("Light", "Сигнал")).color(TEXT_DIM));
+                    let shown = |i: usize| match lights.get(i) {
+                        Some(n) if !n.trim().is_empty() => format!("{i}: {n}"),
+                        _ => format!("{i}"),
+                    };
+                    let text = common.map(shown).unwrap_or_else(|| "—".into());
+                    egui::ComboBox::from_id_salt("group light").selected_text(text).width(160.0).show_ui(ui, |ui| {
+                        for i in 0..lights.len() {
+                            if ui.selectable_label(common == Some(i), shown(i)).clicked() && common != Some(i) {
+                                ed.set_light_indexes(&heads, i);
+                            }
+                        }
+                    });
+                });
+            }
+        }
         ui.add_space(6.0);
         // a group: its name, and undoing it; else making one
         match ed.selected_group() {
@@ -1104,6 +1130,33 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
     }
 }
 
+/// The crossing the selected signal heads take their light from, when they all take it from
+/// the same one, and those heads. A head with no crossing, or two crossings, gives none.
+pub fn shared_signal_heads(ed: &Editor, lib: &Library) -> Option<(i64, Vec<(TileKey, i64)>)> {
+    let doc = ed.doc.as_ref()?;
+    let mut parent: Option<i64> = None;
+    let mut heads = Vec::new();
+    for s in ed.selection() {
+        let (k, id) = match s {
+            Sel::Object(k, id) | Sel::Attached(k, id) => (k, id),
+            Sel::Spline(..) => continue,
+        };
+        let Some((file, p, _)) = crate::selection::state_holder(doc, k, id) else { continue };
+        if !lib.find(&file).map(|a| a.light_head).unwrap_or(false) {
+            continue;
+        }
+        let Some(p) = p else { return None };
+        match parent {
+            None => parent = Some(p),
+            Some(have) if have != p => return None,
+            _ => {}
+        }
+        heads.push((k, id));
+    }
+    let p = parent?;
+    (!heads.is_empty()).then_some((p, heads))
+}
+
 /// What an object takes its state from and what takes its state from it (`[varparent]`),
 /// as OMSI 2's editor links them: a signal head shows one light of its crossing's program,
 /// a stop's display its stop. The parent is picked with a click in the view.
@@ -1111,19 +1164,19 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
     // (what is linked to what is read from the whole map once and kept while it does not
     // change: this panel is drawn on every frame of a drag, and walking a map of a hundred
     // thousand things for it was most of the frame)
-    let parent_id = ed.doc.as_ref().and_then(|d| crate::selection::any_object(d, k, id)).and_then(|o| o.var_parent);
+    let parent_id = ed.doc.as_ref().and_then(|d| crate::selection::state_holder(d, k, id)).and_then(|(_, p, _)| p);
     let (link_parent, linked) = ed.links_of(id, parent_id);
     let Some(doc) = ed.doc.as_ref() else { return };
-    let Some(me) = crate::selection::any_object(doc, k, id) else { return };
+    let Some((_file, parent_id, extra)) = crate::selection::state_holder(doc, k, id) else { return };
     let name_of = |file: &str| lib.find(file).map(|a| a.name.clone()).unwrap_or_else(|| file.rsplit('\\').next().unwrap_or(file).to_string());
     let parent = parent_id.map(|pid| {
-        let found = link_parent.and_then(|(pk, _)| crate::selection::any_object(doc, pk, pid).map(|o| (pk, name_of(&o.file), o.file.clone())));
+        let found = link_parent.and_then(|(pk, _)| crate::selection::state_holder(doc, pk, pid).map(|(f, _, _)| (pk, name_of(&f), f)));
         (pid, found)
     });
-    let light: Option<usize> = me.extra.first().and_then(|l| l.trim().parse().ok());
+    let light: Option<usize> = extra.first().and_then(|l| l.trim().parse().ok());
     let head = info.map(|i| i.light_head).unwrap_or(false);
     let own_lights: &[String] = info.map(|i| i.lights.as_slice()).unwrap_or(&[]);
-    let children: Vec<(TileKey, i64, String, Option<usize>)> = linked.into_iter().filter_map(|(ck, cid)| crate::selection::any_object(doc, ck, cid).map(|o| (ck, cid, name_of(&o.file), o.extra.first().and_then(|l| l.trim().parse().ok())))).collect();
+    let children: Vec<(TileKey, i64, String, Option<usize>)> = linked.into_iter().filter_map(|(ck, cid)| crate::selection::state_holder(doc, ck, cid).map(|(f, _, extra)| (ck, cid, name_of(&f), extra.first().and_then(|l| l.trim().parse().ok())))).collect();
     let picking = ed.link_pick == Some((k, id));
     let mut go: Option<Sel> = None;
     let mut set_parent: Option<Option<i64>> = None;
@@ -1138,7 +1191,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                     ui.horizontal_wrapped(|ui| {
                         ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(TEXT_DIM));
                         if ui.link(name).on_hover_text(format!("{} {pid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
-                            go = Some(Sel::Object(*pk, *pid));
+                            go = Some(crate::selection::as_sel(doc, *pk, *pid));
                         }
                     });
                 }
@@ -1195,7 +1248,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                 for (ck, cid, name, l) in children.iter().take(40) {
                     ui.horizontal(|ui| {
                         if ui.link(name).on_hover_text(format!("{} {cid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
-                            go = Some(Sel::Object(*ck, *cid));
+                            go = Some(crate::selection::as_sel(doc, *ck, *cid));
                         }
                         if let (Some(l), false) = (l, own_lights.is_empty()) {
                             let n = own_lights.get(*l).map(|n| n.as_str()).unwrap_or("?");

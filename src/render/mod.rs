@@ -1323,6 +1323,21 @@ impl Renderer {
                 }
                 parents.insert(o.id, (pose, model));
             }
+            // (a head laid along a road: the same program lights it, at each copy)
+            let org = tile_origin(*k);
+            for a in t.spline_attachments.iter().filter(|_| !extras.hide[1]) {
+                let Some(model) = assets.object(&a.file) else { continue };
+                if !model.light_head {
+                    continue;
+                }
+                let o = omsi_map::MapObject { file: a.file.clone(), id: a.id, extra: a.strings.clone(), var_parent: a.var_parent, ..Default::default() };
+                for ro in crate::place::row_objects(a, &t.splines, org) {
+                    if let Some(mut h) = self.head_of(device, doc, assets, *k, &o, ro.pose.matrix_from(anchor), model.clone(), extras) {
+                        h.sel = Sel::Attached(*k, a.id);
+                        heads.push(h);
+                    }
+                }
+            }
             // (a head hanging on a pole of its tile, as its body is drawn)
             for o in &t.attach_objects {
                 let Some(model) = assets.object(&o.file) else { continue };
@@ -1346,7 +1361,7 @@ impl Renderer {
         }
         let key = self.model_with_labels(device, &o.file.to_lowercase(), &model, &o.extra, assets);
         let scale = mat.x_axis.truncate().length().max(mat.y_axis.truncate().length()).max(mat.z_axis.truncate().length());
-        let program = o.var_parent.and_then(|p| crate::selection::object_by_id(doc, p)).and_then(|(_, p)| assets.object(&p.file));
+        let program = o.var_parent.and_then(|p| crate::selection::file_by_id(doc, p)).and_then(|f| assets.object(&f));
         let light = o.extra.first().and_then(|l| l.trim().parse().ok()).unwrap_or(0);
         let radius = (model.centre().length() + model.radius()) * scale;
         Some(Head { key, model, program, light, mat, radius, sel: Sel::Object(k, o.id) })

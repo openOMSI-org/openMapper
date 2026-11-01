@@ -2013,7 +2013,7 @@ impl Editor {
         if let (Some((k, id)), Tool::Select) = (self.link_pick, self.tool) {
             self.link_pick = None;
             match self.hover {
-                Some(Sel::Object(_, p)) if p != id => self.link_to(k, id, p),
+                Some(Sel::Object(_, p) | Sel::Attached(_, p)) if p != id => self.link_to(k, id, p),
                 _ => self.toast(tr("No object clicked: nothing linked", "Объект не выбран: ничего не связано")),
             }
             return;
@@ -5131,12 +5131,22 @@ impl Editor {
                 return got.clone();
             }
         }
-        let parent = parent.and_then(|p| doc.tiles.iter().find_map(|(k, t)| (t.tile.objects.iter().chain(&t.tile.attach_objects)).any(|o| o.id == p).then_some((*k, p))));
+        let parent = parent.and_then(|p| {
+            doc.tiles.iter().find_map(|(k, t)| {
+                let hit = t.tile.objects.iter().chain(&t.tile.attach_objects).any(|o| o.id == p) || t.tile.spline_attachments.iter().any(|a| a.id == p);
+                hit.then_some((*k, p))
+            })
+        });
         let mut children = Vec::new();
         for (k, t) in &doc.tiles {
             for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
                 if o.var_parent == Some(id) {
                     children.push((*k, o.id));
+                }
+            }
+            for a in &t.tile.spline_attachments {
+                if a.var_parent == Some(id) {
+                    children.push((*k, a.id));
                 }
             }
         }
@@ -7143,6 +7153,8 @@ impl Editor {
         self.history.touch_tile(doc, k);
         if let Some(o) = selection::any_object_mut(doc, k, id) {
             o.var_parent = parent;
+        } else if let Some(a) = doc.attachment_mut(k, id) {
+            a.var_parent = parent;
         }
         if let Some(t) = doc.tiles.get_mut(&k) {
             t.touch_content();
@@ -7171,18 +7183,30 @@ impl Editor {
 
     /// Which light of its parent's program a signal head shows (its first label).
     pub fn set_light_index(&mut self, k: TileKey, id: i64, light: usize) {
+        self.set_light_indexes(&[(k, id)], light);
+    }
+
+    /// The same light, on every one of these heads, as one step.
+    pub fn set_light_indexes(&mut self, heads: &[(TileKey, i64)], light: usize) {
         let Some(doc) = self.doc.as_mut() else { return };
         self.history.begin(tr("Signal head's light", "Сигнал светофора"));
-        self.history.touch_tile(doc, k);
-        if let Some(o) = selection::any_object_mut(doc, k, id) {
-            match o.extra.first_mut() {
-                Some(l) => *l = light.to_string(),
-                None => o.extra.push(light.to_string()),
+        for (k, id) in heads {
+            self.history.touch_tile(doc, *k);
+            if let Some(o) = selection::any_object_mut(doc, *k, *id) {
+                match o.extra.first_mut() {
+                    Some(l) => *l = light.to_string(),
+                    None => o.extra.push(light.to_string()),
+                }
+                o.flag = o.flag.max(o.extra.len() as i32);
+            } else if let Some(a) = doc.attachment_mut(*k, *id) {
+                match a.strings.first_mut() {
+                    Some(l) => *l = light.to_string(),
+                    None => a.strings.push(light.to_string()),
+                }
             }
-            o.flag = o.flag.max(o.extra.len() as i32);
-        }
-        if let Some(t) = doc.tiles.get_mut(&k) {
-            t.touch_content();
+            if let Some(t) = doc.tiles.get_mut(k) {
+                t.touch_content();
+            }
         }
         self.history.commit();
     }
@@ -10634,6 +10658,47 @@ mod tests {
         ed.ghost_pos = Some((DVec3::new(250.0, 250.0, 0.0), 0.0));
         let _ = ed.place_object(&lib, false);
         assert!(ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile.objects.iter().filter(|o| o.file.contains("Ampel")).any(|o| o.var_parent.is_none()));
+    }
+
+    /// A signal head laid along a road is still a signal head: it can take its light from a
+    /// crossing, and the crossing lists it among what takes a state from it.
+    #[test]
+    fn a_signal_head_on_a_road_takes_its_light_from_a_crossing() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 7, 100.0, 100.0, 0.0, 40.0, 0, 0);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.push(omsi_map::SplineAttachment {
+            file: "Sceneryobjects\\Verkehrszeichen_MC\\Ampel_Kfz_1.sco".into(),
+            id: 2,
+            spline_index: 0,
+            ..Default::default()
+        });
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_var_parent((0, 0), 2, Some(1));
+        ed.set_light_index((0, 0), 2, 2);
+        let (_, children) = ed.links_of(1, None);
+        assert!(children.contains(&((0, 0), 2)), "{children:?}");
+        {
+            let d = ed.doc.as_ref().unwrap();
+            let a = d.attachment((0, 0), 2).unwrap();
+            assert_eq!(a.var_parent, Some(1));
+            assert_eq!(a.strings, vec!["2".to_string()]);
+            assert_eq!(crate::selection::var_parent_of(d, 2), Some(1));
+            assert_eq!(crate::selection::file_by_id(d, 2).as_deref(), Some("Sceneryobjects\\Verkehrszeichen_MC\\Ampel_Kfz_1.sco"));
+        }
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.push(omsi_map::SplineAttachment {
+            file: "Sceneryobjects\\Verkehrszeichen_MC\\Ampel_Kfz_1.sco".into(),
+            id: 3,
+            spline_index: 0,
+            var_parent: Some(1),
+            strings: vec!["0".into()],
+            ..Default::default()
+        });
+        ed.set_light_indexes(&[((0, 0), 2), ((0, 0), 3)], 5);
+        let d = ed.doc.as_ref().unwrap();
+        assert_eq!(d.attachment((0, 0), 2).unwrap().strings, vec!["5".to_string()]);
+        assert_eq!(d.attachment((0, 0), 3).unwrap().strings, vec!["5".to_string()]);
     }
 
     #[test]
