@@ -2584,3 +2584,8 @@ Invert orbiting up and down	Obrátit orbitování nahoru a dolů
 Invert the wheel	Obrátit kolečko
 Flying builds up speed the longer the keys are held	Let nabírá rychlost, čím déle jsou klávesy drženy
 Reset the camera	Obnovit kameru
+Surface	Povrch
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Nakreslená silnice nebo konec spline tažený na silnici dosedne na její okraj (země hned vedle se počítá, aby se okraj snadno chytil) a na výšku té silnice; nad objektem dosedne na jeho vlastní plochu (obrubník, chodník, mostovka, nástupiště — místo označí kroužek).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Směr, kterým silnice v tomto konci vede, ve stupních. Tažením se konec otočí; připojená silnice se otočí s ním.
+Snap to road edges and surfaces	Přichytit k okrajům silnic a k povrchům
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Co se kreslí vedle silnice, začíná na jejím okraji; nad objektem začíná na jeho vlastní ploše, v její výšce

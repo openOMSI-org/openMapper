@@ -2584,3 +2584,8 @@ Invert orbiting up and down	ऊपर-नीचे परिक्रमा उ�
 Invert the wheel	व्हील उलटें
 Flying builds up speed the longer the keys are held	कुंजियाँ जितनी देर दबी रहें, उड़ान की गति उतनी बढ़ती है
 Reset the camera	कैमरा रीसेट करें
+Surface	सतह
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	खींची गई सड़क या किसी सड़क पर खींचा गया स्पलाइन सिरा उसके किनारे पर बैठता है (बिल्कुल बगल की ज़मीन भी गिनी जाती है, ताकि किनारा पकड़ना आसान हो) और उस सड़क की ऊँचाई पर; किसी वस्तु के ऊपर वह वस्तु की अपनी सतह पर बैठता है (कर्ब, फुटपाथ, पुल का डेक, प्लेटफ़ॉर्म — एक छल्ला जगह दिखाता है)।
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	इस सिरे पर सड़क जिस दिशा में जाती है, डिग्री में। खींचने से सिरा घूमता है; वहाँ जुड़ी सड़क भी साथ घूमती है।
+Snap to road edges and surfaces	सड़क के किनारों और सतहों पर स्नैप करें
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	सड़क के पास जो बनाया जाता है वह उसके किनारे से शुरू होता है; वस्तु के ऊपर वह वस्तु की अपनी सतह से, उसी ऊँचाई पर शुरू होता है

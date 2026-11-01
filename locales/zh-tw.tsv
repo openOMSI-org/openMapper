@@ -1165,6 +1165,11 @@ Ends (joined roads follow)	端點（相連的道路會跟隨）
 height	高度
 gradient	坡度
 cant	超高
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	道路在此端的行進方向（度）。拖動它會旋轉端點；相連的道路會一併轉過去。
+Surface	表面
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	畫出的道路或拖到路上的樣條端點會落在路邊（路邊的地面也算，方便抓到邊）並採用該路的高度；在物件上方則落在物件本身的面上（路緣、行人路、橋面、月台——圓圈標出該處）。
+Snap to road edges and surfaces	貼齊道路邊緣或物件表面
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	在路旁畫的東西從路邊開始；在物件上方則從物件本身的面、以該高度開始
 Banking across the road, %: positive lowers its right side (into a right bend)	道路橫向傾斜，%：正值使右側降低（用於右彎）
 End	End
 Even slope end to end	兩端均勻坡度

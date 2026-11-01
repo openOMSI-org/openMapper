@@ -2624,3 +2624,8 @@ Invert orbiting up and down	Omhoog en omlaag draaien omkeren
 Invert the wheel	Wiel omkeren
 Flying builds up speed the longer the keys are held	Vliegen bouwt snelheid op naarmate de toetsen langer ingedrukt zijn
 Reset the camera	Camera resetten
+Surface	Oppervlak
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Een getekende weg of een spline-uiteinde dat op een weg wordt gesleept, komt op de rand terecht (de grond er vlak naast telt mee, zodat de rand makkelijk te pakken is) en op de hoogte van die weg; boven een object komt het op het eigen vlak van het object (een stoeprand, een voetpad, een brugdek, een perron — een ring markeert de plek).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	De richting waarin de weg aan dit uiteinde loopt, in graden. Slepen draait het uiteinde; de weg die daarop aansluit draait mee.
+Snap to road edges and surfaces	Vastzetten op wegranden en vlakken
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Wat naast een weg wordt getekend, begint op de rand; boven een object begint het op het eigen vlak van het object, op die hoogte
