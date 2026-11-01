@@ -740,10 +740,6 @@ const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 0.9];
 const GREEN: [f32; 4] = [0.35, 0.85, 0.45, 1.0];
 /// Links between objects (`[varparent]`).
 const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.9];
-/// How near a road's own place a hit has to be to be that thing standing on the road: an
-/// object stands *on* the road, so its foot and the road's surface are the same place, though
-/// the aim meets the road's surface a few metres further along than the object's own face.
-const ON_THE_ROAD: f64 = 1.5;
 
 /// Where a ray enters a model's own box, seen through `m` (None: it does not pass through it).
 ///
@@ -1575,17 +1571,13 @@ impl Editor {
                 }
             }
         }
-        // (whichever the ray reaches first: an object used to win over every spline, however far
-        // behind it, so the road inside a tunnel of objects or under a canopy could not be picked)
-        // (an object standing on a road is its own thing: the road's surface lies *under* its
-        // foot, so the aim meets the road that much further along than the object's own face -
-        // an object clicked over the road it stands on keeps the click)
+        // (whichever the ray reaches first. An object used to win over every spline at the same
+        // place on the ground, however far behind it, so a spline drawn in front of a building
+        // could not be picked until the building was moved off the ray. An object standing on
+        // a road is still its own thing: the road lies under its foot, so the aim meets the
+        // road only a little further along, and that little is allowed for here.)
         match (best, sbest) {
-            (Some((a, sel)), Some((b, _, _, ssel))) => {
-                let foot = (o + d * a).truncate();
-                let under = (o + d * b).truncate();
-                Some(if a <= b + 0.4 || (foot - under).length() <= ON_THE_ROAD { sel } else { ssel })
-            }
+            (Some((a, sel)), Some((b, _, _, ssel))) => Some(if a <= b + 0.4 { sel } else { ssel }),
             (Some((_, sel)), None) => Some(sel),
             (None, s) => s.map(|b| b.3),
         }
@@ -9020,6 +9012,82 @@ mod tests {
         assert_eq!(got, Some(Sel::Spline((0, 0), 2)), "the flyover from below");
     }
 
+    /// A spline drawn in front of an object is the one a click gives, even though the two
+    /// meet the ground within a metre and a half of each other. The object keeps the click
+    /// when it is the thing in front, as a lamp standing on the road is.
+    #[test]
+    fn a_spline_in_front_of_an_object_is_picked_and_an_object_on_the_road_keeps_its_click() {
+        use glam::Vec3;
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].pos[2] = 2.0;
+        // (a wall a metre behind the spline's line, so one ray meets the spline first and the
+        // wall just after, at almost the same place on the ground)
+        add_object(&mut doc, (0, 0), 9, 101.2, 130.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\wall.sco".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        let quad = |z0: f32, z1: f32| omsi_geometry::MeshData {
+            positions: vec![Vec3::new(0.0, -4.0, z0), Vec3::new(0.0, 4.0, z0), Vec3::new(0.0, 4.0, z1), Vec3::new(0.0, -4.0, z1)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let wall = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: quad(0.0, 4.0), materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.1, -4.0, 0.0),
+            hi: Vec3::new(0.1, 4.0, 4.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\wall.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(wall)));
+        // (from the west, a little above the spline, through it and on into the wall)
+        let from = DVec3::new(80.0, 130.0, 4.0);
+        let at = DVec3::new(100.0, 130.0, 2.0);
+        let got = ed.pick(&mut assets, from, (at - from).normalize(), None);
+        assert_eq!(got, Some(Sel::Spline((0, 0), 1)), "the spline in front, not the wall behind it");
+        // (a lamp standing on the road: the ray meets the lamp and then the road under it)
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        add_object(&mut doc, (0, 0), 9, 100.0, 130.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\lamp.sco".into();
+        ed.open(doc);
+        let deck = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(-0.4, -0.4, 2.0), Vec3::new(0.4, -0.4, 2.0), Vec3::new(0.4, 0.4, 2.0), Vec3::new(-0.4, 0.4, 2.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let lamp = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: deck, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.4, -0.4, 0.0),
+            hi: Vec3::new(0.4, 0.4, 2.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\lamp.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(lamp)));
+        let got = ed.pick(&mut assets, DVec3::new(100.0, 130.0, 20.0), -DVec3::Z, Some(DVec3::new(100.0, 130.0, 0.0)));
+        assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the lamp on the road, not the road under it");
+    }
 
     /// A click on an object standing along a road picks that road: the lamps, rails and bays a
     /// map lays along a spline (`[spline_att]`) are drawn with no selection of their own, so a
