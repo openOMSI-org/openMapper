@@ -209,6 +209,28 @@ pub fn total_length(segs: &[Seg]) -> f64 {
     segs.iter().map(|s| s.length).sum()
 }
 
+/// A spline that starts at `start` and runs `length` metres can come within `slack` of `p`
+/// (its end lies somewhere on that length, so anything further away cannot meet `p`).
+pub fn can_reach(start: DVec2, length: f64, p: DVec2, slack: f64) -> bool {
+    (start - p).length() <= length.max(0.0) + slack
+}
+
+/// The tile square at `origin` (side `side`) comes within `slack` of `p`.
+pub fn tile_near(origin: DVec2, side: f64, p: DVec2, slack: f64) -> bool {
+    let closest = DVec2::new(p.x.clamp(origin.x, origin.x + side), p.y.clamp(origin.y, origin.y + side));
+    (closest - p).length() <= slack
+}
+
+/// How far the roads tool marks free ends (m): what is on screen, and no further than 500,
+/// so a map of tens of thousands of splines is not walked and drawn in full every frame.
+pub fn end_marks_reach(distance: f64) -> f64 {
+    (distance * 1.5).clamp(80.0, 500.0)
+}
+
+/// A junction helper stands within this of its object's tile (m). Further than
+/// `within + HELPER_REACH` and the tile cannot hold a snap.
+pub const HELPER_REACH: f64 = 200.0;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,5 +279,27 @@ mod tests {
         assert!(parts.len() >= 4);
         let last = parts.last().unwrap();
         assert!((last.end() - a.end()).length() < 1e-6);
+    }
+
+    #[test]
+    fn a_far_spline_is_not_a_snap_and_a_near_one_is() {
+        let p = DVec2::ZERO;
+        // the next district: 2 km off and only 40 m long, it cannot meet the cursor
+        assert!(!can_reach(DVec2::new(2_000.0, 0.0), 40.0, p, 5.0));
+        // the same start, long enough that its far end can still land on the cursor
+        assert!(can_reach(DVec2::new(2_000.0, 0.0), 2_000.0, p, 5.0));
+        // a road that starts where the cursor is
+        assert!(can_reach(DVec2::new(3.0, 0.0), 20.0, p, 5.0));
+        // the cursor's own tile, and not one a kilometre away (a helper cannot stand 200 m
+        // outside its tile and still be within 5 m of the cursor)
+        assert!(tile_near(DVec2::ZERO, 300.0, DVec2::new(10.0, 20.0), 5.0));
+        assert!(!tile_near(DVec2::new(1_000.0, 0.0), 300.0, p, 5.0 + HELPER_REACH));
+    }
+
+    #[test]
+    fn end_marks_stay_on_screen_and_stop_at_half_a_kilometre() {
+        assert_eq!(end_marks_reach(10.0), 80.0, "zoomed in, still a neighbourhood");
+        assert_eq!(end_marks_reach(100.0), 150.0);
+        assert_eq!(end_marks_reach(10_000.0), 500.0, "zoomed out, the whole map is not marked");
     }
 }

@@ -331,8 +331,8 @@ struct SplineEntry {
 }
 
 /// A tile's splines in one mesh, a draw per material: thousands of splines become a few
-/// hundred draws. The selected and hovered spline (tinted) and the technical ones (no
-/// shadow) stay out and are drawn on their own.
+/// hundred draws. The selected and hovered spline (tinted) stays out and is drawn on its
+/// own. Editor-only splines (no shadow) go in a second chunk, not this one.
 struct Chunk {
     /// The splines in it (IDCode, revision hash).
     members: HashMap<i64, u64>,
@@ -476,6 +476,9 @@ pub struct Renderer {
     /// When the list was last collected.
     warm_collect_at: Option<std::time::Instant>,
     chunks: HashMap<TileKey, Chunk>,
+    /// `[onlyeditor]` splines of a tile in one mesh. Drawn with the roads when "what the game
+    /// does not show" is on, and never into the shadow map.
+    editor_chunks: HashMap<TileKey, Chunk>,
     /// Builds the splines' meshes off the main thread.
     builder: build::Builder,
     ghost_spline_meshes: Vec<(u64, Option<GpuMesh>, Vec<Material>, u32)>,
@@ -1019,6 +1022,7 @@ impl Renderer {
             warm_missing: false,
             warm_collect_at: None,
             chunks: HashMap::new(),
+            editor_chunks: HashMap::new(),
             builder: build::Builder::new(),
             ghost_spline_meshes: Vec::new(),
             thumbs: HashMap::new(),
@@ -1038,6 +1042,7 @@ impl Renderer {
         self.tiles.clear();
         self.splines.clear();
         self.chunks.clear();
+        self.editor_chunks.clear();
         self.builder.reset();
         self.scene_key = 0;
         self.tile_groups.clear();
@@ -1054,6 +1059,7 @@ impl Renderer {
         self.tiles.clear();
         self.splines.clear();
         self.chunks.clear();
+        self.editor_chunks.clear();
         self.builder.reset();
         self.display.clear();
         self.anchor = DVec3::ZERO;
@@ -1089,6 +1095,7 @@ impl Renderer {
         self.picture_alpha.clear();
         self.splines.clear();
         self.chunks.clear();
+        self.editor_chunks.clear();
         self.builder.reset();
         self.scene_key = 0;
         self.tile_groups.clear();
@@ -1372,6 +1379,7 @@ impl Renderer {
                     self.tiles.clear();
                     self.splines.clear();
                     self.chunks.clear();
+                    self.editor_chunks.clear();
                     self.builder.reset();
                     self.scene_key = 0;
                     self.tile_groups.clear();
@@ -1886,48 +1894,75 @@ impl Renderer {
         let start = std::time::Instant::now();
         let keep: std::collections::HashSet<TileKey> = disp.iter().map(|d| d.0).collect();
         self.chunks.retain(|k, _| keep.contains(k));
+        self.editor_chunks.retain(|k, _| keep.contains(k));
         for (k, t) in disp {
             let org = tile_origin(*k);
-            // what belongs in it
+            // what belongs in each batch (roads cast a shadow; editor-only splines do not)
             let mut members: HashMap<i64, u64> = HashMap::new();
+            let mut editor_members: HashMap<i64, u64> = HashMap::new();
             for s in t.splines.iter().filter(|s| !s.deleted) {
                 let Some(e) = self.splines.get(&(*k, s.id)) else { continue };
-                let sel = Some(Sel::Spline(*k, s.id));
-                if e.cpu.is_none() || e.technical || extras.selected == sel || extras.hover == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
-                    continue;
+                let sel = Sel::Spline(*k, s.id);
+                let picked = extras.selected == Some(sel) || extras.hover == Some(sel) || extras.selected_more.contains(&sel);
+                match spline_batch(e.technical, picked, e.cpu.is_some()) {
+                    Some(false) => {
+                        members.insert(s.id, e.hash);
+                    }
+                    Some(true) => {
+                        editor_members.insert(s.id, e.hash);
+                    }
+                    None => {}
                 }
-                members.insert(s.id, e.hash);
             }
-            // (stale: a spline in it changed or went; else only new ones came, which can wait)
-            let (stale, grown) = match self.chunks.get(k) {
-                Some(c) => (c.members.iter().any(|(id, h)| members.get(id) != Some(h)), members.len() > c.members.len()),
-                None => (false, !members.is_empty()),
-            };
-            let build = stale || (grown && start.elapsed().as_millis() < 8);
-            if build {
-                let mut ids: Vec<i64> = members.keys().copied().collect();
-                ids.sort_unstable();
-                let parts: Vec<(&MeshData, &[Material], Aabb)> = ids.iter().filter_map(|id| self.splines.get(&(*k, *id))).filter_map(|e| e.cpu.as_deref().map(|m| (m, e.materials.as_slice(), e.bbox))).collect();
-                let (mesh, materials, bbox) = merge_meshes(&parts, &self.picture_alpha);
-                let mesh = (!mesh.indices.is_empty()).then(|| upload_mesh(device, &mesh));
-                self.chunks.insert(*k, Chunk { members, mesh, materials, bbox, instance: 0 });
-            }
-            let chunk = self.chunks.get_mut(k);
-            let members = chunk.as_ref().map(|c| &c.members);
+            self.refresh_chunk(device, *k, members, false, start);
+            self.refresh_chunk(device, *k, editor_members, true, start);
             for s in t.splines.iter().filter(|s| !s.deleted) {
+                let road = self.chunks.get(k).and_then(|c| c.members.get(&s.id).copied());
+                let editor = self.editor_chunks.get(k).and_then(|c| c.members.get(&s.id).copied());
                 let Some(e) = self.splines.get_mut(&(*k, s.id)) else { continue };
-                e.in_chunk = members.map(|m| m.get(&s.id) == Some(&e.hash)).unwrap_or(false);
+                e.in_chunk = road == Some(e.hash) || editor == Some(e.hash);
                 if e.in_chunk {
                     e.mesh = None;
                 } else if e.mesh.is_none() {
                     e.mesh = e.cpu.as_deref().map(|m| upload_mesh(device, m));
                 }
             }
-            if let Some(c) = chunk {
+            let at = Instance::new(Mat4::from_translation(Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0)), [0.0; 4]).surface(SURF_SPLINE);
+            if let Some(c) = self.chunks.get_mut(k) {
                 c.instance = instances.len() as u32;
-                instances.push(Instance::new(Mat4::from_translation(Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0)), [0.0; 4]).surface(SURF_SPLINE));
+                instances.push(at);
+            }
+            if self.editor_chunks.get(k).map(|c| c.mesh.is_some()).unwrap_or(false) {
+                let n = instances.len() as u32;
+                self.editor_chunks.get_mut(k).unwrap().instance = n;
+                instances.push(at);
             }
         }
+    }
+
+    /// Rebuild one tile's merged spline mesh when its members changed. `editor`: the
+    /// `[onlyeditor]` batch.
+    fn refresh_chunk(&mut self, device: &wgpu::Device, key: TileKey, members: HashMap<i64, u64>, editor: bool, start: std::time::Instant) {
+        let (stale, grown) = {
+            let chunks = if editor { &self.editor_chunks } else { &self.chunks };
+            match chunks.get(&key) {
+                Some(c) => (c.members.iter().any(|(id, h)| members.get(id) != Some(h)), members.len() > c.members.len()),
+                None => (false, !members.is_empty()),
+            }
+        };
+        // (stale: a spline in it changed or went; else only new ones came, which can wait)
+        if !(stale || (grown && start.elapsed().as_millis() < 8)) {
+            return;
+        }
+        let mut ids: Vec<i64> = members.keys().copied().collect();
+        ids.sort_unstable();
+        let (mesh, materials, bbox) = {
+            let parts: Vec<(&MeshData, &[Material], Aabb)> = ids.iter().filter_map(|id| self.splines.get(&(key, *id))).filter_map(|e| e.cpu.as_deref().map(|m| (m, e.materials.as_slice(), e.bbox))).collect();
+            merge_meshes(&parts, &self.picture_alpha)
+        };
+        let mesh = (!mesh.indices.is_empty()).then(|| upload_mesh(device, &mesh));
+        let chunks = if editor { &mut self.editor_chunks } else { &mut self.chunks };
+        chunks.insert(key, Chunk { members, mesh, materials, bbox, instance: 0 });
     }
 
     /// The ground cut of the tiles whose roads, surfaces or ground changed, made on the
@@ -2108,7 +2143,7 @@ impl Renderer {
         for e in self.splines.values() {
             mats.extend(e.materials.iter().cloned());
         }
-        for c in self.chunks.values() {
+        for c in self.chunks.values().chain(self.editor_chunks.values()) {
             mats.extend(c.materials.iter().cloned());
         }
         for g in &self.ghost_spline_meshes {
@@ -2233,6 +2268,7 @@ impl Renderer {
         pass.set_pipeline(&self.shadow_pipeline);
         pass.set_bind_group(0, &self.shadow_globals_bind, &[]);
         pass.set_vertex_buffer(1, dynamic.slice(..));
+        // (editor-only splines are not here: an invisible street casts no shadow)
         for c in self.chunks.values().filter(|c| !self.hide_splines && f.sees(&c.bbox)) {
             if let Some(mesh) = &c.mesh {
                 calls += draw_mesh(&mut pass, &self.materials, mesh, &c.materials, Some(false), &[c.instance..c.instance + 1], &self.picture_alpha);
@@ -2327,6 +2363,9 @@ impl Renderer {
         let (Some(dynamic), Some(scene)) = (&self.instances, &self.scene_buf) else { return };
         // what is in view, the same for both layers
         let mut splines: Vec<(&GpuMesh, &Vec<Material>, u32)> = self.chunks.values().filter(|c| !self.hide_splines && f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))).collect();
+        if extras.show_technical && !self.hide_splines {
+            splines.extend(self.editor_chunks.values().filter(|c| f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))));
+        }
         splines.extend(self.splines.values().filter(|e| !e.hidden && !e.in_chunk && f.sees(&e.bbox) && in_reach(&e.bbox)).filter_map(|e| e.mesh.as_ref().map(|m| (m, &e.materials, e.instance))));
         let mut visible: Vec<(&Batch, Vec<std::ops::Range<u32>>, bool)> = Vec::new();
         for b in &self.batches {
@@ -2803,6 +2842,15 @@ pub fn spline_hidden(technical: bool, extras: &FrameExtras) -> bool {
     technical && !extras.show_technical || extras.hide[2]
 }
 
+/// Which merged mesh a spline belongs in.
+/// `None`: drawn on its own (nothing built yet, or picked, so it can be tinted).
+/// `Some(false)`: the tile's roads, which cast a shadow.
+/// `Some(true)`: the tile's editor-only splines. One mesh for the tile, drawn only while
+/// "what the game does not show" is on, and never into the shadow map.
+pub fn spline_batch(technical: bool, picked: bool, has_mesh: bool) -> Option<bool> {
+    if !has_mesh || picked { None } else { Some(technical) }
+}
+
 /// (`editor`: the meshes seen in the editor only are drawn too)
 fn push_object(groups: &mut Groups, key: &str, model: &Arc<ObjectModel>, label: Option<&String>, m: Mat4, tint: [f32; 4], sel: Option<Sel>, editor: bool) {
     if !m.is_finite() {
@@ -3094,5 +3142,20 @@ mod tests {
         assert!(spline_hidden(false, &extras), "the roads' layer hides ordinary roads too");
         // (an ordinary road is never held back by the editor switch)
         assert!(!spline_hidden(false, &FrameExtras::default()));
+    }
+
+    #[test]
+    fn an_invisible_street_shares_its_tile_and_a_road_casts_the_shadow() {
+        // (a road goes in the tile's shadowed mesh)
+        assert_eq!(spline_batch(false, false, true), Some(false));
+        // (`invis_street.sli`: one mesh with the tile's other editor-only splines, and that
+        // mesh is not the one the shadow pass draws — `Some(true)` is the editor batch)
+        assert_eq!(spline_batch(true, false, true), Some(true));
+        assert!(spline_batch(true, false, true).unwrap());
+        // (picked: drawn on its own, so the tint can be its alone)
+        assert_eq!(spline_batch(true, true, true), None);
+        assert_eq!(spline_batch(false, true, true), None);
+        // (no mesh yet: nothing to merge)
+        assert_eq!(spline_batch(true, false, false), None);
     }
 }
