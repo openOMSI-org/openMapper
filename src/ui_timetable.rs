@@ -237,7 +237,11 @@ impl TimetableUi {
         self.stops = net
             .stops
             .iter()
-            .map(|&(tile, id, pos)| MapStop { tile, id, pos, name: doc.object(tile, id).and_then(|o| o.extra.first().cloned()).unwrap_or_default(), kind: doc.object(tile, id).map(|o| crate::stops::StopSettings::read(&o.extra).kind).unwrap_or_default() })
+            .map(|&(tile, id, pos)| {
+                // (the strings of a stop on a spline are its attachment's)
+                let strings: &[String] = doc.object(tile, id).map(|o| o.extra.as_slice()).or_else(|| doc.tiles.get(&tile).and_then(|t| t.tile.spline_attachments.iter().find(|a| a.id == id)).map(|a| a.strings.as_slice())).unwrap_or(&[]);
+                MapStop { tile, id, pos, name: strings.first().cloned().unwrap_or_default(), kind: crate::stops::StopSettings::read(strings).kind }
+            })
             .collect();
         self.stops.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then(a.id.cmp(&b.id)));
         self.net = Some(net);
@@ -409,7 +413,7 @@ impl TimetableUi {
         let Some((hit, at)) = ed.picked.take() else { return };
         let Some(trip) = self.trip.clone() else { return };
         let hit = match hit {
-            Some(Sel::Object(_, id)) if self.stops.iter().any(|s| s.id == id) => Some(id),
+            Some(Sel::Object(_, id) | Sel::Attached(_, id)) if self.stops.iter().any(|s| s.id == id) => Some(id),
             _ => at.and_then(|p| {
                 self.stops.iter().map(|s| (s.id, (s.pos - p).truncate().length())).filter(|(_, d)| *d < PICK_REACH).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(id, _)| id)
             }),

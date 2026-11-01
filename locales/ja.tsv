@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	この端で道路が向かう方向（度）。ドラッグすると端が回り、そこにつながった道路も一緒に回ります。
 Snap to road edges and surfaces	道路の端と面に吸着
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	道路の脇に描くものはその端から始まり、オブジェクトの上ではそのオブジェクト自身の面、その高さから始まります
+Load all tiles at once	すべてのタイルを一度に読み込む
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、ほかは空の領域をクリックするまで非表示になります

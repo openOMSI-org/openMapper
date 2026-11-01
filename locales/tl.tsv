@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Ang direksyon ng kalsada sa dulong ito, sa digri. Ang paghila ay iniikot ang dulo; ang kalsadang nakakonekta roon ay umiikot kasama nito.
 Snap to road edges and surfaces	I-snap sa gilid ng kalsada at sa mga ibabaw
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ang iginuguhit sa tabi ng kalsada ay nagsisimula sa gilid nito; sa ibabaw ng bagay ay nagsisimula sa sariling mukha ng bagay, sa taas na iyon
+Load all tiles at once	I-load ang lahat ng tile nang sabay-sabay
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Naka-off: ang mga tile lang sa paligid ng camera ang nilo-load, tulad ng sa editor ng OMSI 2, at nakatago ang iba hanggang mag-click ka sa walang laman na zone

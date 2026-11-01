@@ -2587,3 +2587,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Напрям, у якому дорога йде на цьому кінці, у градусах. Перетягування повертає кінець; дорога, приєднана там, повертається разом із ним.
 Snap to road edges and surfaces	До країв доріг і поверхонь
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Те, що малюється біля дороги, починається на її краю; над об'єктом починається на його власній грані, на тій висоті
+Load all tiles at once	Завантажувати всі тайли одразу
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Вимкнено: завантажуються лише тайли навколо камери, як у редакторі OMSI 2, решта приховані, доки ви не клікнете по порожній зоні

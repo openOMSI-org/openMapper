@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Hướng đường chạy ở đầu này, theo độ. Kéo sẽ xoay đầu đó; đường nối ở đó xoay theo.
 Snap to road edges and surfaces	Hút vào mép đường và bề mặt
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Thứ vẽ bên cạnh đường bắt đầu ở mép đường; trên một đối tượng thì bắt đầu trên chính mặt của đối tượng, ở cao độ đó
+Load all tiles at once	Tải tất cả ô cùng lúc
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Tắt: chỉ tải các ô quanh camera, như trình sửa của OMSI 2, các ô khác bị ẩn cho đến khi bạn nhấp vào vùng trống

@@ -367,8 +367,8 @@ impl App {
             .set_title("openMapper")
             .set_buttons(rfd::MessageButtons::YesNo)
             .set_description(tr(
-                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others are hidden until you click on the empty zone, where the next 100 are loaded. It keeps very big maps light. You can change it any time in View > Load 100 tiles at a time.",
-                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные скрыты, пока вы не кликнете по пустой зоне: там загрузятся следующие 100. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать по 100 тайлов.",
+                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others are hidden until you click on the empty zone, where the next 100 are loaded. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).",
+                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные скрыты, пока вы не кликнете по пустой зоне: там загрузятся следующие 100. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать все тайлы сразу (выключено).",
             ))
             .show();
         self.prefs.tile_streaming = Some(yes == rfd::MessageDialogResult::Yes);
@@ -3149,7 +3149,9 @@ impl ApplicationHandler for App {
             self.last_input = Instant::now();
         }
         let resp = g.egui_state.on_window_event(&g.window, &event);
-        let scale = g.window.scale_factor() as f32;
+        // (the interface's points, not the window's: the menu scale sets how many pixels one is, and
+        // the viewport and the pointer are measured in the same ones)
+        let scale = g.egui_ctx.pixels_per_point();
         match event {
             WindowEvent::CloseRequested => {
                 self.do_action(Action::Quit, el);
@@ -3330,7 +3332,7 @@ impl ApplicationHandler for App {
                                 self.mouse.look_raw = false;
                                 let _ = g.window.set_cursor_grab(winit::window::CursorGrabMode::None);
                                 g.window.set_cursor_visible(true);
-                                let _ = g.window.set_cursor_position(winit::dpi::LogicalPosition::new(self.mouse.pos.0 as f64, self.mouse.pos.1 as f64));
+                                let _ = g.window.set_cursor_position(winit::dpi::PhysicalPosition::new((self.mouse.pos.0 * scale) as f64, (self.mouse.pos.1 * scale) as f64));
                             }
                             let menu = self.mouse.right_moved < 5.0 && self.ed.right_click();
                             if menu && self.prefs.omsi_controls && !self.keys.shift {

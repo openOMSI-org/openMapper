@@ -2629,3 +2629,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Kierunek, w którym droga biegnie na tym końcu, w stopniach. Przeciąganie obraca koniec; droga dołączona w tym miejscu obraca się razem z nim.
 Snap to road edges and surfaces	Przyciągaj do krawędzi dróg i powierzchni
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	To, co rysuje się obok drogi, zaczyna się na jej krawędzi; nad obiektem zaczyna się na jego własnej powierzchni, na tej wysokości
+Load all tiles at once	Wczytaj wszystkie kafelki naraz
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Wyłączone: wczytywane są tylko kafelki wokół kamery, jak w edytorze OMSI 2, a pozostałe są ukryte, dopóki nie klikniesz pustej strefy

@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	La direcció en què la carretera corre en aquest extrem, en graus. Arrossegar-lo gira l'extrem; la carretera unida allà gira amb ell.
 Snap to road edges and surfaces	Ajusta a les vores de la carretera i a les superfícies
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	El que es dibuixa al costat d'una carretera comença a la seva vora; sobre un objecte comença a la cara de l'objecte, a aquella altura
+Load all tiles at once	Carrega totes les tessel·les alhora
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desactivat: només es carreguen les tessel·les al voltant de la càmera, com a l'editor d'OMSI 2, i les altres s'amaguen fins que cliqueu a la zona buida

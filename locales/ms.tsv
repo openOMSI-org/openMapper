@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Arah jalan di hujung ini, dalam darjah. Menyeretnya memutar hujung itu; jalan yang bersambung di situ ikut berpusing.
 Snap to road edges and surfaces	Lekat ke tepi jalan dan permukaan
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Yang dilukis di sebelah jalan bermula di tepinya; di atas objek ia bermula pada muka objek itu sendiri, pada ketinggian itu
+Load all tiles at once	Muatkan semua jubin sekali gus
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Mati: hanya jubin di sekitar kamera dimuatkan, seperti dalam editor OMSI 2, dan yang lain disembunyikan sehingga anda mengklik zon kosong

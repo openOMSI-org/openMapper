@@ -2629,3 +2629,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	A direção em que a estrada segue nesta extremidade, em graus. Arrastar roda a extremidade; a estrada ligada ali roda com ela.
 Snap to road edges and surfaces	Ajustar às bermas da estrada e às superfícies
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	O que se desenha ao lado de uma estrada começa na berma; sobre um objeto começa na face do próprio objeto, a essa altura
+Load all tiles at once	Carregar todos os mosaicos de uma vez
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desligado: só são carregados os mosaicos à volta da câmara, como no editor do OMSI 2, e os outros ficam ocultos até clicar na zona vazia

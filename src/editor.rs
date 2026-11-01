@@ -2576,6 +2576,15 @@ impl Editor {
             rot: [heading, 0.0, 0.0],
             ..Default::default()
         };
+        // (a tree, a bush or grass is turned a random way and made a little bigger or smaller,
+        // as OMSI 2's editor does: a row of one kind does not look copied. The sizes are a few
+        // steps, as each is a copy of the type's own)
+        let plant = asset.as_ref().map(|a| a.category == crate::library::Category::Trees).unwrap_or(false);
+        let mut grown = 1.0;
+        if plant {
+            o.rot[0] = self.plant_rng.next() * 360.0;
+            grown = [0.8, 0.9, 1.0, 1.1, 1.2][(self.plant_rng.next() * 5.0) as usize % 5];
+        }
         let is_stop = asset.as_ref().map(|a| a.is_bus_stop).unwrap_or(false);
         if is_stop {
             // (a name no stop far from here has: stops put down one after another are not
@@ -2619,7 +2628,12 @@ impl Editor {
             doc.global.entry_points.push(EntryPoint { object_id: id, name, ..Default::default() });
             sync_entry_points(doc);
         }
-        self.history.commit();
+        if (grown - 1.0f64).abs() > 1e-6 {
+            // (the step stays open: `apply_scales` makes the copy and closes it)
+            self.scale_requests.push((Sel::Object(k, id), DVec3::splat(grown)));
+        } else {
+            self.history.commit();
+        }
         if let Some(n) = linked_to {
             self.toast(format!("{} «{n}»: {}", tr("Linked to", "Связан с"), tr("choose its light in its properties", "сигнал выберите в его свойствах")));
         }

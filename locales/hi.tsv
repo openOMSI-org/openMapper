@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	इस सिरे पर सड़क जिस दिशा में जाती है, डिग्री में। खींचने से सिरा घूमता है; वहाँ जुड़ी सड़क भी साथ घूमती है।
 Snap to road edges and surfaces	सड़क के किनारों और सतहों पर स्नैप करें
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	सड़क के पास जो बनाया जाता है वह उसके किनारे से शुरू होता है; वस्तु के ऊपर वह वस्तु की अपनी सतह से, उसी ऊँचाई पर शुरू होता है
+Load all tiles at once	सभी टाइलें एक साथ लोड करें
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, बाकी तब तक छिपी रहती हैं जब तक आप खाली क्षेत्र पर क्लिक नहीं करते

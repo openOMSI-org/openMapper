@@ -2589,3 +2589,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Осы ұшта жолдың бағыты, градуспен. Сүйреу ұшты бұрады; сонда жалғанған жол бірге бұрылады.
 Snap to road edges and surfaces	Жол жиегі мен беттерге жабыстыру
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Жолдың жанында салынғаны оның жиегінен басталады; нысанның үстінде нысанның өз бетінен, сол биіктіктен басталады
+Load all tiles at once	Барлық тайлды бірден жүктеу
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Өшірулі: OMSI 2 редакторындағыдай тек камера айналасындағы тайлдар жүктеледі, қалғандары бос аймақты басқанша жасырын

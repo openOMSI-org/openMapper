@@ -2587,3 +2587,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Die Richtung, in die die Straße an diesem Ende läuft, in Grad. Ziehen dreht das Ende; die dort anschließende Straße dreht mit.
 Snap to road edges and surfaces	An Straßenkanten und Flächen einrasten
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Was neben einer Straße gezeichnet wird, beginnt an ihrer Kante; über einem Objekt beginnt es auf dessen Fläche, in deren Höhe
+Load all tiles at once	Alle Kacheln auf einmal laden
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Aus: Nur die Kacheln um die Kamera werden geladen, wie im Editor von OMSI 2, die übrigen bleiben verborgen, bis Sie auf die leere Zone klicken

@@ -2629,3 +2629,5 @@ A road drawn or a spline's end dragged onto a road lands on its edge (the ground
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	De richting waarin de weg aan dit uiteinde loopt, in graden. Slepen draait het uiteinde; de weg die daarop aansluit draait mee.
 Snap to road edges and surfaces	Vastzetten op wegranden en vlakken
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Wat naast een weg wordt getekend, begint op de rand; boven een object begint het op het eigen vlak van het object, op die hoogte
+Load all tiles at once	Alle tegels tegelijk laden
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, de rest blijft verborgen tot u op de lege zone klikt
