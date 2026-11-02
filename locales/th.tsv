@@ -2596,3 +2596,5 @@ Click an object in the view	คลิกวัตถุในมุมมอง
 Click an object or a spline in the view	คลิกวัตถุหรือสปลายน์ในมุมมอง
 Click the spline it should stand on. It follows that road and keeps its IDCode	คลิกสปลายน์ที่มันจะยืนอยู่ มันจะไปตามถนนนั้นและคง IDCode ไว้
 That is the one	นี่คืออันนั้น
+Path	เส้นทาง
+Ctrl: snap onto a path, F9: the next one	Ctrl: ติดกับเส้นทาง, F9: ถัดไป

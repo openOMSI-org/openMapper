@@ -2596,3 +2596,5 @@ Click an object in the view	Klikněte na objekt v pohledu
 Click an object or a spline in the view	Klikněte na objekt nebo spline v pohledu
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klikněte na spline, na kterém má stát. Sleduje tu silnici a ponechá si IDCode
 That is the one	To je on
+Path	Cesta
+Ctrl: snap onto a path, F9: the next one	Ctrl: přichytit k cestě, F9: další

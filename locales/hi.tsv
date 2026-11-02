@@ -2596,3 +2596,5 @@ Click an object in the view	दृश्य में एक वस्तु प
 Click an object or a spline in the view	दृश्य में एक वस्तु या स्पलाइन पर क्लिक करें
 Click the spline it should stand on. It follows that road and keeps its IDCode	जिस स्पलाइन पर इसे खड़ा होना है उस पर क्लिक करें। यह उस सड़क के साथ चलता है और IDCode रखता है
 That is the one	यही है
+Path	पथ
+Ctrl: snap onto a path, F9: the next one	Ctrl: पथ पर चिपकाना, F9: अगला

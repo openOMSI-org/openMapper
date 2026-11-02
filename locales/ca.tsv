@@ -2596,3 +2596,5 @@ Click an object in the view	Feu clic en un objecte a la vista
 Click an object or a spline in the view	Feu clic en un objecte o un spline a la vista
 Click the spline it should stand on. It follows that road and keeps its IDCode	Feu clic al spline on ha de estar. Segueix aquesta via i conserva l'IDCode
 That is the one	És aquest
+Path	Camí
+Ctrl: snap onto a path, F9: the next one	Ctrl: enganxar a un camí, F9: el següent

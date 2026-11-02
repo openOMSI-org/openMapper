@@ -2596,3 +2596,5 @@ Click an object in the view	Пстрыкніце аб'ект у выглядзе
 Click an object or a spline in the view	Пстрыкніце аб'ект або сплайн у выглядзе
 Click the spline it should stand on. It follows that road and keeps its IDCode	Пстрыкніце сплайн, на якім ён мусіць стаяць. Ён ідзе за гэтай дарогай і захоўвае IDCode
 That is the one	Гэта ён
+Path	Шлях
+Ctrl: snap onto a path, F9: the next one	Ctrl: прывязаць да шляху, F9: наступны

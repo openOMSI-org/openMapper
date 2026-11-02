@@ -2596,3 +2596,5 @@ Click an object in the view	뷰에서 오브젝트를 클릭
 Click an object or a spline in the view	뷰에서 오브젝트나 스플라인을 클릭
 Click the spline it should stand on. It follows that road and keeps its IDCode	올릴 스플라인을 클릭하세요. 그 길을 따르고 IDCode는 유지됩니다
 That is the one	이것입니다
+Path	경로
+Ctrl: snap onto a path, F9: the next one	Ctrl: 경로에 붙이기, F9: 다음

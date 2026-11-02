@@ -2636,3 +2636,5 @@ Click an object in the view	Kliknij obiekt w widoku
 Click an object or a spline in the view	Kliknij obiekt albo splajn w widoku
 Click the spline it should stand on. It follows that road and keeps its IDCode	Kliknij splajn, na którym ma stać. Podąża za tą drogą i zachowuje IDCode
 That is the one	To ten
+Path	Ścieżka
+Ctrl: snap onto a path, F9: the next one	Ctrl: dociągnij do ścieżki, F9: następna

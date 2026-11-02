@@ -2596,3 +2596,5 @@ Click an object in the view	Kattintson egy objektumra a nézetben
 Click an object or a spline in the view	Kattintson egy objektumra vagy egy spline-ra a nézetben
 Click the spline it should stand on. It follows that road and keeps its IDCode	Kattintson arra a spline-ra, amelyen állnia kell. Azon az úton marad, és megtartja az IDCode-ját
 That is the one	Ez az
+Path	Út
+Ctrl: snap onto a path, F9: the next one	Ctrl: útra illesztés, F9: a következő

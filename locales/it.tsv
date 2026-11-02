@@ -2596,3 +2596,5 @@ Click an object in the view	Fai clic su un oggetto nella vista
 Click an object or a spline in the view	Fai clic su un oggetto o una spline nella vista
 Click the spline it should stand on. It follows that road and keeps its IDCode	Fai clic sulla spline su cui deve stare. Segue quella strada e tiene il suo IDCode
 That is the one	È questo
+Path	Percorso
+Ctrl: snap onto a path, F9: the next one	Ctrl: agganciare a un percorso, F9: il successivo

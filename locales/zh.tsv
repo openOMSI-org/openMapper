@@ -2593,3 +2593,5 @@ Click an object in the view	在画面中点一个物体
 Click an object or a spline in the view	在画面中点一个物体或一条样条
 Click the spline it should stand on. It follows that road and keeps its IDCode	点它要依附的那条样条。它会跟着那条路，并保留 IDCode
 That is the one	就是这个
+Path	路径
+Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条

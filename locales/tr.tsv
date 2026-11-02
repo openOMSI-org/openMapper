@@ -2596,3 +2596,5 @@ Click an object in the view	Görünümde bir nesneye tıklayın
 Click an object or a spline in the view	Görünümde bir nesneye veya bir spline'a tıklayın
 Click the spline it should stand on. It follows that road and keeps its IDCode	Durması gereken spline'a tıklayın. O yolu izler ve IDCode'unu korur
 That is the one	Bu o
+Path	Yol
+Ctrl: snap onto a path, F9: the next one	Ctrl: yola yapıştır, F9: sonraki

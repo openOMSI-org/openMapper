@@ -2596,3 +2596,5 @@ Click an object in the view	I-click ang isang bagay sa tanawin
 Click an object or a spline in the view	I-click ang isang bagay o spline sa tanawin
 Click the spline it should stand on. It follows that road and keeps its IDCode	I-click ang spline na dapat nitong kalagyan. Sumusunod ito sa daang iyon at nananatili ang IDCode
 That is the one	Ito iyon
+Path	Landas
+Ctrl: snap onto a path, F9: the next one	Ctrl: idikit sa landas, F9: susunod

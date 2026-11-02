@@ -2594,3 +2594,5 @@ Click an object in the view	Cliquez un objet dans la vue
 Click an object or a spline in the view	Cliquez un objet ou un spline dans la vue
 Click the spline it should stand on. It follows that road and keeps its IDCode	Cliquez le spline sur lequel il doit se tenir. Il suit cette voie et garde son IDCode
 That is the one	C'est celui-là
+Path	Chemin
+Ctrl: snap onto a path, F9: the next one	Ctrl: coller à un chemin, F9: le suivant

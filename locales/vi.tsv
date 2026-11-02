@@ -2596,3 +2596,5 @@ Click an object in the view	Nhấp một đối tượng trong khung nhìn
 Click an object or a spline in the view	Nhấp một đối tượng hoặc một spline trong khung nhìn
 Click the spline it should stand on. It follows that road and keeps its IDCode	Nhấp spline nó sẽ đứng trên. Nó đi theo đường đó và giữ IDCode
 That is the one	Chính là cái này
+Path	Đường
+Ctrl: snap onto a path, F9: the next one	Ctrl: dính vào đường, F9: đường kế

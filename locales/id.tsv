@@ -2596,3 +2596,5 @@ Click an object in the view	Klik sebuah objek di tampilan
 Click an object or a spline in the view	Klik sebuah objek atau spline di tampilan
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klik spline tempatnya harus berdiri. Ia mengikuti jalan itu dan IDCode-nya tetap
 That is the one	Ini dia
+Path	Jalur
+Ctrl: snap onto a path, F9: the next one	Ctrl: tempel ke jalur, F9: berikutnya

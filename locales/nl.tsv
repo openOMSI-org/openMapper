@@ -2636,3 +2636,5 @@ Click an object in the view	Klik op een object in het beeld
 Click an object or a spline in the view	Klik op een object of een spline in het beeld
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klik op de spline waarop het moet staan. Het volgt die weg en houdt zijn IDCode
 That is the one	Dat is hem
+Path	Pad
+Ctrl: snap onto a path, F9: the next one	Ctrl: aan een pad klikken, F9: de volgende

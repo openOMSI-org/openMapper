@@ -2596,3 +2596,5 @@ Click an object in the view	ビューでオブジェクトをクリック
 Click an object or a spline in the view	ビューでオブジェクトかスプラインをクリック
 Click the spline it should stand on. It follows that road and keeps its IDCode	載せるスプラインをクリック。その道に沿い、IDCode は残ります
 That is the one	これです
+Path	パス
+Ctrl: snap onto a path, F9: the next one	Ctrl: パスに合わせる、F9: 次
