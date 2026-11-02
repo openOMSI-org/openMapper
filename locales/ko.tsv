@@ -2599,3 +2599,5 @@ Select splines first	먼저 스플라인을 선택하세요
 No spline under the cursor	커서 아래에 스플라인이 없습니다
 The ground follows the spline	지면이 스플라인을 따릅니다
 Align ground to splines	지면을 스플라인에 맞추기
+Path	경로
+Ctrl: snap onto a path, F9: the next one	Ctrl: 경로에 붙이기, F9: 다음

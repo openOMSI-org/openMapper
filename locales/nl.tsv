@@ -2639,3 +2639,5 @@ Select splines first	Selecteer eerst splines
 No spline under the cursor	Geen spline onder de cursor
 The ground follows the spline	De grond volgt de spline
 Align ground to splines	Grond gelijktrekken met splines
+Path	Pad
+Ctrl: snap onto a path, F9: the next one	Ctrl: aan een pad klikken, F9: de volgende

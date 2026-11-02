@@ -2639,3 +2639,5 @@ Select splines first	Najpierw wybierz splajny
 No spline under the cursor	Brak splajnu pod kursorem
 The ground follows the spline	Grunt podąża za splajnem
 Align ground to splines	Wyrównaj grunt do splajnów
+Path	Ścieżka
+Ctrl: snap onto a path, F9: the next one	Ctrl: dociągnij do ścieżki, F9: następna

@@ -2599,3 +2599,5 @@ Select splines first	Selecciona primero las splines
 No spline under the cursor	No hay ninguna spline bajo el cursor
 The ground follows the spline	El suelo sigue la spline
 Align ground to splines	Ajustar el suelo a las splines
+Path	Ruta
+Ctrl: snap onto a path, F9: the next one	Ctrl: acoplar a una ruta, F9: la siguiente

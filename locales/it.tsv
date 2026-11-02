@@ -2599,3 +2599,5 @@ Select splines first	Seleziona prima le spline
 No spline under the cursor	Nessuna spline sotto il cursore
 The ground follows the spline	Il terreno segue la spline
 Align ground to splines	Allinea il terreno alle spline
+Path	Percorso
+Ctrl: snap onto a path, F9: the next one	Ctrl: agganciare a un percorso, F9: il successivo

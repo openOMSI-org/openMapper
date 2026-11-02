@@ -2639,3 +2639,5 @@ Select splines first	Välj splines först
 No spline under the cursor	Ingen spline under markören
 The ground follows the spline	Marken följer splinen
 Align ground to splines	Jämna ut marken mot splines
+Path	Bana
+Ctrl: snap onto a path, F9: the next one	Ctrl: fäst vid en bana, F9: nästa

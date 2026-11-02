@@ -2596,3 +2596,5 @@ Select splines first	请先选择样条线
 No spline under the cursor	光标下没有样条线
 The ground follows the spline	地面已跟着样条线
 Align ground to splines	把地面贴齐样条线
+Path	路径
+Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条

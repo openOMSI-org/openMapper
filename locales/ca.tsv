@@ -2599,3 +2599,5 @@ Select splines first	Seleccioneu primer les splines
 No spline under the cursor	No hi ha cap spline sota el cursor
 The ground follows the spline	El terra segueix la spline
 Align ground to splines	Ajustar el terra a les splines
+Path	Camí
+Ctrl: snap onto a path, F9: the next one	Ctrl: enganxar a un camí, F9: el següent

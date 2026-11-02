@@ -2599,3 +2599,5 @@ Select splines first	Спачатку выберыце сплайны
 No spline under the cursor	Пад курсорам няма сплайна
 The ground follows the spline	Зямля паўтарае сплайн
 Align ground to splines	Зямля па сплайнах
+Path	Шлях
+Ctrl: snap onto a path, F9: the next one	Ctrl: прывязаць да шляху, F9: наступны

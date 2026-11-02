@@ -2599,3 +2599,5 @@ Select splines first	先にスプラインを選択してください
 No spline under the cursor	カーソルの下にスプラインがありません
 The ground follows the spline	地面がスプラインに沿いました
 Align ground to splines	地面をスプラインに合わせる
+Path	パス
+Ctrl: snap onto a path, F9: the next one	Ctrl: パスに合わせる、F9: 次

@@ -2596,3 +2596,5 @@ Select splines first	請先選取Spline
 No spline under the cursor	游標下沒有Spline
 The ground follows the spline	地面已跟著Spline
 Align ground to splines	把地面貼齊Spline
+Path	路徑
+Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條

@@ -2599,3 +2599,5 @@ Select splines first	Önce spline seçin
 No spline under the cursor	İmlecin altında spline yok
 The ground follows the spline	Zemin spline'ı izliyor
 Align ground to splines	Zemini spline'lara hizala
+Path	Yol
+Ctrl: snap onto a path, F9: the next one	Ctrl: yola yapıştır, F9: sonraki

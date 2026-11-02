@@ -2599,3 +2599,5 @@ Select splines first	Алдымен сплайндарды таңдаңыз
 No spline under the cursor	Курсор астында сплайн жоқ
 The ground follows the spline	Жер сплайнды қайталайды
 Align ground to splines	Жерді сплайнға келтіру
+Path	Жол
+Ctrl: snap onto a path, F9: the next one	Ctrl: жолға жабыстыру, F9: келесі

@@ -2599,3 +2599,5 @@ Select splines first	เลือกสปลายน์ก่อน
 No spline under the cursor	ไม่มีสปลายน์ใต้เคอร์เซอร์
 The ground follows the spline	พื้นดินตามสปลายน์
 Align ground to splines	ปรับพื้นดินให้ตามสปลายน์
+Path	เส้นทาง
+Ctrl: snap onto a path, F9: the next one	Ctrl: ติดกับเส้นทาง, F9: ถัดไป

@@ -2599,3 +2599,5 @@ Select splines first	Hãy chọn spline trước
 No spline under the cursor	Không có spline dưới con trỏ
 The ground follows the spline	Mặt đất theo spline
 Align ground to splines	Đưa mặt đất theo spline
+Path	Đường
+Ctrl: snap onto a path, F9: the next one	Ctrl: dính vào đường, F9: đường kế

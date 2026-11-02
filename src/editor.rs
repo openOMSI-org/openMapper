@@ -276,6 +276,9 @@ pub struct Grab {
     /// What it was last asked to go (before the grid had its say): a frame that asks for the
     /// same again, as every frame does while the pointer is still, has nothing to move.
     asked: DVec3,
+    /// Ctrl and the path number that `asked` was worked out with. Either changing (F9, Ctrl
+    /// pressed) asks for the place again even when the pointer has not moved.
+    asked_key: Option<(bool, usize)>,
     /// Where what it carries is linked (read once, when it takes hold: reading it again every
     /// frame is walking the whole map for every piece moved).
     links: Option<selection::SplineWhere>,
@@ -394,8 +397,14 @@ pub struct Editor {
     pub straight_lock: bool,
     /// The Logic tool's AI paths are being edited (picked, reshaped, split) rather than drawn.
     pub path_edit: bool,
-    /// Ctrl / Cmd is held (a click on a selected AI path puts a point into it).
+    /// Ctrl / Cmd is held (a click on a selected AI path puts a point into it). While a grab
+    /// runs, it snaps a path of what is held onto a path nearby.
     pub ctrl_held: bool,
+    /// Which path of the thing being grabbed Ctrl lays on the path nearby (F9 takes the next).
+    /// Kept after the grab, as OMSI's editor does.
+    path_snap: usize,
+    /// How many paths that thing has (0: it has none, or its file is not loaded yet).
+    path_count: usize,
     /// The road drawn is planned again this frame.
     pub replan: bool,
     /// The Roads tool builds roundabouts: a click on the centre, then on the ring (or a
@@ -653,6 +662,8 @@ impl Default for Editor {
             straight_lock: false,
             path_edit: false,
             ctrl_held: false,
+            path_snap: 0,
+            path_count: 0,
             replan: false,
             roundabout: false,
             bus_pocket: false,
@@ -3543,7 +3554,7 @@ impl Editor {
         let mids: Vec<_> = [start.mid, end.and_then(|e| e.mid)].into_iter().flatten().collect();
         let end_link = end.filter(|e| e.mid.is_none());
         let start_link = if start.mid.is_some() { Anchor { spline: None, ..start } } else { start };
-        let made = self.build_road(&rel, &segs, z0, z1, start_link, end_link, half as f64);
+        let made = self.build_road(assets, &rel, &segs, z0, z1, start_link, end_link, half as f64);
         let mut last = made.as_ref().and_then(|m| m.last().copied());
         if let Some(made) = &made {
             if self.drawing_track(assets) {
@@ -3660,7 +3671,7 @@ impl Editor {
     }
 
     /// Make the splines of a planned road. Returns the last one.
-    fn build_road(&mut self, rel: &str, segs: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
+    fn build_road(&mut self, assets: &mut Assets, rel: &str, segs: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
         let doc = self.doc.as_mut()?;
         let pieces = roads::split(segs, 50.0);
         let total = roads::total_length(&pieces).max(0.1);
@@ -3677,15 +3688,20 @@ impl Editor {
         }
         self.history.touch_global(doc);
         let _ = total;
-        self.lay_road(rel, &pieces, z0, z1, start, end, half)
+        self.lay_road(assets, rel, &pieces, z0, z1, start, end, half)
     }
 
     /// The splines of a road, cut into pieces (`roads::split`), put into the map, linked to
     /// what its ends meet; inside an open step that keeps every tile.
-    fn lay_road(&mut self, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
-        let doc = self.doc.as_mut()?;
+    fn lay_road(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
         let pieces = pieces.to_vec();
-        let profile = if self.keep_height || !self.auto_terrain { even_profile(&pieces, z0, z1) } else { road_profile(doc, &pieces, z0, z1) };
+        // (the heights before the map is borrowed to be written: with Surface on, the whole
+        // road takes the surface under it, not only its two ends)
+        let profile = {
+            let doc = self.doc.as_ref()?;
+            self.road_heights(assets, doc, &pieces, z0, z1)
+        };
+        let doc = self.doc.as_mut()?;
         let mut made: Vec<(TileKey, i64)> = Vec::new();
         let ids: Vec<i64> = pieces.iter().map(|_| doc.new_id()).collect();
         let mut curves = Vec::new();
@@ -3753,11 +3769,26 @@ impl Editor {
                 }
             }
         }
-        if self.follow_ground && self.auto_terrain && !self.keep_height && !(self.tool == Tool::Logic) {
+        // (a road laid on a surface keeps that surface: the ground under it is not raised up to it)
+        if self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
             conform_ground(doc, &curves, half);
         }
         // (the step stays open: the caller may cut the road it joined, in the same step)
         Some(made)
+    }
+
+    /// Heights at the joints of a planned road. With Surface on, each joint takes the face or
+    /// the road under it (the ground only where there is neither), and may be as steep as that
+    /// surface. Otherwise the ground, no steeper than 10 %.
+    fn road_heights(&self, assets: &mut Assets, doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
+        if self.keep_height || !self.auto_terrain {
+            even_profile(pieces, z0, z1)
+        } else if self.snap_surface {
+            let hide = self.hide[2];
+            road_profile(pieces, z0, z1, &mut |p| cover_z(doc, assets, hide, p), false)
+        } else {
+            road_profile(pieces, z0, z1, &mut |p| doc.ground(p), true)
+        }
     }
 
     /// Roads from OpenStreetMap built as if drawn one after the other (in `osm::roads`'
@@ -3957,7 +3988,7 @@ impl Editor {
                 continue;
             }
             let pieces = roads::split(&segs, 50.0);
-            let Some(made) = self.lay_road(&rel, &pieces, z0, z1, start_link, end_link, half) else { continue };
+            let Some(made) = self.lay_road(assets, &rel, &pieces, z0, z1, start_link, end_link, half) else { continue };
             built += 1;
             ends_made.push(made.first().map(|m| (m.0, m.1, false)));
             ends_made.push(made.last().map(|m| (m.0, m.1, true)));
@@ -5069,22 +5100,19 @@ impl Editor {
                         let pieces = roads::split(segs, 50.0);
                         let total = roads::total_length(&pieces).max(0.1);
                         let _ = total;
-                        let profile = if self.keep_height || !self.auto_terrain { even_profile(&pieces, *z0, *z1) } else { road_profile(doc, &pieces, *z0, *z1) };
+                        let profile = self.road_heights(assets, doc, &pieces, *z0, *z1);
                         for (i, p) in pieces.iter().enumerate() {
                             let mut s = piece_spline(rel, p, &profile, i, DVec2::ZERO);
+                            // (the guide is the road's own height, surface included, not the ground under it)
+                            let shown = omsi_geometry::SplineCurve::from_map(&s, DVec2::ZERO);
+                            let n = (p.length / 2.0).ceil().max(1.0) as usize;
+                            for j in 0..n {
+                                let a = shown.point_at(s.length * j as f64 / n as f64);
+                                let b = shown.point_at(s.length * (j + 1) as f64 / n as f64);
+                                line(&mut x.overlay, cam, a + DVec3::Z * 0.3, b + DVec3::Z * 0.3, w * 0.6, [1.0, 1.0, 1.0, 0.5]);
+                            }
                             s.pos[2] += 0.02;
                             x.ghost_splines.push((rel.clone(), s, [0.35, 0.85, 0.45, 0.25]));
-                        }
-                        for p in &pieces {
-                            let c = p.curve();
-                            let n = (p.length / 2.0).ceil().max(1.0) as usize;
-                            for i in 0..n {
-                                let a = c.point_at(p.length * i as f64 / n as f64);
-                                let b = c.point_at(p.length * (i + 1) as f64 / n as f64);
-                                let za = doc.ground(a.truncate()) + 0.3;
-                                let zb = doc.ground(b.truncate()) + 0.3;
-                                line(&mut x.overlay, cam, DVec3::new(a.x, a.y, za), DVec3::new(b.x, b.y, zb), w * 0.6, [1.0, 1.0, 1.0, 0.5]);
-                            }
                         }
                         if total > 1.0 {
                             let _ = total;
@@ -5655,13 +5683,19 @@ impl Editor {
                 a => format!(" {a}"),
             };
             let d = g.delta;
+            let path = if self.path_count > 0 {
+                format!(" · {} {}", tr("Path", "Путь"), self.path_snap % self.path_count)
+            } else {
+                String::new()
+            };
             return Some(format!(
-                "{} {axis} {:.3} m ({:.3}, {:.3}, {:.3}) · {}",
+                "{} {axis} {:.3} m ({:.3}, {:.3}, {:.3}){path} · {} · {}",
                 tr("Grab", "Захват"),
                 d.length(),
                 d.x,
                 d.y,
                 d.z,
+                tr("Ctrl: snap onto a path, F9: the next one", "Ctrl: привязать к пути, F9: следующий"),
                 tr("X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel", "X / Y / Z: закрепить ось, цифры: как далеко, Enter или клик: готово, Esc: отмена")
             ));
         }
@@ -6570,7 +6604,7 @@ impl Editor {
             self.grab_cancel();
         }
         self.history.begin(tr("Move", "Перемещение"));
-        self.grab = Some(Grab { from, z, arms, start: at, start_mouse: mouse, at, mouse, axis: None, typed: String::new(), delta: DVec3::ZERO, asked: DVec3::ZERO, links });
+        self.grab = Some(Grab { from, z, arms, start: at, start_mouse: mouse, at, mouse, axis: None, typed: String::new(), delta: DVec3::ZERO, asked: DVec3::ZERO, asked_key: None, links });
         self.xform_value = 0.0;
         true
     }
@@ -6578,6 +6612,12 @@ impl Editor {
     /// The pointer has gone to `at` (world) / `mouse` (window points): the selection follows
     /// it, as the axis locked allows.
     pub fn grab_follow(&mut self, at: DVec3, mouse: (f32, f32)) {
+        self.grab_follow_with(None, at, mouse);
+    }
+
+    /// As [`grab_follow`](Self::grab_follow). With the models, Ctrl lays a path of what is
+    /// held onto a path nearby (F9 chooses which).
+    pub fn grab_follow_with(&mut self, assets: Option<&mut Assets>, at: DVec3, mouse: (f32, f32)) {
         let Some(g) = self.grab.as_mut() else { return };
         g.at = at;
         g.mouse = mouse;
@@ -6605,12 +6645,28 @@ impl Editor {
             };
         }
         // (nothing asked for that is not already done: the selection is not moved again, which
-        // on a map of many tiles and a road of many pieces is the frame's whole cost)
-        if (d - g.asked).length() < 1e-12 {
+        // on a map of many tiles and a road of many pieces is the frame's whole cost. Ctrl and
+        // the path number are part of what was asked: F9, or Ctrl going down, moves it again
+        // though the pointer is still)
+        let key = (self.ctrl_held, self.path_snap);
+        if (d - g.asked).length() < 1e-12 && g.asked_key == Some(key) {
             return;
         }
         g.asked = d;
-        self.grab_to(d);
+        g.asked_key = Some(key);
+        self.grab_to(assets, d);
+    }
+
+    /// The next path Ctrl lays on the one nearby, and round to the first after the last.
+    pub fn grab_next_path(&mut self) {
+        if self.path_count > 0 {
+            self.path_snap = (self.path_snap + 1) % self.path_count;
+        } else {
+            self.path_snap = self.path_snap.wrapping_add(1);
+        }
+        if let Some(g) = self.grab.as_mut() {
+            g.asked_key = None;
+        }
     }
 
     /// Lock the grab to an axis (0: X, 1: Y, 2: Z): pressing that axis again lets it go free.
@@ -6677,19 +6733,33 @@ impl Editor {
     }
 
     /// Put the selection where `d` (m) says, from where it was taken.
-    fn grab_to(&mut self, d: DVec3) {
-        let Some(g) = self.grab.as_ref() else { return };
+    fn grab_to(&mut self, mut assets: Option<&mut Assets>, d: DVec3) {
+        if self.grab.is_none() {
+            return;
+        }
+        if let Some(a) = assets.as_deref_mut() {
+            self.note_paths(a);
+        }
+        // (Ctrl, and no axis and no typed distance: a path of what is held meets a path nearby)
+        let free = self.grab.as_ref().is_some_and(|g| g.axis.is_none() && g.typed.is_empty());
+        let align = if self.ctrl_held && free { assets.as_deref_mut().and_then(|a| self.path_align(a, d)) } else { None };
         // (nothing has moved yet: nothing is put anywhere, the grid's snapping included, so
         // taking hold of something and locking an axis leaves it where it stands)
-        if d.length() < 1e-9 {
+        if d.length() < 1e-9 && align.is_none() {
             self.xform_value = 0.0;
             return;
         }
-        // (the grid holds the first one's place, as a drag does)
-        let first = g.from[0].pos;
-        let snapped = self.snap_point(first + d.truncate()) - first;
-        let delta = DVec2::new(snapped.x, snapped.y);
-        let dz = if self.snap_grid && self.grid_step > 0.0 { (d.z / self.grid_step).round() * self.grid_step } else { d.z };
+        let Some(g) = self.grab.as_ref() else { return };
+        // (the grid holds the first one's place, as a drag does; a path that met another
+        // holds the whole selection so that path's end sits on the other)
+        let (pivot, deg, delta, dz) = if let Some(a) = align {
+            a
+        } else {
+            let first = g.from[0].pos;
+            let snapped = self.snap_point(first + d.truncate()) - first;
+            let dz = if self.snap_grid && self.grid_step > 0.0 { (d.z / self.grid_step).round() * self.grid_step } else { d.z };
+            (DVec2::ZERO, 0.0, DVec2::new(snapped.x, snapped.y), dz)
+        };
         // (what it carries is moved out and back: a selection of a hundred thousand pieces
         // copied on every frame of a drag is a frame's work for nothing)
         let arms: Vec<selection::Arm> = g.arms.iter().flat_map(|(_, a)| a.iter().copied()).collect();
@@ -6700,10 +6770,10 @@ impl Editor {
         let n = from.len();
         let links = self.grab.as_ref().and_then(|g| g.links.as_ref());
         let t0 = std::time::Instant::now();
-        let now = selection::transform_known(doc, &mut self.history, &from, DVec2::ZERO, 0.0, delta, links);
+        let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, delta, links);
         let t_move = t0.elapsed();
         // (the roads the selected junctions hold follow, shown as they would be)
-        self.carry_preview = selection::carry_plans(doc, &arms, DVec2::ZERO, 0.0, delta, dz, &|_| false).into_iter().flatten().collect();
+        self.carry_preview = selection::carry_plans(doc, &arms, pivot, deg, delta, dz, &|_| false).into_iter().flatten().collect();
         let t_preview = t0.elapsed() - t_move;
         self.set_selection_unique(now);
         if dz.abs() > 1e-9 {
@@ -6719,6 +6789,72 @@ impl Editor {
         if total.as_millis() > 200 {
             log::warn!("the grab of {n} things took {:.0} ms (the move {:.0}, the preview {:.0}, the heights {:.0})", total.as_secs_f64() * 1000.0, t_move.as_secs_f64() * 1000.0, t_preview.as_secs_f64() * 1000.0, (total - t_move - t_preview).as_secs_f64() * 1000.0);
         }
+    }
+
+    /// How many paths the first object or road of the grab has.
+    fn note_paths(&mut self, assets: &mut Assets) {
+        let Some(doc) = self.doc.as_ref() else { return };
+        let Some(g) = self.grab.as_ref() else { return };
+        let n = g.from.iter().find_map(|o| match o.sel {
+            Sel::Spline(k, id) => doc.spline(k, id).and_then(|s| assets.spline(&s.file)).map(|m| m.def.paths.len()),
+            Sel::Object(k, id) => doc.object(k, id).and_then(|o| assets.object(&o.file)).map(|m| m.paths.len()),
+            Sel::Attached(..) => None,
+        });
+        if let Some(n) = n {
+            self.path_count = n;
+            if n > 0 {
+                self.path_snap %= n;
+            }
+        }
+    }
+
+    /// Where Ctrl puts the grab: the chosen path's nearer end on the nearest path end of the
+    /// same kind within 5 m, headings within 45° of running on into each other. The whole
+    /// selection turns and shifts so that end lands there. None: nothing near enough, and the
+    /// pointer is followed instead.
+    fn path_align(&mut self, assets: &mut Assets, d: DVec3) -> Option<(DVec2, f64, DVec2, f64)> {
+        let doc = self.doc.as_ref()?;
+        let g = self.grab.as_ref()?;
+        let held = g.from.iter().find(|o| matches!(o.sel, Sel::Object(..) | Sel::Spline(..)))?;
+        let z0 = g.z.iter().find(|(s, _)| *s == held.sel).map(|(_, z)| *z).unwrap_or(0.0);
+        let proposed = path_ends_at(doc, assets, held, held.pos + d.truncate(), held.heading, z0)?;
+        if proposed.is_empty() {
+            return None;
+        }
+        let index = self.path_snap % proposed.len();
+        let (kind, ends) = proposed[index].as_ref()?;
+        let reach = ends.iter().map(|(p, _)| (p.truncate() - (held.pos + d.truncate())).length()).fold(0.0, f64::max) + 5.0;
+        let (lanes, _) = crate::lanes::near(doc, assets, held.pos + d.truncate(), reach);
+        let own = |lane: &crate::lanes::Lane| {
+            g.from.iter().any(|o| match o.sel {
+                Sel::Spline(k, id) => lane.spline.is_some_and(|s| s.0 == k && s.1 == id),
+                Sel::Object(k, id) => lane.object == Some((k, id)),
+                Sel::Attached(..) => false,
+            })
+        };
+        let mut best: Option<(f64, usize, DVec3, f64)> = None;
+        for (which, (pos, heading)) in ends.iter().enumerate() {
+            for lane in lanes.iter().filter(|l| l.kind == *kind && l.pts.len() >= 2 && !own(l)) {
+                for e in lane.ends() {
+                    let dist = (pos.truncate() - e.pos.truncate()).length();
+                    if dist > 5.0 || heading_apart(*heading, e.heading + 180.0) > 45.0 {
+                        continue;
+                    }
+                    if best.as_ref().map(|(b, ..)| dist < *b).unwrap_or(true) {
+                        best = Some((dist, which, e.pos, e.heading));
+                    }
+                }
+            }
+        }
+        let (_, which, target, target_heading) = best?;
+        let original = path_ends_at(doc, assets, held, held.pos, held.heading, z0)?;
+        let (end, end_heading) = original.get(index).and_then(|p| p.as_ref()).map(|(_, e)| e[which])?;
+        let mut deg = (target_heading + 180.0 - end_heading).rem_euclid(360.0);
+        if deg > 180.0 {
+            deg -= 360.0;
+        }
+        let turned = selection::turn_point(end.truncate(), held.pos, deg);
+        Some((held.pos, deg, target.truncate() - turned, target.z - end.z))
     }
 
     /// Put the height of what is being grabbed at its own plus `dz` (the Z lock).
@@ -8248,7 +8384,7 @@ impl Editor {
                 }
             }
         }
-        let Some(made) = self.build_road(&rel, &segs, z, z, Anchor::default(), None, half) else { return };
+        let Some(made) = self.build_road(assets, &rel, &segs, z, z, Anchor::default(), None, half) else { return };
         let Some(doc) = self.doc.as_mut() else { return };
         // the ring closes on itself
         let (first, last) = (made[0], *made.last().unwrap());
@@ -8818,13 +8954,79 @@ fn even_profile(pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
     out
 }
 
-fn road_profile(doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
+/// The topmost surface under `p`: an object's face, or a road's ribbon (and the reach beside
+/// its edge), else the ground. A wall, a fence and an AI path are not a surface.
+fn cover_z(doc: &Document, assets: &mut Assets, hide_roads: bool, p: DVec2) -> f64 {
+    let ground = doc.ground(p);
+    let mut best = ground;
+    let origin = DVec3::new(p.x, p.y, ground + 80.0);
+    let down = DVec3::new(0.0, 0.0, -1.0);
+    let ov = Vec3::ZERO;
+    let dv = down.as_vec3();
+    let span = tile_size();
+    for (k, t) in &doc.tiles {
+        let org = tile_origin(*k);
+        if (org + DVec2::splat(span * 0.5) - p).length() > span {
+            continue;
+        }
+        for ob in &t.tile.objects {
+            let Some(model) = assets.object(&ob.file) else { continue };
+            if model.parts.is_empty() || model.technical {
+                continue;
+            }
+            let world = doc.object_world(*k, ob, model.abs_height);
+            if (world.truncate() - p).length() > model.radius() as f64 + 2.0 {
+                continue;
+            }
+            let m = object_matrix(world - origin, ob.rot);
+            if let Some(h) = model.parts.iter().filter_map(|part| omsi_geometry::ray_mesh(ov, dv, &part.mesh, &m)).reduce(f32::min) {
+                let z = origin.z + down.z * h as f64;
+                if z > best {
+                    best = z;
+                }
+            }
+        }
+        if hide_roads {
+            continue;
+        }
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            if (org + DVec2::new(s.pos[0], s.pos[1]) - p).length() > s.length + 40.0 {
+                continue;
+            }
+            let Some(model) = assets.spline(&s.file) else { continue };
+            if model.is_ai_path() {
+                continue;
+            }
+            let (sx0, sx1, top, standing) = model.surface_span();
+            if standing {
+                continue;
+            }
+            let (x0, x1) = if s.mirror { (-(sx1 as f64), -(sx0 as f64)) } else { (sx0 as f64, sx1 as f64) };
+            let Some((along, beside)) = selection::on_spline(s, org, p) else { continue };
+            let lo = x0.min(x1) - EDGE_REACH;
+            let hi = x0.max(x1) + EDGE_REACH;
+            if beside < lo || beside > hi {
+                continue;
+            }
+            let c = omsi_geometry::SplineCurve::from_map(s, org);
+            let z = c.point_at(along).z + top as f64;
+            if z > best {
+                best = z;
+            }
+        }
+    }
+    best
+}
+
+fn road_profile(pieces: &[Seg], z0: f64, z1: f64, at: &mut dyn FnMut(DVec2) -> f64, limit_slope: bool) -> Vec<(f64, f64)> {
     let mut nodes = vec![0.0];
+    let mut where_at = vec![pieces.first().map(|p| p.start).unwrap_or(DVec2::ZERO)];
     for p in pieces {
         nodes.push(nodes.last().unwrap() + p.length);
+        where_at.push(p.end());
     }
     let total = *nodes.last().unwrap();
-    // the ground every 4 m along the road
+    // the height every 4 m along the road
     let mut samples: Vec<(f64, f64)> = Vec::new();
     let mut acc = 0.0;
     for p in pieces {
@@ -8832,33 +9034,36 @@ fn road_profile(doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f
         let n = (p.length / 4.0).ceil().max(1.0) as usize;
         for i in 0..n {
             let s = p.length * i as f64 / n as f64;
-            samples.push((acc + s, doc.ground(c.point_at(s).truncate())));
+            samples.push((acc + s, at(c.point_at(s).truncate())));
         }
         acc += p.length;
     }
     let window = 20.0;
     let mut z: Vec<f64> = nodes
         .iter()
-        .map(|&s| {
+        .enumerate()
+        .map(|(i, &s)| {
             let near: Vec<f64> = samples.iter().filter(|q| (q.0 - s).abs() <= window).map(|q| q.1).collect();
-            if near.is_empty() { doc.ground(DVec2::ZERO) } else { near.iter().sum::<f64>() / near.len() as f64 }
+            if near.is_empty() { at(where_at[i]) } else { near.iter().sum::<f64>() / near.len() as f64 }
         })
         .collect();
     let last = z.len() - 1;
     z[0] = z0;
     z[last] = z1;
-    // no steeper than 10 % (a few passes both ways)
-    for _ in 0..4 {
-        for i in 1..=last {
-            let d = (nodes[i] - nodes[i - 1]).max(0.1) * 0.10;
-            if i != last {
-                z[i] = z[i].clamp(z[i - 1] - d, z[i - 1] + d);
+    // no steeper than 10 % (a few passes both ways). A surface is followed as steep as it is.
+    if limit_slope {
+        for _ in 0..4 {
+            for i in 1..=last {
+                let d = (nodes[i] - nodes[i - 1]).max(0.1) * 0.10;
+                if i != last {
+                    z[i] = z[i].clamp(z[i - 1] - d, z[i - 1] + d);
+                }
             }
-        }
-        for i in (0..last).rev() {
-            let d = (nodes[i + 1] - nodes[i]).max(0.1) * 0.10;
-            if i != 0 {
-                z[i] = z[i].clamp(z[i + 1] - d, z[i + 1] + d);
+            for i in (0..last).rev() {
+                let d = (nodes[i + 1] - nodes[i]).max(0.1) * 0.10;
+                if i != 0 {
+                    z[i] = z[i].clamp(z[i + 1] - d, z[i + 1] + d);
+                }
             }
         }
     }
@@ -9283,6 +9488,76 @@ fn rolls(p: DVec2) -> f64 {
         a + (b - a) * sy
     };
     noise(p / 40.0) * 0.7 + noise(p / 12.0 + DVec2::splat(17.3)) * 0.3
+}
+
+/// The smaller angle between two headings, degrees.
+fn heading_apart(a: f64, b: f64) -> f64 {
+    let d = (a - b).rem_euclid(360.0);
+    d.min(360.0 - d)
+}
+
+/// Every path of the object or road `held`, as it would stand at `pos` / `heading` / `z`
+/// (its height as the map stores it): each path's kind and its two ends (point, the heading
+/// that points back off the path). A path with no length is left out of the pair and is None.
+fn path_ends_at(doc: &Document, assets: &mut Assets, held: &Origin, pos: DVec2, heading: f64, z: f64) -> Option<Vec<Option<(i32, [(DVec3, f64); 2])>>> {
+    match held.sel {
+        Sel::Spline(k, id) => {
+            let s = doc.spline(k, id)?;
+            let model = assets.spline(&s.file)?;
+            let org = tile_origin(k);
+            let mut ghost = s.clone();
+            ghost.pos = [pos.x - org.x, pos.y - org.y, z];
+            ghost.heading = heading;
+            let c = omsi_geometry::SplineCurve::from_map(&ghost, org);
+            let mirror = if s.mirror { -1.0 } else { 1.0 };
+            Some(model.def.paths.iter().map(|p| {
+                let x = p.start[0] as f64 * mirror;
+                let pz = p.start[2] as f64;
+                let a = c.offset_point(0.0, x, pz);
+                let b = c.offset_point(s.length.max(0.0), x, pz);
+                let ha = c.heading_at(0.0);
+                let hb = c.heading_at(s.length.max(0.0));
+                Some((p.kind, [(a, roads::norm_deg(ha + 180.0)), (b, roads::norm_deg(hb))]))
+            }).collect())
+        }
+        Sel::Object(k, id) => {
+            let o = doc.object(k, id)?;
+            let model = assets.object(&o.file)?;
+            let world = if model.abs_height { DVec3::new(pos.x, pos.y, z) } else { DVec3::new(pos.x, pos.y, doc.ground(pos) + z) };
+            let pose = crate::place::Pose::of_object(world, [heading, o.rot[1], o.rot[2]]);
+            Some(model.paths.iter().map(|p| {
+                let c = omsi_geometry::SplineCurve {
+                    start: DVec3::new(p.start[0] as f64, p.start[1] as f64, p.start[2] as f64),
+                    heading_deg: p.end[0] as f64,
+                    length: p.end[2] as f64,
+                    radius: p.end[1] as f64,
+                    grad_start: 0.0,
+                    grad_end: 0.0,
+                    delta_h: None,
+                    cant_start: 0.0,
+                    cant_end: 0.0,
+                    skew_start: 0.0,
+                    skew_end: 0.0,
+                    tex_offset: 0.0,
+                    seed: 0,
+                    half_cant_width: 0.0,
+                };
+                if c.length <= 0.05 {
+                    return None;
+                }
+                let at = |s: f64| {
+                    let q = c.point_at(s);
+                    pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
+                };
+                let (a, b) = (at(0.0), at(c.length));
+                let step = (c.length * 0.05).clamp(0.05, 1.0);
+                let ha = roads::heading_of((at(step) - a).truncate());
+                let hb = roads::heading_of((b - at(c.length - step)).truncate());
+                (ha.is_finite() && hb.is_finite()).then_some((p.kind, [(a, roads::norm_deg(ha + 180.0)), (b, roads::norm_deg(hb))]))
+            }).collect())
+        }
+        Sel::Attached(..) => None,
+    }
 }
 
 #[cfg(test)]
@@ -11330,6 +11605,60 @@ mod tests {
         assert!((o.pos[0] - 100.0).abs() < 1e-6 && (o.pos[1] - 100.0).abs() < 1e-6, "{:?}", o.pos);
     }
 
+    /// Ctrl while grabbing lays path 0 of the road on the nearest path end; F9 lays path 1
+    /// there instead, which shifts the road by the distance between the two paths.
+    #[test]
+    fn ctrl_while_grabbing_snaps_a_path_and_f9_takes_the_next() {
+        use omsi_scenery::PathDef;
+
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 0);
+        add_spline(&mut doc, (0, 0), 2, 98.5, 100.0, 0.0, 40.0, 0, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.snap_grid = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                paths: vec![
+                    PathDef { kind: 0, start: [-1.5, 0.0, 0.0], ..Default::default() },
+                    PathDef { kind: 0, start: [1.5, 0.0, 0.0], ..Default::default() },
+                ],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 2.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        ed.set_selection(vec![Sel::Spline((0, 0), 2)]);
+        ed.cursor = Some(DVec3::new(98.5, 100.0, 0.0));
+        assert!(ed.grab_begin((0.0, 0.0)));
+        // (brought up beside the first road's end, on the side of its left path)
+        ed.ctrl_held = true;
+        ed.grab_follow_with(Some(&mut assets), DVec3::new(96.5, 140.0, 0.0), (1.0, 1.0));
+        let end = |ed: &Editor, x: f64| {
+            let s = ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap();
+            omsi_geometry::SplineCurve::from_map(s, DVec2::ZERO).offset_point(0.0, x, 0.0)
+        };
+        let p0 = end(&ed, -1.5);
+        assert!((p0.truncate() - DVec2::new(98.5, 140.0)).length() < 1e-3, "path 0 meets the other road's path: {p0:?}");
+        let x0 = ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap().pos[0];
+        ed.grab_next_path();
+        ed.grab_follow_with(Some(&mut assets), DVec3::new(96.5, 140.0, 0.0), (1.0, 1.0));
+        let p1 = end(&ed, 1.5);
+        assert!((p1.truncate() - DVec2::new(98.5, 140.0)).length() < 1e-3, "path 1 meets it: {p1:?}");
+        let x1 = ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap().pos[0];
+        assert!((x0 - x1 - 3.0).abs() < 1e-3, "the road shifts by the 3 m between its paths: {x0} -> {x1}");
+        ed.grab_cancel();
+        // (Ctrl up: the same pointer movement only follows the pointer)
+        ed.ctrl_held = false;
+        ed.cursor = Some(DVec3::new(98.5, 100.0, 0.0));
+        assert!(ed.grab_begin((0.0, 0.0)));
+        ed.grab_follow_with(Some(&mut assets), DVec3::new(96.5, 140.0, 0.0), (1.0, 1.0));
+        let s = ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap();
+        assert!((s.pos[0] - 96.5).abs() < 1e-3 && (s.pos[1] - 140.0).abs() < 1e-3, "no ctrl: {:?}", s.pos);
+    }
+
     /// In OMSI 2's and Blender's key sets a press on something and a drag of it picks it and
     /// nothing more: the move there is G, as it is in those editors (a hand used to them does
     /// not expect a click to carry a whole selection off). The map's own key set drags it as
@@ -11929,7 +12258,8 @@ mod tests {
             }
             let seg = roads::straight(DVec2::new(60.0, 120.0), DVec2::new(60.0, 220.0)).unwrap();
             let start = Anchor { pos: DVec3::new(60.0, 120.0, 4.0), heading: 0.0, ..Default::default() };
-            let made = ed.build_road("Splines\\road.sli", &[seg], 4.0, 4.0, start, None, 4.0).unwrap();
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 4.0, 4.0, start, None, 4.0).unwrap();
             ed.history.commit();
             let doc = ed.doc.as_ref().unwrap();
             let zs: Vec<f64> = made.iter().map(|(k, id)| doc.spline(*k, *id).unwrap().pos[2]).collect();
@@ -11937,6 +12267,101 @@ mod tests {
         };
         assert!(rise(false) < 1e-6, "{}", rise(false));
         assert!(rise(true) > 0.5, "{}", rise(true));
+    }
+
+    /// With Surface on, a new road keeps the face under it for its whole length: the joint in
+    /// the middle is on the deck, not on the ground. Without it, only the two ends are.
+    #[test]
+    fn a_road_on_a_surface_keeps_that_height_along_its_length() {
+        use glam::Vec3;
+        let deck = |ed: &mut Editor, assets: &mut Assets| {
+            ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(omsi_map::MapObject {
+                file: "Sceneryobjects\\deck.sco".into(),
+                id: 10,
+                pos: [100.0, 160.0, 0.0],
+                ..Default::default()
+            });
+            let mesh = omsi_geometry::MeshData {
+                positions: vec![Vec3::new(-30.0, -60.0, 5.0), Vec3::new(30.0, -60.0, 5.0), Vec3::new(30.0, 60.0, 5.0), Vec3::new(-30.0, 60.0, 5.0)],
+                normals: Vec::new(),
+                uvs: Vec::new(),
+                ranges: Vec::new(),
+                indices: vec![0, 1, 2, 0, 2, 3],
+                one_sided: false,
+            };
+            let model = crate::assets::ObjectModel {
+                parts: vec![crate::assets::Part { mesh, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+                lo: Vec3::new(-30.0, -60.0, 0.0),
+                hi: Vec3::new(30.0, 60.0, 5.0),
+                ..Default::default()
+            };
+            assets.objects.insert("sceneryobjects\\deck.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        };
+        let heights = |surface: bool| {
+            let mut ed = editor();
+            ed.follow_ground = false;
+            ed.auto_terrain = true;
+            ed.snap_surface = surface;
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            deck(&mut ed, &mut assets);
+            let seg = roads::straight(DVec2::new(100.0, 110.0), DVec2::new(100.0, 210.0)).unwrap();
+            let start = Anchor { pos: DVec3::new(100.0, 110.0, 5.0), heading: 0.0, ..Default::default() };
+            let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 5.0, 5.0, start, None, 4.0).unwrap();
+            ed.history.commit();
+            let doc = ed.doc.as_ref().unwrap();
+            let mut zs = Vec::new();
+            for (k, id) in made {
+                let s = doc.spline(k, id).unwrap();
+                let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+                zs.push(c.point_at(0.0).z);
+                zs.push(c.point_at(s.length * 0.5).z);
+                zs.push(c.end_point().z);
+            }
+            zs
+        };
+        let on = heights(true);
+        assert!(on.iter().all(|z| (*z - 5.0).abs() < 0.05), "{on:?}");
+        let off = heights(false);
+        assert!(off.iter().cloned().fold(f64::MAX, f64::min) < 1.0, "{off:?}");
+        // (the same for a road's own ribbon: the new road's middle stays at that road's height)
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.snap_surface = true;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.push(MapSpline {
+            file: "Splines\\bridge.sli".into(),
+            id: 40,
+            pos: [200.0, 100.0, 6.0],
+            heading: 0.0,
+            length: 200.0,
+            ..Default::default()
+        });
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let model = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\bridge.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let seg = roads::straight(DVec2::new(200.0, 110.0), DVec2::new(200.0, 210.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(200.0, 110.0, 6.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 6.0, 6.0, start, None, 4.0).unwrap();
+        let doc = ed.doc.as_ref().unwrap();
+        for (k, id) in made {
+            let s = doc.spline(k, id).unwrap();
+            let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+            for z in [c.point_at(0.0).z, c.point_at(s.length * 0.5).z, c.end_point().z] {
+                assert!((z - 6.0).abs() < 0.05, "{z}");
+            }
+        }
     }
 
     /// A road drawn from an end that is gone meanwhile (deleted while drawing) starts free:
@@ -11947,7 +12372,8 @@ mod tests {
         ed.follow_ground = false;
         let seg = roads::straight(DVec2::new(50.0, 130.0), DVec2::new(50.0, 160.0)).unwrap();
         let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), ..Default::default() };
-        let made = ed.build_road("Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
         ed.history.commit();
         let (k, id) = made[0];
         assert_eq!(ed.doc.as_ref().unwrap().spline(k, id).unwrap().prev_id, 0);

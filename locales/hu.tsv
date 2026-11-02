@@ -2599,3 +2599,5 @@ Select splines first	Először válasszon spline-okat
 No spline under the cursor	Nincs spline a kurzor alatt
 The ground follows the spline	A talaj követi a spline-t
 Align ground to splines	Talaj igazítása a spline-okhoz
+Path	Út
+Ctrl: snap onto a path, F9: the next one	Ctrl: útra illesztés, F9: a következő

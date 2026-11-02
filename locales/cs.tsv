@@ -2599,3 +2599,5 @@ Select splines first	Nejprve vyberte spline
 No spline under the cursor	Pod kurzorem není žádná spline
 The ground follows the spline	Terén sleduje spline
 Align ground to splines	Srovnat terén podle spline
+Path	Cesta
+Ctrl: snap onto a path, F9: the next one	Ctrl: přichytit k cestě, F9: další

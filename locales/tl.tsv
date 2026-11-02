@@ -2599,3 +2599,5 @@ Select splines first	Pumili muna ng mga spline
 No spline under the cursor	Walang spline sa ilalim ng cursor
 The ground follows the spline	Sinusundan ng lupa ang spline
 Align ground to splines	Ihanay ang lupa sa mga spline
+Path	Landas
+Ctrl: snap onto a path, F9: the next one	Ctrl: idikit sa landas, F9: susunod

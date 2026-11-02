@@ -2599,3 +2599,5 @@ Select splines first	पहले स्पलाइन चुनें
 No spline under the cursor	कर्सर के नीचे कोई स्पलाइन नहीं
 The ground follows the spline	ज़मीन स्पलाइन के साथ जाती है
 Align ground to splines	ज़मीन को स्पलाइन पर लगाना
+Path	पथ
+Ctrl: snap onto a path, F9: the next one	Ctrl: पथ पर चिपकाना, F9: अगला

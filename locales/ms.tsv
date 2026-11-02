@@ -2599,3 +2599,5 @@ Select splines first	Pilih spline dahulu
 No spline under the cursor	Tiada spline di bawah kursor
 The ground follows the spline	Tanah mengikut spline
 Align ground to splines	Selaraskan tanah kepada spline
+Path	Laluan
+Ctrl: snap onto a path, F9: the next one	Ctrl: lekap ke laluan, F9: seterusnya
