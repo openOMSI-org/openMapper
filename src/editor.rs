@@ -3504,7 +3504,7 @@ impl Editor {
         let mids: Vec<_> = [start.mid, end.and_then(|e| e.mid)].into_iter().flatten().collect();
         let end_link = end.filter(|e| e.mid.is_none());
         let start_link = if start.mid.is_some() { Anchor { spline: None, ..start } } else { start };
-        let made = self.build_road(&rel, &segs, z0, z1, start_link, end_link, half as f64);
+        let made = self.build_road(assets, &rel, &segs, z0, z1, start_link, end_link, half as f64);
         let mut last = made.as_ref().and_then(|m| m.last().copied());
         if let Some(made) = &made {
             if self.drawing_track(assets) {
@@ -3621,7 +3621,7 @@ impl Editor {
     }
 
     /// Make the splines of a planned road. Returns the last one.
-    fn build_road(&mut self, rel: &str, segs: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
+    fn build_road(&mut self, assets: &mut Assets, rel: &str, segs: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
         let doc = self.doc.as_mut()?;
         let pieces = roads::split(segs, 50.0);
         let total = roads::total_length(&pieces).max(0.1);
@@ -3638,15 +3638,20 @@ impl Editor {
         }
         self.history.touch_global(doc);
         let _ = total;
-        self.lay_road(rel, &pieces, z0, z1, start, end, half)
+        self.lay_road(assets, rel, &pieces, z0, z1, start, end, half)
     }
 
     /// The splines of a road, cut into pieces (`roads::split`), put into the map, linked to
     /// what its ends meet; inside an open step that keeps every tile.
-    fn lay_road(&mut self, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
-        let doc = self.doc.as_mut()?;
+    fn lay_road(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
         let pieces = pieces.to_vec();
-        let profile = if self.keep_height || !self.auto_terrain { even_profile(&pieces, z0, z1) } else { road_profile(doc, &pieces, z0, z1) };
+        // (the heights before the map is borrowed to be written: with Surface on, the whole
+        // road takes the surface under it, not only its two ends)
+        let profile = {
+            let doc = self.doc.as_ref()?;
+            self.road_heights(assets, doc, &pieces, z0, z1)
+        };
+        let doc = self.doc.as_mut()?;
         let mut made: Vec<(TileKey, i64)> = Vec::new();
         let ids: Vec<i64> = pieces.iter().map(|_| doc.new_id()).collect();
         let mut curves = Vec::new();
@@ -3714,11 +3719,26 @@ impl Editor {
                 }
             }
         }
-        if self.follow_ground && self.auto_terrain && !self.keep_height && !(self.tool == Tool::Logic) {
+        // (a road laid on a surface keeps that surface: the ground under it is not raised up to it)
+        if self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
             conform_ground(doc, &curves, half);
         }
         // (the step stays open: the caller may cut the road it joined, in the same step)
         Some(made)
+    }
+
+    /// Heights at the joints of a planned road. With Surface on, each joint takes the face or
+    /// the road under it (the ground only where there is neither), and may be as steep as that
+    /// surface. Otherwise the ground, no steeper than 10 %.
+    fn road_heights(&self, assets: &mut Assets, doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
+        if self.keep_height || !self.auto_terrain {
+            even_profile(pieces, z0, z1)
+        } else if self.snap_surface {
+            let hide = self.hide[2];
+            road_profile(pieces, z0, z1, &mut |p| cover_z(doc, assets, hide, p), false)
+        } else {
+            road_profile(pieces, z0, z1, &mut |p| doc.ground(p), true)
+        }
     }
 
     /// Roads from OpenStreetMap built as if drawn one after the other (in `osm::roads`'
@@ -3918,7 +3938,7 @@ impl Editor {
                 continue;
             }
             let pieces = roads::split(&segs, 50.0);
-            let Some(made) = self.lay_road(&rel, &pieces, z0, z1, start_link, end_link, half) else { continue };
+            let Some(made) = self.lay_road(assets, &rel, &pieces, z0, z1, start_link, end_link, half) else { continue };
             built += 1;
             ends_made.push(made.first().map(|m| (m.0, m.1, false)));
             ends_made.push(made.last().map(|m| (m.0, m.1, true)));
@@ -4955,22 +4975,19 @@ impl Editor {
                         let pieces = roads::split(segs, 50.0);
                         let total = roads::total_length(&pieces).max(0.1);
                         let _ = total;
-                        let profile = if self.keep_height || !self.auto_terrain { even_profile(&pieces, *z0, *z1) } else { road_profile(doc, &pieces, *z0, *z1) };
+                        let profile = self.road_heights(assets, doc, &pieces, *z0, *z1);
                         for (i, p) in pieces.iter().enumerate() {
                             let mut s = piece_spline(rel, p, &profile, i, DVec2::ZERO);
+                            // (the guide is the road's own height, surface included, not the ground under it)
+                            let shown = omsi_geometry::SplineCurve::from_map(&s, DVec2::ZERO);
+                            let n = (p.length / 2.0).ceil().max(1.0) as usize;
+                            for j in 0..n {
+                                let a = shown.point_at(s.length * j as f64 / n as f64);
+                                let b = shown.point_at(s.length * (j + 1) as f64 / n as f64);
+                                line(&mut x.overlay, cam, a + DVec3::Z * 0.3, b + DVec3::Z * 0.3, w * 0.6, [1.0, 1.0, 1.0, 0.5]);
+                            }
                             s.pos[2] += 0.02;
                             x.ghost_splines.push((rel.clone(), s, [0.35, 0.85, 0.45, 0.25]));
-                        }
-                        for p in &pieces {
-                            let c = p.curve();
-                            let n = (p.length / 2.0).ceil().max(1.0) as usize;
-                            for i in 0..n {
-                                let a = c.point_at(p.length * i as f64 / n as f64);
-                                let b = c.point_at(p.length * (i + 1) as f64 / n as f64);
-                                let za = doc.ground(a.truncate()) + 0.3;
-                                let zb = doc.ground(b.truncate()) + 0.3;
-                                line(&mut x.overlay, cam, DVec3::new(a.x, a.y, za), DVec3::new(b.x, b.y, zb), w * 0.6, [1.0, 1.0, 1.0, 0.5]);
-                            }
                         }
                         if total > 1.0 {
                             let _ = total;
@@ -8125,7 +8142,7 @@ impl Editor {
                 }
             }
         }
-        let Some(made) = self.build_road(&rel, &segs, z, z, Anchor::default(), None, half) else { return };
+        let Some(made) = self.build_road(assets, &rel, &segs, z, z, Anchor::default(), None, half) else { return };
         let Some(doc) = self.doc.as_mut() else { return };
         // the ring closes on itself
         let (first, last) = (made[0], *made.last().unwrap());
@@ -8695,13 +8712,79 @@ fn even_profile(pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
     out
 }
 
-fn road_profile(doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f64)> {
+/// The topmost surface under `p`: an object's face, or a road's ribbon (and the reach beside
+/// its edge), else the ground. A wall, a fence and an AI path are not a surface.
+fn cover_z(doc: &Document, assets: &mut Assets, hide_roads: bool, p: DVec2) -> f64 {
+    let ground = doc.ground(p);
+    let mut best = ground;
+    let origin = DVec3::new(p.x, p.y, ground + 80.0);
+    let down = DVec3::new(0.0, 0.0, -1.0);
+    let ov = Vec3::ZERO;
+    let dv = down.as_vec3();
+    let span = tile_size();
+    for (k, t) in &doc.tiles {
+        let org = tile_origin(*k);
+        if (org + DVec2::splat(span * 0.5) - p).length() > span {
+            continue;
+        }
+        for ob in &t.tile.objects {
+            let Some(model) = assets.object(&ob.file) else { continue };
+            if model.parts.is_empty() || model.technical {
+                continue;
+            }
+            let world = doc.object_world(*k, ob, model.abs_height);
+            if (world.truncate() - p).length() > model.radius() as f64 + 2.0 {
+                continue;
+            }
+            let m = object_matrix(world - origin, ob.rot);
+            if let Some(h) = model.parts.iter().filter_map(|part| omsi_geometry::ray_mesh(ov, dv, &part.mesh, &m)).reduce(f32::min) {
+                let z = origin.z + down.z * h as f64;
+                if z > best {
+                    best = z;
+                }
+            }
+        }
+        if hide_roads {
+            continue;
+        }
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            if (org + DVec2::new(s.pos[0], s.pos[1]) - p).length() > s.length + 40.0 {
+                continue;
+            }
+            let Some(model) = assets.spline(&s.file) else { continue };
+            if model.is_ai_path() {
+                continue;
+            }
+            let (sx0, sx1, top, standing) = model.surface_span();
+            if standing {
+                continue;
+            }
+            let (x0, x1) = if s.mirror { (-(sx1 as f64), -(sx0 as f64)) } else { (sx0 as f64, sx1 as f64) };
+            let Some((along, beside)) = selection::on_spline(s, org, p) else { continue };
+            let lo = x0.min(x1) - EDGE_REACH;
+            let hi = x0.max(x1) + EDGE_REACH;
+            if beside < lo || beside > hi {
+                continue;
+            }
+            let c = omsi_geometry::SplineCurve::from_map(s, org);
+            let z = c.point_at(along).z + top as f64;
+            if z > best {
+                best = z;
+            }
+        }
+    }
+    best
+}
+
+fn road_profile(pieces: &[Seg], z0: f64, z1: f64, at: &mut dyn FnMut(DVec2) -> f64, limit_slope: bool) -> Vec<(f64, f64)> {
     let mut nodes = vec![0.0];
+    let mut where_at = vec![pieces.first().map(|p| p.start).unwrap_or(DVec2::ZERO)];
     for p in pieces {
         nodes.push(nodes.last().unwrap() + p.length);
+        where_at.push(p.end());
     }
     let total = *nodes.last().unwrap();
-    // the ground every 4 m along the road
+    // the height every 4 m along the road
     let mut samples: Vec<(f64, f64)> = Vec::new();
     let mut acc = 0.0;
     for p in pieces {
@@ -8709,33 +8792,36 @@ fn road_profile(doc: &Document, pieces: &[Seg], z0: f64, z1: f64) -> Vec<(f64, f
         let n = (p.length / 4.0).ceil().max(1.0) as usize;
         for i in 0..n {
             let s = p.length * i as f64 / n as f64;
-            samples.push((acc + s, doc.ground(c.point_at(s).truncate())));
+            samples.push((acc + s, at(c.point_at(s).truncate())));
         }
         acc += p.length;
     }
     let window = 20.0;
     let mut z: Vec<f64> = nodes
         .iter()
-        .map(|&s| {
+        .enumerate()
+        .map(|(i, &s)| {
             let near: Vec<f64> = samples.iter().filter(|q| (q.0 - s).abs() <= window).map(|q| q.1).collect();
-            if near.is_empty() { doc.ground(DVec2::ZERO) } else { near.iter().sum::<f64>() / near.len() as f64 }
+            if near.is_empty() { at(where_at[i]) } else { near.iter().sum::<f64>() / near.len() as f64 }
         })
         .collect();
     let last = z.len() - 1;
     z[0] = z0;
     z[last] = z1;
-    // no steeper than 10 % (a few passes both ways)
-    for _ in 0..4 {
-        for i in 1..=last {
-            let d = (nodes[i] - nodes[i - 1]).max(0.1) * 0.10;
-            if i != last {
-                z[i] = z[i].clamp(z[i - 1] - d, z[i - 1] + d);
+    // no steeper than 10 % (a few passes both ways). A surface is followed as steep as it is.
+    if limit_slope {
+        for _ in 0..4 {
+            for i in 1..=last {
+                let d = (nodes[i] - nodes[i - 1]).max(0.1) * 0.10;
+                if i != last {
+                    z[i] = z[i].clamp(z[i - 1] - d, z[i - 1] + d);
+                }
             }
-        }
-        for i in (0..last).rev() {
-            let d = (nodes[i + 1] - nodes[i]).max(0.1) * 0.10;
-            if i != 0 {
-                z[i] = z[i].clamp(z[i + 1] - d, z[i + 1] + d);
+            for i in (0..last).rev() {
+                let d = (nodes[i + 1] - nodes[i]).max(0.1) * 0.10;
+                if i != 0 {
+                    z[i] = z[i].clamp(z[i + 1] - d, z[i + 1] + d);
+                }
             }
         }
     }
@@ -11772,7 +11858,8 @@ mod tests {
             }
             let seg = roads::straight(DVec2::new(60.0, 120.0), DVec2::new(60.0, 220.0)).unwrap();
             let start = Anchor { pos: DVec3::new(60.0, 120.0, 4.0), heading: 0.0, ..Default::default() };
-            let made = ed.build_road("Splines\\road.sli", &[seg], 4.0, 4.0, start, None, 4.0).unwrap();
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 4.0, 4.0, start, None, 4.0).unwrap();
             ed.history.commit();
             let doc = ed.doc.as_ref().unwrap();
             let zs: Vec<f64> = made.iter().map(|(k, id)| doc.spline(*k, *id).unwrap().pos[2]).collect();
@@ -11780,6 +11867,101 @@ mod tests {
         };
         assert!(rise(false) < 1e-6, "{}", rise(false));
         assert!(rise(true) > 0.5, "{}", rise(true));
+    }
+
+    /// With Surface on, a new road keeps the face under it for its whole length: the joint in
+    /// the middle is on the deck, not on the ground. Without it, only the two ends are.
+    #[test]
+    fn a_road_on_a_surface_keeps_that_height_along_its_length() {
+        use glam::Vec3;
+        let deck = |ed: &mut Editor, assets: &mut Assets| {
+            ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(omsi_map::MapObject {
+                file: "Sceneryobjects\\deck.sco".into(),
+                id: 10,
+                pos: [100.0, 160.0, 0.0],
+                ..Default::default()
+            });
+            let mesh = omsi_geometry::MeshData {
+                positions: vec![Vec3::new(-30.0, -60.0, 5.0), Vec3::new(30.0, -60.0, 5.0), Vec3::new(30.0, 60.0, 5.0), Vec3::new(-30.0, 60.0, 5.0)],
+                normals: Vec::new(),
+                uvs: Vec::new(),
+                ranges: Vec::new(),
+                indices: vec![0, 1, 2, 0, 2, 3],
+                one_sided: false,
+            };
+            let model = crate::assets::ObjectModel {
+                parts: vec![crate::assets::Part { mesh, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+                lo: Vec3::new(-30.0, -60.0, 0.0),
+                hi: Vec3::new(30.0, 60.0, 5.0),
+                ..Default::default()
+            };
+            assets.objects.insert("sceneryobjects\\deck.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        };
+        let heights = |surface: bool| {
+            let mut ed = editor();
+            ed.follow_ground = false;
+            ed.auto_terrain = true;
+            ed.snap_surface = surface;
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            deck(&mut ed, &mut assets);
+            let seg = roads::straight(DVec2::new(100.0, 110.0), DVec2::new(100.0, 210.0)).unwrap();
+            let start = Anchor { pos: DVec3::new(100.0, 110.0, 5.0), heading: 0.0, ..Default::default() };
+            let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 5.0, 5.0, start, None, 4.0).unwrap();
+            ed.history.commit();
+            let doc = ed.doc.as_ref().unwrap();
+            let mut zs = Vec::new();
+            for (k, id) in made {
+                let s = doc.spline(k, id).unwrap();
+                let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+                zs.push(c.point_at(0.0).z);
+                zs.push(c.point_at(s.length * 0.5).z);
+                zs.push(c.end_point().z);
+            }
+            zs
+        };
+        let on = heights(true);
+        assert!(on.iter().all(|z| (*z - 5.0).abs() < 0.05), "{on:?}");
+        let off = heights(false);
+        assert!(off.iter().cloned().fold(f64::MAX, f64::min) < 1.0, "{off:?}");
+        // (the same for a road's own ribbon: the new road's middle stays at that road's height)
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.snap_surface = true;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.push(MapSpline {
+            file: "Splines\\bridge.sli".into(),
+            id: 40,
+            pos: [200.0, 100.0, 6.0],
+            heading: 0.0,
+            length: 200.0,
+            ..Default::default()
+        });
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let model = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\bridge.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let seg = roads::straight(DVec2::new(200.0, 110.0), DVec2::new(200.0, 210.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(200.0, 110.0, 6.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 6.0, 6.0, start, None, 4.0).unwrap();
+        let doc = ed.doc.as_ref().unwrap();
+        for (k, id) in made {
+            let s = doc.spline(k, id).unwrap();
+            let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+            for z in [c.point_at(0.0).z, c.point_at(s.length * 0.5).z, c.end_point().z] {
+                assert!((z - 6.0).abs() < 0.05, "{z}");
+            }
+        }
     }
 
     /// A road drawn from an end that is gone meanwhile (deleted while drawing) starts free:
@@ -11790,7 +11972,8 @@ mod tests {
         ed.follow_ground = false;
         let seg = roads::straight(DVec2::new(50.0, 130.0), DVec2::new(50.0, 160.0)).unwrap();
         let start = Anchor { pos: DVec3::new(50.0, 130.0, 0.0), heading: 0.0, spline: Some(((0, 0), 99, true)), ..Default::default() };
-        let made = ed.build_road("Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
         ed.history.commit();
         let (k, id) = made[0];
         assert_eq!(ed.doc.as_ref().unwrap().spline(k, id).unwrap().prev_id, 0);
