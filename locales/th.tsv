@@ -2591,3 +2591,8 @@ Snap to road edges and surfaces	ติดขอบถนนและพื้น
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	สิ่งที่วาดข้างถนนเริ่มที่ขอบถนน บนวัตถุเริ่มที่ผิวของวัตถุนั้นเอง ที่ความสูงนั้น
 Load all tiles at once	โหลดไทล์ทั้งหมดพร้อมกัน
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	ปิด: โหลดเฉพาะไทล์รอบกล้องเหมือนในตัวแก้ไขของ OMSI 2 ส่วนที่เหลือจะถูกซ่อนจนกว่าคุณจะคลิกที่โซนว่าง
+Click a spline in the view	คลิกสปลายน์ในมุมมอง
+Click an object in the view	คลิกวัตถุในมุมมอง
+Click an object or a spline in the view	คลิกวัตถุหรือสปลายน์ในมุมมอง
+Click the spline it should stand on. It follows that road and keeps its IDCode	คลิกสปลายน์ที่มันจะยืนอยู่ มันจะไปตามถนนนั้นและคง IDCode ไว้
+That is the one	นี่คืออันนั้น

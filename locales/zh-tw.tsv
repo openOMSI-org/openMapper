@@ -2588,3 +2588,8 @@ Flying builds up speed the longer the keys are held	按住按鍵越久，飛行�
 Reset the camera	重設攝影機
 Load all tiles at once	一次載入所有圖塊
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	關閉：與 OMSI 2 的編輯器相同，只載入相機周圍的圖塊，其餘圖塊會隱藏，直到您點擊空白區域
+Click a spline in the view	在畫面中點一條 Spline
+Click an object in the view	在畫面中點一個物件
+Click an object or a spline in the view	在畫面中點一個物件或一條 Spline
+Click the spline it should stand on. It follows that road and keeps its IDCode	點它要依附的那條 Spline。它會跟著那條路，並保留 IDCode
+That is the one	就是這個

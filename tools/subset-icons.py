@@ -21,7 +21,7 @@ tram directions_walk fence layers terrain brush ink_eraser
 sensors local_parking route flag volume_up visibility visibility_off traffic
 check_box check_box_outline_blank radio_button_checked radio_button_unchecked chevron_right expand_more
 star history schedule warning error check_circle content_copy content_paste select_all
-open_with rotate_right open_in_full code
+open_with rotate_right open_in_full code colorize
 polyline line_curve call_made deployed_code height
 """.split()
 

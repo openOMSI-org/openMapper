@@ -2591,3 +2591,8 @@ Snap to road edges and surfaces	सड़क के किनारों और
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	सड़क के पास जो बनाया जाता है वह उसके किनारे से शुरू होता है; वस्तु के ऊपर वह वस्तु की अपनी सतह से, उसी ऊँचाई पर शुरू होता है
 Load all tiles at once	सभी टाइलें एक साथ लोड करें
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, बाकी तब तक छिपी रहती हैं जब तक आप खाली क्षेत्र पर क्लिक नहीं करते
+Click a spline in the view	दृश्य में एक स्पलाइन पर क्लिक करें
+Click an object in the view	दृश्य में एक वस्तु पर क्लिक करें
+Click an object or a spline in the view	दृश्य में एक वस्तु या स्पलाइन पर क्लिक करें
+Click the spline it should stand on. It follows that road and keeps its IDCode	जिस स्पलाइन पर इसे खड़ा होना है उस पर क्लिक करें। यह उस सड़क के साथ चलता है और IDCode रखता है
+That is the one	यही है

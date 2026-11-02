@@ -2631,3 +2631,8 @@ Snap to road edges and surfaces	Przyciągaj do krawędzi dróg i powierzchni
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	To, co rysuje się obok drogi, zaczyna się na jej krawędzi; nad obiektem zaczyna się na jego własnej powierzchni, na tej wysokości
 Load all tiles at once	Wczytaj wszystkie kafelki naraz
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Wyłączone: wczytywane są tylko kafelki wokół kamery, jak w edytorze OMSI 2, a pozostałe są ukryte, dopóki nie klikniesz pustej strefy
+Click a spline in the view	Kliknij splajn w widoku
+Click an object in the view	Kliknij obiekt w widoku
+Click an object or a spline in the view	Kliknij obiekt albo splajn w widoku
+Click the spline it should stand on. It follows that road and keeps its IDCode	Kliknij splajn, na którym ma stać. Podąża za tą drogą i zachowuje IDCode
+That is the one	To ten

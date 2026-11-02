@@ -2591,3 +2591,8 @@ Snap to road edges and surfaces	Ajusta a les vores de la carretera i a les super
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	El que es dibuixa al costat d'una carretera comença a la seva vora; sobre un objecte comença a la cara de l'objecte, a aquella altura
 Load all tiles at once	Carrega totes les tessel·les alhora
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desactivat: només es carreguen les tessel·les al voltant de la càmera, com a l'editor d'OMSI 2, i les altres s'amaguen fins que cliqueu a la zona buida
+Click a spline in the view	Feu clic en un spline a la vista
+Click an object in the view	Feu clic en un objecte a la vista
+Click an object or a spline in the view	Feu clic en un objecte o un spline a la vista
+Click the spline it should stand on. It follows that road and keeps its IDCode	Feu clic al spline on ha de estar. Segueix aquesta via i conserva l'IDCode
+That is the one	És aquest

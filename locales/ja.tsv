@@ -2591,3 +2591,8 @@ Snap to road edges and surfaces	道路の端と面に吸着
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	道路の脇に描くものはその端から始まり、オブジェクトの上ではそのオブジェクト自身の面、その高さから始まります
 Load all tiles at once	すべてのタイルを一度に読み込む
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、ほかは空の領域をクリックするまで非表示になります
+Click a spline in the view	ビューでスプラインをクリック
+Click an object in the view	ビューでオブジェクトをクリック
+Click an object or a spline in the view	ビューでオブジェクトかスプラインをクリック
+Click the spline it should stand on. It follows that road and keeps its IDCode	載せるスプラインをクリック。その道に沿い、IDCode は残ります
+That is the one	これです

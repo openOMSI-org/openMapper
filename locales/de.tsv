@@ -2589,3 +2589,8 @@ Snap to road edges and surfaces	An Straßenkanten und Flächen einrasten
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Was neben einer Straße gezeichnet wird, beginnt an ihrer Kante; über einem Objekt beginnt es auf dessen Fläche, in deren Höhe
 Load all tiles at once	Alle Kacheln auf einmal laden
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Aus: Nur die Kacheln um die Kamera werden geladen, wie im Editor von OMSI 2, die übrigen bleiben verborgen, bis Sie auf die leere Zone klicken
+Click a spline in the view	Einen Spline in der Ansicht anklicken
+Click an object in the view	Ein Objekt in der Ansicht anklicken
+Click an object or a spline in the view	Ein Objekt oder einen Spline in der Ansicht anklicken
+Click the spline it should stand on. It follows that road and keeps its IDCode	Den Spline anklicken, auf dem es stehen soll. Es folgt dieser Straße und behält seine IDCode
+That is the one	Das ist es

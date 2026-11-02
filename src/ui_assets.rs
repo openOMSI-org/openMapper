@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, HashMap};
 
 use egui::{Color32, CornerRadius, Pos2, Rect, RichText, Sense, Stroke, Vec2};
 
-use crate::editor::{Editor, Tool};
+use crate::editor::{Editor, Sample, Tool};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::{Asset, Category, Kind, Library};
@@ -90,6 +90,15 @@ impl AssetBrowser {
         if !self.open {
             return;
         }
+        if let Some((rel, true)) = ed.reveal.clone() {
+            if let Some(a) = lib.find(&rel) {
+                let name = rel.rsplit(['\\', '/']).next().unwrap_or(&rel);
+                self.search = name.rsplit_once('.').map(|(s, _)| s).unwrap_or(name).to_string();
+                self.show = if a.kind == Kind::Spline { Show::Splines } else { Show::Objects };
+                self.folder = None;
+                self.picked = Some(a.rel.clone());
+            }
+        }
         // (worked out again only when the library, the search, the kind or the folder changed)
         let key = {
             use std::hash::{Hash, Hasher};
@@ -107,6 +116,17 @@ impl AssetBrowser {
             ui.horizontal(|ui| {
                 ui.label(icons::labelled(Icon::Objects, tr("Assets", "Ассеты")));
                 ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(tr("Search", "Поиск")).desired_width(200.0));
+                let armed = matches!(ed.sample, Some(Sample::Either));
+                let tip = tr("Click an object or a spline in the view", "Щёлкните объект или сплайн в виде");
+                if ui.add(egui::Button::new(Icon::Dropper.text(16.0)).selected(armed)).on_hover_text(tip).clicked() {
+                    if armed {
+                        ed.sample = None;
+                    } else {
+                        ed.sample = Some(Sample::Either);
+                        ed.sample_browser = true;
+                        ed.toast(tip);
+                    }
+                }
                 for (s, label) in [(Show::All, tr("All", "Все")), (Show::Objects, tr("Objects", "Объекты")), (Show::Splines, tr("Roads and splines", "Дороги и сплайны")), (Show::Textures, tr("Textures", "Текстуры"))] {
                     if ui.selectable_label(self.show == s, label).clicked() {
                         self.show = s;
@@ -237,6 +257,9 @@ impl AssetBrowser {
             });
         });
         self.cache = Some(cache);
+        if matches!(&ed.reveal, Some((_, true))) {
+            ed.reveal = None;
+        }
         // a picture let go over the view: placed there
         if let Some(rel) = self.dragging.clone() {
             if !root.ctx().input(|i| i.pointer.any_down()) {
@@ -346,6 +369,11 @@ impl AssetBrowser {
         let galley = ui.painter().layout(a.name.clone(), egui::FontId::proportional(11.0), Color32::from_gray(220), text_rect.width());
         ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, Color32::WHITE);
         let resp = resp.on_hover_text(format!("{}\n{}", a.name, a.rel));
+        if let Some((rel, true)) = &ed.reveal {
+            if rel.eq_ignore_ascii_case(&a.rel) {
+                ui.scroll_to_rect(rect, Some(egui::Align::Center));
+            }
+        }
         if resp.clicked() {
             // choosing is using: the tool is ready at once (the button in the details stays for re-arming)
             self.picked = Some(a.rel.clone());

@@ -2631,3 +2631,8 @@ Snap to road edges and surfaces	Ajustar às bermas da estrada e às superfícies
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	O que se desenha ao lado de uma estrada começa na berma; sobre um objeto começa na face do próprio objeto, a essa altura
 Load all tiles at once	Carregar todos os mosaicos de uma vez
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desligado: só são carregados os mosaicos à volta da câmara, como no editor do OMSI 2, e os outros ficam ocultos até clicar na zona vazia
+Click a spline in the view	Clique numa spline na vista
+Click an object in the view	Clique num objeto na vista
+Click an object or a spline in the view	Clique num objeto ou numa spline na vista
+Click the spline it should stand on. It follows that road and keeps its IDCode	Clique na spline em que deve ficar. Segue essa via e mantém o IDCode
+That is the one	É este

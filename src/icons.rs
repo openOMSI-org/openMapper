@@ -79,6 +79,7 @@ pub enum Icon {
     Rotate,
     Scale,
     Code,
+    Dropper,
 }
 
 impl Icon {
@@ -154,6 +155,7 @@ impl Icon {
             Icon::Rotate => 0xe41a,
             Icon::Code => 0xe86f,
             Icon::Scale => 0xf1ce,
+            Icon::Dropper => 0xe3b8,
         };
         char::from_u32(cp).unwrap_or('?')
     }

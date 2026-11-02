@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use egui::{Align, Color32, CornerRadius, Frame, Id, Layout, Margin, RichText, Sense, Stroke, Vec2};
 
 use crate::doc::Sel;
-use crate::editor::{Editor, LogicMode, TerrainMode, Tool, WaterShape};
+use crate::editor::{Editor, LogicMode, Sample, TerrainMode, Tool, WaterShape};
 use crate::i18n::{self, tr, Lang};
 use crate::icons::{self, Icon};
 use crate::install::{MapEntry, Prefs};
@@ -1615,7 +1615,27 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         ui.end_row();
         }
         ui.label(tr("Search", "Поиск"));
-        ui.add(egui::TextEdit::singleline(&mut st.search).desired_width(f32::INFINITY));
+        ui.horizontal(|ui| {
+            let drop = logic.is_none();
+            let w = (ui.available_width() - if drop { 28.0 } else { 0.0 }).max(40.0);
+            ui.add(egui::TextEdit::singleline(&mut st.search).desired_width(w));
+            if drop {
+                let armed = match (kind, ed.sample) {
+                    (Kind::Spline, Some(Sample::Spline)) | (Kind::Object, Some(Sample::Object)) => true,
+                    _ => false,
+                };
+                let tip = if kind == Kind::Spline { tr("Click a spline in the view", "Щёлкните сплайн в виде") } else { tr("Click an object in the view", "Щёлкните объект в виде") };
+                if ui.add(egui::Button::new(Icon::Dropper.text(16.0)).selected(armed)).on_hover_text(tip).clicked() {
+                    if armed {
+                        ed.sample = None;
+                    } else {
+                        ed.sample = Some(if kind == Kind::Spline { Sample::Spline } else { Sample::Object });
+                        ed.sample_browser = false;
+                        ed.toast(tip);
+                    }
+                }
+            }
+        });
         ui.end_row();
     });
     if logic.is_some() {
@@ -1706,6 +1726,17 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         }
     }
     let selected = if logic == Some(LogicMode::Paths) { ed.path_type.clone() } else if kind == Kind::Spline { ed.road_type.clone() } else { ed.object_type.clone() };
+    if logic.is_none() {
+        if let Some((rel, false)) = ed.reveal.clone() {
+            if let Some(a) = lib.find(&rel) {
+                if a.kind == kind {
+                    *cat = None;
+                    let name = rel.rsplit(['\\', '/']).next().unwrap_or(&rel);
+                    st.search = name.rsplit_once('.').map(|(s, _)| s).unwrap_or(name).to_string();
+                }
+            }
+        }
+    }
     let items: Vec<&crate::library::Asset> = lib.filter(kind, *cat, &st.search).filter(|a| belongs(a)).collect();
     ui.label(RichText::new(if lib.scanning { tr("reading OMSI 2…", "чтение OMSI 2…").to_string() } else { format!("{} {}", items.len(), tr("items", "шт.")) }).small().color(TEXT_DIM));
     let avail = ui.available_height();
@@ -1795,6 +1826,14 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                     }
                 }
             }
+            if on {
+                if let Some((rel, false)) = &ed.reveal {
+                    if rel.eq_ignore_ascii_case(&a.rel) {
+                        ui.scroll_to_rect(rect, Some(Align::Center));
+                        ed.reveal = None;
+                    }
+                }
+            }
         };
         egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 0.0;
@@ -1847,6 +1886,13 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             }
         });
     });
+    if logic.is_none() {
+        if let Some((rel, false)) = &ed.reveal {
+            if lib.find(rel).map(|a| a.kind == kind).unwrap_or(false) {
+                ed.reveal = None;
+            }
+        }
+    }
 }
 
 fn brush_grid(ui: &mut egui::Ui, ed: &mut Editor) {
@@ -2173,8 +2219,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     let mut lean = false;
     let mut alike = false;
     let mut replace_obj: Option<String> = None;
-    let mut attach_road = false;
     let mut detach_road = false;
+    let mut arm_attach: Option<bool> = None;
     // (an attached object's place on its road, its row's shape, and its world rotation)
     let mut new_att: Option<(Option<f64>, Option<f64>, Option<f64>)> = None;
     let mut new_row: Option<(Option<f64>, Option<f64>, Option<bool>)> = None;
@@ -2321,8 +2367,12 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         }
                     });
                 }
-                if att.is_none() && o.parent_id.is_none() && ui.small_button(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).on_hover_text(tr("It stands on the nearest road and follows it (as OMSI's [splineAttachement]); its IDCode stays", "Он встаёт на ближайшую дорогу и следует за ней (как [splineAttachement] в OMSI); IDCode сохраняется")).clicked() {
-                    attach_road = true;
+                if att.is_none() && o.parent_id.is_none() {
+                    let armed = ed.sample == Some(Sample::Attach(k, id));
+                    let tip = tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode");
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).selected(armed)).on_hover_text(tip).clicked() {
+                        arm_attach = Some(!armed);
+                    }
                 }
                 let is_stop = a.map(|a| a.is_bus_stop).unwrap_or(false);
                 let is_entry = a.map(|a| a.is_entry_point).unwrap_or(false);
@@ -2595,6 +2645,17 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
             }
         });
     });
+    if let Some(on) = arm_attach {
+        if on {
+            if let Sel::Object(k, id) = sel {
+                ed.sample = Some(Sample::Attach(k, id));
+                ed.sample_browser = false;
+                ed.toast(tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode"));
+            }
+        } else {
+            ed.sample = None;
+        }
+    }
     // (an object's rules only where it has paths, or rules already)
     let has_paths = match sel {
         Sel::Object(k, id) => {
@@ -2636,14 +2697,6 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
             }
             if attach_points > 0 {
                 crate::ui_edit::attach_section(ui, ed, lib, k, id, attach_points);
-            }
-            if attach_road {
-                if let Err(e) = ed.attach_object_to_spline(lib, k, id) {
-                    if !e.is_empty() {
-                        ed.toast(e);
-                    }
-                }
-                return;
             }
             if let Some(f) = replace_obj {
                 ed.replace_selected_objects(&f);
