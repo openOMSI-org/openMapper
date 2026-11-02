@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	Да краёў дарог і паверхняў
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Тое, што малюецца побач з дарогай, пачынаецца на яе краі; над аб'ектам — на яго грані, на яе вышыні
 Load all tiles at once	Загружаць усе тайлы адразу
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Выключана: загружаюцца толькі тайлы вакол камеры, як у рэдактары OMSI 2, астатнія схаваныя, пакуль вы не клікнеце па пустой зоне
+Along a spline	Уздоўж сплайна
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Пстрыкніце па сплайне: зямля пад ім, шырынёй пэндзля ў абодва бакі, прыводзіцца да яго вышыні, і злучаныя з ім кавалкі таксама
+The brush size is how far either side of the spline the ground is brought to its height.	Памер пэндзля — як далёка ў абодва бакі ад сплайна зямля прыводзіцца да яго вышыні.
+Align the selected splines	Зямля па выбраных сплайнах
+Select splines first	Спачатку выберыце сплайны
+No spline under the cursor	Пад курсорам няма сплайна
+The ground follows the spline	Зямля паўтарае сплайн
+Align ground to splines	Зямля па сплайнах
 Path	Шлях
 Ctrl: snap onto a path, F9: the next one	Ctrl: прывязаць да шляху, F9: наступны

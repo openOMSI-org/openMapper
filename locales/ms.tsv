@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	Lekat ke tepi jalan dan permukaan
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Yang dilukis di sebelah jalan bermula di tepinya; di atas objek ia bermula pada muka objek itu sendiri, pada ketinggian itu
 Load all tiles at once	Muatkan semua jubin sekali gus
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Mati: hanya jubin di sekitar kamera dimuatkan, seperti dalam editor OMSI 2, dan yang lain disembunyikan sehingga anda mengklik zon kosong
+Along a spline	Sepanjang spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klik satu spline: tanah di bawahnya, selebar berus di kedua-dua belah, dibawa ke tinggi spline, dan bahagian yang bersambung turut sama
+The brush size is how far either side of the spline the ground is brought to its height.	Saiz berus ialah sejauh mana di kedua-dua belah spline tanah dibawa ke tingginya.
+Align the selected splines	Selaraskan spline yang dipilih
+Select splines first	Pilih spline dahulu
+No spline under the cursor	Tiada spline di bawah kursor
+The ground follows the spline	Tanah mengikut spline
+Align ground to splines	Selaraskan tanah kepada spline
 Path	Laluan
 Ctrl: snap onto a path, F9: the next one	Ctrl: lekap ke laluan, F9: seterusnya

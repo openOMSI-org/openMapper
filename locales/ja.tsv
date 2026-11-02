@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	道路の端と面に吸着
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	道路の脇に描くものはその端から始まり、オブジェクトの上ではそのオブジェクト自身の面、その高さから始まります
 Load all tiles at once	すべてのタイルを一度に読み込む
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、ほかは空の領域をクリックするまで非表示になります
+Along a spline	スプラインに沿って
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	スプラインをクリック：その下の地面が、ブラシの幅だけ両側までスプラインの高さになり、つながった区間も一緒です
+The brush size is how far either side of the spline the ground is brought to its height.	ブラシの大きさは、スプラインの左右どれだけ遠くまで地面をその高さにするかです。
+Align the selected splines	選択したスプラインに合わせる
+Select splines first	先にスプラインを選択してください
+No spline under the cursor	カーソルの下にスプラインがありません
+The ground follows the spline	地面がスプラインに沿いました
+Align ground to splines	地面をスプラインに合わせる
 Path	パス
 Ctrl: snap onto a path, F9: the next one	Ctrl: パスに合わせる、F9: 次

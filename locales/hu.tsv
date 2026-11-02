@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	Igazítás az útszélekhez és a felületekhez
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ami egy út mellé kerül, annak a szélén kezdődik; egy objektum fölött az objektum saját lapján, annak magasságán kezdődik
 Load all tiles at once	Az összes csempe betöltése egyszerre
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Kikapcsolva: csak a kamera körüli csempék töltődnek be, mint az OMSI 2 szerkesztőjében, a többi rejtve marad, amíg az üres zónára nem kattint
+Along a spline	Egy spline mentén
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Kattintson egy spline-ra: az alatta lévő talaj, a ecset szélességében mindkét oldalon, a spline magasságára kerül, és a hozzá kapcsolt darabok is
+The brush size is how far either side of the spline the ground is brought to its height.	Az ecset mérete az, milyen messze kerül a spline két oldalán a talaj a magasságára.
+Align the selected splines	A kijelölt spline-okhoz igazítás
+Select splines first	Először válasszon spline-okat
+No spline under the cursor	Nincs spline a kurzor alatt
+The ground follows the spline	A talaj követi a spline-t
+Align ground to splines	Talaj igazítása a spline-okhoz
 Path	Út
 Ctrl: snap onto a path, F9: the next one	Ctrl: útra illesztés, F9: a következő

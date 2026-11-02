@@ -2588,5 +2588,13 @@ Flying builds up speed the longer the keys are held	按键按住越久，飞行�
 Reset the camera	重置相机
 Load all tiles at once	一次加载所有图块
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	关闭：与 OMSI 2 的编辑器一样，只加载相机周围的图块，其余图块会隐藏，直到您点击空白区域
+Along a spline	贴齐样条线
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	点击一条样条线：笔刷宽度内两侧的地面会贴到样条线的高度，与它相连的各段也一起
+The brush size is how far either side of the spline the ground is brought to its height.	笔刷大小是样条线左右两侧、地面被贴到其高度的距离。
+Align the selected splines	贴齐所选的样条线
+Select splines first	请先选择样条线
+No spline under the cursor	光标下没有样条线
+The ground follows the spline	地面已跟着样条线
+Align ground to splines	把地面贴齐样条线
 Path	路径
 Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条

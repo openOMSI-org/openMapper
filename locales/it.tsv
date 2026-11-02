@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	Aggancia ai bordi strada e alle superfici
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ciò che si disegna accanto a una strada inizia sul suo bordo; sopra un oggetto inizia sulla faccia dell'oggetto, a quell'altezza
 Load all tiles at once	Carica tutte le tessere in una volta
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Disattivato: vengono caricate solo le tessere attorno alla camera, come nell'editor di OMSI 2, le altre restano nascoste finché non fai clic sulla zona vuota
+Along a spline	Lungo una spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Fai clic su una spline: il terreno sotto, largo quanto il pennello da ogni lato, viene portato all'altezza della spline, e i pezzi uniti con essa
+The brush size is how far either side of the spline the ground is brought to its height.	La dimensione del pennello è quanto lontano, da ogni lato della spline, il terreno viene portato alla sua altezza.
+Align the selected splines	Allinea le spline selezionate
+Select splines first	Seleziona prima le spline
+No spline under the cursor	Nessuna spline sotto il cursore
+The ground follows the spline	Il terreno segue la spline
+Align ground to splines	Allinea il terreno alle spline
 Path	Percorso
 Ctrl: snap onto a path, F9: the next one	Ctrl: agganciare a un percorso, F9: il successivo

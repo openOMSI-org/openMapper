@@ -2588,5 +2588,13 @@ Flying builds up speed the longer the keys are held	按住按鍵越久，飛行�
 Reset the camera	重設攝影機
 Load all tiles at once	一次載入所有圖塊
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	關閉：與 OMSI 2 的編輯器相同，只載入相機周圍的圖塊，其餘圖塊會隱藏，直到您點擊空白區域
+Along a spline	貼齊Spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	點一條Spline：筆刷寬度內兩側的地面會貼到Spline的高度，與它相連的各段也一起
+The brush size is how far either side of the spline the ground is brought to its height.	筆刷大小是Spline左右兩側、地面被貼到其高度的距離。
+Align the selected splines	貼齊所選的Spline
+Select splines first	請先選取Spline
+No spline under the cursor	游標下沒有Spline
+The ground follows the spline	地面已跟著Spline
+Align ground to splines	把地面貼齊Spline
 Path	路徑
 Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條

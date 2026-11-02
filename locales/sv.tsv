@@ -2631,5 +2631,13 @@ Snap to road edges and surfaces	Fäst vid vägkant och ytor
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Det som ritas bredvid en väg börjar på dess kant; över ett objekt börjar det på objektets egen yta, på den höjden
 Load all tiles at once	Läs in alla rutor på en gång
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Av: bara rutorna runt kameran läses in, som i OMSI 2:s redigerare, och de andra är dolda tills du klickar på den tomma zonen
+Along a spline	Längs en spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klicka på en spline: marken under den, lika bred som penseln åt båda håll, förs till splinens höjd, och bitarna som sitter ihop med den följer med
+The brush size is how far either side of the spline the ground is brought to its height.	Penselstorleken är hur långt åt båda håll från splinen marken förs till dess höjd.
+Align the selected splines	Jämna ut de valda splinesen
+Select splines first	Välj splines först
+No spline under the cursor	Ingen spline under markören
+The ground follows the spline	Marken följer splinen
+Align ground to splines	Jämna ut marken mot splines
 Path	Bana
 Ctrl: snap onto a path, F9: the next one	Ctrl: fäst vid en bana, F9: nästa

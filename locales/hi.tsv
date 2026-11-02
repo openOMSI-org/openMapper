@@ -2591,5 +2591,13 @@ Snap to road edges and surfaces	सड़क के किनारों और
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	सड़क के पास जो बनाया जाता है वह उसके किनारे से शुरू होता है; वस्तु के ऊपर वह वस्तु की अपनी सतह से, उसी ऊँचाई पर शुरू होता है
 Load all tiles at once	सभी टाइलें एक साथ लोड करें
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, बाकी तब तक छिपी रहती हैं जब तक आप खाली क्षेत्र पर क्लिक नहीं करते
+Along a spline	स्पलाइन के साथ
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	एक स्पलाइन पर क्लिक करें: उसके नीचे की ज़मीन, ब्रश जितनी चौड़ी दोनों ओर, स्पलाइन की ऊँचाई पर आ जाती है, और उससे जुड़े टुकड़े भी
+The brush size is how far either side of the spline the ground is brought to its height.	ब्रश का आकार यह है कि स्पलाइन के दोनों ओर ज़मीन कितनी दूर तक उसकी ऊँचाई पर लाई जाती है।
+Align the selected splines	चुनी हुई स्पलाइन पर ज़मीन लगाएँ
+Select splines first	पहले स्पलाइन चुनें
+No spline under the cursor	कर्सर के नीचे कोई स्पलाइन नहीं
+The ground follows the spline	ज़मीन स्पलाइन के साथ जाती है
+Align ground to splines	ज़मीन को स्पलाइन पर लगाना
 Path	पथ
 Ctrl: snap onto a path, F9: the next one	Ctrl: पथ पर चिपकाना, F9: अगला

@@ -2631,5 +2631,13 @@ Snap to road edges and surfaces	Przyciągaj do krawędzi dróg i powierzchni
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	To, co rysuje się obok drogi, zaczyna się na jej krawędzi; nad obiektem zaczyna się na jego własnej powierzchni, na tej wysokości
 Load all tiles at once	Wczytaj wszystkie kafelki naraz
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Wyłączone: wczytywane są tylko kafelki wokół kamery, jak w edytorze OMSI 2, a pozostałe są ukryte, dopóki nie klikniesz pustej strefy
+Along a spline	Wzdłuż splajnu
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Kliknij splajn: grunt pod nim, szeroki jak pędzel z obu stron, zostaje sprowadzony do wysokości splajnu, a połączone odcinki razem z nim
+The brush size is how far either side of the spline the ground is brought to its height.	Rozmiar pędzla to, jak daleko po obu stronach splajnu grunt jest sprowadzany do jego wysokości.
+Align the selected splines	Wyrównaj do wybranych splajnów
+Select splines first	Najpierw wybierz splajny
+No spline under the cursor	Brak splajnu pod kursorem
+The ground follows the spline	Grunt podąża za splajnem
+Align ground to splines	Wyrównaj grunt do splajnów
 Path	Ścieżka
 Ctrl: snap onto a path, F9: the next one	Ctrl: dociągnij do ścieżki, F9: następna
