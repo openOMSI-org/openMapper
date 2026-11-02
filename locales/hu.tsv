@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Fel-le keringés megfordítása
 Invert the wheel	Görgő megfordítása
 Flying builds up speed the longer the keys are held	A repülés annál gyorsabb, minél tovább tartod nyomva a billentyűket
 Reset the camera	Kamera visszaállítása
+Path	Út
+Ctrl: snap onto a path, F9: the next one	Ctrl: útra illesztés, F9: a következő

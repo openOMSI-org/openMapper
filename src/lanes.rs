@@ -47,7 +47,7 @@ pub struct LaneEnd {
 
 impl Lane {
     /// Its two ends (before they are checked for links).
-    fn ends(&self) -> [LaneEnd; 2] {
+    pub(crate) fn ends(&self) -> [LaneEnd; 2] {
         let n = self.pts.len();
         let h0 = roads::heading_of((self.pts[1] - self.pts[0]).truncate());
         let h1 = roads::heading_of((self.pts[n - 1] - self.pts[n - 2]).truncate());

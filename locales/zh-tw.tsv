@@ -2581,3 +2581,5 @@ Invert orbiting up and down	反轉上下環繞
 Invert the wheel	反轉滾輪
 Flying builds up speed the longer the keys are held	按住按鍵越久，飛行速度越快
 Reset the camera	重設攝影機
+Path	路徑
+Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條

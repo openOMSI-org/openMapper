@@ -2624,3 +2624,5 @@ Invert orbiting up and down	Invertera orbitering upp och ned
 Invert the wheel	Invertera hjulet
 Flying builds up speed the longer the keys are held	Flygningen ökar i fart ju längre tangenterna hålls nere
 Reset the camera	Återställ kameran
+Path	Bana
+Ctrl: snap onto a path, F9: the next one	Ctrl: fäst vid en bana, F9: nästa

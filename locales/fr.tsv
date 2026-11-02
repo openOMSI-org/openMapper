@@ -2582,3 +2582,5 @@ Invert orbiting up and down	Inverser l'orbite haut/bas
 Invert the wheel	Inverser la molette
 Flying builds up speed the longer the keys are held	Le vol accélère progressivement tant que les touches restent enfoncées
 Reset the camera	Réinitialiser la caméra
+Path	Chemin
+Ctrl: snap onto a path, F9: the next one	Ctrl: coller à un chemin, F9: le suivant

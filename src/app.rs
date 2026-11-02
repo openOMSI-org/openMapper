@@ -1824,7 +1824,15 @@ impl App {
             return;
         }
         // (a grab holds the keyboard, as Blender's does: X, Y, Z lock it, numbers say how far,
-        // Enter or Esc lets it go; Ctrl is left to the rest, for an undo)
+        // Enter or Esc lets it go; Ctrl is left to the rest, for an undo. F9 changes which
+        // path Ctrl snaps, and it has to work while Ctrl is held)
+        if self.ed.grab.is_some() && code == Some(KeyCode::F9) {
+            self.ed.grab_next_path();
+            if let Some(at) = self.ed.cursor {
+                self.ed.grab_follow_with(self.assets.as_mut(), at, self.mouse.pos);
+            }
+            return;
+        }
         if self.ed.grab.is_some() && !self.keys.ctrl {
             self.grab_key(code);
             return;
@@ -2172,7 +2180,7 @@ impl App {
                 // of it costs is what a big map answers slowly with)
                 let t = Instant::now();
                 crate::logging::busy("the grab: the selection following the pointer");
-                self.ed.grab_follow(at, self.mouse.pos);
+                self.ed.grab_follow_with(self.assets.as_mut(), at, self.mouse.pos);
                 crate::logging::busy("");
                 let ms = t.elapsed().as_millis();
                 if ms > 50 {

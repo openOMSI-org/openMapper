@@ -2584,3 +2584,5 @@ Invert orbiting up and down	上下の旋回を反転
 Invert the wheel	ホイールを反転
 Flying builds up speed the longer the keys are held	キーを押し続けるほど飛行速度が上がります
 Reset the camera	カメラをリセット
+Path	パス
+Ctrl: snap onto a path, F9: the next one	Ctrl: パスに合わせる、F9: 次

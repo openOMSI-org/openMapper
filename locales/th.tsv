@@ -2584,3 +2584,5 @@ Invert orbiting up and down	กลับด้านการหมุนวน�
 Invert the wheel	กลับด้านล้อเลื่อน
 Flying builds up speed the longer the keys are held	การบินเร่งความเร็วขึ้นยิ่งกดปุ่มค้างนาน
 Reset the camera	รีเซ็ตกล้อง
+Path	เส้นทาง
+Ctrl: snap onto a path, F9: the next one	Ctrl: ติดกับเส้นทาง, F9: ถัดไป

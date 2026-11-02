@@ -2582,3 +2582,5 @@ Invert orbiting up and down	Інвертувати обертання навко
 Invert the wheel	Інвертувати колесо
 Flying builds up speed the longer the keys are held	Політ набирає швидкість, чим довше утримуються клавіші
 Reset the camera	Скинути камеру
+Path	Шлях
+Ctrl: snap onto a path, F9: the next one	Ctrl: прив'язати до шляху, F9: наступний

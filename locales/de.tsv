@@ -2582,3 +2582,5 @@ Invert orbiting up and down	Umkreisen nach oben/unten umkehren
 Invert the wheel	Rad umkehren
 Flying builds up speed the longer the keys are held	Der Flug wird schneller, je länger die Tasten gehalten werden
 Reset the camera	Kamera zurücksetzen
+Path	Pfad
+Ctrl: snap onto a path, F9: the next one	Ctrl: an einen Pfad heften, F9: der nächste

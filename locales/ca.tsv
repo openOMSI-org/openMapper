@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Inverteix l'òrbita amunt i avall
 Invert the wheel	Inverteix la roda
 Flying builds up speed the longer the keys are held	El vol agafa velocitat com més temps es mantenen premudes les tecles
 Reset the camera	Restableix la càmera
+Path	Camí
+Ctrl: snap onto a path, F9: the next one	Ctrl: enganxar a un camí, F9: el següent

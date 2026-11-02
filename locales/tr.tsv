@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Yukarı ve aşağı yörüngede dönmeyi ters çevir
 Invert the wheel	Tekerleği ters çevir
 Flying builds up speed the longer the keys are held	Uçuş, tuşlar ne kadar uzun basılı tutulursa o kadar hız kazanır
 Reset the camera	Kamerayı sıfırla
+Path	Yol
+Ctrl: snap onto a path, F9: the next one	Ctrl: yola yapıştır, F9: sonraki

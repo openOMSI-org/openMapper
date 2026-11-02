@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Invertir la órbita arriba y abajo
 Invert the wheel	Invertir la rueda
 Flying builds up speed the longer the keys are held	El vuelo gana velocidad cuanto más tiempo se mantienen las teclas
 Reset the camera	Restablecer la cámara
+Path	Ruta
+Ctrl: snap onto a path, F9: the next one	Ctrl: acoplar a una ruta, F9: la siguiente

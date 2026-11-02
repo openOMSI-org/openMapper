@@ -2581,3 +2581,5 @@ Invert orbiting up and down	反转上下环绕
 Invert the wheel	反转滚轮
 Flying builds up speed the longer the keys are held	按键按住越久，飞行速度越快
 Reset the camera	重置相机
+Path	路径
+Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条

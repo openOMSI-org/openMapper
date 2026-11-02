@@ -2584,3 +2584,5 @@ Invert orbiting up and down	위아래 궤도 회전 반전
 Invert the wheel	휠 반전
 Flying builds up speed the longer the keys are held	키를 오래 누를수록 비행 속도가 올라갑니다
 Reset the camera	카메라 초기화
+Path	경로
+Ctrl: snap onto a path, F9: the next one	Ctrl: 경로에 붙이기, F9: 다음

@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Đảo chiều xoay quanh lên và xuống
 Invert the wheel	Đảo chiều con lăn
 Flying builds up speed the longer the keys are held	Bay sẽ tăng tốc càng lâu khi các phím được giữ
 Reset the camera	Đặt lại camera
+Path	Đường
+Ctrl: snap onto a path, F9: the next one	Ctrl: dính vào đường, F9: đường kế

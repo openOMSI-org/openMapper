@@ -2584,3 +2584,5 @@ Invert orbiting up and down	Obrátit orbitování nahoru a dolů
 Invert the wheel	Obrátit kolečko
 Flying builds up speed the longer the keys are held	Let nabírá rychlost, čím déle jsou klávesy drženy
 Reset the camera	Obnovit kameru
+Path	Cesta
+Ctrl: snap onto a path, F9: the next one	Ctrl: přichytit k cestě, F9: další
