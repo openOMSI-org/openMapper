@@ -2596,5 +2596,13 @@ Click an object in the view	Kattintson egy objektumra a nézetben
 Click an object or a spline in the view	Kattintson egy objektumra vagy egy spline-ra a nézetben
 Click the spline it should stand on. It follows that road and keeps its IDCode	Kattintson arra a spline-ra, amelyen állnia kell. Azon az úton marad, és megtartja az IDCode-ját
 That is the one	Ez az
+Along a spline	Egy spline mentén
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Kattintson egy spline-ra: az alatta lévő talaj, a ecset szélességében mindkét oldalon, a spline magasságára kerül, és a hozzá kapcsolt darabok is
+The brush size is how far either side of the spline the ground is brought to its height.	Az ecset mérete az, milyen messze kerül a spline két oldalán a talaj a magasságára.
+Align the selected splines	A kijelölt spline-okhoz igazítás
+Select splines first	Először válasszon spline-okat
+No spline under the cursor	Nincs spline a kurzor alatt
+The ground follows the spline	A talaj követi a spline-t
+Align ground to splines	Talaj igazítása a spline-okhoz
 Path	Út
 Ctrl: snap onto a path, F9: the next one	Ctrl: útra illesztés, F9: a következő

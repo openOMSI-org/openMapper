@@ -2596,5 +2596,13 @@ Click an object in the view	Klik sebuah objek di tampilan
 Click an object or a spline in the view	Klik sebuah objek atau spline di tampilan
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klik spline tempatnya harus berdiri. Ia mengikuti jalan itu dan IDCode-nya tetap
 That is the one	Ini dia
+Along a spline	Sepanjang spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klik sebuah spline: tanah di bawahnya, selebar kuas di kedua sisi, dibawa ke tinggi spline, dan potongan yang tersambung ikut
+The brush size is how far either side of the spline the ground is brought to its height.	Ukuran kuas adalah seberapa jauh di kedua sisi spline tanah dibawa ke tingginya.
+Align the selected splines	Samakan spline yang dipilih
+Select splines first	Pilih spline dahulu
+No spline under the cursor	Tidak ada spline di bawah kursor
+The ground follows the spline	Tanah mengikuti spline
+Align ground to splines	Samakan tanah ke spline
 Path	Jalur
 Ctrl: snap onto a path, F9: the next one	Ctrl: tempel ke jalur, F9: berikutnya

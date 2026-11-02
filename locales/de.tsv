@@ -2594,5 +2594,13 @@ Click an object in the view	Ein Objekt in der Ansicht anklicken
 Click an object or a spline in the view	Ein Objekt oder einen Spline in der Ansicht anklicken
 Click the spline it should stand on. It follows that road and keeps its IDCode	Den Spline anklicken, auf dem es stehen soll. Es folgt dieser Straße und behält seine IDCode
 That is the one	Das ist es
+Along a spline	Entlang eines Splines
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klick auf einen Spline: der Boden darunter, so breit wie der Pinsel zu beiden Seiten, wird auf die Höhe des Splines gebracht, und die verbundenen Stücke mit
+The brush size is how far either side of the spline the ground is brought to its height.	Die Pinselgröße ist, wie weit zu beiden Seiten des Splines der Boden auf seine Höhe gebracht wird.
+Align the selected splines	Die ausgewählten Splines angleichen
+Select splines first	Zuerst Splines auswählen
+No spline under the cursor	Kein Spline unter dem Cursor
+The ground follows the spline	Der Boden folgt dem Spline
+Align ground to splines	Boden an Splines angleichen
 Path	Pfad
 Ctrl: snap onto a path, F9: the next one	Ctrl: an einen Pfad heften, F9: der nächste

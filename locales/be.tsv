@@ -2596,5 +2596,13 @@ Click an object in the view	Пстрыкніце аб'ект у выглядзе
 Click an object or a spline in the view	Пстрыкніце аб'ект або сплайн у выглядзе
 Click the spline it should stand on. It follows that road and keeps its IDCode	Пстрыкніце сплайн, на якім ён мусіць стаяць. Ён ідзе за гэтай дарогай і захоўвае IDCode
 That is the one	Гэта ён
+Along a spline	Уздоўж сплайна
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Пстрыкніце па сплайне: зямля пад ім, шырынёй пэндзля ў абодва бакі, прыводзіцца да яго вышыні, і злучаныя з ім кавалкі таксама
+The brush size is how far either side of the spline the ground is brought to its height.	Памер пэндзля — як далёка ў абодва бакі ад сплайна зямля прыводзіцца да яго вышыні.
+Align the selected splines	Зямля па выбраных сплайнах
+Select splines first	Спачатку выберыце сплайны
+No spline under the cursor	Пад курсорам няма сплайна
+The ground follows the spline	Зямля паўтарае сплайн
+Align ground to splines	Зямля па сплайнах
 Path	Шлях
 Ctrl: snap onto a path, F9: the next one	Ctrl: прывязаць да шляху, F9: наступны

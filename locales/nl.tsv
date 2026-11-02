@@ -2636,5 +2636,13 @@ Click an object in the view	Klik op een object in het beeld
 Click an object or a spline in the view	Klik op een object of een spline in het beeld
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klik op de spline waarop het moet staan. Het volgt die weg en houdt zijn IDCode
 That is the one	Dat is hem
+Along a spline	Langs een spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klik op een spline: de grond eronder, zo breed als het penseel aan weerszijden, wordt op de hoogte van de spline gebracht, en de aangesloten stukken ook
+The brush size is how far either side of the spline the ground is brought to its height.	De penseelgrootte is hoe ver aan weerszijden van de spline de grond op zijn hoogte wordt gebracht.
+Align the selected splines	De geselecteerde splines gelijktrekken
+Select splines first	Selecteer eerst splines
+No spline under the cursor	Geen spline onder de cursor
+The ground follows the spline	De grond volgt de spline
+Align ground to splines	Grond gelijktrekken met splines
 Path	Pad
 Ctrl: snap onto a path, F9: the next one	Ctrl: aan een pad klikken, F9: de volgende

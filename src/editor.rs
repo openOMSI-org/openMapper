@@ -84,6 +84,8 @@ pub enum TerrainMode {
     /// level (the level of the stroke's start, or the tile's water), water laid on the tiles
     /// it touches.
     Water,
+    /// The ground under a spline, as wide as the brush either side, brought to the spline's height.
+    AlongSpline,
 }
 
 /// How a lake or a river is drawn (the Lake / river mode).
@@ -98,7 +100,7 @@ pub enum WaterShape {
 }
 
 impl TerrainMode {
-    pub const ALL: [TerrainMode; 7] = [TerrainMode::Raise, TerrainMode::Lower, TerrainMode::Smooth, TerrainMode::Flatten, TerrainMode::Roughen, TerrainMode::Ramp, TerrainMode::Water];
+    pub const ALL: [TerrainMode; 8] = [TerrainMode::Raise, TerrainMode::Lower, TerrainMode::Smooth, TerrainMode::Flatten, TerrainMode::Roughen, TerrainMode::Ramp, TerrainMode::Water, TerrainMode::AlongSpline];
     pub fn label(self) -> &'static str {
         match self {
             TerrainMode::Raise => tr("Raise", "Поднять"),
@@ -108,6 +110,7 @@ impl TerrainMode {
             TerrainMode::Roughen => tr("Roughen", "Неровности"),
             TerrainMode::Ramp => tr("Ramp", "Пандус"),
             TerrainMode::Water => tr("Lake / river", "Озеро / река"),
+            TerrainMode::AlongSpline => tr("Along a spline", "По сплайну"),
         }
     }
     pub fn icon(self) -> crate::icons::Icon {
@@ -120,6 +123,7 @@ impl TerrainMode {
             TerrainMode::Roughen => Icon::Terrain,
             TerrainMode::Ramp => Icon::Route,
             TerrainMode::Water => Icon::Lower,
+            TerrainMode::AlongSpline => Icon::Road,
         }
     }
 }
@@ -311,6 +315,8 @@ pub struct Editor {
     pub selected: Option<Sel>,
     pub also: Vec<Sel>,
     pub hover: Option<Sel>,
+    /// Everything the aim meets, nearest first. The next click takes the one behind the selection.
+    hover_stack: Vec<Sel>,
     /// The grip of the selected spline under the cursor.
     pub hover_handle: Option<Handle>,
     /// The box being dragged out on the screen (window points: where it began, where it is).
@@ -626,6 +632,7 @@ impl Default for Editor {
             selected: None,
             also: Vec::new(),
             hover: None,
+            hover_stack: Vec::new(),
             hover_handle: None,
             select_box: None,
             clip: None,
@@ -1559,8 +1566,18 @@ impl Editor {
 
     /// The object or spline under a ray.
     pub fn pick(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>) -> Option<Sel> {
+        let mut stack = Vec::new();
+        self.pick_into(assets, o, d, ground, &mut stack)
+    }
+
+    /// The object or spline under a ray. `stack` receives everything the ray meets, nearest first.
+    fn pick_into(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>, stack: &mut Vec<Sel>) -> Option<Sel> {
         let doc = self.doc.as_ref()?;
         let mut best: Option<(f64, Sel)> = None;
+        // (every thing the ray meets, nearest first: a click takes the first, the next click the
+        // one behind it, so two splines or a spline and an object a hand's breadth apart can
+        // each be picked)
+        let mut all: Vec<(f64, Sel)> = Vec::new();
         // (relative to the ray's origin: f32 world positions far from the map's origin are
         // half a metre coarse)
         let ov = glam::Vec3::ZERO;
@@ -1603,6 +1620,9 @@ impl Editor {
                 if let Some(t) = hit {
                     if t < gdist + 2.0 && best.map(|b| t < b.0).unwrap_or(true) {
                         best = Some((t, Sel::Object(*k, ob.id)));
+                    }
+                    if t < gdist + 2.0 {
+                        all.push((t, Sel::Object(*k, ob.id)));
                     }
                 }
             }
@@ -1650,6 +1670,9 @@ impl Editor {
                     if t < gdist + 2.0 && best.map(|b| t < b.0).unwrap_or(true) {
                         best = Some((t, Sel::Object(*k, ob.id)));
                     }
+                    if t < gdist + 2.0 {
+                        all.push((t, Sel::Object(*k, ob.id)));
+                    }
                 }
             }
         }
@@ -1681,6 +1704,9 @@ impl Editor {
                         if let Some(t) = hit {
                             if t < gdist + 2.0 && best.map(|b| t < b.0).unwrap_or(true) {
                                 best = Some((t, Sel::Attached(*k, a.id)));
+                            }
+                            if t < gdist + 2.0 {
+                                all.push((t, Sel::Attached(*k, a.id)));
                             }
                         }
                     }
@@ -1771,6 +1797,7 @@ impl Editor {
                     prev = next;
                 }
                 if let Some((lat, t, sel)) = nearest {
+                    all.push((t, sel));
                     // (the surface the aim meets first. Two at the same place - a painted line
                     // on a road, a kerb beside it - the narrower one is the one under the cursor)
                     let better = match sbest {
@@ -1783,13 +1810,21 @@ impl Editor {
                 }
             }
         }
+        all.sort_by(|a, b| a.0.total_cmp(&b.0));
+        stack.clear();
+        for (_, s) in all {
+            if !stack.contains(&s) {
+                stack.push(s);
+            }
+        }
         // (whichever the ray reaches first. An object used to win over every spline at the same
         // place on the ground, however far behind it, so a spline drawn in front of a building
-        // could not be picked until the building was moved off the ray. An object standing on
-        // a road is still its own thing: the road lies under its foot, so the aim meets the
-        // road only a little further along, and that little is allowed for here.)
+        // could not be picked until the building was moved off the ray. A few centimetres still
+        // go to the object: the road under its foot can be met a hair sooner than the foot.
+        // More than that, and a spline lying over an object — a marking, a kerb, a cable a
+        // hand's breadth above a wall — is the one the click gives, not the object below it.)
         match (best, sbest) {
-            (Some((a, sel)), Some((b, _, _, ssel))) => Some(if a <= b + 0.4 { sel } else { ssel }),
+            (Some((a, sel)), Some((b, _, _, ssel))) => Some(if a <= b + 0.05 { sel } else { ssel }),
             (Some((_, sel)), None) => Some(sel),
             (None, s) => s.map(|b| b.3),
         }
@@ -1809,6 +1844,7 @@ impl Editor {
         // goes if it is laid on it. Only the roads tool draws it, but any tool snaps to it.)
         self.surface = if self.snap_surface { self.surface_hit(assets, o, d, g) } else { None };
         self.hover = None;
+        self.hover_stack.clear();
         self.hover_tile = None;
         match self.acts_as() {
             Tool::Select => {
@@ -1816,7 +1852,9 @@ impl Editor {
                     let found = self.handle_at_ray(assets, o, d);
                     self.hover_handle = found.map(|f| f.1);
                     self.hover_handle_of = found.map(|f| f.0);
-                    self.hover = if self.hover_handle.is_some() { self.selected } else { self.pick(assets, o, d, g) };
+                    let mut stack = Vec::new();
+                    self.hover = if self.hover_handle.is_some() { self.selected } else { self.pick_into(assets, o, d, g, &mut stack) };
+                    self.hover_stack = stack;
                 }
             }
             Tool::Tiles => {
@@ -2090,6 +2128,7 @@ impl Editor {
         }
         match self.acts_as() {
             Tool::Select => self.select_press(shift),
+            Tool::Terrain if self.tool == Tool::Terrain && self.terrain_mode == TerrainMode::AlongSpline => self.align_spline_click(),
             Tool::Terrain if self.tool == Tool::Terrain && self.terrain_mode == TerrainMode::Ramp => {
                 let Some(c) = self.cursor else { return };
                 match self.ramp_start.take() {
@@ -4405,6 +4444,81 @@ impl Editor {
 
     // ---------------------------------------------------------------- terrain and paint
 
+    /// The spline under `p`, within `within` metres of its line.
+    fn spline_under(&self, p: DVec2, within: f64) -> Option<(TileKey, i64)> {
+        let doc = self.doc.as_ref()?;
+        let mut best: Option<(f64, TileKey, i64)> = None;
+        for (k, t) in &doc.tiles {
+            let org = tile_origin(*k);
+            for s in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 1e-3) {
+                let Some((along, _)) = selection::on_spline(s, org, p) else { continue };
+                let c = omsi_geometry::SplineCurve::from_map(s, org);
+                let d = (c.point_at(along).truncate() - p).length();
+                if d <= within && best.map(|b| d < b.0).unwrap_or(true) {
+                    best = Some((d, *k, s.id));
+                }
+            }
+        }
+        best.map(|b| (b.1, b.2))
+    }
+
+    /// A spline and the pieces joined on from either end, so one click covers the whole road.
+    fn spline_chain(doc: &Document, k: TileKey, id: i64) -> Vec<(TileKey, i64)> {
+        let mut out = vec![(k, id)];
+        let walk = |forward: bool, out: &mut Vec<(TileKey, i64)>| {
+            let mut cur = (k, id);
+            for _ in 0..500 {
+                let Some(s) = doc.spline(cur.0, cur.1) else { break };
+                let n = if forward { s.next_id } else { s.prev_id };
+                if n == 0 { break; }
+                let Some((nk, _)) = doc.find_spline(n) else { break };
+                if out.iter().any(|x| *x == (nk, n)) { break; }
+                if forward { out.push((nk, n)); } else { out.insert(0, (nk, n)); }
+                cur = (nk, n);
+            }
+        };
+        walk(false, &mut out);
+        walk(true, &mut out);
+        out
+    }
+
+    /// A click in Along a spline: the spline under the cursor, with the pieces joined to it.
+    fn align_spline_click(&mut self) {
+        let Some(c) = self.cursor else { return };
+        let within = (self.brush_radius as f64).max(8.0);
+        let Some((k, id)) = self.spline_under(c.truncate(), within) else {
+            self.toast(tr("No spline under the cursor", "Под курсором нет сплайна"));
+            return;
+        };
+        let which = self.doc.as_ref().map(|d| Self::spline_chain(d, k, id)).unwrap_or_default();
+        self.align_ground_to(&which);
+    }
+
+    /// Bring the ground to these splines, flat under each for the brush's radius either side,
+    /// blending back to the old ground beside that. One undo step. Tells how many were done.
+    pub fn align_ground_to(&mut self, which: &[(TileKey, i64)]) -> usize {
+        let half = self.brush_radius as f64;
+        let Some(doc) = self.doc.as_ref() else { return 0 };
+        let curves: Vec<omsi_geometry::SplineCurve> = which.iter().filter_map(|(k, id)| {
+            let s = doc.spline(*k, *id).filter(|s| !s.deleted && s.length > 1e-3)?;
+            Some(omsi_geometry::SplineCurve::from_map(s, tile_origin(*k)))
+        }).collect();
+        if curves.is_empty() || half <= 0.0 {
+            return 0;
+        }
+        self.history.begin(tr("Align ground to splines", "Земля по сплайнам"));
+        let pts: Vec<DVec2> = curves.iter().flat_map(|c| {
+            let n = (c.length / 4.0).ceil().max(1.0) as usize;
+            (0..=n).map(move |i| c.point_at(c.length * i as f64 / n as f64).truncate())
+        }).collect();
+        self.touch_around(&pts, half + 12.0);
+        let Some(doc) = self.doc.as_mut() else { return 0 };
+        conform_ground(doc, &curves, half);
+        self.history.commit();
+        self.toast(tr("The ground follows the spline", "Земля повторяет сплайн"));
+        curves.len()
+    }
+
     fn brush_terrain(&mut self, assets: &mut Assets, c: DVec2, dt: f64) {
         let Some(doc) = self.doc.as_mut() else { return };
         let r = self.brush_radius as f64;
@@ -4451,7 +4565,7 @@ impl Editor {
                     // holding it longer shapes them more and does not make noise of noise)
                     TerrainMode::Roughen => h + rolls(p) * strength * 3.0 * dt * w,
                     // (clicked from end to end, not brushed)
-                    TerrainMode::Ramp => h,
+                    TerrainMode::Ramp | TerrainMode::AlongSpline => h,
                     // (dug towards the bed, never filled; the banks ease out with the brush's rim)
                     TerrainMode::Water => {
                         let bed = self.water_level.unwrap_or(0.0) as f64 - self.water_depth as f64;
@@ -5984,12 +6098,21 @@ impl Editor {
             self.reshape = None;
             return;
         }
-        let Some(hit) = self.hover else {
+        let Some(mut hit) = self.hover else {
             if !shift {
                 self.select(None);
             }
             return;
         };
+        // (the aim meets more than one thing: the next plain click takes the one behind the
+        // selection, then the next, and then the first again. Either can be picked however
+        // close together they are.)
+        let behind = self.hover_stack.len() > 1 && !shift && !self.ctrl_held;
+        if behind {
+            if let Some(i) = self.hover_stack.iter().position(|s| self.is_selected(*s)) {
+                hit = self.hover_stack[(i + 1) % self.hover_stack.len()];
+            }
+        }
         if shift {
             self.toggle_selected(hit);
             return;
@@ -6002,7 +6125,7 @@ impl Editor {
         // a double click on a road: the whole road, all its pieces up to where it branches or ends
         let double = self.last_click.map(|(s, t)| s == hit && t.elapsed().as_millis() < 450).unwrap_or(false);
         self.last_click = Some((hit, Instant::now()));
-        if let (true, Sel::Spline(k, id)) = (double, hit) {
+        if let (true, Sel::Spline(k, id)) = (double && !behind, hit) {
             self.last_click = None;
             // (an AI path: a double click puts a point in it, to drag; a road: the whole road)
             if let (true, Some(c)) = (self.editing_paths(), self.cursor) {
@@ -9891,6 +10014,40 @@ mod tests {
         assets.objects.insert("sceneryobjects\\lamp.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(lamp)));
         let got = ed.pick(&mut assets, DVec3::new(100.0, 130.0, 20.0), -DVec3::Z, Some(DVec3::new(100.0, 130.0, 0.0)));
         assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the lamp on the road, not the road under it");
+        // (the same aim, with the object a hand's breadth under the spline: the spline is what
+        // the ray meets first, and it is the one picked, not the object below it)
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 60.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].pos[2] = 0.15;
+        add_object(&mut doc, (0, 0), 9, 100.0, 130.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\slab.sco".into();
+        ed.open(doc);
+        let slab = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(-2.0, -2.0, 0.0), Vec3::new(2.0, -2.0, 0.0), Vec3::new(2.0, 2.0, 0.0), Vec3::new(-2.0, 2.0, 0.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let under = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: slab, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-2.0, -2.0, 0.0),
+            hi: Vec3::new(2.0, 2.0, 0.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\slab.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(under)));
+        let got = ed.pick(&mut assets, DVec3::new(100.0, 130.0, 20.0), -DVec3::Z, Some(DVec3::new(100.0, 130.0, 0.0)));
+        assert_eq!(got, Some(Sel::Spline((0, 0), 1)), "the spline 15 cm over the object, not the object under it");
+        // (a second click takes the object under it, and the click after that the spline again)
+        let lib = crate::library::Library::default();
+        ed.hover_ray(&mut assets, &lib, DVec3::new(100.0, 130.0, 20.0), -DVec3::Z);
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.selected, Some(Sel::Spline((0, 0), 1)));
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.selected, Some(Sel::Object((0, 0), 9)), "the click after the spline takes the object under it");
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.selected, Some(Sel::Spline((0, 0), 1)), "the click after that takes the spline again");
     }
 
     /// A click on an object standing along a road picks that road: the lamps, rails and bays a
@@ -12626,6 +12783,57 @@ mod tests {
         ed.history.undo(d);
         assert_eq!(ways(&ed, &mut assets), before);
         let _ = std::fs::remove_dir_all(content);
+    }
+
+    /// Along a spline brings the ground under the given pieces up to the spline, and no
+    /// further than the brush. A click does the same for the piece under the cursor and the
+    /// pieces joined to it. One undo puts the ground back.
+    #[test]
+    fn aligning_the_ground_to_a_spline_follows_its_height() {
+        let raised = |ed: &mut Editor, id, y, prev, next| {
+            ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.push(MapSpline {
+                file: "Splines\\road.sli".into(),
+                id,
+                prev_id: prev,
+                next_id: next,
+                pos: [100.0, y, 5.0],
+                heading: 0.0,
+                length: 40.0,
+                is_h: true,
+                delta_h: Some(0.0),
+                ..Default::default()
+            });
+        };
+        let mut ed = editor();
+        ed.brush_radius = 6.0;
+        raised(&mut ed, 11, 80.0, 0, 12);
+        raised(&mut ed, 12, 120.0, 11, 0);
+        let n = ed.align_ground_to(&[((0, 0), 11)]);
+        assert_eq!(n, 1);
+        let doc = ed.doc.as_ref().unwrap();
+        let under = doc.ground(DVec2::new(100.0, 100.0));
+        assert!((under - 4.88).abs() < 0.35, "{under}");
+        // (the next piece was not asked for, and it sits beyond the brush)
+        let next = doc.ground(DVec2::new(100.0, 140.0));
+        assert!(next.abs() < 0.35, "{next}");
+        let aside = doc.ground(DVec2::new(140.0, 100.0));
+        assert!(aside.abs() < 0.05, "{aside}");
+        ed.undo();
+        assert!(ed.doc.as_ref().unwrap().ground(DVec2::new(100.0, 100.0)).abs() < 0.05);
+        // (a click on the first piece takes the piece joined on after it too)
+        ed.set_tool(Tool::Terrain);
+        ed.terrain_mode = TerrainMode::AlongSpline;
+        ed.brush_radius = 6.0;
+        ed.cursor = Some(DVec3::new(100.0, 90.0, 0.0));
+        let lib = crate::library::Library::default();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.left_press(&mut assets, &lib, false);
+        let doc = ed.doc.as_ref().unwrap();
+        let a = doc.ground(DVec2::new(100.0, 100.0));
+        let b = doc.ground(DVec2::new(100.0, 140.0));
+        assert!((a - 4.88).abs() < 0.35, "{a}");
+        assert!((b - 4.88).abs() < 0.35, "{b}");
+        assert!(doc.ground(DVec2::new(100.0, 20.0)).abs() < 0.05);
     }
 
     #[test]

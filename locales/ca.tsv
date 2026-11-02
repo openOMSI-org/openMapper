@@ -2596,5 +2596,13 @@ Click an object in the view	Feu clic en un objecte a la vista
 Click an object or a spline in the view	Feu clic en un objecte o un spline a la vista
 Click the spline it should stand on. It follows that road and keeps its IDCode	Feu clic al spline on ha de estar. Segueix aquesta via i conserva l'IDCode
 That is the one	És aquest
+Along a spline	Al llarg d'una spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Feu clic en una spline: el terra de sota, tan ample com el pinzell a cada costat, puja o baixa a l'alçada de la spline, i les peces unides hi van amb ella
+The brush size is how far either side of the spline the ground is brought to its height.	La mida del pinzell és fins on, a cada costat de la spline, el terra s'acosta a la seva alçada.
+Align the selected splines	Ajustar les splines seleccionades
+Select splines first	Seleccioneu primer les splines
+No spline under the cursor	No hi ha cap spline sota el cursor
+The ground follows the spline	El terra segueix la spline
+Align ground to splines	Ajustar el terra a les splines
 Path	Camí
 Ctrl: snap onto a path, F9: the next one	Ctrl: enganxar a un camí, F9: el següent

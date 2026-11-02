@@ -2596,5 +2596,13 @@ Click an object in the view	คลิกวัตถุในมุมมอง
 Click an object or a spline in the view	คลิกวัตถุหรือสปลายน์ในมุมมอง
 Click the spline it should stand on. It follows that road and keeps its IDCode	คลิกสปลายน์ที่มันจะยืนอยู่ มันจะไปตามถนนนั้นและคง IDCode ไว้
 That is the one	นี่คืออันนั้น
+Along a spline	ตามสปลายน์
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	คลิกสปลายน์: พื้นดินใต้เส้น กว้างเท่าแปรงทั้งสองข้าง จะถูกปรับให้สูงเท่าสปลายน์ และช่วงที่ต่อกันไปด้วย
+The brush size is how far either side of the spline the ground is brought to its height.	ขนาดแปรงคือระยะทางสองข้างของสปลายน์ที่พื้นดินจะถูกปรับให้สูงเท่าเส้น
+Align the selected splines	ปรับตามสปลายน์ที่เลือก
+Select splines first	เลือกสปลายน์ก่อน
+No spline under the cursor	ไม่มีสปลายน์ใต้เคอร์เซอร์
+The ground follows the spline	พื้นดินตามสปลายน์
+Align ground to splines	ปรับพื้นดินให้ตามสปลายน์
 Path	เส้นทาง
 Ctrl: snap onto a path, F9: the next one	Ctrl: ติดกับเส้นทาง, F9: ถัดไป

@@ -1921,8 +1921,23 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
             TerrainMode::Roughen => tr("Gives flat ground the rolls and dips of a natural field; hold longer for more", "Придаёт ровной земле бугры и впадины, как в поле; держите дольше: сильнее"),
             TerrainMode::Water => tr("Paint a lake or a river: the ground is dug to a bed under the water's level (where you start the stroke, or the tile's water) and the tile gets water at that level. Water in OMSI is one level for a whole tile: another low place on the same tile shows it too", "Рисуйте озеро или реку: земля копается до дна под уровнем воды (там, где начали мазок, или водой тайла), и тайл получает воду на этом уровне. Вода в OMSI одного уровня на весь тайл: другое низкое место на том же тайле тоже её покажет"),
             TerrainMode::Ramp => tr("Click where it starts, then where it ends: the ground between becomes one even slope as wide as the brush (an embankment, a ramp, a level bed)", "Клик в начале, затем в конце: земля между ними станет ровным склоном шириной с кисть (насыпь, пандус, ровное полотно)"),
+            TerrainMode::AlongSpline => tr("Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it", "Клик по сплайну: земля под ним, шириной с кисть в обе стороны, приводится к его высоте, и соединённые с ним куски тоже"),
         };
         help(st, &r, h);
+    }
+    if ed.terrain_mode == TerrainMode::AlongSpline {
+        ui.label(RichText::new(tr("The brush size is how far either side of the spline the ground is brought to its height.", "Размер кисти — как далеко в обе стороны от сплайна земля приводится к его высоте.")).small().color(TEXT_DIM));
+        if ui.button(icons::labelled(Icon::Road, tr("Align the selected splines", "Земля по выбранным сплайнам"))).clicked() {
+            let which: Vec<_> = ed.selection().into_iter().filter_map(|s| match s {
+                Sel::Spline(k, id) => Some((k, id)),
+                _ => None,
+            }).collect();
+            if which.is_empty() {
+                ed.toast(tr("Select splines first", "Сначала выберите сплайны"));
+            } else {
+                ed.align_ground_to(&which);
+            }
+        }
     }
     if ed.terrain_mode == TerrainMode::Flatten {
         ui.horizontal(|ui| {
@@ -1977,7 +1992,12 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
     }
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Brush", "Кисть")).strong());
-    brush_grid(ui, ed);
+    if ed.terrain_mode == TerrainMode::AlongSpline {
+        ui.label(tr("Size", "Размер"));
+        ui.add(egui::Slider::new(&mut ed.brush_radius, 3.0..=150.0).suffix(" m").logarithmic(true));
+    } else {
+        brush_grid(ui, ed);
+    }
     ui.add_space(6.0);
     if ui.button(icons::labelled(Icon::Terrain, tr("Flatten the whole terrain", "Убрать рельеф со всей карты"))).on_hover_text(tr("Every tile's ground levelled to the map's mean height; the roads, the AI paths and the junctions follow it. One undo step brings the relief back. (The satellite picture: View > Satellite overlay.)", "Земля всех тайлов выравнивается до средней высоты карты; дороги, пути ИИ и перекрёстки подстраиваются. Один шаг отмены вернёт рельеф. (Спутниковая картинка: Вид > Спутниковая подложка.)")).clicked() {
         actions.push(Action::FlattenTerrain);

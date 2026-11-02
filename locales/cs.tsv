@@ -2596,5 +2596,13 @@ Click an object in the view	Klikněte na objekt v pohledu
 Click an object or a spline in the view	Klikněte na objekt nebo spline v pohledu
 Click the spline it should stand on. It follows that road and keeps its IDCode	Klikněte na spline, na kterém má stát. Sleduje tu silnici a ponechá si IDCode
 That is the one	To je on
+Along a spline	Podél spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klikněte na spline: terén pod ní, široký jako štětec na obě strany, se srovná na její výšku a připojené díly s ní
+The brush size is how far either side of the spline the ground is brought to its height.	Velikost štětce je, jak daleko na obě strany od spline se terén srovná na její výšku.
+Align the selected splines	Srovnat vybrané spline
+Select splines first	Nejprve vyberte spline
+No spline under the cursor	Pod kurzorem není žádná spline
+The ground follows the spline	Terén sleduje spline
+Align ground to splines	Srovnat terén podle spline
 Path	Cesta
 Ctrl: snap onto a path, F9: the next one	Ctrl: přichytit k cestě, F9: další

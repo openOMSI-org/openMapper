@@ -2596,5 +2596,13 @@ Click an object in the view	Görünümde bir nesneye tıklayın
 Click an object or a spline in the view	Görünümde bir nesneye veya bir spline'a tıklayın
 Click the spline it should stand on. It follows that road and keeps its IDCode	Durması gereken spline'a tıklayın. O yolu izler ve IDCode'unu korur
 That is the one	Bu o
+Along a spline	Bir spline boyunca
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Bir spline'a tıklayın: altındaki zemin, fırça genişliğinde iki yana, spline yüksekliğine getirilir ve ona bağlı parçalar da birlikte gelir
+The brush size is how far either side of the spline the ground is brought to its height.	Fırça boyutu, spline'ın iki yanında zeminin yüksekliğine ne kadar uzağa getirileceğidir.
+Align the selected splines	Seçili spline'lara hizala
+Select splines first	Önce spline seçin
+No spline under the cursor	İmlecin altında spline yok
+The ground follows the spline	Zemin spline'ı izliyor
+Align ground to splines	Zemini spline'lara hizala
 Path	Yol
 Ctrl: snap onto a path, F9: the next one	Ctrl: yola yapıştır, F9: sonraki

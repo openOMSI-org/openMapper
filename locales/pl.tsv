@@ -2636,5 +2636,13 @@ Click an object in the view	Kliknij obiekt w widoku
 Click an object or a spline in the view	Kliknij obiekt albo splajn w widoku
 Click the spline it should stand on. It follows that road and keeps its IDCode	Kliknij splajn, na którym ma stać. Podąża za tą drogą i zachowuje IDCode
 That is the one	To ten
+Along a spline	Wzdłuż splajnu
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Kliknij splajn: grunt pod nim, szeroki jak pędzel z obu stron, zostaje sprowadzony do wysokości splajnu, a połączone odcinki razem z nim
+The brush size is how far either side of the spline the ground is brought to its height.	Rozmiar pędzla to, jak daleko po obu stronach splajnu grunt jest sprowadzany do jego wysokości.
+Align the selected splines	Wyrównaj do wybranych splajnów
+Select splines first	Najpierw wybierz splajny
+No spline under the cursor	Brak splajnu pod kursorem
+The ground follows the spline	Grunt podąża za splajnem
+Align ground to splines	Wyrównaj grunt do splajnów
 Path	Ścieżka
 Ctrl: snap onto a path, F9: the next one	Ctrl: dociągnij do ścieżki, F9: następna
