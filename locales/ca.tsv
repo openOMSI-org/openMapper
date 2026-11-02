@@ -2591,3 +2591,11 @@ Snap to road edges and surfaces	Ajusta a les vores de la carretera i a les super
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	El que es dibuixa al costat d'una carretera comença a la seva vora; sobre un objecte comença a la cara de l'objecte, a aquella altura
 Load all tiles at once	Carrega totes les tessel·les alhora
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desactivat: només es carreguen les tessel·les al voltant de la càmera, com a l'editor d'OMSI 2, i les altres s'amaguen fins que cliqueu a la zona buida
+Along a spline	Al llarg d'una spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Feu clic en una spline: el terra de sota, tan ample com el pinzell a cada costat, puja o baixa a l'alçada de la spline, i les peces unides hi van amb ella
+The brush size is how far either side of the spline the ground is brought to its height.	La mida del pinzell és fins on, a cada costat de la spline, el terra s'acosta a la seva alçada.
+Align the selected splines	Ajustar les splines seleccionades
+Select splines first	Seleccioneu primer les splines
+No spline under the cursor	No hi ha cap spline sota el cursor
+The ground follows the spline	El terra segueix la spline
+Align ground to splines	Ajustar el terra a les splines

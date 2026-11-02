@@ -2591,3 +2591,11 @@ Snap to road edges and surfaces	Tempel ke tepi jalan dan permukaan
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Yang digambar di samping jalan dimulai di tepinya; di atas objek dimulai pada bidang objek itu sendiri, pada ketinggian itu
 Load all tiles at once	Muat semua ubin sekaligus
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Mati: hanya ubin di sekitar kamera yang dimuat, seperti di editor OMSI 2, dan yang lain disembunyikan sampai Anda mengeklik zona kosong
+Along a spline	Sepanjang spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klik sebuah spline: tanah di bawahnya, selebar kuas di kedua sisi, dibawa ke tinggi spline, dan potongan yang tersambung ikut
+The brush size is how far either side of the spline the ground is brought to its height.	Ukuran kuas adalah seberapa jauh di kedua sisi spline tanah dibawa ke tingginya.
+Align the selected splines	Samakan spline yang dipilih
+Select splines first	Pilih spline dahulu
+No spline under the cursor	Tidak ada spline di bawah kursor
+The ground follows the spline	Tanah mengikuti spline
+Align ground to splines	Samakan tanah ke spline

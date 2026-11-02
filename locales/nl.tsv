@@ -2631,3 +2631,11 @@ Snap to road edges and surfaces	Vastzetten op wegranden en vlakken
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Wat naast een weg wordt getekend, begint op de rand; boven een object begint het op het eigen vlak van het object, op die hoogte
 Load all tiles at once	Alle tegels tegelijk laden
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, de rest blijft verborgen tot u op de lege zone klikt
+Along a spline	Langs een spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klik op een spline: de grond eronder, zo breed als het penseel aan weerszijden, wordt op de hoogte van de spline gebracht, en de aangesloten stukken ook
+The brush size is how far either side of the spline the ground is brought to its height.	De penseelgrootte is hoe ver aan weerszijden van de spline de grond op zijn hoogte wordt gebracht.
+Align the selected splines	De geselecteerde splines gelijktrekken
+Select splines first	Selecteer eerst splines
+No spline under the cursor	Geen spline onder de cursor
+The ground follows the spline	De grond volgt de spline
+Align ground to splines	Grond gelijktrekken met splines

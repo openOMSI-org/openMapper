@@ -2591,3 +2591,11 @@ Snap to road edges and surfaces	Жол жиегі мен беттерге жаб
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Жолдың жанында салынғаны оның жиегінен басталады; нысанның үстінде нысанның өз бетінен, сол биіктіктен басталады
 Load all tiles at once	Барлық тайлды бірден жүктеу
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Өшірулі: OMSI 2 редакторындағыдай тек камера айналасындағы тайлдар жүктеледі, қалғандары бос аймақты басқанша жасырын
+Along a spline	Сплайн бойымен
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Сплайнды басыңыз: астындағы жер, қылқалам енімен екі жаққа, сплайн биіктігіне келтіріледі, жалғасқан бөліктері де бірге
+The brush size is how far either side of the spline the ground is brought to its height.	Қылқалам өлшемі — сплайнның екі жағында жер оның биіктігіне қаншалықты алыс келтірілетіні.
+Align the selected splines	Таңдалған сплайндарға келтіру
+Select splines first	Алдымен сплайндарды таңдаңыз
+No spline under the cursor	Курсор астында сплайн жоқ
+The ground follows the spline	Жер сплайнды қайталайды
+Align ground to splines	Жерді сплайнға келтіру

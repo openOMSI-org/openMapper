@@ -2631,3 +2631,11 @@ Snap to road edges and surfaces	Ajustar às bordas da estrada e às superfícies
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	O que é desenhado ao lado de uma estrada começa na borda; sobre um objeto começa na face do próprio objeto, nessa altura
 Load all tiles at once	Carregar todos os blocos de uma vez
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desligado: só os blocos ao redor da câmera são carregados, como no editor do OMSI 2, e os outros ficam ocultos até você clicar na zona vazia
+Along a spline	Ao longo de uma spline
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Clique numa spline: o chão embaixo, tão largo quanto o pincel de cada lado, vai para a altura da spline, e as peças ligadas vão junto
+The brush size is how far either side of the spline the ground is brought to its height.	O tamanho do pincel é até onde, de cada lado da spline, o chão é levado à altura dela.
+Align the selected splines	Alinhar as splines selecionadas
+Select splines first	Selecione as splines primeiro
+No spline under the cursor	Nenhuma spline sob o cursor
+The ground follows the spline	O chão segue a spline
+Align ground to splines	Alinhar o chão às splines
