@@ -9,7 +9,7 @@
 //!   turned into a DirectX `.x` that OMSI 2 and openOMSI both read.
 
 use std::collections::HashMap;
-use std::io::Read;
+use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use crate::i18n::tr;
@@ -23,6 +23,130 @@ pub struct Report {
 }
 
 const CONTENT_FOLDERS: [&str; 6] = ["sceneryobjects", "splines", "texture", "maps", "vehicles", "fonts"];
+
+fn gltf_uri_path(base: &Path, uri: &str) -> anyhow::Result<Option<PathBuf>> {
+    if uri.starts_with("data:") {
+        return Ok(None);
+    }
+    if let Some(path) = uri.strip_prefix("file://").or_else(|| uri.strip_prefix("file:")) {
+        return Ok(Some(PathBuf::from(path)));
+    }
+    if uri.contains(':') {
+        return Ok(None);
+    }
+    let uri = uri.as_bytes();
+    let mut path = Vec::with_capacity(uri.len());
+    let mut i = 0;
+    while i < uri.len() {
+        if uri[i] == b'%' {
+            let hex = |b: u8| match b {
+                b'0'..=b'9' => Some(b - b'0'),
+                b'a'..=b'f' => Some(b - b'a' + 10),
+                b'A'..=b'F' => Some(b - b'A' + 10),
+                _ => None,
+            };
+            let hi = uri.get(i + 1).and_then(|b| hex(*b));
+            let lo = uri.get(i + 2).and_then(|b| hex(*b));
+            let (Some(hi), Some(lo)) = (hi, lo) else {
+                anyhow::bail!("glTF contains an invalid percent-encoded path");
+            };
+            path.push((hi << 4) | lo);
+            i += 3;
+        } else {
+            path.push(uri[i]);
+            i += 1;
+        }
+    }
+    let path = String::from_utf8(path)?;
+    Ok(Some(base.join(path)))
+}
+
+fn include_gltf_sources(path: &Path, provenance: &mut crate::provenance::Source) -> anyhow::Result<()> {
+    let gltf = gltf::Gltf::open(path)?;
+    let base = path.parent().unwrap_or(Path::new("."));
+    for buffer in gltf.document.buffers() {
+        if let gltf::buffer::Source::Uri(uri) = buffer.source() {
+            if let Some(source) = gltf_uri_path(base, uri)? {
+                provenance.include(&source)?;
+            }
+        }
+    }
+    for image in gltf.document.images() {
+        if let gltf::image::Source::Uri { uri, .. } = image.source() {
+            if let Some(source) = gltf_uri_path(base, uri)? {
+                provenance.include(&source)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn include_obj_sources(path: &Path, provenance: &mut crate::provenance::Source) -> anyhow::Result<()> {
+    let dir = path.parent().unwrap_or(Path::new("."));
+    for line in BufReader::new(std::fs::File::open(path)?).lines() {
+        let line = line?;
+        let line = line.trim_start();
+        if line.split_whitespace().next() == Some("mtllib") {
+            let source = dir.join(line[6..].trim());
+            if source.is_file() {
+                provenance.include(&source)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn include_fbx_sources(path: &Path, provenance: &mut crate::provenance::Source) -> anyhow::Result<()> {
+    let scene = ufbx::load_file(
+        &path.to_string_lossy(),
+        ufbx::LoadOpts { load_external_files: false, ..Default::default() },
+    )
+    .map_err(|e| anyhow::anyhow!("FBX: {}", e.description.as_ref() as &str))?;
+    let dir = path.parent().unwrap_or(Path::new("."));
+    let mut used = std::collections::HashSet::new();
+    for node in scene.nodes.iter() {
+        let Some(mesh) = node.mesh.as_ref() else { continue };
+        for (index, _) in mesh.faces.iter().enumerate() {
+            let material = mesh.face_material.get(index).copied().unwrap_or(0) as usize;
+            if let Some(material) = node.materials.get(material).or_else(|| mesh.materials.get(material)) {
+                used.insert((**material).element.element_id);
+            }
+        }
+    }
+    for material in scene.materials.iter().filter(|material| used.contains(&material.element.element_id)) {
+        for texture in [
+            &material.pbr.base_color.texture,
+            &material.pbr.normal_map.texture,
+            &material.pbr.roughness.texture,
+            &material.pbr.metalness.texture,
+            &material.pbr.ambient_occlusion.texture,
+            &material.fbx.diffuse_color.texture,
+            &material.fbx.normal_map.texture,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            if !texture.content.is_empty() && image::load_from_memory(&texture.content).is_ok() {
+                continue;
+            }
+            let files = [
+                texture.absolute_filename.as_ref() as &str,
+                texture.filename.as_ref(),
+                texture.relative_filename.as_ref(),
+            ];
+            let file = files
+                .iter()
+                .filter(|f| !f.is_empty())
+                .map(|f| Path::new(&f.replace('\\', "/")).to_path_buf())
+                .flat_map(|p| [p.clone(), dir.join(&p), dir.join(p.file_name().unwrap_or_default())])
+                .find(|p| p.is_file());
+            if let Some(file) = file {
+                provenance.include(&file)?;
+            }
+        }
+    }
+    Ok(())
+}
 
 /// Import whatever `path` is into the content folder.
 pub fn import(path: &Path, content: &Path) -> anyhow::Result<Report> {
@@ -235,6 +359,7 @@ fn pbr_siblings(tex: &Path) -> Vec<PathBuf> {
 /// colours, textures and transparency. It stands on the ground: a model whose origin is in its
 /// middle would otherwise sink half into it.
 fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
+    let mut provenance = crate::provenance::Source::capture(path)?;
     let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "model".into());
     let safe = crate::editable::safe_name(&stem);
     let roots = crate::install::Roots { omsi: PathBuf::new(), content: content.to_path_buf() };
@@ -247,6 +372,13 @@ fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
     let mut src = crate::editable::Source { name: stem.clone(), ..Default::default() };
     let mut copied = 1;
     if matches!(ext.as_str(), "obj" | "gltf" | "glb" | "fbx") {
+        if ext == "obj" {
+            include_obj_sources(path, &mut provenance)?;
+        } else if ext == "fbx" {
+            include_fbx_sources(path, &mut provenance)?;
+        } else if ext == "gltf" || ext == "glb" {
+            include_gltf_sources(path, &mut provenance)?;
+        }
         let (mut m, mut tex_names) = if ext == "obj" {
             obj_to_model(path)?
         } else {
@@ -263,6 +395,7 @@ fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
                 let name = Path::new(&t.replace('\\', "/")).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
                 let e = Path::new(&name).extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
                 let found = [src_dir.join(t.replace('\\', "/")), src_dir.join(&name)].into_iter().find(|p| p.is_file());
+                if let Some(p) = &found { provenance.include(p)?; }
                 if !name.is_empty() && !omsi_texture::EXTENSIONS.contains(&e.as_str()) {
                     if let Some(img) = crate::models::picture(None, found.as_deref()) {
                         let png = format!("{}.png", Path::new(&name).file_stem().unwrap().to_string_lossy());
@@ -274,7 +407,7 @@ fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
                 *t = name.clone();
                 textures.push(name);
             }
-            copy_textures(&textures, src_dir, &tex_dir, &mut copied)?;
+            copy_textures(&textures, src_dir, &tex_dir, &mut copied, &mut provenance)?;
             for (mat, name) in m.mats.iter_mut().zip(&tex_names) {
                 if let (0, Some(n)) = (mat.alpha, name) {
                     mat.alpha = crate::models::picture(None, Some(&tex_dir.join(n))).map(|i| crate::models::alpha_of(&i)).unwrap_or(0);
@@ -306,7 +439,7 @@ fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
     } else {
         let m = omsi_o3d::load_mesh(path)?;
         let tex: Vec<String> = m.materials.iter().map(|m| m.texture.clone()).filter(|t| !t.is_empty()).collect();
-        copy_textures(&tex, src_dir, &tex_dir, &mut copied)?;
+        copy_textures(&tex, src_dir, &tex_dir, &mut copied, &mut provenance)?;
         src.model.materials = m
             .materials
             .iter()
@@ -326,6 +459,7 @@ fn import_model(path: &Path, content: &Path) -> anyhow::Result<Report> {
     stand_on_ground(&mut src.model);
     crate::editable::merge_materials(&mut src.model);
     crate::editable::save(&roots, &rel, &src)?;
+    provenance.record(content, &dir)?;
     Ok(Report { copied, objects: vec![rel], message: format!("{} {stem}", tr("Model imported:", "Модель импортирована:")) })
 }
 
@@ -405,7 +539,13 @@ pub fn set_alpha(sco: &Path, mesh: usize, texture: &str, index: i32, alpha: u8) 
 
 /// The textures a model names, from beside it or a texture folder next to it, with their
 /// PBR maps, into the object's own texture folder.
-fn copy_textures(names: &[String], src_dir: &Path, tex_dir: &Path, copied: &mut usize) -> anyhow::Result<()> {
+fn copy_textures(
+    names: &[String],
+    src_dir: &Path,
+    tex_dir: &Path,
+    copied: &mut usize,
+    provenance: &mut crate::provenance::Source,
+) -> anyhow::Result<()> {
     let mut seen = std::collections::HashSet::new();
     for t in names {
         let name = Path::new(&t.replace('\\', "/")).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
@@ -414,9 +554,11 @@ fn copy_textures(names: &[String], src_dir: &Path, tex_dir: &Path, copied: &mut 
         }
         let cands = [src_dir.join(t.replace('\\', "/")), src_dir.join(&name), src_dir.join("texture").join(&name), src_dir.join("textures").join(&name), src_dir.join("Texture").join(&name)];
         if let Some(src) = cands.iter().find(|p| p.is_file()) {
+            provenance.include(src)?;
             std::fs::copy(src, tex_dir.join(&name))?;
             *copied += 1;
             for p in pbr_siblings(src) {
+                provenance.include(&p)?;
                 std::fs::copy(&p, tex_dir.join(p.file_name().unwrap()))?;
                 *copied += 1;
             }
@@ -781,6 +923,68 @@ mod tests {
     }
 
     #[test]
+    fn importing_a_model_records_its_external_pbr_sibling_bytes() {
+        let dir = std::env::temp_dir().join(format!("om-provenance-pbr-{}", std::process::id()));
+        let content = dir.join("content");
+        std::fs::create_dir_all(&content).unwrap();
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([80, 120, 160, 255])).save(dir.join("wall.png")).unwrap();
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([128, 128, 255, 255])).save(dir.join("wall_nn.png")).unwrap();
+        std::fs::write(dir.join("wall.mtl"), "newmtl wall\nmap_Kd wall.png\n").unwrap();
+        std::fs::write(
+            dir.join("wall.obj"),
+            "mtllib wall.mtl\nv 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nvt 1 0\nvt 0 1\nusemtl wall\nf 1/1 2/2 3/3\n",
+        )
+        .unwrap();
+
+        let report = super::import(&dir.join("wall.obj"), &content).unwrap();
+
+        let sibling_hash = crate::provenance::file_hash(&dir.join("wall_nn.png")).unwrap();
+        let material_hash = crate::provenance::file_hash(&dir.join("wall.mtl")).unwrap();
+        let history = crate::provenance::History::load(&content).unwrap();
+        assert!(history.entries.values().any(|sources| sources.contains(&sibling_hash)));
+        assert!(history.entries.values().any(|sources| sources.contains(&material_hash)));
+        assert!(!report.objects.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn importing_a_gltf_records_its_external_buffer_and_texture_bytes() {
+        let dir = std::env::temp_dir().join(format!("om-provenance-gltf-{}", std::process::id()));
+        let content = dir.join("content");
+        std::fs::create_dir_all(&content).unwrap();
+        let positions: [f32; 9] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let uvs: [f32; 6] = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
+        let mut buffer: Vec<u8> = positions.iter().chain(uvs.iter()).flat_map(|f| f.to_le_bytes()).collect();
+        buffer.extend([0u16, 1, 2].iter().flat_map(|i| i.to_le_bytes()));
+        let buffer_path = dir.join("mesh data.bin");
+        std::fs::write(&buffer_path, buffer).unwrap();
+        let texture_path = dir.join("external.png");
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([80, 120, 160, 255])).save(&texture_path).unwrap();
+        let source = dir.join("external.gltf");
+        std::fs::write(
+            &source,
+            r#"{"asset":{"version":"2.0"},"scene":0,"scenes":[{"nodes":[0]}],
+            "nodes":[{"mesh":0}],
+            "meshes":[{"primitives":[{"attributes":{"POSITION":0,"TEXCOORD_0":1},"indices":2,"material":0}]}],
+            "materials":[{"pbrMetallicRoughness":{"baseColorTexture":{"index":0}}}],
+            "textures":[{"source":0}],"images":[{"uri":"external.png"}],
+            "buffers":[{"byteLength":66,"uri":"mesh%20data.bin"}],
+            "bufferViews":[{"buffer":0,"byteOffset":0,"byteLength":36},{"buffer":0,"byteOffset":36,"byteLength":24},{"buffer":0,"byteOffset":60,"byteLength":6}],
+            "accessors":[{"bufferView":0,"componentType":5126,"count":3,"type":"VEC3","min":[0,0,0],"max":[1,1,0]},{"bufferView":1,"componentType":5126,"count":3,"type":"VEC2"},{"bufferView":2,"componentType":5123,"count":3,"type":"SCALAR"}]}"#,
+        )
+        .unwrap();
+
+        super::import(&source, &content).unwrap();
+
+        let buffer_hash = crate::provenance::file_hash(&buffer_path).unwrap();
+        let texture_hash = crate::provenance::file_hash(&texture_path).unwrap();
+        let history = crate::provenance::History::load(&content).unwrap();
+        assert!(history.entries.values().any(|sources| sources.contains(&buffer_hash)));
+        assert!(history.entries.values().any(|sources| sources.contains(&texture_hash)));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_materials_alpha_is_set_and_taken_away_in_the_sco() {
         let dir = std::env::temp_dir().join(format!("om-alpha-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -836,5 +1040,28 @@ mod probe {
         for (i, m) in src.model.materials.iter().enumerate() {
             eprintln!("mat {i} {:?} color {:?} tex {:?} alpha {}", m.name, m.color, m.texture, m.alpha);
         }
+    }
+}
+
+#[cfg(test)]
+mod provenance_tests {
+    use sha2::{Digest, Sha256};
+    #[test]
+    fn original_source_hash_is_retained_after_real_model_conversion() {
+        let root = std::env::temp_dir().join(format!("om-source-provenance-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let content = root.join("content");
+        std::fs::create_dir_all(&content).unwrap();
+        let source = b"v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n";
+        let file = root.join("owned.obj");
+        std::fs::write(&file, source).unwrap();
+        let hash: String = Sha256::digest(source).iter().map(|b| format!("{b:02x}")).collect();
+        let report = super::import(&file, &content).unwrap();
+        assert_eq!(report.objects.len(), 1);
+        let history: serde_json::Value = serde_json::from_slice(&std::fs::read(content.join(".openmapper-provenance.json")).unwrap()).unwrap();
+        assert_eq!(history["format_version"], 1);
+        assert!(history["entries"].as_object().unwrap().values().any(|v| v.as_array().unwrap().iter().any(|s| s == &hash)));
+        assert_eq!(std::fs::read(file).unwrap(), source);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

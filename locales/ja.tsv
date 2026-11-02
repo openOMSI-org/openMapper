@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	道路の端と面に吸着
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	道路の脇に描くものはその端から始まり、オブジェクトの上ではそのオブジェクト自身の面、その高さから始まります
 Load all tiles at once	すべてのタイルを一度に読み込む
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、ほかは空の領域をクリックするまで非表示になります
+Use dependencies	依存関係を使用
+I hold the redistribution rights	再配布する権利を持っています
+Yes	はい

@@ -2631,3 +2631,6 @@ Snap to road edges and surfaces	Fäst vid vägkant och ytor
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Det som ritas bredvid en väg börjar på dess kant; över ett objekt börjar det på objektets egen yta, på den höjden
 Load all tiles at once	Läs in alla rutor på en gång
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Av: bara rutorna runt kameran läses in, som i OMSI 2:s redigerare, och de andra är dolda tills du klickar på den tomma zonen
+Use dependencies	Använd beroenden
+I hold the redistribution rights	Jag har rätt att återdistribuera
+Yes	Ja

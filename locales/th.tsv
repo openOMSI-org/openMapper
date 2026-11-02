@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	ติดขอบถนนและพื้น
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	สิ่งที่วาดข้างถนนเริ่มที่ขอบถนน บนวัตถุเริ่มที่ผิวของวัตถุนั้นเอง ที่ความสูงนั้น
 Load all tiles at once	โหลดไทล์ทั้งหมดพร้อมกัน
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	ปิด: โหลดเฉพาะไทล์รอบกล้องเหมือนในตัวแก้ไขของ OMSI 2 ส่วนที่เหลือจะถูกซ่อนจนกว่าคุณจะคลิกที่โซนว่าง
+Use dependencies	ใช้การอ้างอิงทรัพยากร
+I hold the redistribution rights	ฉันมีสิทธิ์เผยแพร่ต่อ
+Yes	ใช่

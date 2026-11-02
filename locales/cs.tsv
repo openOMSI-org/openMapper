@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	Přichytit k okrajům silnic a k povrchům
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Co se kreslí vedle silnice, začíná na jejím okraji; nad objektem začíná na jeho vlastní ploše, v její výšce
 Load all tiles at once	Načíst všechny dlaždice najednou
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Vypnuto: načtou se jen dlaždice kolem kamery jako v editoru OMSI 2, ostatní jsou skryté, dokud neklepnete na prázdnou zónu
+Use dependencies	Použít závislosti
+I hold the redistribution rights	Mám práva k dalšímu šíření
+Yes	Ano

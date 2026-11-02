@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	सड़क के किनारों और
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	सड़क के पास जो बनाया जाता है वह उसके किनारे से शुरू होता है; वस्तु के ऊपर वह वस्तु की अपनी सतह से, उसी ऊँचाई पर शुरू होता है
 Load all tiles at once	सभी टाइलें एक साथ लोड करें
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, बाकी तब तक छिपी रहती हैं जब तक आप खाली क्षेत्र पर क्लिक नहीं करते
+Use dependencies	निर्भरताओं का उपयोग करें
+I hold the redistribution rights	मेरे पास पुनर्वितरण के अधिकार हैं
+Yes	हाँ

@@ -1,0 +1,19 @@
+name: Fingerprint tools
+
+on:
+  push:
+    branches: [feat/content-protection]
+    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", ".github/workflows/fingerprints.yml"]
+  pull_request:
+    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", ".github/workflows/fingerprints.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 tools/test_fingerprint.py

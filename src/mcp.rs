@@ -475,6 +475,8 @@ mod tests {
         let roots = crate::install::Roots { omsi: PathBuf::new(), content: PathBuf::new() };
         let mut doc = Document {
             global: Default::default(),
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: PathBuf::new(),

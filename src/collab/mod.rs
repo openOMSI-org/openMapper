@@ -450,6 +450,8 @@ fn guest_doc(roots: &Roots, w: &Welcome) -> Result<Document, String> {
 fn placeholder() -> Document {
     Document {
         global: Default::default(),
+        _publisher_mounts: std::sync::Arc::new(Default::default()),
+        _publisher_protected_source: false,
         tiles: Default::default(),
         order: Vec::new(),
         dir: PathBuf::new(),

@@ -217,15 +217,15 @@ pub struct TextureImage {
 }
 
 enum Req {
-    Object(String, PathBuf),
-    Spline(String, PathBuf),
-    Texture(PathBuf),
+    Object(String, PathBuf, u64),
+    Spline(String, PathBuf, u64),
+    Texture(PathBuf, u64),
 }
 
 enum Resp {
-    Object(String, Option<Arc<ObjectModel>>),
-    Spline(String, Option<Arc<SplineModel>>),
-    Texture(PathBuf, Option<Arc<TextureImage>>),
+    Object(String, Option<Arc<ObjectModel>>, u64),
+    Spline(String, Option<Arc<SplineModel>>, u64),
+    Texture(PathBuf, Option<Arc<TextureImage>>, u64),
 }
 
 pub enum Slot<T> {
@@ -249,6 +249,8 @@ pub struct Assets {
     pub pending: usize,
     omsi: PathBuf,
     content: PathBuf,
+    map_scope: Option<PathBuf>,
+    scope_epoch: u64,
 }
 
 /// The largest texture side kept (the editor need not hold 4K pictures).
@@ -268,11 +270,11 @@ impl Assets {
                 let req = { wrx.lock().unwrap().recv() };
                 let Ok(req) = req else { break };
                 let resp = match req {
-                    Req::Object(k, p) => Resp::Object(k, load_object(&p, &omsi, &content).map(Arc::new)),
-                    Req::Spline(k, p) => Resp::Spline(k, load_spline(&p, &omsi, &content).map(Arc::new)),
-                    Req::Texture(p) => {
+                    Req::Object(k, p, epoch) => Resp::Object(k, load_object(&p, &omsi, &content).map(Arc::new), epoch),
+                    Req::Spline(k, p, epoch) => Resp::Spline(k, load_spline(&p, &omsi, &content).map(Arc::new), epoch),
+                    Req::Texture(p, epoch) => {
                         let t = load_texture(&p, &omsi, &content).map(Arc::new);
-                        Resp::Texture(p, t)
+                        Resp::Texture(p, t, epoch)
                     }
                 };
                 if wtx.send(resp).is_err() {
@@ -280,10 +282,32 @@ impl Assets {
                 }
             });
         }
-        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, omsi, content }
+        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, omsi, content, map_scope: None, scope_epoch: 0 }
+    }
+
+    /// Choose the map whose signed dependency aliases this cache resolves. Replies from work
+    /// queued for the previous map carry its old epoch and are discarded when they arrive.
+    pub fn set_map_scope(&mut self, map_dir: &Path) {
+        let map = std::fs::canonicalize(map_dir).unwrap_or_else(|_| map_dir.to_path_buf());
+        if self.map_scope.as_ref() == Some(&map) {
+            return;
+        }
+        self.map_scope = Some(map);
+        self.scope_epoch = self.scope_epoch.wrapping_add(1);
+        self.objects.clear();
+        self.splines.clear();
+        self.textures.clear();
+        self.new_textures.clear();
+        self.tree_masks.clear();
     }
 
     pub(crate) fn resolve(&self, rel: &str) -> PathBuf {
+        if let Some(map) = &self.map_scope {
+            let scoped = omsi_cfg::resolve_path(map, rel);
+            if omsi_cfg::vfs::is_file(&scoped) {
+                return scoped;
+            }
+        }
         let c = omsi_cfg::resolve_path(&self.content, rel);
         if omsi_cfg::vfs::exists(&c) {
             c
@@ -301,7 +325,7 @@ impl Assets {
                 let p = self.resolve(rel);
                 self.objects.insert(key.clone(), Slot::Loading);
                 self.pending += 1;
-                let _ = self.tx.send(Req::Object(key, p));
+                let _ = self.tx.send(Req::Object(key, p, self.scope_epoch));
                 None
             }
         }
@@ -347,7 +371,7 @@ impl Assets {
                 let p = self.resolve(rel);
                 self.splines.insert(key.clone(), Slot::Loading);
                 self.pending += 1;
-                let _ = self.tx.send(Req::Spline(key, p));
+                let _ = self.tx.send(Req::Spline(key, p, self.scope_epoch));
                 None
             }
         }
@@ -398,7 +422,7 @@ impl Assets {
             None => {
                 self.textures.insert(path.to_path_buf(), Slot::Loading);
                 self.pending += 1;
-                let _ = self.tx.send(Req::Texture(path.to_path_buf()));
+                let _ = self.tx.send(Req::Texture(path.to_path_buf(), self.scope_epoch));
                 None
             }
         }
@@ -411,15 +435,21 @@ impl Assets {
             any = true;
             self.pending = self.pending.saturating_sub(1);
             match r {
-                Resp::Object(k, m) => {
-                    self.objects.insert(k, m.map(Slot::Ready).unwrap_or(Slot::Failed));
+                Resp::Object(k, m, epoch) => {
+                    if epoch == self.scope_epoch {
+                        self.objects.insert(k, m.map(Slot::Ready).unwrap_or(Slot::Failed));
+                    }
                 }
-                Resp::Spline(k, m) => {
-                    self.splines.insert(k, m.map(Slot::Ready).unwrap_or(Slot::Failed));
+                Resp::Spline(k, m, epoch) => {
+                    if epoch == self.scope_epoch {
+                        self.splines.insert(k, m.map(Slot::Ready).unwrap_or(Slot::Failed));
+                    }
                 }
-                Resp::Texture(p, t) => {
-                    self.textures.insert(p.clone(), t.map(Slot::Ready).unwrap_or(Slot::Failed));
-                    self.new_textures.push(p);
+                Resp::Texture(p, t, epoch) => {
+                    if epoch == self.scope_epoch {
+                        self.textures.insert(p.clone(), t.map(Slot::Ready).unwrap_or(Slot::Failed));
+                        self.new_textures.push(p);
+                    }
                 }
             }
         }
@@ -448,10 +478,12 @@ impl Assets {
 
     /// Forget everything (after an import changed files on disk).
     pub fn clear(&mut self) {
-        self.objects.retain(|_, s| matches!(s, Slot::Loading));
-        self.splines.retain(|_, s| matches!(s, Slot::Loading));
+        self.scope_epoch = self.scope_epoch.wrapping_add(1);
+        self.objects.clear();
+        self.splines.clear();
         // (pictures too: a texture's PBR maps may have been made or taken away)
-        self.textures.retain(|_, s| matches!(s, Slot::Loading));
+        self.textures.clear();
+        self.new_textures.clear();
     }
 }
 
@@ -933,6 +965,295 @@ mod tests {
         assert_eq!(m.lights[1].phases.len(), 4, "the side road's light keeps its own");
         assert!(!m.light_head, "it runs a program of its own");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn object_and_spline_waits_follow_the_active_map_alias_scope_and_drop_stale_responses() {
+        fn source_object(root: &Path, content: &Path, width: f32) -> (Vec<u8>, Vec<u8>, Vec<u8>, String) {
+            std::fs::create_dir_all(root).unwrap();
+            let input = root.join("triangle.obj");
+            let source = format!("v 0 0 0\nv {width} 0 0\nv 0 {width} 0\nf 1 2 3\n");
+            std::fs::write(&input, source.as_bytes()).unwrap();
+            std::fs::create_dir_all(content).unwrap();
+            let imported = crate::import::import(&input, content).unwrap();
+            let roots = crate::install::Roots {
+                omsi: Default::default(),
+                content: content.to_path_buf(),
+            };
+            let (object, _) = crate::editable::folder_of(&roots, &imported.objects[0]);
+            let sco = std::fs::read_dir(&object)
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .find(|path| path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("sco")))
+                .unwrap();
+            let mesh = std::fs::read_dir(object.join("model"))
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .find(|path| path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("x")))
+                .unwrap();
+            let mesh_name = mesh.file_name().unwrap().to_string_lossy().into_owned();
+            (
+                source.as_bytes().to_vec(),
+                std::fs::read(sco).unwrap(),
+                std::fs::read(mesh).unwrap(),
+                mesh_name,
+            )
+        }
+
+        fn pack(
+            content: &Path,
+            signer: &omsi_pack::SigningKey,
+            pack_id: &str,
+            source: &[u8],
+            sco: &[u8],
+            mesh: &[u8],
+            mesh_name: &str,
+            length: u32,
+        ) -> omsi_pack::Dependency {
+            let dependency = omsi_pack::Dependency {
+                publisher_id: "owned-map-scope-publisher".into(),
+                pack_id: pack_id.into(),
+                version: "1.0.0".into(),
+            };
+            let spline = format!("[length]\n{length}\n[texture]\nmissing.png\n[profile]\n0\n[profilepnt]\n-2 0 0 1\n[profilepnt]\n2 0 1 1\n");
+            omsi_pack::create_pack(
+                &content.join("Packs").join(format!("{pack_id}.oopp")),
+                omsi_pack::PackMetadata {
+                    publisher_id: dependency.publisher_id.clone(),
+                    author: "Owned map-scope fixture".into(),
+                    pack_id: dependency.pack_id.clone(),
+                    version: dependency.version.clone(),
+                    license: "CC0-1.0".into(),
+                    redistribution: false,
+                    key_id: None,
+                    dependencies: Vec::new(),
+                },
+                &[
+                    omsi_pack::AssetInput {
+                        id: "object".into(),
+                        path: "Sceneryobjects/Fixture/Objects.sco".into(),
+                        source_sha256: omsi_pack::sha256_hex(source),
+                        bytes: sco.to_vec(),
+                    },
+                    omsi_pack::AssetInput {
+                        id: "mesh".into(),
+                        path: format!("Sceneryobjects/Fixture/model/{mesh_name}"),
+                        source_sha256: omsi_pack::sha256_hex(source),
+                        bytes: mesh.to_vec(),
+                    },
+                    omsi_pack::AssetInput {
+                        id: "spline".into(),
+                        path: "Splines/Fixture/Road.sli".into(),
+                        source_sha256: omsi_pack::sha256_hex(spline.as_bytes()),
+                        bytes: spline.into_bytes(),
+                    },
+                ],
+                signer,
+                None,
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .unwrap();
+            dependency
+        }
+
+        fn references(map: &Path, dependency: &omsi_pack::Dependency) {
+            std::fs::create_dir_all(map).unwrap();
+            let refs = omsi_cfg::publisher::MapReferences {
+                format_version: 1,
+                dependencies: vec![dependency.clone()],
+                assets: vec![
+                    omsi_cfg::publisher::AssetReference {
+                        path: "Sceneryobjects/Fixture/Objects.sco".into(),
+                        dependency: dependency.clone(),
+                        asset_id: "object".into(),
+                    },
+                    omsi_cfg::publisher::AssetReference {
+                        path: "Splines/Fixture/Road.sli".into(),
+                        dependency: dependency.clone(),
+                        asset_id: "spline".into(),
+                    },
+                ],
+            };
+            std::fs::write(map.join("dependencies.json"), serde_json::to_vec(&refs).unwrap()).unwrap();
+        }
+
+        let root = std::env::temp_dir().join(format!("openmapper-map-scope-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let content = root.join("content");
+        std::fs::create_dir_all(content.join("Packs")).unwrap();
+        let signer = omsi_pack::SigningKey::generate(&ring::rand::SystemRandom::new()).unwrap();
+        let mut trust = omsi_pack::TrustedPublishers::default();
+        trust.insert("owned-map-scope-publisher", signer.key_id(), signer.public_key());
+        trust.save_file(&content.join("Publishers.json")).unwrap();
+
+        let source_a = root.join("source-a");
+        let import_a = root.join("import-a");
+        let (original_a, sco_a, mesh_a, mesh_name_a) = source_object(&source_a, &import_a, 1.0);
+        let source_b = root.join("source-b");
+        let import_b = root.join("import-b");
+        let (original_b, sco_b, mesh_b, mesh_name_b) = source_object(&source_b, &import_b, 4.0);
+        let a = pack(&content, &signer, "map-a-pack", &original_a, &sco_a, &mesh_a, &mesh_name_a, 10);
+        let b = pack(&content, &signer, "map-b-pack", &original_b, &sco_b, &mesh_b, &mesh_name_b, 20);
+        let map_a = root.join("maps/map-a");
+        let map_b = root.join("maps/map-b");
+        references(&map_a, &a);
+        references(&map_b, &b);
+        omsi_cfg::add_content_root(content.clone());
+
+        // The two maps declare identical aliases with distinct signed bytes.
+        let _scope_a = omsi_cfg::publisher::validate_map(&map_a).unwrap();
+        let _scope_b = omsi_cfg::publisher::validate_map(&map_b).unwrap();
+        let mut assets = Assets::new(PathBuf::new(), content.clone());
+        let object_alias = "Sceneryobjects/Fixture/Objects.sco";
+        let spline_alias = "Splines/Fixture/Road.sli";
+
+        assets.set_map_scope(&map_a);
+        assert!(assets.object(object_alias).is_none());
+        assert!(assets.spline(spline_alias).is_none());
+        // Switch before either queued response is consumed; neither old result may enter the
+        // active map's cache even if the worker finishes it first.
+        assets.set_map_scope(&map_b);
+        let object_b = assets.object_wait(object_alias, 10_000).expect("map B object loads");
+        let spline_b = assets.spline_wait(spline_alias, 10_000).expect("map B spline loads");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while assets.pending > 0 && std::time::Instant::now() < deadline {
+            assets.poll();
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        assert_eq!(assets.pending, 0, "stale worker requests finish");
+        assert!(assets.object_wait(object_alias, 100).unwrap().radius() > object_b.radius() * 0.99);
+        assert_eq!(spline_b.def.length, 20.0);
+        assert_eq!(assets.spline_wait(spline_alias, 100).unwrap().def.length, 20.0);
+
+        assets.set_map_scope(&map_a);
+        let object_a = assets.object_wait(object_alias, 10_000).expect("map A object loads");
+        let spline_a = assets.spline_wait(spline_alias, 10_000).expect("map A spline loads");
+        assert!(object_a.radius() < object_b.radius() * 0.5);
+        assert_eq!(spline_a.def.length, 10.0);
+
+        // Reopening the same directory creates a fresh publisher mount. Its aliases must not
+        // leave the models from the previous mount in the path-keyed cache.
+        drop(_scope_a);
+        let source_a_again = root.join("source-a-again");
+        let import_a_again = root.join("import-a-again");
+        let (original_a_again, sco_a_again, mesh_a_again, mesh_name_a_again) =
+            source_object(&source_a_again, &import_a_again, 2.0);
+        std::fs::remove_dir_all(content.join("Packs/map-a-pack.oopp")).unwrap();
+        let reopened = pack(
+            &content,
+            &signer,
+            "map-a-pack",
+            &original_a_again,
+            &sco_a_again,
+            &mesh_a_again,
+            &mesh_name_a_again,
+            15,
+        );
+        assert_eq!(reopened, a);
+        let _scope_a_again = omsi_cfg::publisher::validate_map(&map_a).unwrap();
+        assets.set_map_scope(&map_a);
+        let object_a_again = assets
+            .object_wait(object_alias, 10_000)
+            .expect("reopened map resolves through its fresh publisher mount");
+        let spline_a_again = assets
+            .spline_wait(spline_alias, 10_000)
+            .expect("reopened spline resolves through its fresh publisher mount");
+        assert!(object_a_again.radius() > object_a.radius() * 1.9);
+        assert_eq!(spline_a_again.def.length, 15.0);
+        drop(assets);
+        drop((_scope_a_again, _scope_b));
+        omsi_cfg::remove_content_root(&content);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scoped_encrypted_texture_loads_from_memory_without_plaintext_file() {
+        struct Mounted(PathBuf);
+        impl Drop for Mounted {
+            fn drop(&mut self) {
+                omsi_cfg::vfs::unmount_sealed(&self.0);
+            }
+        }
+
+        let root = std::env::temp_dir().join(format!(
+            "openmapper-encrypted-map-texture-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let content = root.join("content");
+        let map = root.join("maps/fixture");
+        let pack_path = content.join("Packs/texture.oopp");
+        std::fs::create_dir_all(content.join("Packs")).unwrap();
+        std::fs::create_dir_all(&map).unwrap();
+
+        let signer = omsi_pack::SigningKey::generate(&ring::rand::SystemRandom::new()).unwrap();
+        let mut trusted = omsi_pack::TrustedPublishers::default();
+        trusted.insert("encrypted-texture-fixture", signer.key_id(), signer.public_key());
+        let key = omsi_pack::random_content_key().unwrap();
+        let alias = "Sceneryobjects/Fixture/texture/wall.png";
+        let mut png = std::io::Cursor::new(Vec::new());
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([24, 80, 160, 255]))
+            .write_to(&mut png, image::ImageFormat::Png)
+            .unwrap();
+        let texture = png.into_inner();
+        omsi_pack::create_pack(
+            &pack_path,
+            omsi_pack::PackMetadata {
+                publisher_id: "encrypted-texture-fixture".into(),
+                author: "Owned texture fixture".into(),
+                pack_id: "texture".into(),
+                version: "1.0.0".into(),
+                license: "CC0-1.0".into(),
+                redistribution: false,
+                key_id: Some(omsi_pack::sha256_hex(&key)),
+                dependencies: Vec::new(),
+            },
+            &[omsi_pack::AssetInput {
+                id: "wall".into(),
+                path: alias.into(),
+                source_sha256: omsi_pack::sha256_hex(&texture),
+                bytes: texture,
+            }],
+            &signer,
+            Some(&key),
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
+        let pack = std::sync::Arc::new(
+            omsi_pack::VerifiedPack::open_for_authoring(&pack_path, &trusted, Some(key)).unwrap(),
+        );
+        let _mount = Mounted(
+            omsi_cfg::vfs::mount_publisher(
+                &map,
+                pack,
+                std::collections::BTreeMap::from([(alias.to_string(), alias.to_string())]),
+            )
+            .unwrap(),
+        );
+
+        let mut assets = Assets::new(PathBuf::new(), content);
+        assets.set_map_scope(&map);
+        let virtual_path = assets.resolve(alias);
+        assert!(omsi_cfg::vfs::is_file(&virtual_path));
+        assert!(!virtual_path.exists(), "protected texture has no plaintext file");
+        assert!(assets.texture(&virtual_path).is_none());
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while matches!(assets.textures.get(&virtual_path), Some(Slot::Loading))
+            && std::time::Instant::now() < deadline
+        {
+            assets.poll();
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        let decoded = assets
+            .texture(&virtual_path)
+            .expect("encrypted scoped texture decodes from the virtual filesystem");
+        assert_eq!((decoded.image.width, decoded.image.height), (2, 2));
+        assert!(!virtual_path.exists(), "decoding did not extract plaintext");
+
+        drop(assets);
+        drop(_mount);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     /// A wall, a fence or a hedge is drawn *up* from its line; a road and a marking lie on it.

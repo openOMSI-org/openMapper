@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	Aggancia ai bordi strada e alle superfici
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ciò che si disegna accanto a una strada inizia sul suo bordo; sopra un oggetto inizia sulla faccia dell'oggetto, a quell'altezza
 Load all tiles at once	Carica tutte le tessere in una volta
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Disattivato: vengono caricate solo le tessere attorno alla camera, come nell'editor di OMSI 2, le altre restano nascoste finché non fai clic sulla zona vuota
+Use dependencies	Usa dipendenze
+I hold the redistribution rights	Detengo i diritti di ridistribuzione
+Yes	Sì

@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	I-snap sa gilid ng kalsada at sa mga ibabaw
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ang iginuguhit sa tabi ng kalsada ay nagsisimula sa gilid nito; sa ibabaw ng bagay ay nagsisimula sa sariling mukha ng bagay, sa taas na iyon
 Load all tiles at once	I-load ang lahat ng tile nang sabay-sabay
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Naka-off: ang mga tile lang sa paligid ng camera ang nilo-load, tulad ng sa editor ng OMSI 2, at nakatago ang iba hanggang mag-click ka sa walang laman na zone
+Use dependencies	Gamitin ang mga dependency
+I hold the redistribution rights	May karapatan akong muling ipamahagi
+Yes	Oo

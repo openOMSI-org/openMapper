@@ -41,6 +41,9 @@ pub(crate) fn header() -> String {
 /// go under temporary names first, and what they replace is kept in a backup of this save
 /// (see `safe`).
 pub fn save(doc: &mut Document) -> anyhow::Result<()> {
+    if doc._publisher_protected_source {
+        anyhow::bail!("publisher-protected maps cannot be saved as plaintext");
+    }
     std::fs::create_dir_all(&doc.dir)?;
     // a map of the installation (or the template) is copied over first: its timetables,
     // AI lists, light maps and chrono folders come along

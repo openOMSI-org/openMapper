@@ -73,6 +73,7 @@ static EPOCH: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
 /// An autosave made ready on the main thread (what it writes, in memory), to be written
 /// on another.
 pub struct Job {
+    protected_source: bool,
     target: PathBuf,
     ops: Vec<super::safe::Op>,
     meta: Meta,
@@ -91,6 +92,8 @@ pub struct Snapshot {
 pub fn snapshot(doc: &Document) -> Snapshot {
     let copy = Document {
         global: doc.global.clone(),
+        _publisher_mounts: doc._publisher_mounts.clone(),
+        _publisher_protected_source: doc._publisher_protected_source,
         tiles: doc.tiles.iter().filter(|(_, t)| t.dirty).map(|(k, t)| (*k, t.clone())).collect(),
         order: doc.order.clone(),
         dir: doc.dir.clone(),
@@ -158,11 +161,15 @@ fn prepare_from(doc: &Document, known: &std::collections::HashSet<TileKey>, epoc
         ops,
         meta,
         epoch,
+        protected_source: doc._publisher_protected_source,
     }
 }
 
 impl Job {
     pub fn run(self) -> anyhow::Result<()> {
+        if self.protected_source {
+            anyhow::bail!("publisher-protected maps cannot be written to an autosave");
+        }
         let fresh_dir = self.target.with_extension("new");
         let _ = std::fs::remove_dir_all(&fresh_dir);
         std::fs::create_dir_all(&fresh_dir)?;
@@ -267,7 +274,7 @@ impl Timer {
     /// edit). Errors go to the log and are tried again later.
     pub fn tick(&mut self, doc: Option<&Document>, content: Option<&Path>, editing: bool) {
         let (Some(doc), Some(content)) = (doc, content) else { return };
-        if editing || self.last.elapsed() < every() || !doc.is_dirty() || self.running.as_ref().map(|h| !h.is_finished()).unwrap_or(false) {
+        if doc._publisher_protected_source || editing || self.last.elapsed() < every() || !doc.is_dirty() || self.running.as_ref().map(|h| !h.is_finished()).unwrap_or(false) {
             return;
         }
         self.last = Instant::now();
@@ -327,6 +334,8 @@ mod tests {
         let _ = std::fs::remove_dir_all(&content);
         let mut doc = Document {
             global: Default::default(),
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: content.join("maps").join("M"),

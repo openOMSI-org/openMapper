@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	Жол жиегі мен беттерге жаб
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Жолдың жанында салынғаны оның жиегінен басталады; нысанның үстінде нысанның өз бетінен, сол биіктіктен басталады
 Load all tiles at once	Барлық тайлды бірден жүктеу
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Өшірулі: OMSI 2 редакторындағыдай тек камера айналасындағы тайлдар жүктеледі, қалғандары бос аймақты басқанша жасырын
+Use dependencies	Тәуелділіктерді пайдалану
+I hold the redistribution rights	Менде қайта тарату құқығы бар
+Yes	Иә

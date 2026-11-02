@@ -2591,3 +2591,6 @@ Snap to road edges and surfaces	Да краёў дарог і паверхняў
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Тое, што малюецца побач з дарогай, пачынаецца на яе краі; над аб'ектам — на яго грані, на яе вышыні
 Load all tiles at once	Загружаць усе тайлы адразу
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Выключана: загружаюцца толькі тайлы вакол камеры, як у рэдактары OMSI 2, астатнія схаваныя, пакуль вы не клікнеце па пустой зоне
+Use dependencies	Выкарыстоўваць залежнасці
+I hold the redistribution rights	Я маю правы на паўторнае распаўсюджванне
+Yes	Так
