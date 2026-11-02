@@ -2591,3 +2591,5 @@ Snap to road edges and surfaces	Ajustar a los bordes de la carretera y a las sup
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Lo que se dibuja junto a una carretera empieza en su borde; sobre un objeto empieza en la cara del objeto, a esa altura
 Load all tiles at once	Cargar todas las teselas a la vez
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desactivado: solo se cargan las teselas alrededor de la cámara, como en el editor de OMSI 2, y las demás quedan ocultas hasta que hagas clic en la zona vacía
+Path	Ruta
+Ctrl: snap onto a path, F9: the next one	Ctrl: acoplar a una ruta, F9: la siguiente

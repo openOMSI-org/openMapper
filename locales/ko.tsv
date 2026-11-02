@@ -2591,3 +2591,5 @@ Snap to road edges and surfaces	도로 가장자리와 표면에 붙이기
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	도로 옆에 그리는 것은 그 가장자리에서 시작하고, 오브젝트 위에서는 그 오브젝트 자신의 면, 그 높이에서 시작합니다
 Load all tiles at once	모든 타일을 한 번에 불러오기
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	끔: OMSI 2 편집기처럼 카메라 주변의 타일만 불러오며, 나머지는 빈 영역을 클릭할 때까지 숨겨집니다
+Path	경로
+Ctrl: snap onto a path, F9: the next one	Ctrl: 경로에 붙이기, F9: 다음

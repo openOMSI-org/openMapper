@@ -2589,3 +2589,5 @@ Snap to road edges and surfaces	Accrocher aux bords de route et aux surfaces
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ce qui est dessiné le long d'une route commence sur son bord ; au-dessus d'un objet, cela commence sur la face de l'objet, à cette hauteur
 Load all tiles at once	Charger toutes les tuiles à la fois
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Désactivé : seules les tuiles autour de la caméra sont chargées, comme dans l'éditeur d'OMSI 2, les autres restent masquées jusqu'à un clic sur la zone vide
+Path	Chemin
+Ctrl: snap onto a path, F9: the next one	Ctrl: coller à un chemin, F9: le suivant

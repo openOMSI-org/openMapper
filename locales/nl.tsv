@@ -2631,3 +2631,5 @@ Snap to road edges and surfaces	Vastzetten op wegranden en vlakken
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Wat naast een weg wordt getekend, begint op de rand; boven een object begint het op het eigen vlak van het object, op die hoogte
 Load all tiles at once	Alle tegels tegelijk laden
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, de rest blijft verborgen tot u op de lege zone klikt
+Path	Pad
+Ctrl: snap onto a path, F9: the next one	Ctrl: aan een pad klikken, F9: de volgende

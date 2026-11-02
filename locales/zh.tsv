@@ -2588,3 +2588,5 @@ Flying builds up speed the longer the keys are held	按键按住越久，飞行�
 Reset the camera	重置相机
 Load all tiles at once	一次加载所有图块
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	关闭：与 OMSI 2 的编辑器一样，只加载相机周围的图块，其余图块会隐藏，直到您点击空白区域
+Path	路径
+Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条
