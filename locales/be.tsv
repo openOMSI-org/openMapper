@@ -2584,5 +2584,12 @@ Invert orbiting up and down	Інвертаваць аблёт уверх і ўн
 Invert the wheel	Інвертаваць колца
 Flying builds up speed the longer the keys are held	Палёт набірае хуткасць, чым даўжэй утрымліваюцца клавішы
 Reset the camera	Скінуць камеру
+Surface	Паверхня
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Дарога або канец сплайна, наведзеныя на дарогу, кладуцца на яе край (зямля побач таксама лічыцца, каб за край было лёгка ўзяцца) і на яе вышыню; над аб'ектам — на яго грань (бардзюр, тратуар, насціл моста, платформа; месца адзначана кольцам).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Кірунак дарогі на гэтым канцы, градусы. Перацягванне паварочвае канец; дарога, злучаная там, паварочваецца разам з ім.
+Snap to road edges and surfaces	Да краёў дарог і паверхняў
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Тое, што малюецца побач з дарогай, пачынаецца на яе краі; над аб'ектам — на яго грані, на яе вышыні
+Load all tiles at once	Загружаць усе тайлы адразу
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Выключана: загружаюцца толькі тайлы вакол камеры, як у рэдактары OMSI 2, астатнія схаваныя, пакуль вы не клікнеце па пустой зоне
 Path	Шлях
 Ctrl: snap onto a path, F9: the next one	Ctrl: прывязаць да шляху, F9: наступны

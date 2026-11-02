@@ -1018,9 +1018,10 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         actions.push(Action::SetKeySet(if b { crate::controls::Preset::Blender } else { crate::controls::Preset::Mapper }));
                     }
                 });
-                let mut streaming = prefs.tile_streaming == Some(true);
-                if check(ui, &mut streaming, tr("Load 100 tiles at a time (like OMSI 2's editor)", "Загружать по 100 тайлов (как в редакторе OMSI 2)")).clicked() {
-                    actions.push(Action::SetTileStreaming(streaming));
+                let streaming = prefs.tile_streaming == Some(true);
+                let mut all_at_once = !streaming;
+                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные скрыты, пока вы не кликнете по пустой зоне")).clicked() {
+                    actions.push(Action::SetTileStreaming(!all_at_once));
                 }
                 ui.menu_button(tr("Tiles loaded at once", "Тайлов загружено сразу"), |ui| {
                     let now = if prefs.stream_tiles == 0 { 100 } else { prefs.stream_tiles };
@@ -2142,7 +2143,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         return;
     };
     if ed.selection().len() > 1 {
-        crate::ui_edit::group_properties(ui, ed, lib, actions);
+        crate::ui_edit::group_properties(ui, ed, lib, st.parent_lights.as_ref(), actions);
         let objects = ed.selection().iter().filter(|s| !matches!(s, Sel::Spline(..))).count();
         let splines = ed.selection().len() - objects;
         Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| crate::ui_mesh::many_panel(ui, &mut st.keep_cutters, objects, splines, actions));
@@ -2323,7 +2324,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 if att.is_none() && o.parent_id.is_none() && ui.small_button(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).on_hover_text(tr("It stands on the nearest road and follows it (as OMSI's [splineAttachement]); its IDCode stays", "Он встаёт на ближайшую дорогу и следует за ней (как [splineAttachement] в OMSI); IDCode сохраняется")).clicked() {
                     attach_road = true;
                 }
-                let is_stop = att.is_none() && a.map(|a| a.is_bus_stop).unwrap_or(false);
+                let is_stop = a.map(|a| a.is_bus_stop).unwrap_or(false);
                 let is_entry = a.map(|a| a.is_entry_point).unwrap_or(false);
                 if is_entry {
                     ui.add_space(6.0);
@@ -2544,7 +2545,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         join_next = true;
                     }
                 });
-                ends = crate::ui_edit::spline_ends(ui, doc, k, id);
+                let shown = ed.heading_shown.filter(|(kk, iid, _, _)| *kk == k && *iid == id).map(|(_, _, at, h)| (at, h));
+                ends = crate::ui_edit::spline_ends(ui, doc, k, id, shown);
                 if let Some(rt) = &ed.road_type {
                     if !rt.eq_ignore_ascii_case(&s.file) {
                         let n = lib.find(rt).map(|a| a.name.clone()).unwrap_or_else(|| rt.clone());
@@ -2740,6 +2742,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
             if has_paths {
                 crate::ui_edit::rules_section(ui, ed, sel);
             }
+            crate::ui_edit::link_section(ui, ed, lib, k, id, obj_info.as_ref(), parent_lights.as_ref());
             if attach_points > 0 {
                 crate::ui_edit::attach_section(ui, ed, lib, k, id, attach_points);
             }

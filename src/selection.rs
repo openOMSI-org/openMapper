@@ -613,9 +613,33 @@ pub fn object_by_id(doc: &Document, id: i64) -> Option<(TileKey, &omsi_map::MapO
     doc.tiles.iter().find_map(|(k, t)| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id).map(|o| (*k, o)))
 }
 
-/// The object an object takes its state from (`[varparent]`).
+/// The file, the object it takes its state from, and its labels: an object, one hanging on
+/// another, or a spline attachment.
+pub fn state_holder(doc: &Document, k: TileKey, id: i64) -> Option<(String, Option<i64>, Vec<String>)> {
+    if let Some(o) = any_object(doc, k, id) {
+        return Some((o.file.clone(), o.var_parent, o.extra.clone()));
+    }
+    let a = doc.attachment(k, id)?;
+    Some((a.file.clone(), a.var_parent, a.strings.clone()))
+}
+
+/// The object an object takes its state from (`[varparent]`). A spline attachment is an
+/// object too: a signal head laid along a road takes its light the same way.
 pub fn var_parent_of(doc: &Document, id: i64) -> Option<i64> {
-    object_by_id(doc, id)?.1.var_parent
+    if let Some((_, o)) = object_by_id(doc, id) {
+        return o.var_parent;
+    }
+    doc.tiles.values().find_map(|t| t.tile.spline_attachments.iter().find(|a| a.id == id).and_then(|a| a.var_parent))
+}
+
+/// The file of an object or a spline attachment, by its IDCode.
+pub fn file_by_id(doc: &Document, id: i64) -> Option<String> {
+    object_by_id(doc, id).map(|(_, o)| o.file.clone()).or_else(|| doc.tiles.values().find_map(|t| t.tile.spline_attachments.iter().find(|a| a.id == id).map(|a| a.file.clone())))
+}
+
+/// What is selected for the properties: an object, or a spline attachment standing in for one.
+pub fn as_sel(doc: &Document, k: TileKey, id: i64) -> Sel {
+    if doc.attachment(k, id).is_some() { Sel::Attached(k, id) } else { Sel::Object(k, id) }
 }
 
 /// The objects that take their state from object `id` (`[varparent]`).

@@ -2584,5 +2584,12 @@ Invert orbiting up and down	Invertir la órbita arriba y abajo
 Invert the wheel	Invertir la rueda
 Flying builds up speed the longer the keys are held	El vuelo gana velocidad cuanto más tiempo se mantienen las teclas
 Reset the camera	Restablecer la cámara
+Surface	Superficie
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Una carretera dibujada o el extremo de una spline arrastrado sobre una carretera cae en su borde (el suelo justo al lado también cuenta, para que el borde sea fácil de tomar) y a la altura de esa carretera; sobre un objeto cae en la cara del objeto (un bordillo, una acera, el tablero de un puente, un andén; un anillo marca el lugar).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	La dirección en que la carretera corre en este extremo, en grados. Arrastrarlo gira el extremo; la carretera unida allí gira con él.
+Snap to road edges and surfaces	Ajustar a los bordes de la carretera y a las superficies
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Lo que se dibuja junto a una carretera empieza en su borde; sobre un objeto empieza en la cara del objeto, a esa altura
+Load all tiles at once	Cargar todas las teselas a la vez
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Desactivado: solo se cargan las teselas alrededor de la cámara, como en el editor de OMSI 2, y las demás quedan ocultas hasta que hagas clic en la zona vacía
 Path	Ruta
 Ctrl: snap onto a path, F9: the next one	Ctrl: acoplar a una ruta, F9: la siguiente

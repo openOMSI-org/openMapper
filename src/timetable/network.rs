@@ -203,6 +203,15 @@ impl Network {
                 }
                 internal += info.paths.len();
             }
+            // (a stop standing on a spline is an attachment, not an object of the tile)
+            for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
+                if !files.get(&a.file).map(|i| i.is_bus_stop).unwrap_or(false) {
+                    continue;
+                }
+                if let Some(first) = crate::place::row_objects(a, &t.tile.splines, org).first() {
+                    net.stops.push((*k, a.id, first.pose.pos));
+                }
+            }
             for o in &t.tile.objects {
                 let Some(info) = files.get(&o.file) else {
                     net.missing_files += 1;

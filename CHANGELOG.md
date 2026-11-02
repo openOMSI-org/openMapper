@@ -4,6 +4,21 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.1.20 - 2026-11-01
+
+### Added
+- A spline end can be laid on a road edge or an object face (and turned), a footpath, fence or cable can be drawn onto a free end near the cursor without joining it into a road, and a signal head on a spline takes a crossing's light (set for every selected head at once).
+- Trees, bushes and grass get a random turn and a random size when placed, as in OMSI 2's editor.
+
+### Changed
+- "Load 100 tiles at a time" is now "Load all tiles at once" (the tick is the other way round).
+
+### Fixed
+- **Bus stops standing on a spline can be picked for a trip** and show their stop settings.
+- A menu scale other than 100% no longer moves the pointer away from what it selects.
+- A spline drawn in front of a building can be selected (the one the ray meets first), and a spline is picked by the surface it is drawn as.
+- The roads tool keeps to nearby splines, and editor-only streets are batched per tile.
+
 ## 0.1.19 - 2026-10-30
 
 ### Added

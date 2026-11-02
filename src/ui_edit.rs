@@ -153,7 +153,7 @@ pub fn paint_cut(ctx: &egui::Context, ed: &Editor, cam: &crate::camera::Camera, 
 }
 
 /// How many of the status bar's snapping units there are (see `snap_unit`).
-const SNAP_UNITS: usize = 9;
+const SNAP_UNITS: usize = 10;
 
 /// The width a snapping unit takes in the status bar (its toggles are as wide as their text).
 fn snap_unit_width(ui: &egui::Ui, i: usize) -> f32 {
@@ -171,6 +171,7 @@ fn snap_unit_width(ui: &egui::Ui, i: usize) -> f32 {
         5 => toggle(tr("Auto-Switch", "Авто-стрелки")),
         6 => toggle(tr("Auto-Junction", "Авто-перекрёсток")),
         7 => toggle(tr("Auto-Adapt", "Авто-переход")),
+        8 => toggle(tr("Surface", "Поверхность")),
         _ => toggle(tr("Auto-Align", "Авто-выравнивание")),
     }
 }
@@ -218,6 +219,10 @@ fn snap_unit(ui: &mut egui::Ui, ed: &mut Editor, i: usize) {
         }
         7 => {
             check(ui, &mut ed.auto_adapt, RichText::new(tr("Auto-Adapt", "Авто-переход")).small()).on_hover_text(tr("Where roads of different width meet, a plate tapers one into the other", "Где встречаются дороги разной ширины, между ними плавный переход"));
+        }
+        8 => {
+            check(ui, &mut ed.snap_surface, RichText::new(tr("Surface", "Поверхность")).small())
+                .on_hover_text(tr("A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).", "Дорога или конец сплайна, наведённые на дорогу, ложатся на её край (земля рядом тоже считается, чтобы за край было легко взяться) и на её высоту; над объектом - на его грань (бордюр, тротуар, настил моста, платформа; место отмечено кольцом)."));
         }
         _ => {
             check(ui, &mut ed.align_to_road, RichText::new(tr("Auto-Align", "Авто-выравнивание")).small()).on_hover_text(tr("Line objects up with the nearest road (Shift: put it freely)", "Выравнивать объекты по ближайшей дороге (Shift: ставить свободно)"));
@@ -284,7 +289,7 @@ pub fn snap_controls(ui: &mut egui::Ui, ed: &mut Editor, room: f32) {
 }
 
 /// The right panel with more than one thing selected.
-pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, actions: &mut Vec<crate::ui::Action>) {
+pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, parent_lights: Option<&(String, Vec<String>)>, actions: &mut Vec<crate::ui::Action>) {
     let sels = ed.selection();
     let objects = sels.iter().filter(|s| !matches!(s, Sel::Spline(..))).count();
     let splines = sels.len() - objects;
@@ -292,6 +297,32 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, actio
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         ui.label(RichText::new(format!("{} {}", tr("Selected:", "Выбрано:"), sels.len())).strong().color(Color32::WHITE));
         ui.label(RichText::new(format!("{} {objects} · {} {splines}", tr("objects", "объектов"), tr("splines", "сплайнов"))).small().color(TEXT_DIM));
+        let shared = shared_signal_heads(ed, lib);
+        if let (Some((_, lights)), Some((_, heads))) = (parent_lights, shared.as_ref()) {
+            if heads.len() > 1 && !lights.is_empty() {
+                ui.add_space(6.0);
+                let common = ed.doc.as_ref().and_then(|doc| {
+                    let mut it = heads.iter().map(|(k, id)| crate::selection::state_holder(doc, *k, *id).and_then(|(_, _, extra)| extra.first().and_then(|l| l.trim().parse().ok())));
+                    let first = it.next()?;
+                    it.all(|l| l == first).then_some(first).flatten()
+                });
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(tr("Light", "Сигнал")).color(TEXT_DIM));
+                    let shown = |i: usize| match lights.get(i) {
+                        Some(n) if !n.trim().is_empty() => format!("{i}: {n}"),
+                        _ => format!("{i}"),
+                    };
+                    let text = common.map(shown).unwrap_or_else(|| "—".into());
+                    egui::ComboBox::from_id_salt("group light").selected_text(text).width(160.0).show_ui(ui, |ui| {
+                        for i in 0..lights.len() {
+                            if ui.selectable_label(common == Some(i), shown(i)).clicked() && common != Some(i) {
+                                ed.set_light_indexes(&heads, i);
+                            }
+                        }
+                    });
+                });
+            }
+        }
         ui.add_space(6.0);
         // a group: its name, and undoing it; else making one
         match ed.selected_group() {
@@ -448,25 +479,32 @@ pub struct EndsEdit {
     even: Option<f64>,
     /// (at the end rather than the start, new cant)
     cant: Option<(bool, f64)>,
+    /// (at the end rather than the start, new heading, degrees clockwise from north)
+    heading: Option<(bool, f64)>,
 }
 
 /// A road's heights and gradients at its two ends.
-pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id: i64) -> EndsEdit {
+pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id: i64, shown: Option<(bool, f64)>) -> EndsEdit {
     let mut out = EndsEdit::default();
     let Some(s) = doc.spline(k, id) else { return out };
     let c = omsi_geometry::SplineCurve::from_map(s, crate::doc::tile_origin(k));
     let (mut z0, mut z1) = (c.point_at(0.0).z, c.end_point().z);
     let (mut g0, mut g1) = (c.slope_at(0.0) * 100.0, c.slope_at(s.length) * 100.0);
     let (mut c0, mut c1) = (s.cant_start, s.cant_end);
+    let (mut h0, mut h1) = (crate::roads::norm_deg(c.heading_at(0.0)), crate::roads::norm_deg(c.heading_at(s.length)));
+    if let Some((at_end, h)) = shown {
+        if at_end { h1 = h } else { h0 = h }
+    }
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Ends (joined roads follow)", "Концы (соседние дороги следуют)")).strong());
-    egui::Grid::new("spline ends").num_columns(4).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
+    egui::Grid::new("spline ends").num_columns(5).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
         ui.label("");
         ui.label(RichText::new(tr("height", "высота")).small().color(TEXT_DIM));
         ui.label(RichText::new(tr("gradient", "уклон")).small().color(TEXT_DIM));
         ui.label(RichText::new(tr("cant", "вираж")).small().color(TEXT_DIM)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
+        ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(TEXT_DIM)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
         ui.end_row();
-        for (at_end, z, g, cant, name) in [(false, &mut z0, &mut g0, &mut c0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, tr("End", "Конец"))] {
+        for (at_end, z, g, cant, h, name) in [(false, &mut z0, &mut g0, &mut c0, &mut h0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, &mut h1, tr("End", "Конец"))] {
             prop_row(ui, name, |ui| {
                 if ui.add(egui::DragValue::new(z).speed(0.02).max_decimals(2).suffix(" m")).changed() {
                     out.change = Some((at_end, Some(*z), None));
@@ -477,6 +515,9 @@ pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id
                 }
                 if ui.add(egui::DragValue::new(cant).speed(0.05).range(-100.0..=100.0).max_decimals(2).suffix(" %")).changed() {
                     out.cant = Some((at_end, *cant));
+                }
+                if ui.add(egui::DragValue::new(h).speed(0.4).max_decimals(1).suffix("°")).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним.")).changed() {
+                    out.heading = Some((at_end, *h));
                 }
             });
         }
@@ -495,6 +536,11 @@ pub fn apply_ends(ed: &mut Editor, ctx: &egui::Context, k: TileKey, id: i64, e: 
     }
     if let Some((at_end, c)) = e.cant {
         ed.set_spline_cant(k, id, at_end, c);
+        return;
+    }
+    if let Some((at_end, h)) = e.heading {
+        ed.heading_shown = Some((k, id, at_end, h));
+        ed.heading_request = Some((k, id, at_end, h));
         return;
     }
     match e.change {
@@ -918,6 +964,7 @@ pub fn road_options(ui: &mut egui::Ui, ed: &mut Editor) {
     r.on_hover_text(tr("A one-way ring of the chosen road type (pick a one-way road); roads inside are cut back to it and joined with junctions", "Одностороннее кольцо выбранного типа дороги (выберите одностороннюю); дороги внутри обрезаются по кольцу и соединяются перекрёстками"));
     let r = check(ui, &mut ed.keep_height, tr("Keep the height (bridge, embankment)", "Держать высоту (мост, насыпь)"));
     r.on_hover_text(tr("An even gradient from end to end, the ground left as it is; the rise to the end can be typed while drawing. Pillars: select the road and put them along it as objects.", "Ровный уклон от начала до конца, земля не меняется; подъём к концу можно ввести при рисовании. Опоры: выберите дорогу и расставьте их вдоль неё как объекты."));
+    check(ui, &mut ed.snap_surface, tr("Snap to road edges and surfaces", "Привязка к краям дорог и поверхностям")).on_hover_text(tr("What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height", "Что рисуется рядом с дорогой, начинается на её краю; над объектом - на его грани, на её высоте"));
 }
 
 /// The Roads tool's bus pocket tool: with the box ticked a click on a road lays a pocket
@@ -1083,6 +1130,33 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
     }
 }
 
+/// The crossing the selected signal heads take their light from, when they all take it from
+/// the same one, and those heads. A head with no crossing, or two crossings, gives none.
+pub fn shared_signal_heads(ed: &Editor, lib: &Library) -> Option<(i64, Vec<(TileKey, i64)>)> {
+    let doc = ed.doc.as_ref()?;
+    let mut parent: Option<i64> = None;
+    let mut heads = Vec::new();
+    for s in ed.selection() {
+        let (k, id) = match s {
+            Sel::Object(k, id) | Sel::Attached(k, id) => (k, id),
+            Sel::Spline(..) => continue,
+        };
+        let Some((file, p, _)) = crate::selection::state_holder(doc, k, id) else { continue };
+        if !lib.find(&file).map(|a| a.light_head).unwrap_or(false) {
+            continue;
+        }
+        let Some(p) = p else { return None };
+        match parent {
+            None => parent = Some(p),
+            Some(have) if have != p => return None,
+            _ => {}
+        }
+        heads.push((k, id));
+    }
+    let p = parent?;
+    (!heads.is_empty()).then_some((p, heads))
+}
+
 /// What an object takes its state from and what takes its state from it (`[varparent]`),
 /// as OMSI 2's editor links them: a signal head shows one light of its crossing's program,
 /// a stop's display its stop. The parent is picked with a click in the view.
@@ -1090,19 +1164,19 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
     // (what is linked to what is read from the whole map once and kept while it does not
     // change: this panel is drawn on every frame of a drag, and walking a map of a hundred
     // thousand things for it was most of the frame)
-    let parent_id = ed.doc.as_ref().and_then(|d| crate::selection::any_object(d, k, id)).and_then(|o| o.var_parent);
+    let parent_id = ed.doc.as_ref().and_then(|d| crate::selection::state_holder(d, k, id)).and_then(|(_, p, _)| p);
     let (link_parent, linked) = ed.links_of(id, parent_id);
     let Some(doc) = ed.doc.as_ref() else { return };
-    let Some(me) = crate::selection::any_object(doc, k, id) else { return };
+    let Some((_file, parent_id, extra)) = crate::selection::state_holder(doc, k, id) else { return };
     let name_of = |file: &str| lib.find(file).map(|a| a.name.clone()).unwrap_or_else(|| file.rsplit('\\').next().unwrap_or(file).to_string());
     let parent = parent_id.map(|pid| {
-        let found = link_parent.and_then(|(pk, _)| crate::selection::any_object(doc, pk, pid).map(|o| (pk, name_of(&o.file), o.file.clone())));
+        let found = link_parent.and_then(|(pk, _)| crate::selection::state_holder(doc, pk, pid).map(|(f, _, _)| (pk, name_of(&f), f)));
         (pid, found)
     });
-    let light: Option<usize> = me.extra.first().and_then(|l| l.trim().parse().ok());
+    let light: Option<usize> = extra.first().and_then(|l| l.trim().parse().ok());
     let head = info.map(|i| i.light_head).unwrap_or(false);
     let own_lights: &[String] = info.map(|i| i.lights.as_slice()).unwrap_or(&[]);
-    let children: Vec<(TileKey, i64, String, Option<usize>)> = linked.into_iter().filter_map(|(ck, cid)| crate::selection::any_object(doc, ck, cid).map(|o| (ck, cid, name_of(&o.file), o.extra.first().and_then(|l| l.trim().parse().ok())))).collect();
+    let children: Vec<(TileKey, i64, String, Option<usize>)> = linked.into_iter().filter_map(|(ck, cid)| crate::selection::state_holder(doc, ck, cid).map(|(f, _, extra)| (ck, cid, name_of(&f), extra.first().and_then(|l| l.trim().parse().ok())))).collect();
     let picking = ed.link_pick == Some((k, id));
     let mut go: Option<Sel> = None;
     let mut set_parent: Option<Option<i64>> = None;
@@ -1117,7 +1191,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                     ui.horizontal_wrapped(|ui| {
                         ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(TEXT_DIM));
                         if ui.link(name).on_hover_text(format!("{} {pid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
-                            go = Some(Sel::Object(*pk, *pid));
+                            go = Some(crate::selection::as_sel(doc, *pk, *pid));
                         }
                     });
                 }
@@ -1174,7 +1248,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                 for (ck, cid, name, l) in children.iter().take(40) {
                     ui.horizontal(|ui| {
                         if ui.link(name).on_hover_text(format!("{} {cid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
-                            go = Some(Sel::Object(*ck, *cid));
+                            go = Some(crate::selection::as_sel(doc, *ck, *cid));
                         }
                         if let (Some(l), false) = (l, own_lights.is_empty()) {
                             let n = own_lights.get(*l).map(|n| n.as_str()).unwrap_or("?");

@@ -1165,6 +1165,11 @@ Ends (joined roads follow)	端點（相連的道路會跟隨）
 height	高度
 gradient	坡度
 cant	超高
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	道路在此端的行進方向（度）。拖動它會旋轉端點；相連的道路會一併轉過去。
+Surface	表面
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	畫出的道路或拖到路上的樣條端點會落在路邊（路邊的地面也算，方便抓到邊）並採用該路的高度；在物件上方則落在物件本身的面上（路緣、行人路、橋面、月台——圓圈標出該處）。
+Snap to road edges and surfaces	貼齊道路邊緣或物件表面
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	在路旁畫的東西從路邊開始；在物件上方則從物件本身的面、以該高度開始
 Banking across the road, %: positive lowers its right side (into a right bend)	道路橫向傾斜，%：正值使右側降低（用於右彎）
 End	End
 Even slope end to end	兩端均勻坡度
@@ -2581,5 +2586,7 @@ Invert orbiting up and down	反轉上下環繞
 Invert the wheel	反轉滾輪
 Flying builds up speed the longer the keys are held	按住按鍵越久，飛行速度越快
 Reset the camera	重設攝影機
+Load all tiles at once	一次載入所有圖塊
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	關閉：與 OMSI 2 的編輯器相同，只載入相機周圍的圖塊，其餘圖塊會隱藏，直到您點擊空白區域
 Path	路徑
 Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條

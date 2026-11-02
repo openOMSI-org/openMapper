@@ -2584,5 +2584,12 @@ Invert orbiting up and down	Đảo chiều xoay quanh lên và xuống
 Invert the wheel	Đảo chiều con lăn
 Flying builds up speed the longer the keys are held	Bay sẽ tăng tốc càng lâu khi các phím được giữ
 Reset the camera	Đặt lại camera
+Surface	Bề mặt
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	Đường được vẽ hoặc đầu spline kéo lên một con đường sẽ nằm ở mép đường (mặt đất ngay bên cạnh cũng được tính, để dễ giữ mép) và ở cao độ của đường đó; trên một đối tượng thì nằm trên chính mặt của đối tượng (lề đường, vỉa hè, mặt cầu, ke ga — một vòng tròn đánh dấu chỗ).
+The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	Hướng đường chạy ở đầu này, theo độ. Kéo sẽ xoay đầu đó; đường nối ở đó xoay theo.
+Snap to road edges and surfaces	Hút vào mép đường và bề mặt
+What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Thứ vẽ bên cạnh đường bắt đầu ở mép đường; trên một đối tượng thì bắt đầu trên chính mặt của đối tượng, ở cao độ đó
+Load all tiles at once	Tải tất cả ô cùng lúc
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Tắt: chỉ tải các ô quanh camera, như trình sửa của OMSI 2, các ô khác bị ẩn cho đến khi bạn nhấp vào vùng trống
 Path	Đường
 Ctrl: snap onto a path, F9: the next one	Ctrl: dính vào đường, F9: đường kế
