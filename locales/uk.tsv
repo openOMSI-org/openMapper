@@ -2624,3 +2624,4 @@ Polygon: fill the selected splines, or click its corners	Багатокутни�
 Polygon: click its corners	Багатокутник: клацніть по кутах
 Polygon from it	Багатокутник із нього
 Polygon from them	Багатокутник із них
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Клацніть сплайн, на якому вони мають стояти. Кожен іде за цією дорогою і зберігає IDCode

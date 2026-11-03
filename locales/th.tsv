@@ -2626,3 +2626,4 @@ Polygon: fill the selected splines, or click its corners	รูปหลาย�
 Polygon: click its corners	รูปหลายเหลี่ยม: คลิกที่มุม
 Polygon from it	รูปหลายเหลี่ยมจากเส้นนี้
 Polygon from them	รูปหลายเหลี่ยมจากเส้นเหล่านี้
+Click the spline they should stand on. Each follows that road and keeps its IDCode	คลิกสปลายน์ที่พวกมันจะยืน แต่ละชิ้นจะไปตามถนนนั้นและเก็บ IDCode
