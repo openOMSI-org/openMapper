@@ -1020,7 +1020,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 });
                 let streaming = prefs.tile_streaming == Some(true);
                 let mut all_at_once = !streaming;
-                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные скрыты, пока вы не кликнете по пустой зоне")).clicked() {
+                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные подгружаются, когда вы туда доходите")).clicked() {
                     actions.push(Action::SetTileStreaming(!all_at_once));
                 }
                 ui.menu_button(tr("Tiles loaded at once", "Тайлов загружено сразу"), |ui| {
@@ -1030,7 +1030,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetStreamTiles(n));
                         }
                     }
-                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others are hidden until you click on the empty zone", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные скрыты, пока вы не кликнете по пустой зоне")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(TEXT_DIM));
                 });
                 ui.menu_button(tr("Time of day", "Время суток"), |ui| {
                     if radio(ui, st.daytime.is_none(), tr("Plain day (as the game by day)", "Обычный день (как в игре днём)")).clicked() {

@@ -2666,3 +2666,8 @@ Polygon: fill the selected splines, or click its corners	Veelhoek: vul de gesele
 Polygon: click its corners	Veelhoek: klik op de hoeken
 Polygon from it	Veelhoek hiervan
 Polygon from them	Veelhoek hiervan
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, en meer laden als u erheen gaat
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Een grote of zeer gedetailleerde kaart loopt soepeler met minder tegels: de rest laadt als u erheen gaat
+tiles round the camera are loaded; more load as you go there	tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Only the tiles round the camera are loaded; more load as you go there	Alleen de tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Een grote kaart 100 tegels tegelijk laden, zoals de editor van OMSI 2?\n\nAlleen de 100 tegels rond de camera blijven in het grafisch geheugen; de rest laadt als u erheen gaat. Zeer grote kaarten blijven zo licht. Altijd te wijzigen via Beeld > Alle tegels tegelijk laden (uit).

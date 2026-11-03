@@ -2666,3 +2666,8 @@ Polygon: fill the selected splines, or click its corners	Wielokąt: wypełnij za
 Polygon: click its corners	Wielokąt: kliknij narożniki
 Polygon from it	Wielokąt z niego
 Polygon from them	Wielokąt z nich
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Wyłączone: wczytywane są tylko kafelki wokół kamery, jak w edytorze OMSI 2, a kolejne wczytują się, gdy tam dojdziesz
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Duża lub bardzo szczegółowa mapa działa lżej z mniejszą liczbą kafelków: pozostałe wczytują się, gdy tam dojdziesz
+tiles round the camera are loaded; more load as you go there	kafelków wokół kamery jest wczytanych; kolejne wczytują się, gdy tam dojdziesz
+Only the tiles round the camera are loaded; more load as you go there	Wczytane są tylko kafelki wokół kamery; kolejne wczytują się, gdy tam dojdziesz
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Wczytywać dużą mapę po 100 kafelków, jak edytor OMSI 2?\n\nW pamięci grafiki zostaje tylko 100 kafelków wokół kamery; pozostałe wczytują się, gdy tam dojdziesz. Bardzo duże mapy zostają dzięki temu lekkie. Można to zmienić w każdej chwili: Widok > Wczytaj wszystkie kafelki naraz (wyłączone).
