@@ -4,6 +4,21 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.1.21 - 2026-11-02
+
+### Added
+- **Polygons**: click the corners of an area on the map (`Shift+P`), or fill the outline that the selected roads and splines make end to end (`P`: kerbs round an island, for instance). A flat sheet or a slab of a chosen thickness, in a plain colour or a texture, as an object you can edit as a mesh. The click mode stays on for the next polygon; it is also in the right-click menu, the command search and the panel of selected splines.
+- **Along a spline** in the terrain tool brings the ground under a spline (and the pieces joined to it) to its height. A second click in the same place picks the next thing behind the first.
+- **An eyedropper** on the road list, the object list and the asset grid reads the object or spline under the next click and jumps to that file; Attach to the spline waits for a click on the spline to stand on.
+- Holding Ctrl while moving an object or road lays it onto a nearby path end of the same kind; F9 steps to the next path.
+
+### Changed
+- The ring that shows where a spline end would be laid on a surface is smaller and fainter, and drawn only in the roads tool.
+- Updated the `zip` and `ureq` crates.
+
+### Fixed
+- With Surface snap on, a new spline follows an object face or road from start to end, not only at the two ends.
+
 ## 0.1.20 - 2026-11-01
 
 ### Added
