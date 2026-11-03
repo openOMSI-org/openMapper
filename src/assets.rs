@@ -1185,6 +1185,7 @@ mod tests {
         let pack_path = content.join("Packs/texture.oopp");
         std::fs::create_dir_all(content.join("Packs")).unwrap();
         std::fs::create_dir_all(&map).unwrap();
+        let map = std::fs::canonicalize(&map).unwrap();
 
         let signer = omsi_pack::SigningKey::generate(&ring::rand::SystemRandom::new()).unwrap();
         let mut trusted = omsi_pack::TrustedPublishers::default();
