@@ -2622,3 +2622,7 @@ No texture: a plain colour	Doku yok: düz renk
 Texture size, m	Doku boyutu, m
 Thickness, m	Kalınlık, m
 Above the ground, m	Zeminin üstünde, m
+Polygon: fill the selected splines, or click its corners	Çokgen: seçili spline'ları doldur veya köşelere tıkla
+Polygon: click its corners	Çokgen: köşelere tıkla
+Polygon from it	Ondan çokgen
+Polygon from them	Onlardan çokgen

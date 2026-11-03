@@ -2622,3 +2622,7 @@ No texture: a plain colour	テクスチャなし：単色
 Texture size, m	テクスチャサイズ（m）
 Thickness, m	厚み（m）
 Above the ground, m	地面からの高さ（m）
+Polygon: fill the selected splines, or click its corners	ポリゴン：選択したスプラインを塗りつぶす、または角をクリック
+Polygon: click its corners	ポリゴン：角をクリック
+Polygon from it	これからポリゴン
+Polygon from them	これらからポリゴン

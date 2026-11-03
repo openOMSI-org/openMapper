@@ -1977,6 +1977,10 @@ impl App {
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
             Cmd::EditMesh => self.toggle_edit_mode(),
+            Cmd::Polygon | Cmd::PolygonClick => {
+                let splines = self.ed.selection().iter().any(|s| matches!(s, Sel::Spline(..)));
+                self.mesh_action(if splines && c == Cmd::Polygon { crate::ui_mesh::MeshAction::PolygonFromSplines } else { crate::ui_mesh::MeshAction::PolygonDraw });
+            }
             Cmd::JoinObjects => self.mesh_action(crate::ui_mesh::MeshAction::Join),
             Cmd::XformMove | Cmd::XformRotate | Cmd::XformScale => {
                 use crate::editor::Xform;

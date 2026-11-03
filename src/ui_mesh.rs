@@ -117,8 +117,8 @@ pub enum MeshAction {
     /// them with `true`), to edit as a mesh.
     SplinesToObject(bool),
     /// A polygon: click its corners on the map, or fill the outline the selected splines make.
-    PolygonDraw(crate::makers::Settings),
-    PolygonFromSplines(crate::makers::Settings),
+    PolygonDraw,
+    PolygonFromSplines,
 }
 
 use crate::editable::{Lamp, Light, LightKind, When};
@@ -907,6 +907,9 @@ pub fn spline_panel(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         if ui.button(tr("Replace by an object", "Заменить объектом")).on_hover_text(tr("The same, the spline taken away (its lanes go with it)", "То же, а сплайн удаляется (вместе с полосами)")).clicked() {
             actions.push(Action::Mesh(MeshAction::SplinesToObject(true)));
         }
+        if ui.button(tr("Polygon from it", "Многоугольник по нему")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+            actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
+        }
         if ui.button(tr("Export…", "Экспорт…")).clicked() {
             actions.push(Action::Mesh(MeshAction::Export));
         }
@@ -923,6 +926,9 @@ pub fn many_panel(ui: &mut egui::Ui, keep: &mut bool, objects: usize, splines: u
             }
             if ui.button(tr("Replace by one object", "Заменить одним объектом")).clicked() {
                 actions.push(Action::Mesh(MeshAction::SplinesToObject(true)));
+            }
+            if ui.button(tr("Polygon from them", "Многоугольник по ним")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+                actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
             }
         });
     }
@@ -1333,10 +1339,10 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
     ui.label(RichText::new(tr("Polygon", "Многоугольник")).small().color(DIM));
     ui.horizontal_wrapped(|ui| {
         if ui.button(tr("Draw a polygon", "Нарисовать многоугольник")).on_hover_text(tr("Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other", "Кликайте по углам на карте; клик по первому углу или Enter замыкает контур, Esc убирает последний угол. Внутренность заполняется объектом, который можно двигать и править как любой другой")).clicked() {
-            actions.push(Action::Mesh(MeshAction::PolygonDraw(s.clone())));
+            actions.push(Action::Mesh(MeshAction::PolygonDraw));
         }
         if ui.button(tr("From the selected splines", "По выделенным сплайнам")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
-            actions.push(Action::Mesh(MeshAction::PolygonFromSplines(s.clone())));
+            actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
         }
     });
     egui::Grid::new("polygon makers").num_columns(2).show(ui, |ui| {

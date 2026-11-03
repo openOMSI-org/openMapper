@@ -2622,3 +2622,7 @@ No texture: a plain colour	कोई टेक्सचर नहीं: सा�
 Texture size, m	टेक्सचर का आकार, m
 Thickness, m	मोटाई, m
 Above the ground, m	ज़मीन से ऊपर, m
+Polygon: fill the selected splines, or click its corners	बहुभुज: चुने हुए स्प्लाइन भरें, या कोनों पर क्लिक करें
+Polygon: click its corners	बहुभुज: कोनों पर क्लिक करें
+Polygon from it	इससे बहुभुज
+Polygon from them	इनसे बहुभुज

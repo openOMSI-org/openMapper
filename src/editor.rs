@@ -2939,8 +2939,8 @@ impl Editor {
             self.toast(tr("A polygon needs three corners", "Для многоугольника нужны три угла"));
             return;
         }
+        // (the mode stays on for the next one: Esc with no corners left ends it)
         self.poly_request = Some(std::mem::take(&mut self.poly_pts));
-        self.poly_draw = false;
     }
 
     fn close_radius(&self) -> f64 {
@@ -11531,7 +11531,9 @@ mod tests {
         click(&mut ed, 100.0, 100.0);
         let pts = ed.poly_request.take().expect("the first corner closes it");
         assert_eq!(pts.len(), 3);
-        assert!(!ed.poly_draw && ed.poly_pts.is_empty());
+        assert!(ed.poly_draw && ed.poly_pts.is_empty(), "it stays on for the next polygon");
+        ed.right_click();
+        assert!(!ed.poly_draw, "Esc with no corners ends it");
         // (two corners are too few for Enter)
         ed.poly_draw = true;
         click(&mut ed, 10.0, 10.0);

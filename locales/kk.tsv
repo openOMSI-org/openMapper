@@ -2622,3 +2622,7 @@ No texture: a plain colour	Текстура жоқ: қарапайым түс
 Texture size, m	Текстура өлшемі, м
 Thickness, m	Қалыңдығы, м
 Above the ground, m	Жерден биіктігі, м
+Polygon: fill the selected splines, or click its corners	Көпбұрыш: таңдалған сплайндарды толтыру немесе бұрыштарды басу
+Polygon: click its corners	Көпбұрыш: бұрыштарды басыңыз
+Polygon from it	Одан көпбұрыш
+Polygon from them	Олардан көпбұрыш

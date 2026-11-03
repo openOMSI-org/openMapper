@@ -2622,3 +2622,7 @@ No texture: a plain colour	Nincs textúra: egyszínű
 Texture size, m	Textúra mérete, m
 Thickness, m	Vastagság, m
 Above the ground, m	A föld felett, m
+Polygon: fill the selected splines, or click its corners	Sokszög: a kijelölt splinek kitöltése, vagy kattintás a sarkokra
+Polygon: click its corners	Sokszög: kattintson a sarkokra
+Polygon from it	Sokszög ebből
+Polygon from them	Sokszög ezekből

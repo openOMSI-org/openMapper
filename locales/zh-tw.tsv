@@ -2619,3 +2619,7 @@ No texture: a plain colour	無貼圖：純色
 Texture size, m	貼圖大小，m
 Thickness, m	厚度，m
 Above the ground, m	離地高度，m
+Polygon: fill the selected splines, or click its corners	多邊形：填滿選取的樣條，或點擊各轉角
+Polygon: click its corners	多邊形：點擊各轉角
+Polygon from it	由此建立多邊形
+Polygon from them	由這些建立多邊形

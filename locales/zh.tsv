@@ -2619,3 +2619,7 @@ No texture: a plain colour	无纹理：纯色
 Texture size, m	纹理大小，m
 Thickness, m	厚度，m
 Above the ground, m	离地高度，m
+Polygon: fill the selected splines, or click its corners	多边形：填充所选样条线，或点击各拐角
+Polygon: click its corners	多边形：点击各拐角
+Polygon from it	由此创建多边形
+Polygon from them	由这些创建多边形

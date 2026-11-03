@@ -399,15 +399,13 @@ impl App {
                 MeshAction::NewLight(s) => self.new_light(&s)?,
                 MeshAction::NewSound(s) => self.new_sound(&s)?,
                 MeshAction::SplinesToObject(replace) => self.splines_to_object(replace)?,
-                MeshAction::PolygonDraw(s) => {
+                MeshAction::PolygonDraw => {
                     self.ed.set_tool(crate::editor::Tool::Objects);
-                    self.ed.poly_settings = s;
                     self.ed.poly_pts.clear();
                     self.ed.poly_draw = true;
                     self.ed.toast(tr("Click the corners of the polygon; the first corner or Enter closes it", "Кликайте по углам многоугольника; первый угол или Enter замыкает его"));
                 }
-                MeshAction::PolygonFromSplines(s) => {
-                    self.ed.poly_settings = s;
+                MeshAction::PolygonFromSplines => {
                     let pts = self.spline_outline()?;
                     self.make_polygon(&pts)?;
                 }

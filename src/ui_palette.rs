@@ -90,6 +90,8 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Layers, "Satellite and terrain…", "Спутник и рельеф…", "imagery aerial photo heights place world спутник снимок высоты место", "I", |_, _, a| a.push(Action::Geo)),
         cmd!(Icon::Road, "From OpenStreetMap…", "Из OpenStreetMap…", "osm real place streets buildings реальное место улицы здания", "", |_, _, a| a.push(Action::Osm)),
         cmd!(Icon::Route, "GPS tracks to trace…", "GPS-треки для обводки…", "gpx kml geojson trace route recorded phone трек маршрут телефон", "", |_, _, a| a.push(Action::Trace)),
+        cmd!(Icon::Add, "Draw a polygon", "Нарисовать многоугольник", "fill area shape island sheet slab многоугольник площадь", "Shift+P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonDraw))),
+        cmd!(Icon::Add, "From the selected splines", "По выделенным сплайнам", "polygon fill outline kerb island многоугольник контур", "P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines))),
         cmd!(Icon::Tiles, "Tiles from another map…", "Тайлы из другой карты…", "merge join import combine объединить соединить импорт", "", |_, _, a| a.push(Action::MergeTiles)),
         cmd!(Icon::CheckCircle, "Check in openOMSI…", "Проверка в openOMSI…", "game verify validate offscreen игра проверить", "", |_, _, a| a.push(Action::GameCheck)),
         cmd!(Icon::Play, "Test drive in openOMSI", "Тест-драйв в openOMSI", "play run game drive играть запустить", "F5", |_, _, a| a.push(Action::Play)),

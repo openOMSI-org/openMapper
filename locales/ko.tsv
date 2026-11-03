@@ -2622,3 +2622,7 @@ No texture: a plain colour	텍스처 없음: 단색
 Texture size, m	텍스처 크기 (m)
 Thickness, m	두께 (m)
 Above the ground, m	지면 위 높이 (m)
+Polygon: fill the selected splines, or click its corners	폴리곤: 선택한 스플라인을 채우거나 모서리를 클릭
+Polygon: click its corners	폴리곤: 모서리를 클릭
+Polygon from it	이것으로 폴리곤
+Polygon from them	이것들로 폴리곤

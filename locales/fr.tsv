@@ -2620,3 +2620,7 @@ No texture: a plain colour	Sans texture : une couleur unie
 Texture size, m	Taille de la texture, m
 Thickness, m	Épaisseur, m
 Above the ground, m	Au-dessus du sol, m
+Polygon: fill the selected splines, or click its corners	Polygone : remplir les splines sélectionnés ou cliquer sur les angles
+Polygon: click its corners	Polygone : cliquer sur les angles
+Polygon from it	Polygone à partir de lui
+Polygon from them	Polygone à partir d'eux

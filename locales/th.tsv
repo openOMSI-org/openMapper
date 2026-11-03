@@ -2622,3 +2622,7 @@ No texture: a plain colour	ไม่มีพื้นผิว: สีเรี
 Texture size, m	ขนาดพื้นผิว, m
 Thickness, m	ความหนา, m
 Above the ground, m	เหนือพื้นดิน, m
+Polygon: fill the selected splines, or click its corners	รูปหลายเหลี่ยม: เติมสไปลน์ที่เลือก หรือคลิกที่มุม
+Polygon: click its corners	รูปหลายเหลี่ยม: คลิกที่มุม
+Polygon from it	รูปหลายเหลี่ยมจากเส้นนี้
+Polygon from them	รูปหลายเหลี่ยมจากเส้นเหล่านี้

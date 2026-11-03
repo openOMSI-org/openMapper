@@ -2662,3 +2662,7 @@ No texture: a plain colour	Sem textura: uma cor lisa
 Texture size, m	Tamanho da textura, m
 Thickness, m	Espessura, m
 Above the ground, m	Acima do terreno, m
+Polygon: fill the selected splines, or click its corners	Polígono: preencher os splines selecionados ou clicar nos cantos
+Polygon: click its corners	Polígono: clicar nos cantos
+Polygon from it	Polígono a partir dele
+Polygon from them	Polígono a partir deles
