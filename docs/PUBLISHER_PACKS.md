@@ -82,3 +82,7 @@ extraction through official tools and cannot guarantee unextractable playable co
 geometry or binary PPM texture samples. Its tests document supported transformations and
 false-positive limits. It is separate from signatures and encryption, has no telemetry, and
 is not a durable watermark against arbitrary modification.
+
+[The optional placement watermark](PLACEMENT_WATERMARKS.md) gives each buyer's copy of a map
+its own sub-millimetre object placements, so the creator can trace a leaked copy to the buyer
+it was made for. It needs the creator's secret key and the unmarked original to inspect a copy.

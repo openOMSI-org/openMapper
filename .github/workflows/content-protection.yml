@@ -36,6 +36,7 @@ jobs:
       - run: cargo build --locked --release
       - run: python3 tools/i18n/check.py
       - run: python3 tools/test_fingerprint.py
+      - run: python3 tools/test_placement_watermark.py
 
       - name: Resolved dependency lock
         if: always()

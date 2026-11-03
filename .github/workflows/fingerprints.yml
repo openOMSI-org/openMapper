@@ -3,9 +3,9 @@ name: Fingerprint tools
 on:
   push:
     branches: ["feat/publisher-content-protection*"]
-    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", ".github/workflows/fingerprints.yml"]
+    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", "tools/placement_watermark.py", "tools/test_placement_watermark.py", ".github/workflows/fingerprints.yml"]
   pull_request:
-    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", ".github/workflows/fingerprints.yml"]
+    paths: ["tools/fingerprint.py", "tools/test_fingerprint.py", "tools/placement_watermark.py", "tools/test_placement_watermark.py", ".github/workflows/fingerprints.yml"]
 
 permissions:
   contents: read
@@ -17,3 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 tools/test_fingerprint.py
+      - run: python3 tools/test_placement_watermark.py
