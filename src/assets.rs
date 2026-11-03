@@ -285,13 +285,10 @@ impl Assets {
         Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, omsi, content, map_scope: None, scope_epoch: 0 }
     }
 
-    /// Choose the map whose signed dependency aliases this cache resolves. Replies from work
-    /// queued for the previous map carry its old epoch and are discarded when they arrive.
+    /// Start a map session; reopening the same directory replaces its dependency mount.
+    /// Replies queued for the previous session carry its epoch and are discarded.
     pub fn set_map_scope(&mut self, map_dir: &Path) {
         let map = std::fs::canonicalize(map_dir).unwrap_or_else(|_| map_dir.to_path_buf());
-        if self.map_scope.as_ref() == Some(&map) {
-            return;
-        }
         self.map_scope = Some(map);
         self.scope_epoch = self.scope_epoch.wrapping_add(1);
         self.objects.clear();
@@ -474,6 +471,7 @@ impl Assets {
     pub fn forget_object(&mut self, rel: &str, dir: &Path) {
         self.objects.remove(&rel.to_lowercase());
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
+        self.tree_masks.retain(|k, _| !k.starts_with(dir));
     }
 
     /// Forget everything (after an import changed files on disk).
@@ -484,6 +482,7 @@ impl Assets {
         // (pictures too: a texture's PBR maps may have been made or taken away)
         self.textures.clear();
         self.new_textures.clear();
+        self.tree_masks.clear();
     }
 }
 
@@ -1253,6 +1252,35 @@ mod tests {
 
         drop(assets);
         drop(_mount);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn clear_reloads_tree_mask_after_same_path_texture_replacement() {
+        let root = std::env::temp_dir().join(format!(
+            "openmapper-tree-mask-clear-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("tree.png");
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([10, 20, 30, 0]))
+            .save(&path)
+            .unwrap();
+
+        let mut assets = Assets::new(PathBuf::new(), PathBuf::new());
+        let dirs = vec![root.clone()];
+        let before = assets.tree_mask(&dirs, "tree.png").unwrap();
+        assert!(!before.solid(0.0, 0.0));
+
+        image::RgbaImage::from_pixel(2, 2, image::Rgba([10, 20, 30, 255]))
+            .save(&path)
+            .unwrap();
+        omsi_cfg::content_changed();
+        assets.clear();
+
+        let after = assets.tree_mask(&dirs, "tree.png").unwrap();
+        assert!(after.solid(0.0, 0.0));
         std::fs::remove_dir_all(root).unwrap();
     }
 
