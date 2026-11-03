@@ -2591,6 +2591,11 @@ Snap to road edges and surfaces	Aggancia ai bordi strada e alle superfici
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ciò che si disegna accanto a una strada inizia sul suo bordo; sopra un oggetto inizia sulla faccia dell'oggetto, a quell'altezza
 Load all tiles at once	Carica tutte le tessere in una volta
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Disattivato: vengono caricate solo le tessere attorno alla camera, come nell'editor di OMSI 2, le altre restano nascoste finché non fai clic sulla zona vuota
+Click a spline in the view	Fai clic su una spline nella vista
+Click an object in the view	Fai clic su un oggetto nella vista
+Click an object or a spline in the view	Fai clic su un oggetto o una spline nella vista
+Click the spline it should stand on. It follows that road and keeps its IDCode	Fai clic sulla spline su cui deve stare. Segue quella strada e tiene il suo IDCode
+That is the one	È questo
 Along a spline	Lungo una spline
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Fai clic su una spline: il terreno sotto, largo quanto il pennello da ogni lato, viene portato all'altezza della spline, e i pezzi uniti con essa
 The brush size is how far either side of the spline the ground is brought to its height.	La dimensione del pennello è quanto lontano, da ogni lato della spline, il terreno viene portato alla sua altezza.

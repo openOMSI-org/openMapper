@@ -2589,6 +2589,11 @@ Snap to road edges and surfaces	До країв доріг і поверхонь
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Те, що малюється біля дороги, починається на її краю; над об'єктом починається на його власній грані, на тій висоті
 Load all tiles at once	Завантажувати всі тайли одразу
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Вимкнено: завантажуються лише тайли навколо камери, як у редакторі OMSI 2, решта приховані, доки ви не клікнете по порожній зоні
+Click a spline in the view	Клацніть сплайн у вигляді
+Click an object in the view	Клацніть об'єкт у вигляді
+Click an object or a spline in the view	Клацніть об'єкт або сплайн у вигляді
+Click the spline it should stand on. It follows that road and keeps its IDCode	Клацніть сплайн, на якому він має стояти. Він іде за цією дорогою і зберігає IDCode
+That is the one	Це він
 Along a spline	Уздовж сплайна
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Клацніть сплайн: земля під ним, завширшки з пензель в обидва боки, приводиться до його висоти, і з'єднані з ним частини теж
 The brush size is how far either side of the spline the ground is brought to its height.	Розмір пензля — як далеко в обидва боки від сплайна земля приводиться до його висоти.

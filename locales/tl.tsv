@@ -2591,6 +2591,11 @@ Snap to road edges and surfaces	I-snap sa gilid ng kalsada at sa mga ibabaw
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Ang iginuguhit sa tabi ng kalsada ay nagsisimula sa gilid nito; sa ibabaw ng bagay ay nagsisimula sa sariling mukha ng bagay, sa taas na iyon
 Load all tiles at once	I-load ang lahat ng tile nang sabay-sabay
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Naka-off: ang mga tile lang sa paligid ng camera ang nilo-load, tulad ng sa editor ng OMSI 2, at nakatago ang iba hanggang mag-click ka sa walang laman na zone
+Click a spline in the view	I-click ang isang spline sa tanawin
+Click an object in the view	I-click ang isang bagay sa tanawin
+Click an object or a spline in the view	I-click ang isang bagay o spline sa tanawin
+Click the spline it should stand on. It follows that road and keeps its IDCode	I-click ang spline na dapat nitong kalagyan. Sumusunod ito sa daang iyon at nananatili ang IDCode
+That is the one	Ito iyon
 Along a spline	Kasunod ng isang spline
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	I-click ang isang spline: ang lupa sa ilalim, kasinlawak ng brush sa magkabilang gilid, dinadala sa taas ng spline, kasama ang mga pirasong nakadugtong
 The brush size is how far either side of the spline the ground is brought to its height.	Ang laki ng brush ay kung gaano kalayo sa magkabilang gilid ng spline dadalhin ang lupa sa taas nito.

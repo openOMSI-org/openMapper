@@ -2591,6 +2591,11 @@ Snap to road edges and surfaces	Přichytit k okrajům silnic a k povrchům
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Co se kreslí vedle silnice, začíná na jejím okraji; nad objektem začíná na jeho vlastní ploše, v její výšce
 Load all tiles at once	Načíst všechny dlaždice najednou
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Vypnuto: načtou se jen dlaždice kolem kamery jako v editoru OMSI 2, ostatní jsou skryté, dokud neklepnete na prázdnou zónu
+Click a spline in the view	Klikněte na spline v pohledu
+Click an object in the view	Klikněte na objekt v pohledu
+Click an object or a spline in the view	Klikněte na objekt nebo spline v pohledu
+Click the spline it should stand on. It follows that road and keeps its IDCode	Klikněte na spline, na kterém má stát. Sleduje tu silnici a ponechá si IDCode
+That is the one	To je on
 Along a spline	Podél spline
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Klikněte na spline: terén pod ní, široký jako štětec na obě strany, se srovná na její výšku a připojené díly s ní
 The brush size is how far either side of the spline the ground is brought to its height.	Velikost štětce je, jak daleko na obě strany od spline se terén srovná na její výšku.

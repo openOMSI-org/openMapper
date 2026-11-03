@@ -2591,6 +2591,11 @@ Snap to road edges and surfaces	Hút vào mép đường và bề mặt
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Thứ vẽ bên cạnh đường bắt đầu ở mép đường; trên một đối tượng thì bắt đầu trên chính mặt của đối tượng, ở cao độ đó
 Load all tiles at once	Tải tất cả ô cùng lúc
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Tắt: chỉ tải các ô quanh camera, như trình sửa của OMSI 2, các ô khác bị ẩn cho đến khi bạn nhấp vào vùng trống
+Click a spline in the view	Nhấp một spline trong khung nhìn
+Click an object in the view	Nhấp một đối tượng trong khung nhìn
+Click an object or a spline in the view	Nhấp một đối tượng hoặc một spline trong khung nhìn
+Click the spline it should stand on. It follows that road and keeps its IDCode	Nhấp spline nó sẽ đứng trên. Nó đi theo đường đó và giữ IDCode
+That is the one	Chính là cái này
 Along a spline	Dọc theo spline
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Nhấp một spline: mặt đất bên dưới, rộng bằng cọ hai bên, được đưa tới cao độ của spline, và các đoạn nối với nó cũng vậy
 The brush size is how far either side of the spline the ground is brought to its height.	Cỡ cọ là mặt đất được đưa tới cao độ của spline xa bao nhiêu về hai phía.

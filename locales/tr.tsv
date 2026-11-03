@@ -2591,6 +2591,11 @@ Snap to road edges and surfaces	Yol kenarlarına ve yüzeylere yapıştır
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	Bir yolun yanında çizilen şey kenarında başlar; bir nesnenin üzerinde nesnenin kendi yüzünde, o yükseklikte başlar
 Load all tiles at once	Tüm karoları bir kerede yükle
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	Kapalı: OMSI 2'nin düzenleyicisindeki gibi yalnızca kameranın çevresindeki karolar yüklenir, diğerleri boş bölgeye tıklayana kadar gizli kalır
+Click a spline in the view	Görünümde bir spline'a tıklayın
+Click an object in the view	Görünümde bir nesneye tıklayın
+Click an object or a spline in the view	Görünümde bir nesneye veya bir spline'a tıklayın
+Click the spline it should stand on. It follows that road and keeps its IDCode	Durması gereken spline'a tıklayın. O yolu izler ve IDCode'unu korur
+That is the one	Bu o
 Along a spline	Bir spline boyunca
 Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	Bir spline'a tıklayın: altındaki zemin, fırça genişliğinde iki yana, spline yüksekliğine getirilir ve ona bağlı parçalar da birlikte gelir
 The brush size is how far either side of the spline the ground is brought to its height.	Fırça boyutu, spline'ın iki yanında zeminin yüksekliğine ne kadar uzağa getirileceğidir.
