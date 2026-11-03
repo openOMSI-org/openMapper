@@ -127,6 +127,8 @@ pub struct App {
     /// `OPENMAPPER_SHOT=file.png`: save the window's picture after that many frames and end.
     shot: Option<(PathBuf, u64)>,
     autosave: crate::doc::autosave::Timer,
+    /// Ctrl+S writing the map on its own thread: the view keeps drawing until it finishes.
+    save_flight: Option<std::sync::mpsc::Receiver<anyhow::Result<crate::doc::save::SaveStamp>>>,
     /// An autosave left by a session that did not end normally, offered back.
     recover: Option<crate::doc::autosave::Meta>,
     /// The Lines window.
@@ -218,6 +220,7 @@ impl App {
             unguarded: false,
             shot: std::env::var_os("OPENMAPPER_SHOT").map(|p| (PathBuf::from(p), std::env::var("OPENMAPPER_SHOT_FRAMES").ok().and_then(|n| n.parse().ok()).unwrap_or(90))),
             autosave: Default::default(),
+            save_flight: None,
             recover: None,
         };
         crate::logging::stage("looking for OMSI 2 and the content");
@@ -999,13 +1002,76 @@ impl App {
             self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
             return false;
         }
-        // (a scenario's things being edited on the map are not the map's)
+        if self.save_flight.is_some() && !self.finish_save() {
+            return false;
+        }
+        let pending = self.ed.doc.as_ref().map(|d| d.is_dirty() || d.source.is_some()).unwrap_or(false);
+        if !pending {
+            return self.ed.doc.is_some();
+        }
+        self.save_blocking()
+    }
+
+    /// Ctrl+S: the files are written on another thread, and the view keeps drawing.
+    fn save_smooth(&mut self) {
+        if self.collab.is_guest() {
+            self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+            return;
+        }
+        if self.save_flight.is_some() {
+            self.ed.toast(tr("Still saving", "Ещё сохраняется"));
+            return;
+        }
+        if !self.prepare_for_save() {
+            return;
+        }
+        let Some(doc) = self.ed.doc.as_ref() else { return };
+        let job = crate::doc::save::prepare_save(doc);
+        let (tx, rx) = std::sync::mpsc::channel();
+        if std::thread::Builder::new().name("save".into()).spawn(move || {
+            let _ = tx.send(job.run());
+        }).is_err() {
+            self.ed.error(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"));
+            return;
+        }
+        self.save_flight = Some(rx);
+        self.ed.toast(tr("Saving…", "Сохранение…"));
+    }
+
+    /// A save that has to be finished before the next step (a test drive, closing).
+    fn save_blocking(&mut self) -> bool {
+        if self.collab.is_guest() {
+            self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+            return false;
+        }
+        if !self.prepare_for_save() {
+            return false;
+        }
+        let Some(doc) = self.ed.doc.as_mut() else { return false };
+        crate::logging::busy("saving the map");
+        let saved = crate::doc::save(doc);
+        crate::logging::busy("");
+        match saved {
+            Ok(()) => {
+                self.after_saved();
+                true
+            }
+            Err(e) => {
+                self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")));
+                false
+            }
+        }
+    }
+
+    /// Bookkeeping the files do not contain: the history closed, start points, signal routes.
+    fn prepare_for_save(&mut self) -> bool {
         self.chrono.end_session(&mut self.ed);
         let Some(doc) = self.ed.doc.as_mut() else { return false };
         self.ed.history.commit();
         crate::editor::sync_entry_points(doc);
         self.tt.before_save(doc, self.roots.as_ref());
-        // (the signal routes' pieces counted again among their tiles' paths: tiles change)
+        crate::timetable::follow_stop_tiles(doc);
+        doc.sync_mask_slots();
         if let Some(r) = &self.roots {
             if !doc.traffic.signal_routes.is_empty() {
                 let mut routes = std::mem::take(&mut doc.traffic.signal_routes);
@@ -1016,38 +1082,102 @@ impl App {
                 }
             }
         }
-        crate::logging::busy("saving the map");
-        let saved = crate::doc::save(doc);
-        crate::logging::busy("");
-        match saved {
-            Ok(()) => {
-                omsi_cfg::content_changed();
-                if let (Some(r), None) = (&self.roots, &self.recover) {
-                    crate::doc::autosave::clear(&r.content);
-                }
-                self.autosave.reset();
-                let cfg = doc.dir.join("global.cfg");
-                let dir = doc.dir.display().to_string();
-                let has_start = !doc.global.entry_points.is_empty();
-                self.prefs.push_recent(&cfg);
-                if let Some(r) = &self.roots {
-                    self.ui.maps = install::list_maps(r);
-                }
-                self.ed.toast(format!("{} {dir}", tr("Saved:", "Сохранено:")));
-                // (junction plates nothing uses any more, from earlier sessions)
-                let gone = self.ed.clean_junction_files();
-                if gone > 0 {
-                    log::info!("removed {gone} unused junction file(s)");
-                }
-                if !has_start {
-                    self.ed.toast(tr("Tip: place a start point (Game logic > Start points) so the bus has somewhere to appear", "Совет: поставьте точку старта (Служебное > Точки старта), чтобы автобусу было где появиться"));
-                }
+        true
+    }
+
+    /// A background save that has finished since the last frame.
+    fn poll_save(&mut self) {
+        let done = match self.save_flight.as_ref() {
+            Some(rx) => match rx.try_recv() {
+                Ok(r) => Some(r),
+                Err(std::sync::mpsc::TryRecvError::Empty) => None,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(Err(anyhow::anyhow!(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")))),
+            },
+            None => return,
+        };
+        let Some(r) = done else { return };
+        self.save_flight = None;
+        match r {
+            Ok(stamp) => {
+                self.apply_stamp(stamp);
+                self.after_saved();
+            }
+            Err(e) => self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"))),
+        }
+    }
+
+    /// Wait for the background save (a test drive or closing must not go on without the files).
+    fn finish_save(&mut self) -> bool {
+        let Some(rx) = self.save_flight.take() else { return true };
+        match rx.recv() {
+            Ok(Ok(stamp)) => {
+                self.apply_stamp(stamp);
+                self.after_saved();
                 true
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")));
                 false
             }
+            Err(_) => {
+                self.ed.error(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"));
+                false
+            }
+        }
+    }
+
+    /// Forget the changes the finished save wrote, and only those: an edit made while it
+    /// wrote stays to be saved next time.
+    fn apply_stamp(&mut self, stamp: crate::doc::save::SaveStamp) {
+        let Some(doc) = self.ed.doc.as_mut() else { return };
+        for (k, content, terrain, mask) in &stamp.tiles {
+            if let Some(t) = doc.tiles.get_mut(k) {
+                if t.content_rev == *content && t.terrain_rev == *terrain && t.mask_rev == *mask {
+                    t.dirty = false;
+                    t.tile.version = 14;
+                    t.tile.has_terrain = true;
+                }
+            }
+        }
+        if stamp.global_dirty && doc.global_rev == stamp.global_rev {
+            doc.global_dirty = false;
+        }
+        if stamp.tt_dirty && doc.timetable.edit == stamp.tt_gen {
+            crate::timetable::saved(&mut doc.timetable);
+        }
+        if stamp.traffic_dirty && doc.traffic.edit == stamp.traffic_gen {
+            crate::traffic::saved(&mut doc.traffic);
+        }
+        if stamp.desc_dirty && doc.descriptions.edit == stamp.desc_gen {
+            doc.descriptions.saved();
+        }
+        if doc.source == stamp.source {
+            doc.source = None;
+            doc.fresh = false;
+        }
+    }
+
+    fn after_saved(&mut self) {
+        let Some(doc) = self.ed.doc.as_ref() else { return };
+        omsi_cfg::content_changed();
+        if let (Some(r), None) = (&self.roots, &self.recover) {
+            crate::doc::autosave::clear(&r.content);
+        }
+        self.autosave.reset();
+        let cfg = doc.dir.join("global.cfg");
+        let dir = doc.dir.display().to_string();
+        let has_start = !doc.global.entry_points.is_empty();
+        self.prefs.push_recent(&cfg);
+        if let Some(r) = &self.roots {
+            self.ui.maps = install::list_maps(r);
+        }
+        self.ed.toast(format!("{} {dir}", tr("Saved:", "Сохранено:")));
+        let gone = self.ed.clean_junction_files();
+        if gone > 0 {
+            log::info!("removed {gone} unused junction file(s)");
+        }
+        if !has_start {
+            self.ed.toast(tr("Tip: place a start point (Game logic > Start points) so the bus has somewhere to appear", "Совет: поставьте точку старта (Служебное > Точки старта), чтобы автобусу было где появиться"));
         }
     }
 
@@ -1320,7 +1450,7 @@ impl App {
                 }
             }
             Action::Save => {
-                self.save();
+                self.save_smooth();
             }
             Action::RestoreBackup(b) => {
                 let Some(dir) = self.ed.doc.as_ref().map(|d| d.dir.clone()) else { return };
@@ -2054,6 +2184,7 @@ impl App {
     // ------------------------------------------------------------------ frame
 
     fn frame(&mut self, el: &ActiveEventLoop) {
+        self.poll_save();
         let now = Instant::now();
         let gap = (now - self.last).as_secs_f64();
         // (a frame that took far longer than a frame: the first ones build the map's picture
@@ -3471,7 +3602,8 @@ impl ApplicationHandler for App {
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
         // (nobody at the mouse or keys, the view still: a few frames a second are enough)
-        let idle = self.last_input.elapsed().as_secs_f32() > 3.0 && !self.cam.is_moving() && !self.lib.scanning && self.assets.as_ref().map(|a| a.pending == 0).unwrap_or(true) && self.shot.is_none() && !crate::render::profile::enabled();
+        self.poll_save();
+        let idle = self.save_flight.is_none() && self.last_input.elapsed().as_secs_f32() > 3.0 && !self.cam.is_moving() && !self.lib.scanning && self.assets.as_ref().map(|a| a.pending == 0).unwrap_or(true) && self.shot.is_none() && !crate::render::profile::enabled();
         if idle {
             if self.last.elapsed().as_millis() >= 50 {
                 if let Some(g) = &self.gfx {

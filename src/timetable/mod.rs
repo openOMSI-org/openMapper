@@ -32,6 +32,8 @@ pub struct Timetable {
     pub order: Vec<TileKey>,
     /// Changed since read or saved.
     pub dirty: bool,
+    /// Counts each change, so a save that is still writing can tell a later edit from the one it copied.
+    pub edit: u64,
     /// Files to write (lower-case names) and to take away on the next save.
     changed: BTreeSet<String>,
     removed: BTreeSet<String>,
@@ -91,18 +93,18 @@ impl Timetable {
     pub fn touch_line(&mut self, name: &str) {
         self.changed.insert(key(&format!("{name}.ttl")));
         self.removed.remove(&key(&format!("{name}.ttl")));
-        self.dirty = true;
+        self.mark();
     }
 
     pub fn touch_trip(&mut self, name: &str) {
         self.changed.insert(key(&format!("{name}.ttp")));
         self.removed.remove(&key(&format!("{name}.ttp")));
-        self.dirty = true;
+        self.mark();
     }
 
     pub fn touch_stops(&mut self) {
         self.stops_changed = true;
-        self.dirty = true;
+        self.mark();
     }
 
     /// A trip's stops changed: its route is found again.
@@ -127,12 +129,12 @@ impl Timetable {
         self.car_removed = replaced.car_use.iter().map(|c| c.file.to_lowercase()).filter(|f| !have.contains(f)).chain(replaced.car_removed.iter().cloned()).filter(|f| !have.contains(f)).collect();
         self.car_changed = have;
         self.reroute.clear();
-        self.dirty = true;
+        self.mark();
     }
 
     pub fn touch_calendar(&mut self) {
         self.calendar_changed = true;
-        self.dirty = true;
+        self.mark();
     }
 
     /// The same lines, trips, tours and stops (what the Lines window edits; not the routes
@@ -228,7 +230,7 @@ impl Timetable {
                 self.delete_trip(&t);
             }
         }
-        self.dirty = true;
+        self.mark();
     }
 
     /// A new trip of a line, its stops `stops`.
@@ -302,7 +304,7 @@ impl Timetable {
             self.touch_line(&l);
         }
         self.reroute.remove(&key(name));
-        self.dirty = true;
+        self.mark();
     }
 
     /// The route found for a trip: its track (`<trip>.ttr`) and the station links between
@@ -319,7 +321,7 @@ impl Timetable {
             self.links.push(l);
         }
         self.links_changed = true;
-        self.dirty = true;
+        self.mark();
     }
 
     /// The stop list brought in line with the map's stop objects (`stop_entries`): names and
@@ -499,6 +501,13 @@ pub fn plan(tt: &mut Timetable, map_dir: &Path, order: &[TileKey]) -> Vec<Op> {
     }
     ops.extend(caruse::plan(tt, map_dir));
     ops
+}
+
+impl Timetable {
+    pub(crate) fn mark(&mut self) {
+        self.dirty = true;
+        self.edit = self.edit.wrapping_add(1);
+    }
 }
 
 /// The planned files were written.

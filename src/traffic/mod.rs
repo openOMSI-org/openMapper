@@ -77,6 +77,8 @@ pub struct Traffic {
     /// the second when it is changed.
     pub legacy: bool,
     pub dirty: bool,
+    /// Counts each change, so a save that is still writing can tell a later edit from the one it copied.
+    pub edit: u64,
     changed: BTreeSet<File>,
 }
 
@@ -121,6 +123,11 @@ impl Traffic {
         t
     }
 
+    fn mark(&mut self) {
+        self.dirty = true;
+        self.edit = self.edit.wrapping_add(1);
+    }
+
     pub fn touch(&mut self, f: File) {
         match f {
             File::TimeZone => self.has[0] = true,
@@ -129,7 +136,7 @@ impl Traffic {
             _ => {}
         }
         self.changed.insert(f);
-        self.dirty = true;
+        self.mark();
     }
 
     /// The depot files are written with the next save.
@@ -149,7 +156,7 @@ impl Traffic {
             }
         }
         self.changed.insert(File::Depots);
-        self.dirty = true;
+        self.mark();
     }
 
     pub fn depots(&self) -> impl Iterator<Item = &AiGroup> {
