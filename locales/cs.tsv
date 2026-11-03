@@ -2606,3 +2606,19 @@ The ground follows the spline	Terén sleduje spline
 Align ground to splines	Srovnat terén podle spline
 Path	Cesta
 Ctrl: snap onto a path, F9: the next one	Ctrl: přichytit k cestě, F9: další
+Click the corners of the polygon; the first corner or Enter closes it	Klikejte na rohy mnohoúhelníku; první roh nebo Enter jej uzavře
+select the roads or splines that make the outline first	nejprve vyberte silnice nebo spliny, které tvoří obrys
+the selected splines do not make one outline: they have to join end to end	vybrané spliny netvoří jeden obrys: musí na sebe navazovat konec na konec
+A polygon needs three corners	Mnohoúhelník potřebuje tři rohy
+The corners make no area	Rohy netvoří žádnou plochu
+The polygon lies outside the map	Mnohoúhelník leží mimo mapu
+Polygon made: Tab edits its mesh	Mnohoúhelník vytvořen: Tab upraví jeho síť
+Polygon	Mnohoúhelník
+Draw a polygon	Nakreslit mnohoúhelník
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Klikejte na jeho rohy na mapě; kliknutí na první roh nebo Enter jej uzavře, Esc vrátí poslední roh. Vnitřek se vyplní jako objekt, který lze přesouvat a upravovat jako každý jiný
+From the selected splines	Z vybraných splinů
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Vyplnit obrys, který tvoří vybrané silnice a spliny, když na sebe navazují konec na konec (například obrubníky kolem ostrůvku)
+No texture: a plain colour	Bez textury: jednolitá barva
+Texture size, m	Velikost textury, m
+Thickness, m	Tloušťka, m
+Above the ground, m	Nad zemí, m

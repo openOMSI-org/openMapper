@@ -2646,3 +2646,19 @@ The ground follows the spline	O chão segue a spline
 Align ground to splines	Alinhar o chão às splines
 Path	Caminho
 Ctrl: snap onto a path, F9: the next one	Ctrl: colar a um caminho, F9: o seguinte
+Click the corners of the polygon; the first corner or Enter closes it	Clique nos cantos do polígono; o primeiro canto ou Enter fecha-o
+select the roads or splines that make the outline first	selecione primeiro as estradas ou splines que formam o contorno
+the selected splines do not make one outline: they have to join end to end	os splines selecionados não formam um único contorno: têm de se ligar de ponta a ponta
+A polygon needs three corners	Um polígono precisa de três cantos
+The corners make no area	Os cantos não formam nenhuma área
+The polygon lies outside the map	O polígono fica fora do mapa
+Polygon made: Tab edits its mesh	Polígono criado: Tab edita a sua malha
+Polygon	Polígono
+Draw a polygon	Desenhar um polígono
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Clique nos seus cantos no mapa; clique no primeiro canto ou prima Enter para fechar, Esc recua o último canto. O interior é preenchido como um objeto que pode mover e editar como qualquer outro
+From the selected splines	A partir dos splines selecionados
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Preencher o contorno que as estradas e os splines selecionados formam quando se ligam de ponta a ponta (lancis à volta de uma ilha, por exemplo)
+No texture: a plain colour	Sem textura: uma cor lisa
+Texture size, m	Tamanho da textura, m
+Thickness, m	Espessura, m
+Above the ground, m	Acima do terreno, m

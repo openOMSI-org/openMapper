@@ -2606,3 +2606,19 @@ The ground follows the spline	ज़मीन स्पलाइन के स�
 Align ground to splines	ज़मीन को स्पलाइन पर लगाना
 Path	पथ
 Ctrl: snap onto a path, F9: the next one	Ctrl: पथ पर चिपकाना, F9: अगला
+Click the corners of the polygon; the first corner or Enter closes it	बहुभुज के कोनों पर क्लिक करें; पहला कोना या Enter उसे बंद कर देता है
+select the roads or splines that make the outline first	पहले वे सड़कें या स्प्लाइन चुनें जो रूपरेखा बनाती हैं
+the selected splines do not make one outline: they have to join end to end	चुने गए स्प्लाइन एक रूपरेखा नहीं बनाते: उन्हें सिरे से सिरे तक जुड़ना होगा
+A polygon needs three corners	बहुभुज के लिए तीन कोने चाहिए
+The corners make no area	कोनों से कोई क्षेत्र नहीं बनता
+The polygon lies outside the map	बहुभुज मैप के बाहर है
+Polygon made: Tab edits its mesh	बहुभुज बन गया: Tab उसकी मेश बदलता है
+Polygon	बहुभुज
+Draw a polygon	बहुभुज बनाएँ
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	मैप पर उसके कोनों पर क्लिक करें; पहले कोने पर क्लिक करें या Enter दबाएँ तो वह बंद हो जाता है, Esc आख़िरी कोना वापस ले लेता है। अंदर का हिस्सा एक ऑब्जेक्ट के रूप में भरा जाता है जिसे आप किसी भी दूसरे की तरह हिला और बदल सकते हैं
+From the selected splines	चुने गए स्प्लाइन से
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	चुनी गई सड़कों और स्प्लाइन की बनाई रूपरेखा को भरें, जब वे सिरे से सिरे तक जुड़ें (जैसे किसी द्वीप के चारों ओर के किनारे)
+No texture: a plain colour	कोई टेक्सचर नहीं: सादा रंग
+Texture size, m	टेक्सचर का आकार, m
+Thickness, m	मोटाई, m
+Above the ground, m	ज़मीन से ऊपर, m

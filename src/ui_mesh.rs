@@ -116,6 +116,9 @@ pub enum MeshAction {
     /// The selected roads and splines made an openMapper object of their shape (in place of
     /// them with `true`), to edit as a mesh.
     SplinesToObject(bool),
+    /// A polygon: click its corners on the map, or fill the outline the selected splines make.
+    PolygonDraw(crate::makers::Settings),
+    PolygonFromSplines(crate::makers::Settings),
 }
 
 use crate::editable::{Lamp, Light, LightKind, When};
@@ -1325,6 +1328,45 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
         if ui.button(tr("Sound source…", "Источник звука…")).on_hover_text(tr("Choose a sound file (.wav): it plays where you put the marker, as far as the radius carries; the marker shows in the editor only", "Выберите звуковой файл (.wav): он звучит там, где стоит маркер, на расстояние радиуса; маркер виден только в редакторе")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewSound(s.clone())));
         }
+    });
+    ui.add_space(6.0);
+    ui.label(RichText::new(tr("Polygon", "Многоугольник")).small().color(DIM));
+    ui.horizontal_wrapped(|ui| {
+        if ui.button(tr("Draw a polygon", "Нарисовать многоугольник")).on_hover_text(tr("Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other", "Кликайте по углам на карте; клик по первому углу или Enter замыкает контур, Esc убирает последний угол. Внутренность заполняется объектом, который можно двигать и править как любой другой")).clicked() {
+            actions.push(Action::Mesh(MeshAction::PolygonDraw(s.clone())));
+        }
+        if ui.button(tr("From the selected splines", "По выделенным сплайнам")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+            actions.push(Action::Mesh(MeshAction::PolygonFromSplines(s.clone())));
+        }
+    });
+    egui::Grid::new("polygon makers").num_columns(2).show(ui, |ui| {
+        ui.label(RichText::new(tr("Texture", "Текстура")).small().color(DIM));
+        ui.horizontal(|ui| {
+            let name = s.poly_texture.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().to_string());
+            if ui.button(name.clone().unwrap_or_else(|| tr("Choose…", "Выбрать…").to_string())).clicked() {
+                if let Some(f) = rfd::FileDialog::new().set_title(tr("Choose a picture or a texture", "Выберите картинку или текстуру")).add_filter(tr("Pictures", "Картинки"), &["png", "jpg", "jpeg", "bmp", "tga", "dds", "tif", "tiff", "webp"]).pick_file() {
+                    s.poly_texture = Some(f);
+                }
+            }
+            if name.is_some() && ui.small_button("✕").on_hover_text(tr("No texture: a plain colour", "Без текстуры: просто цвет")).clicked() {
+                s.poly_texture = None;
+            }
+        });
+        ui.end_row();
+        if s.poly_texture.is_none() {
+            ui.label(RichText::new(tr("Colour", "Цвет")).small().color(DIM));
+            ui.color_edit_button_srgb(&mut s.poly_color);
+            ui.end_row();
+        }
+        ui.label(RichText::new(tr("Texture size, m", "Размер текстуры, м")).small().color(DIM));
+        ui.add(egui::DragValue::new(&mut s.poly_scale).range(0.1..=500.0).speed(0.1));
+        ui.end_row();
+        ui.label(RichText::new(tr("Thickness, m", "Толщина, м")).small().color(DIM));
+        ui.add(egui::DragValue::new(&mut s.poly_thickness).range(0.0..=50.0).speed(0.01));
+        ui.end_row();
+        ui.label(RichText::new(tr("Above the ground, m", "Над землёй, м")).small().color(DIM));
+        ui.add(egui::DragValue::new(&mut s.poly_lift).range(-5.0..=5.0).speed(0.01));
+        ui.end_row();
     });
     egui::Grid::new("extra makers").num_columns(2).show(ui, |ui| {
         ui.label(RichText::new(tr("Picture width, m", "Ширина картинки, м")).small().color(DIM));

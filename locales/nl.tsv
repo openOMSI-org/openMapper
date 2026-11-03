@@ -2646,3 +2646,19 @@ The ground follows the spline	De grond volgt de spline
 Align ground to splines	Grond gelijktrekken met splines
 Path	Pad
 Ctrl: snap onto a path, F9: the next one	Ctrl: aan een pad klikken, F9: de volgende
+Click the corners of the polygon; the first corner or Enter closes it	Klik op de hoeken van de veelhoek; de eerste hoek of Enter sluit hem
+select the roads or splines that make the outline first	selecteer eerst de wegen of splines die de omtrek vormen
+the selected splines do not make one outline: they have to join end to end	de geselecteerde splines vormen geen enkele omtrek: ze moeten van uiteinde tot uiteinde aansluiten
+A polygon needs three corners	Een veelhoek heeft drie hoeken nodig
+The corners make no area	De hoeken vormen geen oppervlak
+The polygon lies outside the map	De veelhoek ligt buiten de kaart
+Polygon made: Tab edits its mesh	Veelhoek gemaakt: Tab bewerkt de mesh
+Polygon	Veelhoek
+Draw a polygon	Veelhoek tekenen
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Klik op de hoeken op de kaart; klik op de eerste hoek of druk op Enter om te sluiten, Esc neemt de laatste hoek terug. De binnenkant wordt gevuld als een object dat je net als elk ander kunt verplaatsen en bewerken
+From the selected splines	Van de geselecteerde splines
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Vul de omtrek die de geselecteerde wegen en splines vormen als ze van uiteinde tot uiteinde aansluiten (bijvoorbeeld stoepranden rond een eiland)
+No texture: a plain colour	Geen textuur: een effen kleur
+Texture size, m	Textuurgrootte, m
+Thickness, m	Dikte, m
+Above the ground, m	Boven de grond, m

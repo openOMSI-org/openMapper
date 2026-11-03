@@ -2606,3 +2606,19 @@ The ground follows the spline	지면이 스플라인을 따릅니다
 Align ground to splines	지면을 스플라인에 맞추기
 Path	경로
 Ctrl: snap onto a path, F9: the next one	Ctrl: 경로에 붙이기, F9: 다음
+Click the corners of the polygon; the first corner or Enter closes it	폴리곤의 모서리를 클릭하세요. 첫 모서리나 Enter로 닫습니다
+select the roads or splines that make the outline first	먼저 윤곽을 이룰 도로나 스플라인을 선택하세요
+the selected splines do not make one outline: they have to join end to end	선택한 스플라인이 하나의 윤곽을 이루지 않습니다. 끝과 끝이 이어져야 합니다
+A polygon needs three corners	폴리곤에는 모서리가 세 개 필요합니다
+The corners make no area	모서리가 면적을 이루지 않습니다
+The polygon lies outside the map	폴리곤이 맵 밖에 있습니다
+Polygon made: Tab edits its mesh	폴리곤을 만들었습니다. Tab으로 메시를 편집합니다
+Polygon	폴리곤
+Draw a polygon	폴리곤 그리기
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	맵에서 모서리를 클릭하세요. 첫 모서리를 클릭하거나 Enter를 눌러 닫고, Esc는 마지막 모서리를 되돌립니다. 안쪽은 다른 오브젝트처럼 옮기고 편집할 수 있는 오브젝트로 채워집니다
+From the selected splines	선택한 스플라인으로
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	선택한 도로와 스플라인이 끝과 끝으로 이어져 이루는 윤곽을 채웁니다 (예: 섬 둘레의 연석)
+No texture: a plain colour	텍스처 없음: 단색
+Texture size, m	텍스처 크기 (m)
+Thickness, m	두께 (m)
+Above the ground, m	지면 위 높이 (m)
