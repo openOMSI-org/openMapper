@@ -32,11 +32,6 @@ jobs:
           key: content-protection-${{ matrix.os }}
           cache-on-failure: true
           cache-workspace-crates: true
-      # Integration bootstrap: retain the resolved lock artifact, then commit it and remove
-      # this step before claiming final validation of the submitted lockfile.
-      - name: Resolve companion integration lock
-        shell: bash
-        run: cargo metadata --format-version 1 > /dev/null
       - run: cargo test --locked --release
       - run: cargo build --locked --release
       - run: python3 tools/i18n/check.py
