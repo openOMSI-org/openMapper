@@ -2606,3 +2606,23 @@ The ground follows the spline	Il terreno segue la spline
 Align ground to splines	Allinea il terreno alle spline
 Path	Percorso
 Ctrl: snap onto a path, F9: the next one	Ctrl: agganciare a un percorso, F9: il successivo
+Click the corners of the polygon; the first corner or Enter closes it	Clicca gli angoli del poligono; il primo angolo o Invio lo chiude
+select the roads or splines that make the outline first	seleziona prima le strade o gli spline che formano il contorno
+the selected splines do not make one outline: they have to join end to end	gli spline selezionati non formano un unico contorno: devono unirsi da un'estremità all'altra
+A polygon needs three corners	Un poligono ha bisogno di tre angoli
+The corners make no area	Gli angoli non formano alcuna area
+The polygon lies outside the map	Il poligono si trova fuori dalla mappa
+Polygon made: Tab edits its mesh	Poligono creato: Tab ne modifica la mesh
+Polygon	Poligono
+Draw a polygon	Disegna un poligono
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Clicca i suoi angoli sulla mappa; clicca il primo angolo o premi Invio per chiuderlo, Esc annulla l'ultimo angolo. L'interno viene riempito come un oggetto che puoi spostare e modificare come qualsiasi altro
+From the selected splines	Dagli spline selezionati
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Riempi il contorno formato dalle strade e dagli spline selezionati quando si uniscono da un'estremità all'altra (per esempio i cordoli attorno a un'isola)
+No texture: a plain colour	Nessuna texture: un colore semplice
+Texture size, m	Dimensione della texture, m
+Thickness, m	Spessore, m
+Above the ground, m	Sopra il terreno, m
+Polygon: fill the selected splines, or click its corners	Poligono: riempi le spline selezionate o clicca sugli angoli
+Polygon: click its corners	Poligono: clicca sugli angoli
+Polygon from it	Poligono da questa
+Polygon from them	Poligono da queste

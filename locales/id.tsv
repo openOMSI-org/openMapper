@@ -2606,3 +2606,23 @@ The ground follows the spline	Tanah mengikuti spline
 Align ground to splines	Samakan tanah ke spline
 Path	Jalur
 Ctrl: snap onto a path, F9: the next one	Ctrl: tempel ke jalur, F9: berikutnya
+Click the corners of the polygon; the first corner or Enter closes it	Klik sudut-sudut poligon; sudut pertama atau Enter menutupnya
+select the roads or splines that make the outline first	pilih dulu jalan atau spline yang membentuk garis luar
+the selected splines do not make one outline: they have to join end to end	spline yang dipilih tidak membentuk satu garis luar: ujung-ujungnya harus bersambung
+A polygon needs three corners	Poligon butuh tiga sudut
+The corners make no area	Sudut-sudutnya tidak membentuk luas
+The polygon lies outside the map	Poligon berada di luar peta
+Polygon made: Tab edits its mesh	Poligon dibuat: Tab mengedit mesh-nya
+Polygon	Poligon
+Draw a polygon	Gambar poligon
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Klik sudut-sudutnya di peta; klik sudut pertama atau tekan Enter untuk menutupnya, Esc membatalkan sudut terakhir. Bagian dalamnya diisi sebagai objek yang bisa dipindah dan diedit seperti objek lain
+From the selected splines	Dari spline yang dipilih
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Isi garis luar yang dibentuk jalan dan spline yang dipilih bila ujung-ujungnya bersambung (misalnya tepi jalan di sekeliling pulau jalan)
+No texture: a plain colour	Tanpa tekstur: satu warna polos
+Texture size, m	Ukuran tekstur, m
+Thickness, m	Ketebalan, m
+Above the ground, m	Di atas tanah, m
+Polygon: fill the selected splines, or click its corners	Poligon: isi spline yang dipilih, atau klik sudut-sudutnya
+Polygon: click its corners	Poligon: klik sudut-sudutnya
+Polygon from it	Poligon darinya
+Polygon from them	Poligon dari semuanya

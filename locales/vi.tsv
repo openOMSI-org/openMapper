@@ -2606,3 +2606,23 @@ The ground follows the spline	Mặt đất theo spline
 Align ground to splines	Đưa mặt đất theo spline
 Path	Đường
 Ctrl: snap onto a path, F9: the next one	Ctrl: dính vào đường, F9: đường kế
+Click the corners of the polygon; the first corner or Enter closes it	Nhấp vào các góc của đa giác; góc đầu tiên hoặc Enter sẽ đóng nó lại
+select the roads or splines that make the outline first	hãy chọn trước các đường hoặc spline tạo thành đường viền
+the selected splines do not make one outline: they have to join end to end	các spline đã chọn không tạo thành một đường viền: chúng phải nối với nhau đầu nối đầu
+A polygon needs three corners	Đa giác cần ba góc
+The corners make no area	Các góc không tạo thành diện tích
+The polygon lies outside the map	Đa giác nằm ngoài bản đồ
+Polygon made: Tab edits its mesh	Đã tạo đa giác: Tab để sửa mesh của nó
+Polygon	Đa giác
+Draw a polygon	Vẽ đa giác
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Nhấp vào các góc của nó trên bản đồ; nhấp vào góc đầu tiên hoặc nhấn Enter để đóng, Esc lấy lại góc cuối. Phần bên trong được tô đầy như một đối tượng mà bạn có thể di chuyển và sửa như mọi đối tượng khác
+From the selected splines	Từ các spline đã chọn
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Tô đầy đường viền do các đường và spline đã chọn tạo thành khi chúng nối đầu nối đầu (ví dụ: lề đường quanh đảo giao thông)
+No texture: a plain colour	Không có texture: màu trơn
+Texture size, m	Kích thước texture, m
+Thickness, m	Độ dày, m
+Above the ground, m	Trên mặt đất, m
+Polygon: fill the selected splines, or click its corners	Đa giác: tô đầy các spline đã chọn, hoặc nhấp vào các góc
+Polygon: click its corners	Đa giác: nhấp vào các góc
+Polygon from it	Đa giác từ nó
+Polygon from them	Đa giác từ chúng

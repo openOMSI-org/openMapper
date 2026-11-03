@@ -107,6 +107,15 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 actions.push(Action::FocusSelection);
                 done = true;
             }
+            let splines = sels.iter().any(|s| matches!(s, crate::doc::Sel::Spline(..)));
+            if item(ui, Icon::Add, tr("From the selected splines", "По выделенным сплайнам"), "P", splines) {
+                actions.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines));
+                done = true;
+            }
+            if item(ui, Icon::Add, tr("Draw a polygon", "Нарисовать многоугольник"), "Shift+P", true) {
+                actions.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonDraw));
+                done = true;
+            }
             if item(ui, Icon::Import, tr("Export…", "Экспорт…"), "", any) {
                 actions.push(Action::Mesh(crate::ui_mesh::MeshAction::ExportModel));
                 done = true;

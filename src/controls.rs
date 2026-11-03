@@ -208,6 +208,8 @@ pub enum Cmd {
     Focus,
     TestDrive,
     Picture,
+    Polygon,
+    PolygonClick,
 }
 
 use Cmd::*;
@@ -215,7 +217,7 @@ use Cmd::*;
 pub const ALL: &[Cmd] = &[
     Forward, Back, Left, Right, TurnLeft, TurnRight, LookDown, View2d, Focus, TileGrid, Overview, Assets, Lines, Traffic, Imagery, ToolSelect, ToolRoads, ToolObjects, ToolLogic,
     ToolTerrain, ToolPaint, ToolTiles, NewObject, XformMove, XformRotate, XformScale, EditMesh, JoinObjects, Rotate, Ruler, Knife, BuildRoad, Confirm, BrushSmaller, BrushLarger, Delete, Group, Ungroup, Copy, Cut, Paste, Duplicate, SelectAll, Undo,
-    Redo, Save, Find, Commands, TestDrive, Picture,
+    Redo, Save, Find, Commands, TestDrive, Picture, Polygon, PolygonClick,
 ];
 
 impl Cmd {
@@ -272,6 +274,8 @@ impl Cmd {
             Focus => "focus",
             TestDrive => "test_drive",
             Picture => "picture",
+            Polygon => "polygon",
+            PolygonClick => "polygon_click",
         }
     }
 
@@ -327,6 +331,8 @@ impl Cmd {
             Focus => tr("Go to the selection", "Перейти к выбранному"),
             TestDrive => tr("Test drive in openOMSI (Shift: from the camera)", "Тест-драйв в openOMSI (Shift: от камеры)"),
             Picture => tr("Save a picture of the view", "Сохранить картинку вида"),
+            Polygon => tr("Polygon: fill the selected splines, or click its corners", "Многоугольник: заполнить выделенные сплайны или кликать по углам"),
+            PolygonClick => tr("Polygon: click its corners", "Многоугольник: кликать по углам"),
         }
     }
 
@@ -382,6 +388,8 @@ impl Cmd {
             Focus => Chord::key(KeyCode::KeyF),
             TestDrive => Chord::key(KeyCode::F5),
             Picture => Chord::key(KeyCode::F12),
+            Polygon => Chord::key(KeyCode::KeyP),
+            PolygonClick => Chord { code: KeyCode::KeyP, ctrl: false, shift: true },
         }
     }
 

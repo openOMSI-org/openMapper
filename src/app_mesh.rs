@@ -23,6 +23,11 @@ impl App {
     /// change has rested.
     pub(super) fn mesh_frame(&mut self) {
         let Some(roots) = self.roots.clone() else { return };
+        if let Some(pts) = self.ed.poly_request.take() {
+            if let Err(e) = self.make_polygon(&pts) {
+                self.ed.toast(e.to_string());
+            }
+        }
         // the object selected alone, if it is openMapper's
         let want: Option<(String, Sel)> = match (self.ed.selected, self.ed.selection().len()) {
             (Some(s @ Sel::Object(k, id)), 1) => self.ed.doc.as_ref().and_then(|d| d.object(k, id)).map(|o| (o.file.clone(), s)),
@@ -394,6 +399,16 @@ impl App {
                 MeshAction::NewLight(s) => self.new_light(&s)?,
                 MeshAction::NewSound(s) => self.new_sound(&s)?,
                 MeshAction::SplinesToObject(replace) => self.splines_to_object(replace)?,
+                MeshAction::PolygonDraw => {
+                    self.ed.set_tool(crate::editor::Tool::Objects);
+                    self.ed.poly_pts.clear();
+                    self.ed.poly_draw = true;
+                    self.ed.toast(tr("Click the corners of the polygon; the first corner or Enter closes it", "Кликайте по углам многоугольника; первый угол или Enter замыкает его"));
+                }
+                MeshAction::PolygonFromSplines => {
+                    let pts = self.spline_outline()?;
+                    self.make_polygon(&pts)?;
+                }
             }
             Ok(())
         })();
@@ -821,6 +836,69 @@ impl App {
         self.lib.start_scan(&roots);
         self.ed.toast(tr("Made into an object: Tab edits its mesh", "Превращено в объект: Tab — редактировать меш"));
         Ok(())
+    }
+
+    /// The outline the selected splines make end to end, along their centre lines.
+    fn spline_outline(&self) -> anyhow::Result<Vec<DVec3>> {
+        let Some(doc) = self.ed.doc.as_ref() else { return Ok(Vec::new()) };
+        let mut lines = Vec::new();
+        for sel in self.ed.selection() {
+            let Sel::Spline(k, id) = sel else { continue };
+            let Some(sp) = doc.spline(k, id) else { continue };
+            let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(k));
+            let n = if c.radius == 0.0 { 1 } else { (c.length / 2.0).ceil().clamp(1.0, 500.0) as usize };
+            lines.push((0..=n).map(|i| c.point_at(c.length * i as f64 / n as f64)).collect());
+        }
+        if lines.is_empty() {
+            anyhow::bail!("{}", tr("select the roads or splines that make the outline first", "сначала выделите дороги или сплайны, образующие контур"));
+        }
+        crate::makers::outline(lines, 1.5).ok_or_else(|| anyhow::anyhow!("{}", tr("the selected splines do not make one outline: they have to join end to end", "выделенные сплайны не образуют один контур: они должны смыкаться концами")))
+    }
+
+    /// A polygon object over `pts` (world corners, with their heights), by the maker's
+    /// settings, its texture copied beside it; selected when made.
+    fn make_polygon(&mut self, pts: &[DVec3]) -> anyhow::Result<()> {
+        let Some(roots) = self.roots.clone() else { return Ok(()) };
+        let s = self.ed.poly_settings.clone();
+        if pts.len() < 3 {
+            anyhow::bail!("{}", tr("A polygon needs three corners", "Для многоугольника нужны три угла"));
+        }
+        let (mut lo, mut hi) = (pts[0], pts[0]);
+        for p in pts {
+            lo = lo.min(*p);
+            hi = hi.max(*p);
+        }
+        let origin = DVec3::new((lo.x + hi.x) / 2.0, (lo.y + hi.y) / 2.0, (lo.z + hi.z) / 2.0);
+        let rel_pts: Vec<Vec3> = pts.iter().map(|p| (*p - origin).as_vec3()).collect();
+        let rel = editable::new_rel(&roots, &self.map_folder(), "Polygon");
+        let (dir, stem) = editable::folder_of(&roots, &rel);
+        let tex = match &s.poly_texture {
+            Some(file) => {
+                let img = crate::models::picture(None, Some(file)).ok_or_else(|| anyhow::anyhow!("{}: {}", tr("cannot read the picture", "картинка не читается"), file.display()))?;
+                Some((bring_picture(file, &dir.join("texture"), &stem)?, crate::models::alpha_of(&img)))
+            }
+            None => None,
+        };
+        let Some(src) = crate::makers::polygon(&rel_pts, tex.as_ref().map(|t| t.0.as_str()), tex.as_ref().map(|t| t.1).unwrap_or(0), &s) else {
+            anyhow::bail!("{}", tr("The corners make no area", "Из этих углов не получается площади"));
+        };
+        let Some(added) = self.add_map_object_abs_pending(&roots, &rel, &src, origin)? else {
+            anyhow::bail!("{}", tr("The polygon lies outside the map", "Многоугольник вне карты"));
+        };
+        self.lib.start_scan(&roots);
+        self.ed.select(Some(added));
+        self.ed.toast(tr("Polygon made: Tab edits its mesh", "Многоугольник создан: Tab — редактировать меш"));
+        Ok(())
+    }
+
+    /// The object saved and put on the map at `world`, if the map has a tile there.
+    fn add_map_object_abs_pending(&mut self, roots: &crate::install::Roots, rel: &str, src: &editable::Source, world: DVec3) -> anyhow::Result<Option<Sel>> {
+        let k = crate::doc::tile_of(world.truncate());
+        if !self.ed.doc.as_ref().map_or(false, |d| d.tiles.contains_key(&k)) {
+            return Ok(None);
+        }
+        editable::save(roots, rel, src)?;
+        Ok(self.add_map_object_abs(rel, world))
     }
 
     fn add_map_object_abs(&mut self, rel: &str, world: DVec3) -> Option<Sel> {

@@ -1447,6 +1447,9 @@ fn tool_panel(
                 crate::ui_mesh::primitives_grid(ui, actions);
                 crate::ui_mesh::lamp_makers(ui, &mut st.signal_lamps, actions);
                 crate::ui_mesh::extra_makers(ui, &mut st.makers, actions);
+                if ed.poly_settings != st.makers {
+                    ed.poly_settings = st.makers.clone();
+                }
             });
             ui.add_space(4.0);
             catalogue(ui, st, ed, lib, thumbs, wanted, Kind::Object, actions)

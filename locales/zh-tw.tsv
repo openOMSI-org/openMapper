@@ -2603,3 +2603,23 @@ The ground follows the spline	地面已跟著Spline
 Align ground to splines	把地面貼齊Spline
 Path	路徑
 Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條
+Click the corners of the polygon; the first corner or Enter closes it	點選多邊形的角點；第一個角點或 Enter 會將其封閉
+select the roads or splines that make the outline first	請先選取構成輪廓的道路或樣條
+the selected splines do not make one outline: they have to join end to end	所選樣條無法構成單一輪廓：它們必須首尾相連
+A polygon needs three corners	多邊形需要三個角點
+The corners make no area	這些角點無法構成面積
+The polygon lies outside the map	多邊形位於地圖之外
+Polygon made: Tab edits its mesh	已建立多邊形：Tab 可編輯其網格
+Polygon	多邊形
+Draw a polygon	繪製多邊形
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	在地圖上點選其角點；點選第一個角點或按 Enter 封閉，Esc 取消最後一個角點。內部會填滿為一個物件，可像其他物件一樣移動與編輯
+From the selected splines	從所選樣條
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	填滿所選道路與樣條首尾相連時構成的輪廓（例如安全島周圍的路緣石）
+No texture: a plain colour	無貼圖：純色
+Texture size, m	貼圖大小，m
+Thickness, m	厚度，m
+Above the ground, m	離地高度，m
+Polygon: fill the selected splines, or click its corners	多邊形：填滿選取的樣條，或點擊各轉角
+Polygon: click its corners	多邊形：點擊各轉角
+Polygon from it	由此建立多邊形
+Polygon from them	由這些建立多邊形

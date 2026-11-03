@@ -2606,3 +2606,23 @@ The ground follows the spline	Zemin spline'ı izliyor
 Align ground to splines	Zemini spline'lara hizala
 Path	Yol
 Ctrl: snap onto a path, F9: the next one	Ctrl: yola yapıştır, F9: sonraki
+Click the corners of the polygon; the first corner or Enter closes it	Çokgenin köşelerine tıklayın; ilk köşe veya Enter onu kapatır
+select the roads or splines that make the outline first	önce dış çizgiyi oluşturan yolları veya spline'ları seçin
+the selected splines do not make one outline: they have to join end to end	seçilen spline'lar tek bir dış çizgi oluşturmuyor: uç uca birleşmeleri gerekir
+A polygon needs three corners	Çokgen için üç köşe gerekir
+The corners make no area	Köşeler bir alan oluşturmuyor
+The polygon lies outside the map	Çokgen haritanın dışında kalıyor
+Polygon made: Tab edits its mesh	Çokgen yapıldı: Tab ağını düzenler
+Polygon	Çokgen
+Draw a polygon	Çokgen çiz
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Köşelerine haritada tıklayın; kapatmak için ilk köşeye tıklayın veya Enter'a basın, Esc son köşeyi geri alır. İç kısım, diğerleri gibi taşıyıp düzenleyebileceğiniz bir nesne olarak doldurulur
+From the selected splines	Seçilen spline'lardan
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Seçilen yolların ve spline'ların uç uca birleştiğinde oluşturduğu dış çizgiyi doldurun (örneğin bir adanın çevresindeki kaldırım taşları)
+No texture: a plain colour	Doku yok: düz renk
+Texture size, m	Doku boyutu, m
+Thickness, m	Kalınlık, m
+Above the ground, m	Zeminin üstünde, m
+Polygon: fill the selected splines, or click its corners	Çokgen: seçili spline'ları doldur veya köşelere tıkla
+Polygon: click its corners	Çokgen: köşelere tıkla
+Polygon from it	Ondan çokgen
+Polygon from them	Onlardan çokgen

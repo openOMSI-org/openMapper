@@ -278,6 +278,15 @@ The complete list. A short overview is in the [README](../README.md).
     grid, circle, triangle, triangular prism, wedge, corner wedge, pyramid, sphere,
     icosphere, cylinder, cone, torus, tube, capsule, stairs, arch; textured in metres, put on
     the map with a click, their sizes and segments changed in the properties until edited.
+  * **Polygons** (Objects tool > Shapes and lamps > Polygon): click the corners on the map (the
+    first corner or `Enter` closes it, `Esc` takes the last corner back; with Snap to road edges
+    and surfaces on, a corner takes the height of the face or edge under the cursor), or fill the
+    outline that the selected roads and splines make end to end (kerbs round an island): a flat
+    sheet, or a slab of a chosen thickness, of a plain colour or a picture repeating every so many
+    metres, at the corners' heights; an object like any other (`Tab` edits its mesh). `P` fills the
+    selected splines (or, with none selected, starts clicking corners), `Shift+P` always clicks
+    corners, and the mode stays on for the next polygon until `Esc` with no corners; also in the
+    right-click menu, the command search and the panel of a selected road or splines.
   * **Edit the mesh** (`Tab`, or Edit the mesh in an object's properties; any object, a copy of
     its type of its own made first, its textures and lamps carried over): vertices, edges or
     faces (`1 2 3`) picked with a click, Shift + click, a box, a second click or Alt + click

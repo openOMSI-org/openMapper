@@ -563,6 +563,12 @@ pub struct Editor {
     pub plant_area: bool,
     /// The outline's corners so far (world).
     pub plant_outline: Vec<DVec2>,
+    /// The corners of a polygon being clicked out (Objects tool), the polygon maker's settings,
+    /// and a finished outline waiting for the app to make the object.
+    pub poly_draw: bool,
+    pub poly_pts: Vec<DVec3>,
+    pub poly_settings: crate::makers::Settings,
+    pub poly_request: Option<Vec<DVec3>>,
     /// The camera's distance at the last frame (how near a click must come to a corner).
     view_distance: std::cell::Cell<f64>,
     plant_rng: crate::plants::Rng,
@@ -757,6 +763,10 @@ impl Default for Editor {
             ramp_start: None,
             plant_area: false,
             plant_outline: Vec::new(),
+            poly_draw: false,
+            poly_pts: Vec::new(),
+            poly_settings: crate::makers::Settings::default(),
+            poly_request: None,
             view_distance: std::cell::Cell::new(100.0),
             plant_rng: crate::plants::Rng::new(0x5eed),
             ghost_pos: None,
@@ -1230,6 +1240,8 @@ impl Editor {
         self.select_box = None;
         self.ring_centre = None;
         self.plant_outline.clear();
+        self.poly_draw = false;
+        self.poly_pts.clear();
         self.ramp_start = None;
         self.water_pts.clear();
         self.link_pick = None;
@@ -2166,6 +2178,15 @@ impl Editor {
             Tool::Roads if self.roundabout && !self.drawing_paths() => self.ring_click(assets),
             Tool::Roads => self.road_click(assets, lib),
             Tool::Objects if self.tool == Tool::Logic && self.logic == LogicMode::Parking && self.parking_row => self.parking_click(assets, lib),
+            Tool::Objects if self.tool == Tool::Objects && self.poly_draw => {
+                let Some(c) = self.poly_corner() else { return };
+                // (a click on the first corner closes the outline)
+                if self.poly_pts.len() >= 3 && (self.poly_pts[0].truncate() - c.truncate()).length() < self.close_radius() {
+                    self.finish_polygon();
+                } else {
+                    self.poly_pts.push(c);
+                }
+            }
             Tool::Objects if self.tool == Tool::Objects && self.plant_brush && self.plant_area => {
                 let Some(c) = self.cursor else { return };
                 // (a click on the first corner closes the outline)
@@ -2318,6 +2339,11 @@ impl Editor {
             }
             Tool::Terrain if !self.water_pts.is_empty() => {
                 self.water_pts.pop();
+            }
+            Tool::Objects if self.poly_draw => {
+                if self.poly_pts.pop().is_none() {
+                    self.poly_draw = false;
+                }
             }
             Tool::Objects if !self.plant_outline.is_empty() => {
                 self.plant_outline.pop();
@@ -2898,6 +2924,25 @@ impl Editor {
 
     /// How near (m) a click must come to an outline's first corner to close it: some
     /// pixels on the screen.
+    /// Where a polygon's next corner goes: on the face or the road edge under the cursor when
+    /// surface snapping is on, else on the ground.
+    fn poly_corner(&self) -> Option<DVec3> {
+        match (self.snap_surface, self.surface) {
+            (true, Some(q)) => Some(q),
+            _ => self.cursor,
+        }
+    }
+
+    /// The corners clicked so far become the polygon the app makes (three are needed).
+    fn finish_polygon(&mut self) {
+        if self.poly_pts.len() < 3 {
+            self.toast(tr("A polygon needs three corners", "Для многоугольника нужны три угла"));
+            return;
+        }
+        // (the mode stays on for the next one: Esc with no corners left ends it)
+        self.poly_request = Some(std::mem::take(&mut self.poly_pts));
+    }
+
     fn close_radius(&self) -> f64 {
         (self.view_distance.get() * 0.015).clamp(1.0, 40.0)
     }
@@ -5180,6 +5225,24 @@ impl Editor {
             }
             for (i, p) in self.plant_outline.iter().enumerate() {
                 disc(&mut x.overlay, cam, on(*p), dw * if i == 0 { 4.0 } else { 2.5 }, color);
+            }
+        }
+        // a polygon being clicked out, closed to the cursor
+        if self.tool == Tool::Objects && self.poly_draw {
+            let color = [0.4, 0.8, 1.0, 1.0];
+            let up = DVec3::new(0.0, 0.0, 0.1);
+            let mut pts: Vec<DVec3> = self.poly_pts.clone();
+            if let (Some(c), true) = (self.poly_corner(), self.cursor_in_view) {
+                pts.push(c);
+            }
+            for seg in pts.windows(2) {
+                line(&mut x.overlay, cam, seg[0] + up, seg[1] + up, w, color);
+            }
+            if pts.len() >= 3 {
+                line(&mut x.overlay, cam, pts[pts.len() - 1] + up, pts[0] + up, w * 0.6, [color[0], color[1], color[2], 0.5]);
+            }
+            for (i, p) in self.poly_pts.iter().enumerate() {
+                disc(&mut x.overlay, cam, *p + up, dw * if i == 0 { 4.0 } else { 2.5 }, color);
             }
         }
         match self.acts_as() {
@@ -8437,6 +8500,10 @@ impl Editor {
 
     /// Build the road drawn so far (Enter).
     pub fn confirm_road(&mut self, assets: &mut Assets, lib: &Library) {
+        if self.tool == Tool::Objects && self.poly_draw {
+            self.finish_polygon();
+            return;
+        }
         if self.tool == Tool::Objects && !self.plant_outline.is_empty() {
             self.finish_plant_outline(assets);
             return;
@@ -11438,6 +11505,41 @@ mod tests {
         ed.left_press(&mut assets, &lib, false);
         assert_eq!(ed.sample, Some(Sample::Object));
         assert!(ed.object_type.is_none());
+    }
+
+    /// Clicking round a polygon: a click on the first corner (or Enter) hands the corners on, Esc takes one back.
+    #[test]
+    fn a_polygon_is_clicked_out_and_closed_on_its_first_corner() {
+        let mut ed = Editor::default();
+        ed.open(flat_map(1));
+        ed.set_tool(Tool::Objects);
+        let lib = crate::library::Library::default();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.poly_draw = true;
+        let mut click = |ed: &mut Editor, x: f64, y: f64| {
+            ed.hover_ray(&mut assets, &lib, DVec3::new(x, y, 50.0), -DVec3::Z);
+            ed.left_press(&mut assets, &lib, false);
+        };
+        click(&mut ed, 100.0, 100.0);
+        click(&mut ed, 160.0, 100.0);
+        click(&mut ed, 160.0, 160.0);
+        assert_eq!(ed.poly_pts.len(), 3);
+        assert!(ed.poly_request.is_none());
+        ed.right_click();
+        assert_eq!(ed.poly_pts.len(), 2, "Esc takes the last corner back");
+        click(&mut ed, 160.0, 160.0);
+        click(&mut ed, 100.0, 100.0);
+        let pts = ed.poly_request.take().expect("the first corner closes it");
+        assert_eq!(pts.len(), 3);
+        assert!(ed.poly_draw && ed.poly_pts.is_empty(), "it stays on for the next polygon");
+        ed.right_click();
+        assert!(!ed.poly_draw, "Esc with no corners ends it");
+        // (two corners are too few for Enter)
+        ed.poly_draw = true;
+        click(&mut ed, 10.0, 10.0);
+        click(&mut ed, 50.0, 10.0);
+        ed.confirm_road(&mut assets, &lib);
+        assert!(ed.poly_request.is_none() && ed.poly_draw);
     }
 
     #[test]

@@ -2606,3 +2606,23 @@ The ground follows the spline	Жер сплайнды қайталайды
 Align ground to splines	Жерді сплайнға келтіру
 Path	Жол
 Ctrl: snap onto a path, F9: the next one	Ctrl: жолға жабыстыру, F9: келесі
+Click the corners of the polygon; the first corner or Enter closes it	Көпбұрыштың бұрыштарын басыңыз; бірінші бұрыш немесе Enter оны жабады
+select the roads or splines that make the outline first	алдымен контурды құрайтын жолдарды немесе сплайндарды таңдаңыз
+the selected splines do not make one outline: they have to join end to end	таңдалған сплайндар бір контур құрамайды: олар ұшынан ұшына жалғасуы керек
+A polygon needs three corners	Көпбұрышқа үш бұрыш керек
+The corners make no area	Бұрыштар аудан құрамайды
+The polygon lies outside the map	Көпбұрыш картадан тыс жатыр
+Polygon made: Tab edits its mesh	Көпбұрыш жасалды: Tab оның мешін өңдейді
+Polygon	Көпбұрыш
+Draw a polygon	Көпбұрыш салу
+Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	Картада оның бұрыштарын басыңыз; бірінші бұрышты басыңыз немесе Enter басып жабыңыз, Esc соңғы бұрышты қайтарады. Ішкі жағы кез келген басқа нысан сияқты жылжытуға және өңдеуге болатын нысан ретінде толтырылады
+From the selected splines	Таңдалған сплайндардан
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	Ұшынан ұшына жалғасқан таңдалған жолдар мен сплайндар құрайтын контурды толтыру (мысалы, арал айналасындағы жиектер)
+No texture: a plain colour	Текстура жоқ: қарапайым түс
+Texture size, m	Текстура өлшемі, м
+Thickness, m	Қалыңдығы, м
+Above the ground, m	Жерден биіктігі, м
+Polygon: fill the selected splines, or click its corners	Көпбұрыш: таңдалған сплайндарды толтыру немесе бұрыштарды басу
+Polygon: click its corners	Көпбұрыш: бұрыштарды басыңыз
+Polygon from it	Одан көпбұрыш
+Polygon from them	Олардан көпбұрыш
