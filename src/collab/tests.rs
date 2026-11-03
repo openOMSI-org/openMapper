@@ -426,3 +426,20 @@ fn an_edit_held_open_keeps_reading_and_puts_the_others_work_in_once_it_is_closed
     assert_eq!(bruno_ed.doc.as_ref().unwrap().tiles[&(0, 0)].terrain.heights[0], 9.0);
     let _ = std::fs::remove_dir_all(&content);
 }
+
+
+#[test]
+fn protected_source_cannot_start_a_collaboration_host() {
+    let _map = crate::doc::one_map();
+    let mut ed = crate::editor::Editor::default();
+    let mut doc = flat_map(1);
+    doc._publisher_protected_source = true;
+    ed.doc = Some(doc);
+    let mut collab = super::Collab::default();
+    collab.no_password = true;
+    collab.lan = false;
+    collab.port = 0;
+    collab.host(&mut ed);
+    assert!(collab.error.as_deref().is_some_and(|error| error.contains("protected")));
+    assert!(matches!(collab.phase, super::Phase::Off), "protected map was made available to peers");
+}

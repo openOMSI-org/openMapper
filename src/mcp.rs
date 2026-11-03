@@ -33,6 +33,12 @@ struct Server {
 
 type Reply = Result<Value, String>;
 
+pub(crate) fn load_document(roots: &crate::install::Roots, cfg: &Path) -> anyhow::Result<Document> {
+    let doc = Document::load(roots, cfg, |_| {})?;
+    anyhow::ensure!(!doc._publisher_protected_source, "publisher-protected maps cannot be exposed through MCP");
+    Ok(doc)
+}
+
 /// `openmapper --mcp`: serve until stdin closes. Returns the exit code.
 pub fn cli(cfg: &Path, allow_edit: bool) -> i32 {
     let prefs = crate::install::Prefs::load();
@@ -43,7 +49,7 @@ pub fn cli(cfg: &Path, allow_edit: bool) -> i32 {
     let roots = crate::install::Roots::new(omsi);
     let mut lib = Library::default();
     lib.start_scan(&roots);
-    let doc = match Document::load(&roots, cfg, |_| {}) {
+    let doc = match load_document(&roots, cfg) {
         Ok(d) => d,
         Err(e) => {
             eprintln!("{}: {e}", cfg.display());
@@ -178,6 +184,9 @@ impl Server {
     }
 
     fn call(&mut self, name: &str, args: &Value) -> Reply {
+        if self.doc._publisher_protected_source {
+            return Err("publisher-protected maps cannot be exposed through MCP".into());
+        }
         match name {
             "map_info" => Ok(self.map_info()),
             "convert" => {
@@ -412,7 +421,7 @@ impl Server {
     }
 
     fn reload(&mut self) -> Reply {
-        let doc = Document::load(&self.roots, &self.cfg, |_| {}).map_err(|e| format!("{}: {e}", self.cfg.display()))?;
+        let doc = load_document(&self.roots, &self.cfg).map_err(|e| format!("{}: {e}", self.cfg.display()))?;
         self.doc = doc;
         Ok(json!({ "reloaded": true, "tiles": self.doc.tiles.len() }))
     }
@@ -475,6 +484,8 @@ mod tests {
         let roots = crate::install::Roots { omsi: PathBuf::new(), content: PathBuf::new() };
         let mut doc = Document {
             global: Default::default(),
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: PathBuf::new(),
@@ -507,5 +518,9 @@ mod tests {
         assert_eq!(r["result"]["isError"], true);
         let r = talk(&mut s, r#"{"jsonrpc":"2.0","id":5,"method":"nothing"}"#);
         assert_eq!(r["error"]["code"], -32601);
+        s.doc._publisher_protected_source = true;
+        for name in ["map_info", "check", "query", "terrain", "convert", "reload", "save"] {
+            assert!(s.call(name, &json!({})).is_err(), "protected source escaped through {name}");
+        }
     }
 }

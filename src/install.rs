@@ -303,6 +303,9 @@ impl Roots {
         let content = content_dir();
         let _ = omsi_cfg::ensure_content_layout(&content);
         omsi_cfg::add_content_root(content.clone());
+        if let Err(e) = omsi_cfg::publisher::mount_packs(&content) {
+            log::warn!("publisher packs: {e}");
+        }
         omsi_cfg::add_content_root(omsi.clone());
         Roots { omsi, content }
     }
@@ -334,21 +337,30 @@ pub struct MapEntry {
 /// Every map of both roots (a map in the content folder hides the installation's copy).
 pub fn list_maps(roots: &Roots) -> Vec<MapEntry> {
     let mut out: Vec<MapEntry> = Vec::new();
-    for (i, root) in roots.all().iter().enumerate() {
-        let dir = root.join("maps");
-        let Ok(rd) = std::fs::read_dir(&dir) else { continue };
-        for e in rd.flatten() {
-            let p = e.path();
+    let content_maps = roots.content.join("maps");
+    let install_maps = roots.omsi.join("maps");
+    let extra = omsi_cfg::content_dirs("maps");
+    let mut dirs = vec![content_maps.clone()];
+    dirs.extend(extra.iter().filter(|p| p.starts_with(&roots.content) && **p != content_maps && **p != install_maps).cloned());
+    dirs.push(install_maps.clone());
+    dirs.extend(extra.into_iter().filter(|p| !p.starts_with(&roots.content) && *p != install_maps));
+    let mut seen_dirs = std::collections::HashSet::new();
+    for dir in dirs {
+        if !seen_dirs.insert(dir.clone()) { continue; }
+        let Some(entries) = omsi_cfg::vfs::list_dir(&dir) else { continue };
+        for (folder, is_dir) in entries {
+            if !is_dir { continue; }
+            let p = dir.join(folder);
             let cfg = p.join("global.cfg");
-            if !cfg.is_file() {
+            if !omsi_cfg::vfs::is_file(&cfg) {
                 continue;
             }
-            let folder = e.file_name().to_string_lossy().to_string();
+            let folder = p.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
             if out.iter().any(|m| m.cfg.parent().and_then(|d| d.file_name()).map(|f| f.to_string_lossy().eq_ignore_ascii_case(&folder)).unwrap_or(false)) {
                 continue;
             }
             let name = friendly_name(&cfg).unwrap_or_else(|| folder.clone());
-            out.push(MapEntry { name, cfg, in_content: i == 0 });
+            out.push(MapEntry { name, cfg, in_content: dir.starts_with(&roots.content) });
         }
     }
     out.sort_by_key(|m| m.name.to_lowercase());
@@ -367,4 +379,43 @@ fn friendly_name(cfg: &Path) -> Option<String> {
         }
     }
     name
+}
+
+#[cfg(test)]
+mod publisher_maps {
+    use super::*;
+
+    #[test]
+    fn protected_publisher_maps_appear_in_the_map_picker() {
+        let root = std::env::temp_dir().join(format!("openmapper-publisher-picker-{}", std::process::id()));
+        let content = root.join("content");
+        let omsi = root.join("omsi");
+        std::fs::create_dir_all(content.join("Packs")).unwrap();
+        std::fs::create_dir_all(&omsi).unwrap();
+        let signer = omsi_pack::SigningKey::generate(&ring::rand::SystemRandom::new()).unwrap();
+        let mut trust = omsi_pack::TrustedPublishers::default();
+        trust.insert("fixture", signer.key_id(), signer.public_key());
+        trust.save_file(&content.join("Publishers.json")).unwrap();
+        let pack = content.join("Packs/protected-map.oopp");
+        omsi_pack::create_pack(
+            &pack,
+            omsi_pack::PackMetadata {
+                publisher_id: "fixture".into(), author: "Fixture".into(), pack_id: "map".into(),
+                version: "1.0.0".into(), license: "CC0-1.0".into(), redistribution: false,
+                key_id: None, dependencies: Vec::new(),
+            },
+            &[omsi_pack::AssetInput {
+                id: "global".into(), path: "maps/Protected/global.cfg".into(),
+                source_sha256: "12".repeat(32), bytes: b"[name]\r\nProtected\r\n[friendlyname]\r\nProtected Map\r\n".to_vec(),
+            }],
+            &signer, None, &std::sync::atomic::AtomicBool::new(false),
+        ).unwrap();
+        omsi_cfg::add_content_root(content.clone());
+        let mounts = omsi_cfg::publisher::mount_packs(&content).unwrap();
+        let found = list_maps(&Roots { omsi, content: content.clone() });
+        assert!(found.iter().any(|m| m.name == "Protected Map" && m.in_content && omsi_cfg::vfs::is_file(&m.cfg)));
+        for mount in mounts { omsi_cfg::vfs::unmount_sealed(&mount); omsi_cfg::remove_content_root(&mount); }
+        omsi_cfg::remove_content_root(&content);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

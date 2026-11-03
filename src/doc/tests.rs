@@ -29,6 +29,8 @@ pub(crate) fn sample_map(roots: &Roots) -> Document {
     ];
     let mut doc = Document {
         global,
+        _publisher_mounts: std::sync::Arc::new(Default::default()),
+        _publisher_protected_source: false,
         tiles: Default::default(),
         order: Vec::new(),
         dir: roots.content.join("maps").join("Roundtrip"),
@@ -428,4 +430,116 @@ fn pieces_of_other_bends_are_not_joined() {
     doc.join_splines((0, 0), 1).unwrap();
     assert_eq!(doc.spline((0, 0), 1).unwrap().length, 130.0);
     assert!(doc.join_splines((0, 0), 1).is_err());
+}
+
+#[test]
+fn a_map_keeps_signed_asset_aliases_while_its_document_and_read_snapshot_live() {
+    let _map = one_map();
+    let roots = scratch("publisher-map-scope");
+    let content = &roots.content;
+    std::fs::create_dir_all(content.join("Packs")).unwrap();
+    omsi_cfg::add_content_root(content.clone());
+    let signer = omsi_pack::SigningKey::generate(&ring::rand::SystemRandom::new()).unwrap();
+    let mut trusted = omsi_pack::TrustedPublishers::default();
+    trusted.insert("fixture", signer.key_id(), signer.public_key());
+    trusted.save_file(&content.join("Publishers.json")).unwrap();
+    let pack = content.join("Packs/scenery.oopp");
+    omsi_pack::create_pack(
+        &pack,
+        omsi_pack::PackMetadata {
+            publisher_id: "fixture".into(),
+            author: "Fixture".into(),
+            pack_id: "scenery".into(),
+            version: "1.0.0".into(),
+            license: "CC0-1.0".into(),
+            redistribution: false,
+            key_id: None,
+            dependencies: Vec::new(),
+        },
+        &[omsi_pack::AssetInput {
+            id: "sign".into(),
+            path: "Sceneryobjects/Fixture/sign.sco".into(),
+            source_sha256: "12".repeat(32),
+            bytes: b"[friendlyname]\nProtected fixture\n".to_vec(),
+        }],
+        &signer,
+        None,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
+
+    let mut doc = sample_map(&roots);
+    doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file =
+        "Sceneryobjects\\Fixture\\sign.sco".into();
+    save(&mut doc).unwrap();
+    let map_dir = doc.dir.clone();
+    let refs = serde_json::json!({"format_version":1,"dependencies":[{"publisher_id":"fixture","pack_id":"scenery","version":"1.0.0"}],"assets":[{"path":"Sceneryobjects/Fixture/sign.sco","dependency":{"publisher_id":"fixture","pack_id":"scenery","version":"1.0.0"},"asset_id":"sign"}]});
+    std::fs::write(map_dir.join("dependencies.json"), refs.to_string()).unwrap();
+    drop(doc);
+
+    let cfg = map_dir.join("global.cfg");
+    let loaded = Document::load(&roots, &cfg, |_| {}).unwrap();
+    let snapshot = loaded.for_reading();
+    let object = omsi_cfg::resolve_path(&map_dir, "Sceneryobjects/Fixture/sign.sco");
+    assert_eq!(
+        omsi_cfg::CfgFile::read(&object).unwrap().lines[1],
+        "Protected fixture"
+    );
+    drop(loaded);
+    assert_eq!(
+        omsi_cfg::CfgFile::read(&object).unwrap().lines[1],
+        "Protected fixture"
+    );
+    drop(snapshot);
+    assert!(omsi_cfg::CfgFile::read(&object).is_err());
+
+    omsi_cfg::remove_content_root(content);
+    std::fs::remove_dir_all(content).unwrap();
+}
+
+
+#[test]
+fn encrypted_global_cfg_cannot_be_saved_as_plain_map_or_autosave() {
+    use std::sync::Arc;
+
+    let _map = one_map();
+    let roots = scratch("protected-global");
+    omsi_cfg::add_content_root(roots.content.clone());
+    let blobs = roots.content.join("protected-fixture");
+    std::fs::create_dir_all(&blobs).unwrap();
+    let key = Arc::new(omsi_cfg::vfs::SealKey::new(
+        &omsi_cfg::vfs::random_key().unwrap(),
+    ));
+    let global = b"[name]\r\nProtected fixture\r\n[friendlyname]\r\nProtected fixture\r\n";
+    let aad = b"encrypted global configuration".to_vec();
+    let blob = blobs.join("global.sealed");
+    std::fs::write(&blob, omsi_cfg::vfs::seal(&key, &aad, global).unwrap()).unwrap();
+    let mount = roots.content.join("Packs/protected-map.oopp/.mount");
+    omsi_cfg::vfs::mount_sealed(
+        &mount,
+        key,
+        vec![omsi_cfg::vfs::SealedFile {
+            rel: "maps/Protected/global.cfg".into(),
+            blob,
+            aad,
+            size: global.len() as u64,
+        }],
+    );
+    omsi_cfg::add_content_root(mount.clone());
+
+    let cfg = mount.join("maps/Protected/global.cfg");
+    let mut doc = Document::load(&roots, &cfg, |_| {}).unwrap();
+    assert!(doc._publisher_protected_source);
+    assert!(crate::mcp::load_document(&roots, &cfg).is_err(), "protected map opened through MCP load boundary");
+    let map_dir = doc.dir.clone();
+    assert!(save(&mut doc).is_err());
+    assert!(!map_dir.exists());
+    let job = crate::doc::autosave::snapshot(&doc).prepare(&roots.content);
+    assert!(job.run().is_err());
+    assert!(!crate::doc::autosave::dir(&roots.content).exists());
+    drop(doc);
+    omsi_cfg::vfs::unmount_sealed(&mount);
+    omsi_cfg::remove_content_root(&mount);
+    omsi_cfg::remove_content_root(&roots.content);
+    std::fs::remove_dir_all(&roots.content).unwrap();
 }

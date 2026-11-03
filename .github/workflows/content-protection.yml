@@ -1,0 +1,46 @@
+name: Content protection
+
+on:
+  push:
+    branches: ["feat/publisher-content-protection*"]
+    paths-ignore: ["tools/fingerprint.py", "tools/test_fingerprint.py", "docs/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-protection-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: content-protection-${{ matrix.os }}
+          cache-on-failure: true
+          cache-workspace-crates: true
+      - run: cargo test --locked --release
+      - run: cargo build --locked --release
+      - run: python3 tools/i18n/check.py
+      - run: python3 tools/test_fingerprint.py
+
+      - name: Resolved dependency lock
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-lock-${{ matrix.os }}
+          path: Cargo.lock
+          retention-days: 2
