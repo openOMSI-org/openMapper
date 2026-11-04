@@ -2543,7 +2543,6 @@ That point is already joined	その点は既につながっています
 Click an end point of a path	経路の端の点をクリック
 Path connected	経路を接続しました
 Connect the path	経路を接続
-There is no tile there	そこにタイルがありません
 Click the other point	もう一方の点をクリック
 The graphics API changes the next time openMapper starts	グラフィックスAPIはopenMapperの次回起動時に変わります
 Settings…	設定…
@@ -2626,4 +2625,9 @@ Polygon: fill the selected splines, or click its corners	ポリゴン：選択�
 Polygon: click its corners	ポリゴン：角をクリック
 Polygon from it	これからポリゴン
 Polygon from them	これらからポリゴン
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、移動先はそこへ行くと読み込まれます
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	大きなマップや非常に詳細なマップは、タイル数を減らすと軽くなります。残りはそこへ行くと読み込まれます
+tiles round the camera are loaded; more load as you go there	個のタイルをカメラの周囲に読み込みました。移動先はそこへ行くと読み込まれます
+Only the tiles round the camera are loaded; more load as you go there	カメラの周囲のタイルだけを読み込みました。移動先はそこへ行くと読み込まれます
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2のエディターと同じく、大きなマップを一度に100タイル読み込みますか？\n\nグラフィックメモリにはカメラの周囲の100タイルだけが残り、残りはそこへ行くと読み込まれます。とても大きなマップが軽くなります。表示 > すべてのタイルを一度に読み込む（オフ）でいつでも変更できます。
 Click the spline they should stand on. Each follows that road and keeps its IDCode	それらを置くスプラインをクリックします。それぞれがその道に沿い、IDCode を保ちます

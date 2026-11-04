@@ -2541,7 +2541,6 @@ That point is already joined	Ця точка вже з'єднана
 Click an end point of a path	Клацніть кінцеву точку шляху
 Path connected	Шлях з'єднано
 Connect the path	З'єднати шлях
-There is no tile there	Там немає клітини
 Click the other point	Клацніть іншу точку
 The graphics API changes the next time openMapper starts	Графічний API зміниться під час наступного запуску openMapper
 Settings…	Налаштування…
@@ -2624,4 +2623,9 @@ Polygon: fill the selected splines, or click its corners	Багатокутни�
 Polygon: click its corners	Багатокутник: клацніть по кутах
 Polygon from it	Багатокутник із нього
 Polygon from them	Багатокутник із них
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Вимкнено: завантажуються лише тайли навколо камери, як у редакторі OMSI 2, решта завантажується, коли ви туди доходите
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Велика або дуже детальна карта працює легше з меншою кількістю тайлів: решта завантажується, коли ви туди доходите
+tiles round the camera are loaded; more load as you go there	тайлів навколо камери завантажено; решта завантажується, коли ви туди доходите
+Only the tiles round the camera are loaded; more load as you go there	Завантажено лише тайли навколо камери; решта завантажується, коли ви туди доходите
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Завантажувати велику карту по 100 тайлів, як редактор OMSI 2?\n\nУ графічній пам’яті лишаються лише 100 тайлів навколо камери; решта завантажується, коли ви туди доходите. Дуже великі карти лишаються легкими. Можна змінити будь-коли: Вигляд > Завантажувати всі тайли одразу (вимкнено).
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Клацніть сплайн, на якому вони мають стояти. Кожен іде за цією дорогою і зберігає IDCode
