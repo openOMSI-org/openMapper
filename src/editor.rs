@@ -12683,6 +12683,105 @@ mod tests {
         assert_eq!(ed.doc.as_ref().unwrap().spline(k, id).unwrap().prev_id, 0);
     }
 
+    /// A new road, drawn where nothing is, keeps its own IDCode and no link, even when the
+    /// map's counter is still below IDs that are already in use. Deleting it leaves the
+    /// road that was already there, and that road's own next piece.
+    #[test]
+    fn a_new_road_does_not_take_an_existing_splines_id_or_its_link() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let doc = ed.doc.as_mut().unwrap();
+        doc.global.next_id_code = 1;
+        add_spline(doc, (0, 0), 40, 200.0, 10.0, 0.0, 40.0, 0, 41);
+        add_spline(doc, (0, 0), 41, 200.0, 50.0, 0.0, 40.0, 40, 0);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(20.0, 200.0), DVec2::new(20.0, 230.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(20.0, 200.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(id > 41, "{id}");
+        let fresh = doc.spline(k, id).unwrap();
+        assert_eq!((fresh.prev_id, fresh.next_id), (0, 0));
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+        assert_eq!(doc.spline((0, 0), 41).unwrap().prev_id, 40);
+        let ids: Vec<i64> = doc.tiles[&(0, 0)].tile.splines.iter().map(|s| s.id).collect();
+        let mut once = ids.clone();
+        once.sort();
+        once.dedup();
+        assert_eq!(ids.len(), once.len(), "{ids:?}");
+        ed.doc.as_mut().unwrap().delete_spline(k, id);
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(doc.spline(k, id).is_none());
+        assert!(doc.spline((0, 0), 40).is_some() && doc.spline((0, 0), 41).is_some());
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+    }
+
+    /// A road started at a free end is that road's next piece, and nothing else's.
+    #[test]
+    fn a_road_drawn_from_a_free_end_links_only_that_end() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // spline 3 runs north from (50, 50) for 30 m, so its free end is (50, 80)
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_ne!(id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, id);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
+    /// An end that already continues into another piece is left as it is: the new road
+    /// does not become that next piece.
+    #[test]
+    fn a_road_drawn_from_an_end_that_already_continues_stays_unlinked() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.iter_mut().find(|s| s.id == 3).unwrap().next_id = 9;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 0);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 9);
+    }
+
+    /// The pieces of one new road link only to each other, never to a road already on the map.
+    #[test]
+    fn a_new_roads_pieces_link_only_each_other() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().global.next_id_code = 1;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(10.0, 10.0), DVec2::new(10.0, 90.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(10.0, 10.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        assert!(made.len() >= 2, "{made:?}");
+        let doc = ed.doc.as_ref().unwrap();
+        let ids: Vec<i64> = made.iter().map(|m| m.1).collect();
+        assert!(ids.iter().all(|id| *id != 3));
+        for (i, (k, id)) in made.iter().enumerate() {
+            let s = doc.spline(*k, *id).unwrap();
+            let prev = if i == 0 { 0 } else { ids[i - 1] };
+            let next = if i + 1 == ids.len() { 0 } else { ids[i + 1] };
+            assert_eq!((s.prev_id, s.next_id), (prev, next), "{id}");
+        }
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
     /// The junction options shown in the properties are those of the map open: another
     /// map's junction of the same IDCode does not show (and get made again with) them.
     #[test]
