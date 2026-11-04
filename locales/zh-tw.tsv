@@ -2624,13 +2624,79 @@ Polygon from it	由此建立多邊形
 Polygon from them	由這些建立多邊形
 Saving…	儲存中…
 Still saving	仍在儲存
+Click the spline they should stand on. Each follows that road and keeps its IDCode	點它們要依附的那條 Spline。每一個都會跟著那條路，並保留 IDCode
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	關閉：與 OMSI 2 的編輯器相同，只載入相機周圍的圖塊，你走到哪裡就載入哪裡
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	大型或非常精細的地圖在圖磚較少時更流暢：其餘圖磚會在你走到那裡時載入
 tiles round the camera are loaded; more load as you go there	個圖磚已載在相機周圍；你走到哪裡就再載入哪裡
 Only the tiles round the camera are loaded; more load as you go there	只載入相機周圍的圖磚；你走到哪裡就載入哪裡
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	要像 OMSI 2 的編輯器那樣，一次載入 100 個圖塊嗎？\n\n圖形記憶體只保留相機周圍的 100 個圖塊；其餘會在你走到那裡時載入。這樣非常大的地圖會比較輕。隨時可在「檢視 > 一次載入所有圖塊」（關閉）更改。
-Click the spline they should stand on. Each follows that road and keeps its IDCode	點它們要依附的那條 Spline。每一個都會跟著那條路，並保留 IDCode
+Choose the OMSI installation first	請先選擇 OMSI 安裝位置
+a file the object names is missing	物件指名的檔案不存在
+Another crossing file	另一個路口檔案
+Crossing paths of the picked object…	所選路口物件的路徑…
+Crossing paths	路口路徑
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	路口或交叉物件之路徑、封鎖與紅綠燈時相，在物件的副本中編輯，原始檔案維持不變
+Footway	人行道
+Street	車道
+Against	逆向
+Both ways	雙向
+Along	順向
+Left	左
+Right	右
+Red and yellow	紅與黃
+Green and yellow	綠與黃
+Off	熄滅
+Select a crossing object, or pick one of these	請選擇路口物件，或從下列挑一個
+Pick a crossing object of the map	在地圖上挑選路口物件
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	在此編輯既有路口的路径、封鎖與紅綠燈時相。物件會複製到 openMapper 自己的資料庫，原始檔案維持不變。
+openMapper's copy	openMapper 的副本
+in its own file (a copy is made on saving)	存成自己的檔案（儲存時會建立副本）
+Paths	路徑
+Add a path	新增路徑
+Remove this path	刪除此路徑
+0 is a straight line, above 0 turns right, below 0 left	0 為直線，大於 0 右轉，小於 0 左轉
+Direction	行車方向
+Turn signal	方向燈
+Keeps the junction clear	保持路口淨空
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	停在此路徑的車輛會為其他車輛保留路口淨空（`[crossingproblem]`）
+Blocks	封鎖
+Cycle	週期
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`：一輪的秒數。未設定時取最長號誌時相之總和
+The phases do not add up to the cycle: the last one holds to its end	時相總和不等於週期：最後一個時相會持續到週期結束
+(no name)	（無名稱）
+Detector	偵測距離
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`：車輛在停止線前多少公尺提出請求
+A phase	時相
+Remove this light	刪除此號誌
+A light	號誌
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	有號誌的路口需要地圖上的號誌燈頭：遊戲只會執行已連結燈頭的時相
+Request loops	請求感應線圈
+Spline helpers	曲線輔助點
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	地圖道路接上路口的位置。x、高度、物件座標中的前方
+The road type it takes (a `.sli`)	它承接的道路類型（`.sli`）
+A helper	輔助點
+At the picked end	在所選端點
+A helper where the picked path ends, facing out of the crossing	在所選路徑終點、朝路口外側的輔助點
+Save as a copy	另存為副本
+Write the paths into openMapper's copy of the object	將路徑寫入物件在 openMapper 的副本
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	物件資料夾會複製到 openMapper 的資料庫，路徑寫入其中，地圖物件改指向該處：原始檔案不會被更動
+Back to how the object was when it was opened (the file is not touched)	回到開啟時的狀態（不會更動檔案）
+Zoom out	縮小
+Zoom in	放大
+The whole crossing in view	檢視整個路口
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	拖曳端點可移動。Ctrl 可吸附到另一條路徑的端點。滾輪縮放，右鍵或中鍵拖曳平移
+Back to how it was opened	回到開啟時的狀態
+Nothing to edit yet	尚無可編輯的內容
+Crossing paths…	路口路徑…
 Trains	列車
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列車使用的隱形軌道車道：在軌道和道岔的軌道車道末端與之相接
 Keep the ground under roads	讓地面保持在道路下方
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	開啟：筆刷不會把地面抬高穿過道路。關閉：可像其他地方一樣自由修改道路下方和旁邊的地面
+There are unsaved changes here: Save or Revert first	這裡有未儲存的變更：請先儲存或還原
+The map has changed since this was opened: open the object again	地圖在開啟後已變更：請重新開啟物件
+A spline helper has no road type: pick one or remove it	有樣條輔助點沒有道路類型：請選擇一種或將其移除
+the object names this file outside its own folder, which a copy would lose	物件引用了其資料夾外的此檔案，複本會遺失它
+what was written does not read back the same	寫入的內容讀回後不一致
+its paths are in a file of their own (`[paths]`), which this editor does not read	其路徑位於獨立檔案（`[paths]`），此編輯器不會讀取
+it has no path	它沒有路徑
+jump	跳轉

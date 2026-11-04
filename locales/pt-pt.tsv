@@ -2627,13 +2627,79 @@ Polygon from it	Polígono a partir dele
 Polygon from them	Polígono a partir deles
 Saving…	A guardar…
 Still saving	Ainda a guardar
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Clique no spline em que devem ficar. Cada um segue essa estrada e mantém o IDCode
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Desligado: só são carregados os mosaicos à volta da câmara, como no editor do OMSI 2, e mais são carregados quando vai até lá
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Um mapa grande ou muito detalhado fica mais leve com menos mosaicos: os restantes carregam quando vai até lá
 tiles round the camera are loaded; more load as you go there	mosaicos à volta da câmara estão carregados; mais carregam quando vai até lá
 Only the tiles round the camera are loaded; more load as you go there	Só os mosaicos à volta da câmara estão carregados; mais carregam quando vai até lá
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Carregar um mapa grande 100 mosaicos de cada vez, como o editor do OMSI 2?\n\nSó os 100 mosaicos à volta da câmara ficam na memória gráfica; os restantes carregam quando vai até lá. Mapas muito grandes ficam assim mais leves. Pode mudar quando quiser em Vista > Carregar todos os mosaicos de uma vez (desligado).
-Click the spline they should stand on. Each follows that road and keeps its IDCode	Clique no spline em que devem ficar. Cada um segue essa estrada e mantém o IDCode
+Choose the OMSI installation first	Escolha primeiro a instalação do OMSI
+a file the object names is missing	falta um ficheiro que o objeto indica
+Another crossing file	Outro ficheiro de cruzamento
+Crossing paths of the picked object…	Vias do objeto de cruzamento escolhido…
+Crossing paths	Vias do cruzamento
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	As vias de um objeto de cruzamento ou nó, os seus bloqueios e o seu programa de semáforos, editados numa cópia do objeto: o original fica como está
+Footway	Passadeira
+Street	Faixa de rodagem
+Against	Contra o sentido
+Both ways	Nos dois sentidos
+Along	No sentido
+Left	Esquerda
+Right	Direita
+Red and yellow	Vermelho e amarelo
+Green and yellow	Verde e amarelo
+Off	Apagado
+Select a crossing object, or pick one of these	Escolha um objeto de cruzamento ou pegue num destes
+Pick a crossing object of the map	Pegue num objeto de cruzamento do mapa
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Aqui editam-se as vias, os bloqueios e o programa de semáforos de um cruzamento existente. O objeto é copiado para a pasta própria do openMapper; o ficheiro original fica como está.
+openMapper's copy	a cópia do openMapper
+in its own file (a copy is made on saving)	no seu próprio ficheiro (é feita uma cópia ao guardar)
+Paths	Vias
+Add a path	Adicionar uma via
+Remove this path	Remover esta via
+0 is a straight line, above 0 turns right, below 0 left	0 é uma reta, acima de 0 curva à direita, abaixo à esquerda
+Direction	Sentido
+Turn signal	Pisca
+Keeps the junction clear	Mantém o cruzamento livre
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Um veículo à espera nesta via mantém o cruzamento livre para os outros (`[crossingproblem]`)
+Blocks	Bloqueia
+Cycle	Ciclo
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: os segundos de um ciclo. Sem valor, é a soma das fases do semáforo mais longo
+The phases do not add up to the cycle: the last one holds to its end	As fases não somam o ciclo: a última dura até ao fim dele
+(no name)	(sem nome)
+Detector	Detetor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: a quantos metros antes da linha de paragem um veículo pede passagem
+A phase	Uma fase
+Remove this light	Remover este semáforo
+A light	Um semáforo
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Um cruzamento com semáforos precisa dos focos no mapa: o jogo só executa um programa a que os focos estejam ligados
+Request loops	Laços de pedido
+Spline helpers	Pontos de encaixe dos splines
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Onde uma estrada do mapa encaixa no cruzamento. x, altura, para a frente no sistema do objeto
+The road type it takes (a `.sli`)	O tipo de estrada que aceita (um `.sli`)
+A helper	Um ponto de encaixe
+At the picked end	Na ponta escolhida
+A helper where the picked path ends, facing out of the crossing	Um ponto de encaixe onde a via escolhida termina, para fora do cruzamento
+Save as a copy	Guardar como cópia
+Write the paths into openMapper's copy of the object	Gravar as vias na cópia do objeto do openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	A pasta do objeto é copiada para a do openMapper, as vias são gravadas lá e o objeto do mapa passa a apontar para ela: o ficheiro original não é tocado
+Back to how the object was when it was opened (the file is not touched)	Voltar a como o objeto estava ao abrir (o ficheiro não é tocado)
+Zoom out	Afastar
+Zoom in	Aproximar
+The whole crossing in view	O cruzamento todo à vista
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Arraste uma ponta para a mover. Ctrl encaixa-a na ponta de outra via. A roda aproxima, o botão direito ou do meio desloca a vista
+Back to how it was opened	Voltar a como estava ao abrir
+Nothing to edit yet	Nada para editar por agora
+Crossing paths…	Vias do cruzamento…
 Trains	Comboios
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Uma via férrea invisível para os comboios da IA: liga-se às vias dos carris e agulhas onde estas terminam
 Keep the ground under roads	Manter o terreno sob as estradas
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Ligado: o pincel não eleva o terreno através de uma estrada. Desligado: molda o terreno sob as estradas e ao lado delas tão livremente como em qualquer outro lugar
+There are unsaved changes here: Save or Revert first	Há alterações por guardar: guarde-as ou reverta-as primeiro
+The map has changed since this was opened: open the object again	O mapa mudou desde que foi aberto: abra o objeto novamente
+A spline helper has no road type: pick one or remove it	Um auxiliar de spline não tem tipo de estrada: escolha um ou remova-o
+the object names this file outside its own folder, which a copy would lose	o objeto indica este ficheiro fora da sua pasta, e uma cópia iria perdê-lo
+what was written does not read back the same	o que foi escrito não se lê da mesma forma
+its paths are in a file of their own (`[paths]`), which this editor does not read	os seus caminhos estão num ficheiro próprio (`[paths]`), que este editor não lê
+it has no path	não tem caminhos
+jump	salto

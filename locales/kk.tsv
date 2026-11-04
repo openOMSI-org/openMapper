@@ -2627,13 +2627,79 @@ Polygon from it	Одан көпбұрыш
 Polygon from them	Олардан көпбұрыш
 Saving…	Сақталуда…
 Still saving	Әлі сақталуда
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Олар тұратын сплайнды басыңыз. Әрқайсысы сол жолды ұстайды және IDCode сақтайды
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Өшірулі: OMSI 2 редакторындағыдай тек камера айналасындағы тайлдар жүктеледі, қалғаны сол жерге барғанда жүктеледі
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Үлкен немесе өте егжей-тегжейлі карта тайлдар аз болғанда жеңілірек жұмыс істейді: қалғандары сол жерге барғанда жүктеледі
 tiles round the camera are loaded; more load as you go there	тайл камера айналасында жүктелді; қалғаны сол жерге барғанда жүктеледі
 Only the tiles round the camera are loaded; more load as you go there	Тек камера айналасындағы тайлдар жүктелді; қалғаны сол жерге барғанда жүктеледі
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Үлкен картаны OMSI 2 редакторы сияқты бірден 100 тайлдан жүктеу керек пе?\n\nГрафика жадында тек камера айналасындағы 100 тайл қалады; қалғаны сол жерге барғанда жүктеледі. Өте үлкен карталар жеңіл қалады. Кез келген уақытта Көрініс > Барлық тайлдарды бірден жүктеу (өшірулі) бөлімінде өзгертуге болады.
-Click the spline they should stand on. Each follows that road and keeps its IDCode	Олар тұратын сплайнды басыңыз. Әрқайсысы сол жолды ұстайды және IDCode сақтайды
+Choose the OMSI installation first	Алдымен OMSI орнатуын көрсетіңіз
+a file the object names is missing	нысан атаған файл жоқ
+Another crossing file	Басқа айқас файлы
+Crossing paths of the picked object…	Таңдалған айқас нысанының жолдары…
+Crossing paths	Айқас жолдары
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Айқас немесе түйін нысанының жолдары, олардың бөгеулері және бағдаршам бағдарламасы нысанның көшірмесінде өңделеді — түпнұсқа сол күйінде қалады
+Footway	Жаяу жүргінші жолы
+Street	Жүріс бөлігі
+Against	Бағытына қарсы
+Both ways	Екі бағытта
+Along	Бағытымен
+Left	Солға
+Right	Оңға
+Red and yellow	Қызыл және сары
+Green and yellow	Жасыл және сары
+Off	Өшірулі
+Select a crossing object, or pick one of these	Айқас нысанын таңдаңыз немесе осылардың бірін алыңыз
+Pick a crossing object of the map	Картадан айқас нысанын алыңыз
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Мұнда дайын айқастың жолдары, бөгеулері және бағдаршам бағдарламасы өңделеді. Нысан openMapper қалтасына көшіріледі; түпнұсқа файл сол күйінде қалады.
+openMapper's copy	openMapper көшірмесі
+in its own file (a copy is made on saving)	өз файлында (сақтағанда көшірме жасалады)
+Paths	Жолдар
+Add a path	Жол қосу
+Remove this path	Осы жолды жою
+0 is a straight line, above 0 turns right, below 0 left	0 — түзу, 0-ден жоғары — оңға, 0-ден төмен — солға
+Direction	Қозғалыс бағыты
+Turn signal	Бұрылыс көрсеткіші
+Keeps the junction clear	Айқасты бос ұстайды
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Осы жолда күткен көлік айқасты басқалар үшін бос ұстайды (`[crossingproblem]`)
+Blocks	Бөгейді
+Cycle	Цикл
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: бір айналымның секундтары. Көрсетілмесе — ең ұзын бағдаршам фазаларының қосындысы
+The phases do not add up to the cycle: the last one holds to its end	Фазалар циклге қосылмайды: соңғысы оның соңына дейін созылады
+(no name)	(атауы жоқ)
+Detector	Детектор
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: тоқтау сызығына дейін неше метрде көлік сұраныс береді
+A phase	Фаза
+Remove this light	Осы бағдаршамды жою
+A light	Бағдаршам
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Бағдаршамы бар айқасқа картадағы сигнал бастары керек: ойын тек бастары байланған бағдарламаны іске қосады
+Request loops	Сұраныс ілмектері
+Spline helpers	Сплайн бекіту нүктелері
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Картадағы жол айқасқа қайда бекінеді. x, биіктік, нысан жүйесінде алға
+The road type it takes (a `.sli`)	Ол қабылдайтын жол түрі (`.sli`)
+A helper	Бекіту нүктесі
+At the picked end	Таңдалған ұшта
+A helper where the picked path ends, facing out of the crossing	Таңдалған жол бітетін жерде, айқастан сыртқа қарай бекіту нүктесі
+Save as a copy	Көшірме ретінде сақтау
+Write the paths into openMapper's copy of the object	Жолдарды openMapper нысан көшірмесіне жазу
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Нысан қалтасы openMapper қалтасына көшіріледі, жолдар сонда жазылады, карта нысаны соған сілтеме жасайды: түпнұсқа файлға тиілмейді
+Back to how the object was when it was opened (the file is not touched)	Нысан ашылған күйіне қайту (файлға тиілмейді)
+Zoom out	Алыстату
+Zoom in	Жақындату
+The whole crossing in view	Бүкіл айқас көріністе
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Ұшын сүйреп жылжытыңыз. Ctrl оны басқа жолдың ұшына бекітеді. Дөңгелек — масштаб, оң немесе ортаңғы түйме — жылжыту
+Back to how it was opened	Ашылған күйіне қайту
+Nothing to edit yet	Әзірге өңдейтін нәрсе жоқ
+Crossing paths…	Айқас жолдары…
 Trains	Пойыздар
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ЖИ пойыздарына арналған көрінбейтін рельс жолағы: жолдар мен бағыттамалардың рельс жолақтарына олар аяқталатын жерде қосылады
 Keep the ground under roads	Жерді жолдардың астында ұстау
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Қосулы: қылқалам жерді жол арқылы көтермейді. Өшірулі: жолдардың астындағы және жанындағы жерді басқа жердегідей еркін өзгертеді
+There are unsaved changes here: Save or Revert first	Сақталмаған өзгерістер бар: алдымен сақтаңыз немесе қайтарыңыз
+The map has changed since this was opened: open the object again	Ашылғаннан бері карта өзгерді: нысанды қайта ашыңыз
+A spline helper has no road type: pick one or remove it	Сплайн көмекшісінде жол түрі жоқ: біреуін таңдаңыз немесе оны жойыңыз
+the object names this file outside its own folder, which a copy would lose	нысан бұл файлды өз қалтасынан тыс атайды, көшірме оны жоғалтады
+what was written does not read back the same	жазылған дерек сол қалпында оқылмайды
+its paths are in a file of their own (`[paths]`), which this editor does not read	оның жолдары бөлек файлда (`[paths]`), бұл редактор оны оқымайды
+it has no path	оның жолдары жоқ
+jump	өту

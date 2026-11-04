@@ -2627,13 +2627,79 @@ Polygon from it	รูปหลายเหลี่ยมจากเส้น�
 Polygon from them	รูปหลายเหลี่ยมจากเส้นเหล่านี้
 Saving…	กำลังบันทึก…
 Still saving	ยังบันทึกอยู่
+Click the spline they should stand on. Each follows that road and keeps its IDCode	คลิกสปลายน์ที่พวกมันจะยืน แต่ละชิ้นจะไปตามถนนนั้นและเก็บ IDCode
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	ปิด: โหลดเฉพาะไทล์รอบกล้องเหมือนในตัวแก้ไขของ OMSI 2 และจะโหลดเพิ่มเมื่อคุณไปถึงที่นั่น
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	แผนที่ขนาดใหญ่หรือละเอียดมากจะลื่นขึ้นเมื่อใช้ไทล์น้อยลง: ส่วนที่เหลือจะโหลดเมื่อคุณไปถึงที่นั่น
 tiles round the camera are loaded; more load as you go there	ไทล์รอบกล้องถูกโหลดแล้ว จะโหลดเพิ่มเมื่อคุณไปถึงที่นั่น
 Only the tiles round the camera are loaded; more load as you go there	โหลดเฉพาะไทล์รอบกล้อง จะโหลดเพิ่มเมื่อคุณไปถึงที่นั่น
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	โหลดแผนที่ขนาดใหญ่ครั้งละ 100 ไทล์ เหมือนตัวแก้ไขของ OMSI 2 หรือไม่?\n\nหน่วยความจำกราฟิกเก็บเฉพาะ 100 ไทล์รอบกล้อง ส่วนที่เหลือจะโหลดเมื่อคุณไปถึงที่นั่น แผนที่ขนาดใหญ่มากจึงยังเบา สามารถเปลี่ยนได้ตลอดที่ มุมมอง > โหลดทุกไทล์พร้อมกัน (ปิด)
-Click the spline they should stand on. Each follows that road and keeps its IDCode	คลิกสปลายน์ที่พวกมันจะยืน แต่ละชิ้นจะไปตามถนนนั้นและเก็บ IDCode
+Choose the OMSI installation first	เลือกที่ติดตั้ง OMSI ก่อน
+a file the object names is missing	ไฟล์ที่ออบเจกต์ระบุไว้หายไป
+Another crossing file	ไฟล์ทางแยกอื่น
+Crossing paths of the picked object…	เส้นทางของออบเจกต์ทางแยกที่เลือก…
+Crossing paths	เส้นทางของทางแยก
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	เส้นทางของออบเจกต์ทางแยกหรือชุมทาง การกั้น และโปรแกรมไฟจราจร แก้ไขในสำเนาของออบเจกต์ - ต้นฉบับคงไว้เหมือนเดิม
+Footway	ทางเท้า
+Street	ผิวจราจร
+Against	สวนทาง
+Both ways	สองทิศทาง
+Along	ตามทิศทาง
+Left	ซ้าย
+Right	ขวา
+Red and yellow	แดงและเหลือง
+Green and yellow	เขียวและเหลือง
+Off	ดับ
+Select a crossing object, or pick one of these	เลือกออบเจกต์ทางแยก หรือเลือกหนึ่งในนี้
+Pick a crossing object of the map	เลือกออบเจกต์ทางแยกบนแผนที่
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	แก้ไขเส้นทาง การกั้น และโปรแกรมไฟจราจรของทางแยกที่มีอยู่ได้ที่นี่ ออบเจกต์จะถูกคัดลอกไปยังโฟลเดอร์ของ openMapper เอง ส่วนไฟล์ต้นฉบับคงไว้เหมือนเดิม
+openMapper's copy	สำเนาของ openMapper
+in its own file (a copy is made on saving)	ในไฟล์ของตัวเอง (สร้างสำเนาเมื่อบันทึก)
+Paths	เส้นทาง
+Add a path	เพิ่มเส้นทาง
+Remove this path	ลบเส้นทางนี้
+0 is a straight line, above 0 turns right, below 0 left	0 คือเส้นตรง มากกว่า 0 เลี้ยวขวา น้อยกว่า 0 เลี้ยวซ้าย
+Direction	ทิศทาง
+Turn signal	ไฟเลี้ยว
+Keeps the junction clear	กั้นไม่ให้รถค้างในทางแยก
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	รถที่รออยู่บนเส้นทางนี้จะกั้นทางแยกให้ว่างสำหรับคันอื่น (`[crossingproblem]`)
+Blocks	กั้น
+Cycle	รอบ
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: วินาทีของหนึ่งรอบ ถ้าไม่กำหนด จะใช้ผลรวมของช่วงของสัญญาณที่ยาวที่สุด
+The phases do not add up to the cycle: the last one holds to its end	ผลรวมของช่วงไม่ตรงกับรอบ ช่วงสุดท้ายจะคงอยู่จนจบรอบ
+(no name)	(ไม่มีชื่อ)
+Detector	ระยะตรวจจับ
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: รถแจ้งคำขอที่ระยะกี่เมตรก่อนเส้นหยุด
+A phase	ช่วงสัญญาณ
+Remove this light	ลบสัญญาณนี้
+A light	สัญญาณ
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	ทางแยกที่มีสัญญาณต้องมีหัวสัญญาณบนแผนที่ เกมจะรันเฉพาะโปรแกรมที่มีหัวสัญญาณเชื่อมอยู่
+Request loops	ลูปร้องขอ
+Spline helpers	จุดเชื่อมสไปลน์
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	ตำแหน่งที่ถนนบนแผนที่ต่อเข้ากับทางแยก x, ความสูง, ไปข้างหน้าในกรอบของออบเจกต์
+The road type it takes (a `.sli`)	ประเภทถนนที่รับ (`.sli`)
+A helper	จุดเชื่อม
+At the picked end	ที่ปลายที่เลือก
+A helper where the picked path ends, facing out of the crossing	จุดเชื่อมตรงปลายเส้นทางที่เลือก หันออกนอกทางแยก
+Save as a copy	บันทึกเป็นสำเนา
+Write the paths into openMapper's copy of the object	เขียนเส้นทางลงในสำเนาออบเจกต์ของ openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	โฟลเดอร์ของออบเจกต์จะถูกคัดลอกไปยัง openMapper เขียนเส้นทางไว้ที่นั่น และออบเจกต์บนแผนที่จะชี้ไปที่นั่น ไฟล์ต้นฉบับไม่ถูกแตะต้อง
+Back to how the object was when it was opened (the file is not touched)	กลับไปสู่สภาพตอนเปิดออบเจกต์ (ไฟล์ไม่ถูกแตะต้อง)
+Zoom out	ย่อ
+Zoom in	ขยาย
+The whole crossing in view	เห็นทางแยกทั้งแห่ง
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	ลากปลายเพื่อย้าย Ctrl จะดูดให้ติดปลายของเส้นทางอื่น ล้อเลื่อนย่อขยาย ลากปุ่มขวาหรือกลางเพื่อเลื่อนภาพ
+Back to how it was opened	กลับไปสู่สภาพตอนเปิด
+Nothing to edit yet	ยังไม่มีอะไรให้แก้ไข
+Crossing paths…	เส้นทางของทางแยก…
 Trains	รถไฟ
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ช่องรางที่มองไม่เห็นสำหรับรถไฟ AI: เชื่อมกับช่องรางของรางและประแจตรงจุดที่สิ้นสุด
 Keep the ground under roads	ให้พื้นดินอยู่ใต้ถนน
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	เปิด: แปรงจะไม่ยกพื้นดินทะลุถนน ปิด: แก้ไขพื้นดินใต้และข้างถนนได้อย่างอิสระเหมือนที่อื่น
+There are unsaved changes here: Save or Revert first	มีการแก้ไขที่ยังไม่ได้บันทึก: บันทึกหรือย้อนกลับก่อน
+The map has changed since this was opened: open the object again	แผนที่เปลี่ยนไปตั้งแต่เปิด: เปิดวัตถุอีกครั้ง
+A spline helper has no road type: pick one or remove it	ตัวช่วยสไปลน์ไม่มีประเภทถนน: เลือกหรือลบออก
+the object names this file outside its own folder, which a copy would lose	วัตถุอ้างถึงไฟล์นี้นอกโฟลเดอร์ของตน สำเนาจะทำไฟล์นี้หาย
+what was written does not read back the same	สิ่งที่เขียนอ่านกลับมาไม่เหมือนเดิม
+its paths are in a file of their own (`[paths]`), which this editor does not read	เส้นทางของมันอยู่ในไฟล์แยก (`[paths]`) ซึ่งตัวแก้ไขนี้ไม่อ่าน
+it has no path	ไม่มีเส้นทาง
+jump	ข้าม

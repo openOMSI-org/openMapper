@@ -2627,13 +2627,79 @@ Polygon from it	Polygon z něj
 Polygon from them	Polygon z nich
 Saving…	Ukládání…
 Still saving	Stále se ukládá
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klikněte na spline, na kterém mají stát. Každý sleduje tu silnici a ponechá si IDCode
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Vypnuto: načtou se jen dlaždice kolem kamery jako v editoru OMSI 2 a další se načtou, když tam dojdete
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Velká nebo velmi podrobná mapa běží plynuleji s méně dlaždicemi: ostatní se načtou, když tam dojdete
 tiles round the camera are loaded; more load as you go there	dlaždic kolem kamery je načteno; další se načtou, když tam dojdete
 Only the tiles round the camera are loaded; more load as you go there	Načteny jsou jen dlaždice kolem kamery; další se načtou, když tam dojdete
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Načítat velkou mapu po 100 dlaždicích, jako editor OMSI 2?\n\nV grafické paměti zůstane jen 100 dlaždic kolem kamery; ostatní se načtou, když tam dojdete. Velmi velké mapy tak zůstanou lehké. Lze kdykoli změnit v Zobrazení > Načíst všechny dlaždice najednou (vypnuto).
-Click the spline they should stand on. Each follows that road and keeps its IDCode	Klikněte na spline, na kterém mají stát. Každý sleduje tu silnici a ponechá si IDCode
+Choose the OMSI installation first	Nejprve vyber instalaci OMSI
+a file the object names is missing	chybí soubor, který objekt uvádí
+Another crossing file	Jiný soubor křižovatky
+Crossing paths of the picked object…	Cesty vybraného objektu křižovatky…
+Crossing paths	Cesty křižovatky
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Cesty objektu křižovatky či uzlu, jejich blokování a program semaforů, upravované v kopii objektu - originál zůstane, jak je
+Footway	Chodník
+Street	Vozovka
+Against	Proti směru
+Both ways	Oběma směry
+Along	Po směru
+Left	Vlevo
+Right	Vpravo
+Red and yellow	Červená a žlutá
+Green and yellow	Zelená a žlutá
+Off	Vypnuto
+Select a crossing object, or pick one of these	Vyber objekt křižovatky, nebo vezmi jeden z těchto
+Pick a crossing object of the map	Vezmi objekt křižovatky z mapy
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Zde se upravují cesty, blokování a program semaforů hotové křižovatky. Objekt se zkopíruje do vlastní složky openMapperu; původní soubor zůstane, jak je.
+openMapper's copy	kopie openMapperu
+in its own file (a copy is made on saving)	ve vlastním souboru (kopie vznikne při uložení)
+Paths	Cesty
+Add a path	Přidat cestu
+Remove this path	Odebrat tuto cestu
+0 is a straight line, above 0 turns right, below 0 left	0 je přímka, nad 0 zatáčí vpravo, pod 0 vlevo
+Direction	Směr
+Turn signal	Ukazatel směru
+Keeps the junction clear	Drží křižovatku volnou
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Vozidlo čekající na této cestě drží křižovatku volnou pro ostatní (`[crossingproblem]`)
+Blocks	Blokuje
+Cycle	Cyklus
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: sekundy jednoho cyklu. Bez hodnoty je to součet fází nejdelšího semaforu
+The phases do not add up to the cycle: the last one holds to its end	Fáze nedávají cyklus: poslední trvá do jeho konce
+(no name)	(bez názvu)
+Detector	Detektor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: kolik metrů před stopčarou vozidlo žádá
+A phase	Fáze
+Remove this light	Odebrat tento semafor
+A light	Semafor
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Křižovatka se semafory potřebuje na mapě návěstidla: hra spustí jen program, ke kterému jsou návěstidla připojena
+Request loops	Smyčky požadavků
+Spline helpers	Pomocné body splajnů
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Kde se silnice z mapy připojí ke křižovatce. x, výška, dopředu v soustavě objektu
+The road type it takes (a `.sli`)	Typ silnice, který přijímá (`.sli`)
+A helper	Pomocný bod
+At the picked end	Na vybraném konci
+A helper where the picked path ends, facing out of the crossing	Pomocný bod na konci vybrané cesty, ven z křižovatky
+Save as a copy	Uložit jako kopii
+Write the paths into openMapper's copy of the object	Zapsat cesty do kopie objektu v openMapperu
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Složka objektu se zkopíruje do openMapperu, cesty se zapíšou tam a objekt mapy se na ni přepne: původní soubor zůstane nedotčen
+Back to how the object was when it was opened (the file is not touched)	Zpět do stavu při otevření (soubor zůstane nedotčen)
+Zoom out	Oddálit
+Zoom in	Přiblížit
+The whole crossing in view	Celá křižovatka v pohledu
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Tažením konce jej posuneš. Ctrl jej přichytí ke konci jiné cesty. Kolečko mění měřítko, pravé nebo prostřední tlačítko posouvá pohled
+Back to how it was opened	Zpět do stavu při otevření
+Nothing to edit yet	Zatím není co upravovat
+Crossing paths…	Cesty křižovatky…
 Trains	Vlaky
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Neviditelný kolejový pruh pro vlaky AI: napojí se na kolejové pruhy tratí a výhybek tam, kde končí
 Keep the ground under roads	Držet terén pod silnicemi
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Zapnuto: štětec nezvedá terén skrz silnici. Vypnuto: terén pod silnicemi a vedle nich upravuje stejně volně jako kdekoli jinde
+There are unsaved changes here: Save or Revert first	Jsou tu neuložené změny: nejprve je uložte nebo vraťte zpět
+The map has changed since this was opened: open the object again	Mapa se od otevření změnila: otevřete objekt znovu
+A spline helper has no road type: pick one or remove it	Pomocný bod spline nemá typ silnice: vyberte ho nebo bod odstraňte
+the object names this file outside its own folder, which a copy would lose	objekt odkazuje na tento soubor mimo svou složku, kopie by o něj přišla
+what was written does not read back the same	zapsaná data se nenačítají stejně
+its paths are in a file of their own (`[paths]`), which this editor does not read	jeho cesty jsou ve vlastním souboru (`[paths]`), který tento editor nečte
+it has no path	nemá žádnou cestu
+jump	skok

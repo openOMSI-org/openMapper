@@ -2627,13 +2627,79 @@ Polygon from it	これからポリゴン
 Polygon from them	これらからポリゴン
 Saving…	保存中…
 Still saving	まだ保存しています
+Click the spline they should stand on. Each follows that road and keeps its IDCode	それらを置くスプラインをクリックします。それぞれがその道に沿い、IDCode を保ちます
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	オフ：OMSI 2のエディターと同じく、カメラの周囲のタイルだけを読み込み、移動先はそこへ行くと読み込まれます
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	大きなマップや非常に詳細なマップは、タイル数を減らすと軽くなります。残りはそこへ行くと読み込まれます
 tiles round the camera are loaded; more load as you go there	個のタイルをカメラの周囲に読み込みました。移動先はそこへ行くと読み込まれます
 Only the tiles round the camera are loaded; more load as you go there	カメラの周囲のタイルだけを読み込みました。移動先はそこへ行くと読み込まれます
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2のエディターと同じく、大きなマップを一度に100タイル読み込みますか？\n\nグラフィックメモリにはカメラの周囲の100タイルだけが残り、残りはそこへ行くと読み込まれます。とても大きなマップが軽くなります。表示 > すべてのタイルを一度に読み込む（オフ）でいつでも変更できます。
-Click the spline they should stand on. Each follows that road and keeps its IDCode	それらを置くスプラインをクリックします。それぞれがその道に沿い、IDCode を保ちます
+Choose the OMSI installation first	まず OMSI のインストール先を選んでください
+a file the object names is missing	オブジェクトが指定するファイルがありません
+Another crossing file	別の交差点ファイル
+Crossing paths of the picked object…	選んだ交差点オブジェクトの経路…
+Crossing paths	交差点の経路
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	交差点またはジャンクションオブジェクトの経路、その封鎖、信号機のプログラムを、オブジェクトの複製の中で編集します。元のファイルはそのまま残ります
+Footway	歩道
+Street	車道
+Against	逆方向
+Both ways	両方向
+Along	順方向
+Left	左
+Right	右
+Red and yellow	赤と黄
+Green and yellow	青と黄
+Off	消灯
+Select a crossing object, or pick one of these	交差点オブジェクトを選ぶか、次のいずれかを選んでください
+Pick a crossing object of the map	マップ上の交差点オブジェクトを選ぶ
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	既存の交差点の経路、封鎖、信号機のプログラムをここで編集します。オブジェクトは openMapper 自身のフォルダに複製され、元のファイルはそのまま残ります。
+openMapper's copy	openMapper の複製
+in its own file (a copy is made on saving)	専用のファイルに (保存時に複製を作成)
+Paths	経路
+Add a path	経路を追加
+Remove this path	この経路を削除
+0 is a straight line, above 0 turns right, below 0 left	0 は直線、0 より大きいと右、0 より小さいと左に曲がる
+Direction	進行方向
+Turn signal	方向指示器
+Keeps the junction clear	交差点を空けておく
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	この経路で待つ車両が、他のために交差点を空けておく (`[crossingproblem]`)
+Blocks	封鎖
+Cycle	周期
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: 1 周期の秒数。未設定なら最も長い信号の現示の合計
+The phases do not add up to the cycle: the last one holds to its end	現示の合計が周期に合わないため、最後の現示が周期の終わりまで続きます
+(no name)	(名前なし)
+Detector	検知距離
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: 停止線の何メートル手前で車両が要求を登録するか
+A phase	現示
+Remove this light	この信号機を削除
+A light	信号機
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	信号のある交差点にはマップ上の灯器が必要です。ゲームは灯器が結び付いたプログラムしか実行しません
+Request loops	要求ループ
+Spline helpers	スプライン接続点
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	マップの道路が交差点に接続する位置。x、高さ、オブジェクト座標での前方
+The road type it takes (a `.sli`)	受け入れる道路種別 (`.sli`)
+A helper	接続点
+At the picked end	選んだ端点に
+A helper where the picked path ends, facing out of the crossing	選んだ経路の終点、交差点の外を向いた接続点
+Save as a copy	複製として保存
+Write the paths into openMapper's copy of the object	オブジェクトの openMapper 複製に経路を書き込む
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	オブジェクトのフォルダを openMapper に複製し、そこへ経路を書き込み、マップのオブジェクトをそちらへ向けます。元のファイルには触れません
+Back to how the object was when it was opened (the file is not touched)	開いたときの状態に戻す (ファイルには触れません)
+Zoom out	縮小
+Zoom in	拡大
+The whole crossing in view	交差点全体を表示
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	端点をドラッグして移動。Ctrl で他の経路の端点に吸着。ホイールで拡大縮小、右または中ボタンのドラッグで表示を移動
+Back to how it was opened	開いたときの状態に戻す
+Nothing to edit yet	まだ編集できるものがありません
+Crossing paths…	交差点の経路…
 Trains	列車
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	AI列車用の見えない線路レーン: 線路や分岐器の線路レーンの端に接続します
 Keep the ground under roads	地面を道路の下に保つ
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	オン: ブラシは地面を道路より上に上げません。オフ: 道路の下や脇の地面も他の場所と同じように自由に編集します
+There are unsaved changes here: Save or Revert first	未保存の変更があります: 先に保存するか元に戻してください
+The map has changed since this was opened: open the object again	開いた後にマップが変更されました: オブジェクトを開き直してください
+A spline helper has no road type: pick one or remove it	スプラインヘルパーに道路タイプがありません: 選択するか削除してください
+the object names this file outside its own folder, which a copy would lose	オブジェクトは自身のフォルダー外のこのファイルを参照しており、コピーでは失われます
+what was written does not read back the same	書き込んだ内容が同じように読み戻せません
+its paths are in a file of their own (`[paths]`), which this editor does not read	パスは別ファイル (`[paths]`) にあり、このエディターでは読み込めません
+it has no path	パスがありません
+jump	ジャンプ

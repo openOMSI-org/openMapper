@@ -94,6 +94,8 @@ pub enum Action {
     RoadTypes,
     /// The complex junction editor window.
     ComplexJunctions,
+    /// The crossing path editor window on the picked object (or a crossing picked there).
+    CrossingPaths,
     /// A complex junction drawing put on the map as splines, turned by so many degrees.
     PlaceComplex(Box<crate::cjunction::Layout>, f64),
     /// A drawing written as a custom junction (an object, and a layout for automatic junctions).
@@ -1126,6 +1128,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 }
                 if menu_item(ui, Some(Icon::Junction), tr("Complex junction editor…", "Редактор сложных перекрёстков…"), "", true) {
                     actions.push(Action::ComplexJunctions);
+                }
+                if menu_item(ui, Some(Icon::Route), tr("Crossing paths of the picked object…", "Пути выбранного перекрёстка…"), "", true) {
+                    actions.push(Action::CrossingPaths);
                 }
                 if menu_item(ui, Some(Icon::Layers), tr("PBR maps for a picture…", "PBR-карты для картинки…"), "", true) {
                     actions.push(Action::PbrMaker);
@@ -2286,6 +2291,14 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 help(st, &r, tr("Normal, roughness, metal and shadow maps made from the object's textures, tuned and written as openOMSI reads them", "Карты нормалей, шероховатости, металла и теней из текстур объекта: настроить и записать так, как их читает openOMSI"));
                 if r.clicked() {
                     actions.push(Action::PbrForObject(o.file.clone()));
+                }
+                // its paths, if it is a crossing: edited in a copy of the object
+                if matches!(sel, Sel::Object(..)) {
+                    let r = ui.button(icons::labelled(Icon::Route, tr("Crossing paths", "Пути перекрёстка")));
+                    help(st, &r, tr("The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is", "Пути перекрёстка или перекрёстка-объекта, их блокировки и программу светофора правят в копии объекта, исходный остаётся как был"));
+                    if r.clicked() {
+                        actions.push(Action::CrossingPaths);
+                    }
                 }
                 ui.add_space(4.0);
                 egui::Grid::new("obj").num_columns(2).spacing(Vec2::new(8.0, 5.0)).show(ui, |ui| {

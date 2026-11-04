@@ -2627,13 +2627,79 @@ Polygon from it	Poligon darinya
 Polygon from them	Poligon dari semuanya
 Saving…	Menyimpan…
 Still saving	Masih menyimpan
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik spline tempat mereka harus berdiri. Masing-masing mengikuti jalan itu dan menyimpan IDCode
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Mati: hanya ubin di sekitar kamera yang dimuat, seperti di editor OMSI 2, dan yang lain dimuat saat Anda sampai di sana
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Peta besar atau sangat detail lebih ringan dengan lebih sedikit tile: sisanya dimuat saat Anda sampai di sana
 tiles round the camera are loaded; more load as you go there	ubin di sekitar kamera sudah dimuat; yang lain dimuat saat Anda sampai di sana
 Only the tiles round the camera are loaded; more load as you go there	Hanya ubin di sekitar kamera yang dimuat; yang lain dimuat saat Anda sampai di sana
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Muat peta besar 100 ubin sekaligus, seperti editor OMSI 2?\n\nHanya 100 ubin di sekitar kamera yang tetap di memori grafis; yang lain dimuat saat Anda sampai di sana. Peta yang sangat besar tetap ringan. Bisa diubah kapan saja di Tampilan > Muat semua ubin sekaligus (mati).
-Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik spline tempat mereka harus berdiri. Masing-masing mengikuti jalan itu dan menyimpan IDCode
+Choose the OMSI installation first	Pilih lokasi pemasangan OMSI dulu
+a file the object names is missing	berkas yang disebut objek tidak ada
+Another crossing file	Berkas persimpangan lain
+Crossing paths of the picked object…	Lajur objek persimpangan yang dipilih…
+Crossing paths	Lajur persimpangan
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Lajur objek persimpangan atau pertemuan, pemblokirannya, dan program lampu lalulintasnya, disunting dalam salinan objek - aslinya dibiarkan apa adanya
+Footway	Trotoar
+Street	Jalur kendaraan
+Against	Berlawanan arah
+Both ways	Dua arah
+Along	Searah
+Left	Kiri
+Right	Kanan
+Red and yellow	Merah dan kuning
+Green and yellow	Hijau dan kuning
+Off	Mati
+Select a crossing object, or pick one of these	Pilih objek persimpangan, atau ambil salah satu ini
+Pick a crossing object of the map	Ambil objek persimpangan dari peta
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Lajur, pemblokiran, dan program lampu lalulintas persimpangan yang sudah ada disunting di sini. Objeknya disalin ke folder openMapper sendiri; berkas aslinya dibiarkan apa adanya.
+openMapper's copy	salinan openMapper
+in its own file (a copy is made on saving)	di berkasnya sendiri (salinan dibuat saat menyimpan)
+Paths	Lajur
+Add a path	Tambah lajur
+Remove this path	Hapus lajur ini
+0 is a straight line, above 0 turns right, below 0 left	0 lurus, di atas 0 menikung ke kanan, di bawah 0 ke kiri
+Direction	Arah
+Turn signal	Lampu sein
+Keeps the junction clear	Menjaga persimpangan tetap kosong
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Kendaraan yang menunggu di lajur ini menjaga persimpangan kosong bagi yang lain (`[crossingproblem]`)
+Blocks	Memblokir
+Cycle	Siklus
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: detik satu putaran. Bila tidak diisi, jumlah fase lampu terpanjang
+The phases do not add up to the cycle: the last one holds to its end	Fasenya tidak memenuhi siklus: fase terakhir bertahan sampai akhir siklus
+(no name)	(tanpa nama)
+Detector	Detektor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: berapa meter sebelum garis henti kendaraan mendaftarkan permintaan
+A phase	Fase
+Remove this light	Hapus lampu ini
+A light	Lampu
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Persimpangan dengan lampu membutuhkan kepala lampu di peta: permainan hanya menjalankan program yang kepala lampunya tertaut
+Request loops	Lingkar permintaan
+Spline helpers	Titik sambung spline
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Tempat jalan peta menyambung ke persimpangan. x, tinggi, ke depan dalam kerangka objek
+The road type it takes (a `.sli`)	Jenis jalan yang diterimanya (sebuah `.sli`)
+A helper	Titik sambung
+At the picked end	Di ujung yang dipilih
+A helper where the picked path ends, facing out of the crossing	Titik sambung di ujung lajur yang dipilih, menghadap keluar persimpangan
+Save as a copy	Simpan sebagai salinan
+Write the paths into openMapper's copy of the object	Tulis lajur ke salinan objek milik openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Folder objek disalin ke folder openMapper, lajur ditulis di sana, dan objek peta diarahkan ke sana: berkas asli tidak disentuh
+Back to how the object was when it was opened (the file is not touched)	Kembali ke keadaan objek saat dibuka (berkas tidak disentuh)
+Zoom out	Perkecil
+Zoom in	Perbesar
+The whole crossing in view	Seluruh persimpangan dalam pandangan
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Seret ujung untuk memindahkannya. Ctrl menempelkannya ke ujung lajur lain. Roda memperbesar, seret tombol kanan atau tengah menggeser pandangan
+Back to how it was opened	Kembali ke keadaan saat dibuka
+Nothing to edit yet	Belum ada yang bisa disunting
+Crossing paths…	Lajur persimpangan…
 Trains	Kereta
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Lajur rel tak terlihat untuk kereta AI: tersambung ke lajur rel trek dan wesel di tempat lajur itu berakhir
 Keep the ground under roads	Jaga tanah di bawah jalan
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Aktif: kuas tidak menaikkan tanah menembus jalan. Nonaktif: kuas membentuk tanah di bawah dan di samping jalan sebebas di tempat lain
+There are unsaved changes here: Save or Revert first	Ada perubahan yang belum disimpan: simpan atau kembalikan dulu
+The map has changed since this was opened: open the object again	Peta berubah sejak dibuka: buka objeknya lagi
+A spline helper has no road type: pick one or remove it	Pembantu spline tidak punya jenis jalan: pilih satu atau hapus
+the object names this file outside its own folder, which a copy would lose	objek menyebut berkas ini di luar foldernya, salinan akan kehilangannya
+what was written does not read back the same	yang ditulis tidak terbaca sama
+its paths are in a file of their own (`[paths]`), which this editor does not read	jalurnya ada di berkas tersendiri (`[paths]`), yang tidak dibaca editor ini
+it has no path	tidak punya jalur
+jump	lompat

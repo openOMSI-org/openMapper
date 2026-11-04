@@ -333,6 +333,10 @@ pub struct Editor {
     pub select_box: Option<[(f32, f32); 2]>,
     /// What was copied.
     pub clip: Option<crate::clipboard::Clip>,
+    /// The crossing whose paths are being edited: its object and the paths as the editor has
+    /// them, so the map shows the change before it is saved (and the object's own lanes are
+    /// not drawn a second time under them).
+    pub crossing_draft: Option<(TileKey, i64, Vec<crate::crossing_edit::Path>)>,
     /// Where the selection stood when a move began.
     move_from: Vec<Origin>,
     /// A reshape being dragged: its plan, or why it cannot be.
@@ -657,6 +661,7 @@ impl Default for Editor {
             hover_handle: None,
             select_box: None,
             clip: None,
+            crossing_draft: None,
             move_from: Vec::new(),
             press_drags: true,
             reshape: None,
@@ -5104,13 +5109,15 @@ impl Editor {
         let dw = w * 0.4;
         x.show_technical = self.show_technical || self.tool == Tool::Logic;
         x.hide = self.hide;
+        // (the crossing being edited draws its own paths below, not the file's)
+        let draft = self.crossing_draft.as_ref().filter(|d| !d.2.is_empty()).map(|d| (d.0, d.1));
         // the AI's lanes: arrows the way traffic goes, ends green where joined, red where not
         // (thin and small: a lane is a line on the road, not a road of its own)
         if self.tool == Tool::Logic || self.show_lanes {
             let r = (cam.distance * 1.3).clamp(40.0, 500.0);
             let (lanes, ends) = crate::lanes::near(doc, assets, cam.target.truncate(), r);
             let lw = (cam.distance * 0.0012).clamp(0.03, 1.2) as f32;
-            for l in &lanes {
+            for l in lanes.iter().filter(|l| !(draft.is_some() && l.object == draft)) {
                 let color = match l.kind {
                     0 => [1.0, 0.78, 0.2, 0.9],
                     2 => [0.85, 0.5, 1.0, 0.9],
@@ -5147,6 +5154,31 @@ impl Editor {
             }
             for e in &ends {
                 disc(&mut x.overlay, cam, e.pos + DVec3::Z * 0.2, lw * 1.2, if e.linked { [0.35, 0.85, 0.45, 0.95] } else { [0.95, 0.25, 0.2, 0.95] });
+            }
+        }
+        // the crossing being edited: its paths as the window has them, on the map itself
+        if let (Some((k, id)), Some((_, _, paths))) = (draft, self.crossing_draft.as_ref()) {
+            if let Some(o) = doc.object(k, id) {
+                let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                let world = doc.object_world(k, o, abs);
+                let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
+                let lift = DVec3::Z * 0.25;
+                let lw = (cam.distance * 0.0016).clamp(0.04, 1.6) as f32;
+                for p in paths {
+                    let color = match p.kind() {
+                        1 => [0.42, 0.74, 0.92, 0.95],
+                        2 => [0.78, 0.58, 0.84, 0.95],
+                        _ => [0.98, 0.72, 0.22, 0.95],
+                    };
+                    let pts: Vec<DVec3> = p.points(0.5).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    for s in pts.windows(2) {
+                        line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
+                    }
+                    // the ends, where they are dragged in the window
+                    for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
+                        disc(&mut x.overlay, cam, at + lift, lw * 1.8, color);
+                    }
+                }
             }
         }
         // an AI path has nothing to see: the picked and the hovered one drawn as lines
@@ -7832,6 +7864,21 @@ impl Editor {
             }
         }
         doc.tiles.get_mut(&k).map(|t| t.touch_content());
+    }
+
+    /// An object of the map made one of the type `file` (the crossing editor's copy), in one
+    /// step of the history.
+    pub fn set_object_file(&mut self, k: TileKey, id: i64, file: &str) {
+        let Some(doc) = self.doc.as_mut() else { return };
+        self.history.begin(tr("Another crossing file", "Другой файл перекрёстка"));
+        self.history.touch_tile(doc, k);
+        if let Some(o) = selection::any_object_mut(doc, k, id) {
+            if o.file != file {
+                o.file = file.to_string();
+            }
+        }
+        doc.tiles.get_mut(&k).map(|t| t.touch_content());
+        self.history.commit();
     }
 
     /// The selected objects made ones of the type `file`, where they stand.

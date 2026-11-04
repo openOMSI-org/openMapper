@@ -139,6 +139,7 @@ pub struct App {
     pbr: crate::ui_pbr::PbrWindow,
     road_types: crate::ui_roads::RoadTypes,
     cj: crate::ui_cjunction::ComplexJunctions,
+    crossing: crate::ui_crossing::CrossingPaths,
     scripts: crate::ui_script::ScriptsUi,
     map_settings: crate::ui_mapsettings::MapSettings,
     calendar: crate::ui_calendar::CalendarWindow,
@@ -204,6 +205,7 @@ impl App {
             pbr: Default::default(),
             road_types: Default::default(),
             cj: Default::default(),
+            crossing: Default::default(),
             scripts: Default::default(),
             map_settings: Default::default(),
             calendar: Default::default(),
@@ -1579,6 +1581,16 @@ impl App {
             }
             Action::RoadTypes => self.road_types.open = !self.road_types.open,
             Action::ComplexJunctions => self.cj.open = !self.cj.open,
+            Action::CrossingPaths => {
+                // (its copy of the object would be on this disk only, and the map's others would get a path they lack)
+                if self.collab.is_guest() {
+                    self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+                } else if let Some(roots) = self.roots.clone() {
+                    self.crossing.request(&mut self.ed, &roots, &self.lib);
+                } else {
+                    self.ed.toast(tr("Choose the OMSI installation first", "Сначала укажите установку OMSI"));
+                }
+            }
             Action::PlaceComplex(layout, turn) => {
                 let at = self.cam.target.truncate();
                 if let Some(assets) = self.assets.as_mut() {
@@ -2447,6 +2459,7 @@ impl App {
                 self.pbr.window(&ctx, self.roots.as_ref(), &mut actions);
                 self.road_types.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.cj.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref().map(|r| &r.content), self.assets.as_mut(), &mut actions);
+                self.crossing.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), self.assets.as_mut(), &mut actions);
                 let folder = self.map_folder();
                 self.scripts.window(&ctx, &mut self.ed, self.roots.as_ref(), &folder, &mut actions);
                 self.map_settings.window(&ctx, &mut self.ed, self.roots.as_ref());
