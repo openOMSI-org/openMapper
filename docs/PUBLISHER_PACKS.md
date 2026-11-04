@@ -42,6 +42,35 @@ Windows user-scoped DPAPI. No purchase service, universal key or client ownershi
 Back up publisher keys privately; users obtain replacement entitlements if native storage is
 lost. Linux protected storage is currently unsupported; signed unencrypted packs still work.
 
+## Per-sale packs and licences
+
+A publisher selling a map can build one protected pack and one licence for each sale:
+
+```text
+openmapper --publish-licensed-packs spec.json sales signing.pk8 licence-ids.txt <expiry-unix>
+```
+
+- **Licence IDs.** `licence-ids.txt` lists one opaque licence ID per line, for example 32
+  random hexadecimal characters from the publisher's store. IDs use 1 to 128 ASCII letters,
+  digits, dots, underscores or hyphens, the same format as
+  [placement watermark](PLACEMENT_WATERMARKS.md) buyer IDs, so one ID can name both. They
+  hold no personal data; only the publisher's own records link an ID to a buyer.
+- **What is built.** For each ID, the new `sales` folder gets:
+  - `<id>.oopp`, a pack with a fresh content key whose signed manifest names the ID;
+  - `<id>.licence.json`, a licence for that pack that repeats the ID.
+- **What goes where.** Send each buyer only their `.oopp` folder and `.licence.json` file.
+  Keep `<id>.key` and `licences.json` private. The key lets the publisher issue a
+  replacement licence later with `omsi-pack issue ... --licence-id <id>`. `licences.json`
+  records each licence ID with its pack, version, manifest digest, key ID and expiry.
+- **What it does.** A licence unlocks only the pack built for the same ID, so a leaked pack
+  or licence names the sale it came from. Original-file hashes are the same in every
+  buyer's pack, so provenance recognition still works.
+- **Failures.** The specification must be protected. A repeated, malformed or case-only
+  duplicate ID, a past expiry or any build failure leaves no output folder.
+
+Licence IDs trace a pack or licence that was passed on as it is. A copy taken from a
+decrypted map in memory carries no licence ID; placement watermarks address that case.
+
 ## Sharing a map
 
 Normal export consults trusted signed manifests and the retained `PackIndex`. Exact matching

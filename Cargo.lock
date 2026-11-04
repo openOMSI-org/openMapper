@@ -3333,7 +3333,7 @@ dependencies = [
 [[package]]
 name = "omsi-audio"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "cpal",
@@ -3350,7 +3350,7 @@ dependencies = [
 [[package]]
 name = "omsi-cfg"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "encoding_rs",
  "flate2",
@@ -3367,7 +3367,7 @@ dependencies = [
 [[package]]
 name = "omsi-content"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3376,7 +3376,7 @@ dependencies = [
 [[package]]
 name = "omsi-geometry"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "glam",
  "log",
@@ -3390,7 +3390,7 @@ dependencies = [
 [[package]]
 name = "omsi-htmlengine"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "ab_glyph",
  "log",
@@ -3401,7 +3401,7 @@ dependencies = [
 [[package]]
 name = "omsi-htmlpage"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "ab_glyph",
  "boa_engine",
@@ -3413,7 +3413,7 @@ dependencies = [
 [[package]]
 name = "omsi-launcher-core"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "libc",
@@ -3438,7 +3438,7 @@ dependencies = [
 [[package]]
 name = "omsi-map"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "bytemuck",
  "glam",
@@ -3452,7 +3452,7 @@ dependencies = [
 [[package]]
 name = "omsi-model"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3461,7 +3461,7 @@ dependencies = [
 [[package]]
 name = "omsi-net"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "flate2",
  "libc",
@@ -3479,7 +3479,7 @@ dependencies = [
 [[package]]
 name = "omsi-o3d"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "encoding_rs",
  "glam",
@@ -3495,7 +3495,7 @@ dependencies = [
 [[package]]
 name = "omsi-pack"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "libc",
  "ring",
@@ -3511,7 +3511,7 @@ dependencies = [
 [[package]]
 name = "omsi-platform"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "log",
@@ -3528,7 +3528,7 @@ dependencies = [
 [[package]]
 name = "omsi-render"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "ash",
@@ -3550,7 +3550,7 @@ dependencies = [
 [[package]]
 name = "omsi-scene"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "ab_glyph",
  "anyhow",
@@ -3589,7 +3589,7 @@ dependencies = [
 [[package]]
 name = "omsi-scenery"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3599,7 +3599,7 @@ dependencies = [
 [[package]]
 name = "omsi-script"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "hashbrown 0.17.1",
  "log",
@@ -3610,7 +3610,7 @@ dependencies = [
 [[package]]
 name = "omsi-sim"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3637,7 +3637,7 @@ dependencies = [
 [[package]]
 name = "omsi-soundscape"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "anyhow",
  "glam",
@@ -3658,7 +3658,7 @@ dependencies = [
 [[package]]
 name = "omsi-texture"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "hashbrown 0.17.1",
  "image",
@@ -3673,7 +3673,7 @@ dependencies = [
 [[package]]
 name = "omsi-timetable"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3683,7 +3683,7 @@ dependencies = [
 [[package]]
 name = "omsi-transit"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3692,7 +3692,7 @@ dependencies = [
 [[package]]
 name = "omsi-trolley"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "glam",
  "hashbrown 0.17.1",
@@ -3703,7 +3703,7 @@ dependencies = [
 [[package]]
 name = "omsi-ui"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "ab_glyph",
  "bytemuck",
@@ -3720,7 +3720,7 @@ dependencies = [
 [[package]]
 name = "omsi-vehicle"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -3730,7 +3730,7 @@ dependencies = [
 [[package]]
 name = "omsi-weather"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "glam",
  "log",
@@ -3744,7 +3744,7 @@ dependencies = [
 [[package]]
 name = "omsi-world"
 version = "0.1.0"
-source = "git+https://github.com/Italian-seasoning/openOMSI?rev=6ac0681e6d37fea9b3dfebd34314659c376bc2a4#6ac0681e6d37fea9b3dfebd34314659c376bc2a4"
+source = "git+https://github.com/Italian-seasoning/openOMSI?rev=f10c6d68e260279efbeb23acc66cbf1144ab43ab#f10c6d68e260279efbeb23acc66cbf1144ab43ab"
 dependencies = [
  "glam",
  "hashbrown 0.17.1",

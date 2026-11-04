@@ -153,6 +153,13 @@ fn main() {
         };
         std::process::exit(publisher::cli(std::path::Path::new(spec), std::path::Path::new(out), std::path::Path::new(signing), args.get(5).map(std::path::Path::new)));
     }
+    if args.get(1).is_some_and(|a| a == "--publish-licensed-packs") {
+        let (Some(spec), Some(out), Some(signing), Some(licences), Some(expires), None) = (args.get(2), args.get(3), args.get(4), args.get(5), args.get(6), args.get(7)) else {
+            eprintln!("openmapper --publish-licensed-packs spec.json out-folder signing.pk8 licence-ids.txt expiry-unix");
+            std::process::exit(2);
+        };
+        std::process::exit(publisher::licensed_cli(std::path::Path::new(spec), std::path::Path::new(out), std::path::Path::new(signing), std::path::Path::new(licences), expires));
+    }
     if args.get(1).map(|a| a == "--check").unwrap_or(false) {
         let Some(cfg) = args.get(2) else {
             eprintln!("openmapper --check path/to/global.cfg");
