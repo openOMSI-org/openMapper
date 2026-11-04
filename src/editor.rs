@@ -515,6 +515,9 @@ pub struct Editor {
     road_start: Option<(Anchor, bool)>,
     road_plan: Option<(Vec<Seg>, f64, f64, Option<Anchor>)>,
     pub follow_ground: bool,
+    /// The terrain brush keeps the ground from coming up through a road (off: it edits the
+    /// ground under and beside roads as anywhere else).
+    pub keep_ground_under_roads: bool,
     /// What is built follows the ground: new roads, paths and tracks take its height along their
     /// way (off: they run level from where they start). Only what is built from now on; what is
     /// there stays as it is.
@@ -748,6 +751,7 @@ impl Default for Editor {
             road_start: None,
             road_plan: None,
             follow_ground: true,
+            keep_ground_under_roads: true,
             auto_junctions: true,
             auto_adapt: true,
             auto_terrain: true,
@@ -4584,7 +4588,7 @@ impl Editor {
         let Some(doc) = self.doc.as_mut() else { return };
         let r = self.brush_radius as f64;
         // the roads near the brush: the ground is not raised up through them
-        let roads = road_points_near(doc, assets, c, r + 15.0);
+        let roads = if self.keep_ground_under_roads { road_points_near(doc, assets, c, r + 15.0) } else { Vec::new() };
         let strength = self.brush_strength as f64;
         let mode = self.terrain_mode;
         let flat = self.flatten_to.unwrap_or(0.0) as f64;
@@ -13124,6 +13128,41 @@ mod tests {
         assert!((a - 4.88).abs() < 0.35, "{a}");
         assert!((b - 4.88).abs() < 0.35, "{b}");
         assert!(doc.ground(DVec2::new(100.0, 20.0)).abs() < 0.05);
+    }
+
+    /// The terrain brush stops under a road unless told not to, and then raises the ground
+    /// right up to and past it.
+    #[test]
+    fn the_brush_raises_the_ground_at_a_road_only_when_that_is_turned_off() {
+        let raised = |keep: bool| {
+            let mut doc = flat_map(1);
+            add_spline(&mut doc, (0, 0), 1, 100.0, 80.0, 0.0, 40.0, 0, 0);
+            let mut ed = Editor::default();
+            ed.open(doc);
+            ed.keep_ground_under_roads = keep;
+            ed.terrain_mode = TerrainMode::Raise;
+            ed.brush_radius = 12.0;
+            ed.brush_strength = 1.0;
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            let road = crate::assets::SplineModel {
+                def: omsi_scenery::Spline {
+                    profiles: vec![omsi_scenery::SplineProfile {
+                        texture: 0,
+                        points: vec![omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() }, omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() }],
+                    }],
+                    ..Default::default()
+                },
+                materials: Vec::new(),
+                half_width: 4.0,
+            };
+            assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+            for _ in 0..10 {
+                ed.brush_terrain(&mut assets, DVec2::new(100.0, 100.0), 0.1);
+            }
+            ed.doc.as_ref().unwrap().ground(DVec2::new(100.0, 100.0))
+        };
+        assert!(raised(true) < 0.01, "{}", raised(true));
+        assert!(raised(false) > 1.0, "{}", raised(false));
     }
 
     #[test]

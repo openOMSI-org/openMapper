@@ -1942,6 +1942,10 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
             }
         }
     }
+    if matches!(ed.terrain_mode, TerrainMode::Raise | TerrainMode::Smooth | TerrainMode::Flatten | TerrainMode::Roughen) {
+        let r = check(ui, &mut ed.keep_ground_under_roads, tr("Keep the ground under roads", "Держать землю под дорогами"));
+        help(st, &r, tr("On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else", "Включено: кисть не поднимает землю сквозь дорогу. Выключено: земля под дорогами и рядом с ними меняется так же свободно, как и везде"));
+    }
     if ed.terrain_mode == TerrainMode::Flatten {
         ui.horizontal(|ui| {
             let mut fixed = ed.flatten_fixed.is_some();
