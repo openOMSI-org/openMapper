@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	Sokszög: a kijelölt s
 Polygon: click its corners	Sokszög: kattintson a sarkokra
 Polygon from it	Sokszög ebből
 Polygon from them	Sokszög ezekből
+Saving…	Mentés…
+Still saving	Még ment
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Kikapcsolva: csak a kamera körüli csempék töltődnek be, mint az OMSI 2 szerkesztőjében, a többi akkor töltődik, amikor odamész
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Egy nagy vagy nagyon részletes térkép kevesebb csempével gyorsabb: a többi akkor töltődik be, amikor odamész
 tiles round the camera are loaded; more load as you go there	csempe van betöltve a kamera körül; a többi akkor töltődik, amikor odamész

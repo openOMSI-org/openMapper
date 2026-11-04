@@ -2623,6 +2623,8 @@ Polygon: fill the selected splines, or click its corners	Polygone : remplir les 
 Polygon: click its corners	Polygone : cliquer sur les angles
 Polygon from it	Polygone à partir de lui
 Polygon from them	Polygone à partir d'eux
+Saving…	Enregistrement…
+Still saving	Encore en cours
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Désactivé : seules les tuiles autour de la caméra sont chargées, comme dans l'éditeur d'OMSI 2, et d'autres se chargent quand vous y allez
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Une carte grande ou très détaillée est plus fluide avec moins de tuiles : les autres se chargent quand vous y allez
 tiles round the camera are loaded; more load as you go there	tuiles autour de la caméra sont chargées ; d'autres se chargent quand vous y allez

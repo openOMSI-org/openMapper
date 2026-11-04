@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	बहुभुज: च
 Polygon: click its corners	बहुभुज: कोनों पर क्लिक करें
 Polygon from it	इससे बहुभुज
 Polygon from them	इनसे बहुभुज
+Saving…	सहेजा जा रहा है…
+Still saving	अभी भी सहेजा जा रहा है
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, और आप जहाँ जाएँ वहाँ और लोड होती हैं
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	बड़ा या बहुत विस्तृत मैप कम टाइलों के साथ हल्का चलता है: बाकी टाइलें आप वहाँ जाने पर लोड होती हैं
 tiles round the camera are loaded; more load as you go there	टाइलें कैमरे के आसपास लोड हैं; आप जहाँ जाएँ वहाँ और लोड होती हैं

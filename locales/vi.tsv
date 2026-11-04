@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	Đa giác: tô đầy c
 Polygon: click its corners	Đa giác: nhấp vào các góc
 Polygon from it	Đa giác từ nó
 Polygon from them	Đa giác từ chúng
+Saving…	Đang lưu…
+Still saving	Vẫn đang lưu
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Tắt: chỉ tải các ô quanh camera, như trình sửa của OMSI 2, và tải thêm khi bạn đến đó
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Bản đồ lớn hoặc rất chi tiết sẽ nhẹ hơn khi có ít ô hơn: các ô còn lại được tải khi bạn đến đó
 tiles round the camera are loaded; more load as you go there	ô quanh camera đã được tải; sẽ tải thêm khi bạn đến đó

@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	Көпбұрыш: та�
 Polygon: click its corners	Көпбұрыш: бұрыштарды басыңыз
 Polygon from it	Одан көпбұрыш
 Polygon from them	Олардан көпбұрыш
+Saving…	Сақталуда…
+Still saving	Әлі сақталуда
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Өшірулі: OMSI 2 редакторындағыдай тек камера айналасындағы тайлдар жүктеледі, қалғаны сол жерге барғанда жүктеледі
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Үлкен немесе өте егжей-тегжейлі карта тайлдар аз болғанда жеңілірек жұмыс істейді: қалғандары сол жерге барғанда жүктеледі
 tiles round the camera are loaded; more load as you go there	тайл камера айналасында жүктелді; қалғаны сол жерге барғанда жүктеледі

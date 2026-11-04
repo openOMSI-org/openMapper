@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	Çokgen: seçili spline
 Polygon: click its corners	Çokgen: köşelere tıkla
 Polygon from it	Ondan çokgen
 Polygon from them	Onlardan çokgen
+Saving…	Kaydediliyor…
+Still saving	Hâlâ kaydediliyor
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Kapalı: OMSI 2'nin düzenleyicisindeki gibi yalnızca kameranın çevresindeki karolar yüklenir, oraya gittiğinizde daha fazlası yüklenir
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Büyük veya çok ayrıntılı bir harita daha az karoyla daha akıcı çalışır: diğerleri oraya gittiğinizde yüklenir
 tiles round the camera are loaded; more load as you go there	karo kameranın çevresinde yüklü; oraya gittiğinizde daha fazlası yüklenir

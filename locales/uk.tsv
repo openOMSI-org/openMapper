@@ -2623,6 +2623,8 @@ Polygon: fill the selected splines, or click its corners	Багатокутни�
 Polygon: click its corners	Багатокутник: клацніть по кутах
 Polygon from it	Багатокутник із нього
 Polygon from them	Багатокутник із них
+Saving…	Збереження…
+Still saving	Ще зберігається
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Вимкнено: завантажуються лише тайли навколо камери, як у редакторі OMSI 2, решта завантажується, коли ви туди доходите
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	Велика або дуже детальна карта працює легше з меншою кількістю тайлів: решта завантажується, коли ви туди доходите
 tiles round the camera are loaded; more load as you go there	тайлів навколо камери завантажено; решта завантажується, коли ви туди доходите

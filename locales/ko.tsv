@@ -2625,6 +2625,8 @@ Polygon: fill the selected splines, or click its corners	폴리곤: 선택한 �
 Polygon: click its corners	폴리곤: 모서리를 클릭
 Polygon from it	이것으로 폴리곤
 Polygon from them	이것들로 폴리곤
+Saving…	저장 중…
+Still saving	아직 저장 중
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	끔: OMSI 2 편집기처럼 카메라 주변의 타일만 불러오며, 가는 곳은 도착하면 더 불러옵니다
 A big or very detailed map is lighter with fewer tiles: the others load as you go there	크거나 매우 상세한 맵은 타일 수가 적을수록 가볍습니다. 나머지는 그곳으로 가면 불러옵니다
 tiles round the camera are loaded; more load as you go there	개의 타일이 카메라 주변에 불러와졌습니다. 가는 곳은 도착하면 더 불러옵니다
