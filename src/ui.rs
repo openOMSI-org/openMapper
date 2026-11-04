@@ -2547,7 +2547,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                             let mut side = if s.radius == 0.0 { 0.0 } else { s.radius.signum() };
                             let mut changed = false;
                             if side != 0.0 {
-                                changed = ui.add(egui::DragValue::new(&mut r).speed(0.5).range(s.radius.abs().min(3.0)..=s.radius.abs().max(20000.0)).max_decimals(1).suffix(" m")).changed() && r != s.radius.abs();
+                                // (any radius, to the decimal: a thin wall's pillar has one of 0.3 m)
+                                changed = ui.add(egui::DragValue::new(&mut r).speed((s.radius.abs() * 0.02).clamp(0.005, 0.5)).range(s.radius.abs().min(0.01)..=s.radius.abs().max(20000.0)).max_decimals(3).suffix(" m")).changed() && r != s.radius.abs();
                             }
                             egui::ComboBox::from_id_salt("bend").selected_text(if side > 0.0 { tr("right", "вправо") } else if side < 0.0 { tr("left", "влево") } else { tr("straight", "прямая") }).width(80.0).show_ui(ui, |ui| {
                                 for (v, name) in [(0.0, tr("straight", "прямая")), (-1.0, tr("left", "влево")), (1.0, tr("right", "вправо"))] {

@@ -2407,7 +2407,8 @@ impl Editor {
                 let sels = self.selection();
                 let arms = self.arms_for(&sels);
                 let Some(doc) = self.doc.as_mut() else { return };
-                let Some(pivot) = selection::centre(doc, &sels) else { return };
+                let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
+                let Some(pivot) = pivot else { return };
                 let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
                 // (one thing alone, with angle snapping on, comes to a whole step)
                 let deg = match (&from[..], self.snap_angle) {
@@ -5801,7 +5802,8 @@ impl Editor {
     }
 
     /// The Move / Rotate / Scale handles of the selection (None: the Select tool's plain
-    /// mode, nothing selected, or a single road, which has grips of its own).
+    /// mode, nothing selected, or a single road being moved or scaled, which has grips of its
+    /// own for that; it can still be turned).
     pub fn gizmo(&self) -> Option<crate::gizmo::Gizmo> {
         use crate::gizmo::{Gizmo, Mode};
         if let Some(m) = self.mesh.as_ref().filter(|m| m.editing) {
@@ -5815,9 +5817,9 @@ impl Editor {
         if self.tool != Tool::Select || self.xform == Xform::Select || self.cutting || self.ruler.is_some() {
             return None;
         }
-        // (a road selected alone has no handles: read from the selection kept rather than from a
-        // copy of it made again - copies of a selection of thousands were most of a frame)
-        if matches!(self.selected, Some(Sel::Spline(..))) && self.also.iter().all(|s| Some(*s) == self.selected) {
+        // (a road selected alone has only the turning handle: read from the selection kept rather
+        // than from a copy of it made again - copies of a selection of thousands were most of a frame)
+        if self.xform != Xform::Rotate && matches!(self.selected, Some(Sel::Spline(..))) && self.also.iter().all(|s| Some(*s) == self.selected) {
             return None;
         }
         let sels = self.selection();
@@ -5832,7 +5834,8 @@ impl Editor {
         if pts.is_empty() {
             return None;
         }
-        let pivot = pts.iter().sum::<DVec3>() / pts.len() as f64;
+        let middle = pts.iter().sum::<DVec3>() / pts.len() as f64;
+        let pivot = if self.xform == Xform::Rotate { road_start(doc, &sels).unwrap_or(middle) } else { middle };
         let mode = match self.xform {
             Xform::Rotate => Mode::Rotate,
             Xform::Scale => Mode::Scale,
@@ -9571,6 +9574,13 @@ fn road_points_near(doc: &Document, assets: &mut Assets, c: DVec2, within: f64) 
     out
 }
 
+/// A road selected alone turns about its start, so it stays where the piece before it ends
+/// (a wall's next section at a right angle, a corner that closes).
+fn road_start(doc: &Document, sels: &[Sel]) -> Option<DVec3> {
+    let [Sel::Spline(k, id)] = sels else { return None };
+    doc.spline(*k, *id).map(|s| omsi_geometry::SplineCurve::from_map(s, tile_origin(*k)).point_at(0.0))
+}
+
 /// The highest the ground sample at `p` may lie without its triangles showing through a
 /// road beside it (see `conform_ground`), if a road is that near.
 fn ground_cap(roads: &[(DVec2, f64, f64)], p: DVec2, cell: f64) -> Option<f64> {
@@ -11970,6 +11980,38 @@ mod tests {
         let mut ed = Editor::default();
         ed.open(doc);
         ed
+    }
+
+    /// A road alone has the turning handle, about its start, and turns there by the R key too.
+    /// Moving and scaling keep to its grips.
+    #[test]
+    fn a_road_alone_turns_about_its_start() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.select(Some(Sel::Spline((0, 0), 3)));
+        ed.xform = Xform::Move;
+        assert!(ed.gizmo().is_none());
+        ed.xform = Xform::Scale;
+        assert!(ed.gizmo().is_none());
+        ed.xform = Xform::Rotate;
+        let g = ed.gizmo().expect("a turning handle");
+        assert!((g.pivot.truncate() - DVec2::new(50.0, 50.0)).length() < 1e-9, "{:?}", g.pivot);
+        assert_eq!(g.allowed, [false, false, true]);
+        ed.rotate(90.0);
+        let s = ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap();
+        assert!((s.pos[0] - 50.0).abs() < 1e-9 && (s.pos[1] - 50.0).abs() < 1e-9, "{:?}", s.pos);
+        assert!((s.heading - 90.0).abs() < 1e-9, "{}", s.heading);
+    }
+
+    /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.
+    #[test]
+    fn a_small_radius_stays_as_typed() {
+        let mut ed = editor();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.shape_request = Some(((0, 0), 3, 1.0, 0.3));
+        ed.tick(&mut assets, 0.0, false);
+        assert!((ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap().radius - 0.3).abs() < 1e-9);
     }
 
     /// A road made longer by numbers: the road joined at its end starts where it now ends,
