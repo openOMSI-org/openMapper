@@ -2633,3 +2633,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klicken Sie den Spline an, auf dem sie stehen sollen. Jeder folgt dieser Straße und behält seinen IDCode
 Trains	Züge
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Eine unsichtbare Schienenspur für die KI-Züge: Sie schließt dort an die Schienenspuren von Gleisen und Weichen an, wo diese enden
+Keep the ground under roads	Boden unter Straßen halten
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	An: Der Pinsel hebt den Boden nicht durch eine Straße. Aus: Er formt den Boden unter und neben Straßen so frei wie überall sonst

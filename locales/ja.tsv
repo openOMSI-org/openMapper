@@ -2635,3 +2635,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	それらを置くスプラインをクリックします。それぞれがその道に沿い、IDCode を保ちます
 Trains	列車
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	AI列車用の見えない線路レーン: 線路や分岐器の線路レーンの端に接続します
+Keep the ground under roads	地面を道路の下に保つ
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	オン: ブラシは地面を道路より上に上げません。オフ: 道路の下や脇の地面も他の場所と同じように自由に編集します

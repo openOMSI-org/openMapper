@@ -297,6 +297,7 @@ struct SideProfile {
 }
 
 /// An arm as the junction's mesh needs it, seen from the junction looking out along it.
+#[derive(Clone)]
 struct ArmGeo {
     end: DVec3,
     out: f64,
@@ -817,6 +818,67 @@ fn num(v: f64) -> String {
     if s.is_empty() || s == "-0" { "0".into() } else { s.to_string() }
 }
 
+/// How finely a plate's own shape is kept: arms that differ by less make the same file. Far under
+/// what shows where a road meets its plate, and well over a float's noise.
+const PLATE_GRID_M: f64 = 0.01;
+const PLATE_GRID_DEG: f64 = 0.25;
+
+fn snapped(v: f64, grid: f64) -> f64 {
+    (v / grid).round() * grid
+}
+
+/// The junction as its object file holds it. Roads meeting the same way must make the same file,
+/// wherever they lie on the map, whichever way round, and whichever was drawn first:
+/// `order` is the arms counter-clockwise from the one every such junction picks, `turn` the
+/// object's heading on the map (0 when an option names arms by their heading on the map), and the
+/// arms and lanes are in the object's frame, kept to the plate's grid, with the texture along the
+/// kerbs starting afresh at each arm rather than running on from that road's own length.
+struct PlateFrame {
+    order: Vec<usize>,
+    turn: f64,
+    arms: Vec<ArmGeo>,
+    lanes: Vec<LaneEnd>,
+}
+
+fn plate_frame(geo: &[ArmGeo], files: &[String], lanes: &[LaneEnd], centre: DVec3, keep_heading: bool) -> PlateFrame {
+    let ccw = |g: &ArmGeo| roads::norm_deg(-g.out).rem_euclid(360.0);
+    let mut round: Vec<usize> = (0..geo.len()).collect();
+    round.sort_by(|a, b| ccw(&geo[*a]).total_cmp(&ccw(&geo[*b])));
+    // (each arm as it looks from the junction, and the turn on to the next round)
+    let looks: Vec<String> = (0..round.len())
+        .map(|k| {
+            let (i, next) = (round[k], round[(k + 1) % round.len()]);
+            let g = &geo[i];
+            let to_next = (ccw(&geo[next]) - ccw(g)).rem_euclid(360.0);
+            let d = g.end - centre;
+            format!("{}|{}|{:.2}|{:.2}|{:.2}|{:.2}|{:.2}|{:.2}", files[i].to_lowercase(), g.vdir, g.right_w, g.left_w, snapped(d.truncate().length(), PLATE_GRID_M), snapped(d.z, PLATE_GRID_M), snapped(to_next, PLATE_GRID_DEG), g.road_z)
+        })
+        .collect();
+    let from_arm = |k: usize| -> Vec<&String> { (0..looks.len()).map(|n| &looks[(k + n) % looks.len()]).collect() };
+    let first = (0..looks.len()).min_by_key(|k| from_arm(*k)).unwrap_or(0);
+    let order: Vec<usize> = (0..round.len()).map(|n| round[(first + n) % round.len()]).collect();
+    let turn = if keep_heading { 0.0 } else { order.first().map(|i| geo[*i].out).unwrap_or(0.0) };
+    let frame = |p: DVec3| -> DVec3 {
+        let q = crate::selection::turn_point((p - centre).truncate(), DVec2::ZERO, -turn);
+        DVec3::new(snapped(q.x, PLATE_GRID_M), snapped(q.y, PLATE_GRID_M), snapped(p.z - centre.z, PLATE_GRID_M))
+    };
+    let heading = |h: f64| roads::norm_deg(snapped(roads::norm_deg(h - turn), PLATE_GRID_DEG));
+    let arms = order
+        .iter()
+        .map(|i| {
+            let g = &geo[*i];
+            ArmGeo { end: frame(g.end), out: heading(g.out), v0: 0.0, ..g.clone() }
+        })
+        .collect();
+    let lanes = order
+        .iter()
+        .enumerate()
+        .flat_map(|(n, i)| lanes.iter().filter(move |l| l.arm == *i).map(move |l| (n, l)))
+        .map(|(n, l)| LaneEnd { arm: n, pos: frame(l.pos), flow: heading(l.flow), ..*l })
+        .collect();
+    PlateFrame { order, turn, arms, lanes }
+}
+
 /// How far from `centre` the plate reaches: out to the corners of the arms' ends, with the
 /// kerb and footway beyond the roadway (the ground under it is brought to its height out to
 /// there, not only to the roads' own width).
@@ -835,22 +897,30 @@ pub fn reach(doc: &Document, assets: &mut Assets, centre: DVec3, arms: &[Arm]) -
 pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphalt: Option<&Path>, centre: DVec3, arms: &[Arm], opts: &Options) -> anyhow::Result<i64> {
     let (_, lanes) = arm_ends(doc, assets, arms).ok_or_else(|| anyhow::anyhow!("a road of the junction is not loaded"))?;
     let geo: Vec<ArmGeo> = arms.iter().map(|a| arm_geometry(doc, assets, a)).collect::<Option<_>>().ok_or_else(|| anyhow::anyhow!("a road of the junction is not loaded"))?;
-    let outs: Vec<f64> = geo.iter().map(|g| g.out).collect();
-    let light_of: Vec<Option<usize>> = if opts.lights && arms.len() >= 3 {
+    // (from here on, what goes in the file: in the object's frame, its centre the origin)
+    let files: Vec<String> = arms.iter().map(|a| doc.spline(a.key, a.id).map(|s| s.file.clone()).unwrap_or_default()).collect();
+    let plate = plate_frame(&geo, &files, &lanes, centre, !opts.crossings.is_empty());
+    let plate_lights: Vec<Option<usize>> = if opts.lights && arms.len() >= 3 {
+        let outs: Vec<f64> = plate.arms.iter().map(|g| g.out).collect();
         let (a, b) = main_road(&outs);
         (0..arms.len()).map(|i| Some(if i == a || i == b { 0 } else { 1 })).collect()
     } else {
         vec![None; arms.len()]
     };
-    let mut recs = paths(&lanes, centre, &light_of);
+    // (the signal heads stand on the map, arm by arm as the roads came)
+    let mut light_of = vec![None; arms.len()];
+    for (n, i) in plate.order.iter().enumerate() {
+        light_of[*i] = plate_lights[n];
+    }
+    let mut recs = paths(&plate.lanes, DVec3::ZERO, &plate_lights);
     // zebra crossings: a footway across each arm chosen, a step inside its end
     let mut zebras: Vec<(DVec2, f64, f64, f64)> = Vec::new();
-    for g in geo.iter().filter(|g| opts.crossing_at(g.out)) {
+    for g in plate.arms.iter().filter(|g| opts.crossing_at(g.out)) {
         let r = roads::right(g.out);
-        let mid = g.end.truncate() - roads::dir(g.out) * 2.0 - centre.truncate();
+        let mid = g.end.truncate() - roads::dir(g.out) * 2.0;
         let (a, b) = (mid - r * (g.left_w + 0.5), mid + r * (g.right_w + 0.5));
         if let Some(seg) = roads::straight(a, b) {
-            let z = g.end.z - centre.z;
+            let z = g.end.z;
             recs.push(PathRec { seg, z0: z, z1: z, kind: 1, width: 3.0, direction: 2, blinker: 0, light: None });
             zebras.push((mid, g.out, g.left_w, g.right_w));
         }
@@ -865,7 +935,7 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
     // the roadway's texture: the asphalt of the roads that meet (a plate in the colour of its
     // roads, cut so that no patch comes along in rows), else the installation's own junction
     // asphalt
-    let widest = geo.iter().filter(|g| g.road_tex.is_some()).max_by(|a, b| (a.left_w + a.right_w).total_cmp(&(b.left_w + b.right_w)));
+    let widest = plate.arms.iter().filter(|g| g.road_tex.is_some()).max_by(|a, b| (a.left_w + a.right_w).total_cmp(&(b.left_w + b.right_w)));
     let road_tex = widest.and_then(|g| g.road_tex.clone());
     let (core_tex, period) = match road_tex {
         Some((tex, u, range, period, width, lane)) => {
@@ -877,14 +947,14 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
         None => (asphalt.map(Path::to_path_buf), 8.0),
     };
     let along = widest.map(|g| g.out).unwrap_or(0.0);
-    let mut mesh = junction_mesh(&geo, centre, core_tex, period, along);
+    let mut mesh = junction_mesh(&plate.arms, DVec3::ZERO, core_tex, period, along);
     if !zebras.is_empty() {
         let white = tex_dir.join("om_zebra_white.png");
         if !white.exists() {
             let _ = image::RgbaImage::from_pixel(8, 8, image::Rgba([235, 235, 230, 255])).save(&white);
         }
         let mat = mesh.material(Some(white));
-        let z = geo.iter().map(|g| g.end.z - centre.z).sum::<f64>() / geo.len().max(1) as f64 + 0.03;
+        let z = plate.arms.iter().map(|g| g.end.z).sum::<f64>() / plate.arms.len().max(1) as f64 + 0.03;
         for (mid, out, lw, rw) in &zebras {
             let (d, r) = (roads::dir(*out), roads::right(*out));
             // stripes 0.5 m wide, a metre apart, 3 m along the road
@@ -912,18 +982,18 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
         }
         names.push(name);
     }
-    // (the plate is written from what it is made of, its centre as the origin: junctions
-    // that come out the same share one object file, one model and one set of textures, so
-    // the game loads and draws it once. Named by what is in it)
+    // (the plate is written from what it is made of, in its own frame: junctions that come out
+    // the same share one object file, one model and one set of textures, so the game loads and
+    // draws it once. Named by what is in it)
     let x_text = mesh_x(&mesh, &names);
     let mut body = String::new();
-    if light_of.iter().any(|l| l.is_some()) {
+    if plate_lights.iter().any(|l| l.is_some()) {
         body.push_str(&light_program(opts));
     }
     // where roads join it (the editors snap to these)
-    for (g, a) in geo.iter().zip(arms) {
-        let file = doc.spline(a.key, a.id).map(|s| s.file.clone()).unwrap_or_default();
-        let p = g.end - centre;
+    for (g, i) in plate.arms.iter().zip(&plate.order) {
+        let file = &files[*i];
+        let p = g.end;
         // (OMSI's order: x, height, forward)
         let _ = write!(body, "[splinehelper]\n{file}\n{}\n{}\n{}\n{}\n0.1\n0\n\n", num(p.x), num(p.z), num(p.y), num(roads::norm_deg(g.out + 180.0)));
     }
@@ -957,7 +1027,7 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
     let org = tile_origin(k);
     let rel = format!("Sceneryobjects\\openMapper\\{folder}\\{name}.sco");
     let t = doc.tiles.get_mut(&k).ok_or_else(|| anyhow::anyhow!("no tile"))?;
-    t.tile.objects.push(MapObject { file: rel, id, pos: [centre.x - org.x, centre.y - org.y, centre.z], rot: [0.0; 3], ..Default::default() });
+    t.tile.objects.push(MapObject { file: rel, id, pos: [centre.x - org.x, centre.y - org.y, centre.z], rot: [roads::norm_deg(plate.turn), 0.0, 0.0], ..Default::default() });
     t.touch_content();
     // the signal heads, on poles, bound to the junction's lights by [varparent]
     let left_hand = doc.global.left_hand_traffic;
@@ -1299,6 +1369,65 @@ mod tests {
         // it rounds the corner through its inside
         let mid = segs[segs.len() / 2].point(segs[segs.len() / 2].length * 0.5);
         assert!(mid.x > 4.0 && mid.y > 4.0 && mid.x < 12.0 && mid.y < 12.0, "{mid:?}");
+    }
+
+    fn test_road() -> SplineModel {
+        let lane = |x: f32, direction: i32| omsi_scenery::PathDef { kind: 0, start: [x, 0.0, 0.0], width: 3.0, direction, ..Default::default() };
+        SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() }, omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() }],
+                }],
+                paths: vec![lane(2.0, 0), lane(-2.0, 1)],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        }
+    }
+
+    /// Three roads out of `centre`, turned by `turn`, made into a junction: its object.
+    fn t_junction(doc: &mut Document, assets: &mut Assets, content: &Path, centre: DVec2, turn: f64, ids: [i64; 3], lengths: [f64; 3]) -> MapObject {
+        let mut arms = Vec::new();
+        for ((rel, id), length) in [0.0, 90.0, 270.0].into_iter().zip(ids).zip(lengths) {
+            let out = roads::norm_deg(turn + rel);
+            let p = centre + roads::dir(out) * 10.0;
+            crate::selection::tests::add_spline(doc, (0, 0), id, p.x, p.y, out, length, 0, 0);
+            arms.push(Arm { key: (0, 0), id, at_end: false });
+        }
+        let id = make_with(doc, assets, content, None, DVec3::new(centre.x, centre.y, 0.0), &arms, &Options::default()).unwrap();
+        doc.tiles[&(0, 0)].tile.objects.iter().find(|o| o.id == id).unwrap().clone()
+    }
+
+    /// The same roads meeting at the same angles make one object, wherever the junction lies, whichever
+    /// way it faces, whichever road came first and however long the roads run on.
+    #[test]
+    fn junctions_of_the_same_shape_share_one_object() {
+        let roots = crate::doc::tests::scratch("junction-shared");
+        let content = roots.content.clone();
+        std::fs::create_dir_all(content.join("Sceneryobjects")).unwrap();
+        let mut doc = crate::selection::tests::flat_map(1);
+        doc.dir = content.join("maps").join("shared");
+        let mut assets = Assets::new(roots.omsi.clone(), content.clone());
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(test_road())));
+        let a = t_junction(&mut doc, &mut assets, &content, DVec2::new(100.0, 100.0), 0.0, [1, 2, 3], [20.0, 20.0, 20.0]);
+        let b = t_junction(&mut doc, &mut assets, &content, DVec2::new(200.0, 200.0), 37.0, [6, 5, 4], [13.5, 41.2, 27.3]);
+        assert_eq!(a.file, b.file);
+        assert!((roads::norm_deg(b.rot[0] - a.rot[0]) - 37.0).abs() < 1e-6, "{:?} {:?}", a.rot, b.rot);
+        let dir = omsi_cfg::resolve_path(&content, &a.file);
+        let dir = dir.parent().unwrap();
+        let scos = std::fs::read_dir(dir).unwrap().flatten().filter(|e| e.path().extension().is_some_and(|x| x == "sco")).count();
+        assert_eq!(scos, 1);
+        // each junction's lanes meet its roads' lanes on the map, however it is turned
+        assets.object_wait(&a.file, 5000).expect("the object reads back");
+        for centre in [DVec2::new(100.0, 100.0), DVec2::new(200.0, 200.0)] {
+            let (_, ends) = crate::lanes::near(&doc, &mut assets, centre, 14.0);
+            let inner: Vec<_> = ends.iter().filter(|e| (e.pos.truncate() - centre).length() < 12.5).collect();
+            assert!(inner.len() >= 12, "{}", inner.len());
+            assert!(inner.iter().all(|e| e.linked), "{centre:?} {inner:?}");
+        }
+        let _ = std::fs::remove_dir_all(&content);
     }
 
     #[test]

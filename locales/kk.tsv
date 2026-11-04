@@ -2635,3 +2635,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Олар тұратын сплайнды басыңыз. Әрқайсысы сол жолды ұстайды және IDCode сақтайды
 Trains	Пойыздар
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ЖИ пойыздарына арналған көрінбейтін рельс жолағы: жолдар мен бағыттамалардың рельс жолақтарына олар аяқталатын жерде қосылады
+Keep the ground under roads	Жерді жолдардың астында ұстау
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Қосулы: қылқалам жерді жол арқылы көтермейді. Өшірулі: жолдардың астындағы және жанындағы жерді басқа жердегідей еркін өзгертеді

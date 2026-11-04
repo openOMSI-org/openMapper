@@ -2635,3 +2635,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik de spline waarop ze moeten staan. Elk volgt die weg en houdt zijn IDCode
 Trains	Treinen
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Een onzichtbare spoorbaan voor de AI-treinen: sluit aan op de spoorbanen van sporen en wissels waar die eindigen
+Keep the ground under roads	Grond onder wegen houden
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Aan: het penseel tilt de grond niet door een weg heen. Uit: het vormt de grond onder en naast wegen even vrij als overal elders

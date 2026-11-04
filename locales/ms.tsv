@@ -2635,3 +2635,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik spline tempat mereka harus berdiri. Setiap satu mengikut jalan itu dan mengekalkan IDCode
 Trains	Kereta api
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Lorong rel halimunan untuk kereta api AI: bersambung ke lorong rel landasan dan suis di tempat ia berakhir
+Keep the ground under roads	Kekalkan tanah di bawah jalan
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Hidup: berus tidak menaikkan tanah menembusi jalan. Mati: berus membentuk tanah di bawah dan di sebelah jalan sebebas tempat lain

@@ -2633,3 +2633,5 @@ Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Cliquez le spline sur lequel ils doivent se tenir. Chacun suit cette route et garde son IDCode
 Trains	Trains
 An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Une voie ferrée invisible pour les trains de l'IA : elle rejoint les voies des rails et des aiguillages là où elles finissent
+Keep the ground under roads	Garder le terrain sous les routes
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Activé : le pinceau ne soulève pas le terrain à travers une route. Désactivé : il façonne le terrain sous les routes et à côté aussi librement qu'ailleurs
