@@ -2626,3 +2626,69 @@ Polygon: fill the selected splines, or click its corners	Sokszög: a kijelölt s
 Polygon: click its corners	Sokszög: kattintson a sarkokra
 Polygon from it	Sokszög ebből
 Polygon from them	Sokszög ezekből
+Saving…	Mentés…
+Still saving	Még ment
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Kattintson a spline-ra, amelyen állniuk kell. Mindegyik követi azt az utat, és megtartja az IDCode-ját
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Kikapcsolva: csak a kamera körüli csempék töltődnek be, mint az OMSI 2 szerkesztőjében, a többi akkor töltődik, amikor odamész
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Egy nagy vagy nagyon részletes térkép kevesebb csempével gyorsabb: a többi akkor töltődik be, amikor odamész
+tiles round the camera are loaded; more load as you go there	csempe van betöltve a kamera körül; a többi akkor töltődik, amikor odamész
+Only the tiles round the camera are loaded; more load as you go there	Csak a kamera körüli csempék vannak betöltve; a többi akkor töltődik, amikor odamész
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Egy nagy térképet 100 csempénként töltsön, mint az OMSI 2 szerkesztője?\n\nA grafikus memóriában csak a kamera körüli 100 csempe marad; a többi akkor töltődik be, amikor odamész. A nagyon nagy térképek így könnyűek maradnak. Bármikor módosítható: Nézet > Az összes csempe egyszerre (ki).
+Choose the OMSI installation first	Előbb válaszd ki az OMSI telepítését
+a file the object names is missing	hiányzik egy fájl, amelyet az objektum megnevez
+Another crossing file	Másik kereszteződésfájl
+Crossing paths of the picked object…	A kiválasztott kereszteződés sávjai…
+Crossing paths	Kereszteződés sávjai
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Egy kereszteződés- vagy csomópontobjektum sávjai, azok zárásai és lámpaprogramja, az objektum másolatában szerkesztve - az eredeti érintetlen marad
+Footway	Járda
+Street	Úttest
+Against	A menetirány ellen
+Both ways	Mindkét irányban
+Along	A menetirányban
+Left	Balra
+Right	Jobbra
+Red and yellow	Piros és sárga
+Green and yellow	Zöld és sárga
+Off	Kikapcsolva
+Select a crossing object, or pick one of these	Válassz egy kereszteződés-objektumot, vagy vegyél egyet ezek közül
+Pick a crossing object of the map	Vegyél egy kereszteződés-objektumot a térképről
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Itt egy meglévő kereszteződés sávjai, zárásai és lámpaprogramja szerkeszthetők. Az objektum az openMapper saját mappájába másolódik; az eredeti fájl érintetlen marad.
+openMapper's copy	az openMapper másolata
+in its own file (a copy is made on saving)	a saját fájljában (mentéskor másolat készül)
+Paths	Sávok
+Add a path	Sáv hozzáadása
+Remove this path	Sáv eltávolítása
+0 is a straight line, above 0 turns right, below 0 left	0 egyenes, 0 felett jobbra, 0 alatt balra kanyarodik
+Direction	Irány
+Turn signal	Irányjelző
+Keeps the junction clear	Szabadon tartja a kereszteződést
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Az ezen a sávon várakozó jármű szabadon tartja a kereszteződést a többieknek (`[crossingproblem]`)
+Blocks	Zárja
+Cycle	Ciklus
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: egy ciklus másodpercei. Megadás nélkül a leghosszabb lámpa fázisainak összege
+The phases do not add up to the cycle: the last one holds to its end	A fázisok nem adják ki a ciklust: az utolsó a ciklus végéig tart
+(no name)	(név nélkül)
+Detector	Detektor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: hány méterrel a stopvonal előtt kér egy jármű
+A phase	Egy fázis
+Remove this light	Lámpa eltávolítása
+A light	Egy lámpa
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	A lámpás kereszteződéshez jelfejek kellenek a térképen: a játék csak olyan programot futtat, amelyhez fejek vannak kötve
+Request loops	Kérőhurkok
+Spline helpers	Spline-illesztőpontok
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Ahol a térkép útja a kereszteződéshez illeszkedik. x, magasság, előre az objektum rendszerében
+The road type it takes (a `.sli`)	Az úttípus, amelyet fogad (egy `.sli`)
+A helper	Egy illesztőpont
+At the picked end	A kiválasztott végénél
+A helper where the picked path ends, facing out of the crossing	Illesztőpont ott, ahol a kiválasztott sáv véget ér, kifelé a kereszteződésből
+Save as a copy	Mentés másolatként
+Write the paths into openMapper's copy of the object	A sávok írása az objektum openMapper-másolatába
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Az objektum mappája az openMapperébe másolódik, a sávok oda íródnak, a térkép objektuma pedig arra mutat: az eredeti fájl érintetlen marad
+Back to how the object was when it was opened (the file is not touched)	Vissza ahhoz, ahogy az objektum megnyitáskor volt (a fájl érintetlen)
+Zoom out	Kicsinyítés
+Zoom in	Nagyítás
+The whole crossing in view	A teljes kereszteződés a képben
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Húzd a végét a mozgatáshoz. A Ctrl a másik sáv végéhez pattintja. A kerék nagyít, a jobb vagy középső gomb húzza a képet
+Back to how it was opened	Vissza a megnyitáskori állapothoz
+Nothing to edit yet	Egyelőre nincs mit szerkeszteni
+Crossing paths…	Kereszteződés sávjai…

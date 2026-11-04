@@ -2626,3 +2626,69 @@ Polygon: fill the selected splines, or click its corners	폴리곤: 선택한 �
 Polygon: click its corners	폴리곤: 모서리를 클릭
 Polygon from it	이것으로 폴리곤
 Polygon from them	이것들로 폴리곤
+Saving…	저장 중…
+Still saving	아직 저장 중
+Click the spline they should stand on. Each follows that road and keeps its IDCode	그것들이 설 스플라인을 클릭하세요. 각각 그 길을 따르며 IDCode를 유지합니다
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	끔: OMSI 2 편집기처럼 카메라 주변의 타일만 불러오며, 가는 곳은 도착하면 더 불러옵니다
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	크거나 매우 상세한 맵은 타일 수가 적을수록 가볍습니다. 나머지는 그곳으로 가면 불러옵니다
+tiles round the camera are loaded; more load as you go there	개의 타일이 카메라 주변에 불러와졌습니다. 가는 곳은 도착하면 더 불러옵니다
+Only the tiles round the camera are loaded; more load as you go there	카메라 주변의 타일만 불러왔습니다. 가는 곳은 도착하면 더 불러옵니다
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2 편집기처럼 큰 맵을 한 번에 100개 타일씩 불러올까요?\n\n그래픽 메모리에는 카메라 주변의 100개 타일만 남고, 나머지는 그곳으로 가면 불러옵니다. 아주 큰 맵이 가벼워집니다. 보기 > 모든 타일을 한 번에 불러오기(끔)에서 언제든 바꿀 수 있습니다.
+Choose the OMSI installation first	먼저 OMSI 설치 위치를 선택하세요
+a file the object names is missing	오브젝트가 지정한 파일이 없습니다
+Another crossing file	다른 교차로 파일
+Crossing paths of the picked object…	선택한 교차로 오브젝트의 경로…
+Crossing paths	교차로 경로
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	교차로 또는 분기 오브젝트의 경로, 그 차단과 신호등 프로그램을 오브젝트의 사본에서 편집합니다. 원본은 그대로 남습니다
+Footway	보도
+Street	차도
+Against	역방향
+Both ways	양방향
+Along	정방향
+Left	좌
+Right	우
+Red and yellow	적색과 황색
+Green and yellow	녹색과 황색
+Off	소등
+Select a crossing object, or pick one of these	교차로 오브젝트를 선택하거나 다음 중 하나를 고르세요
+Pick a crossing object of the map	지도에서 교차로 오브젝트 고르기
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	기존 교차로의 경로, 차단, 신호등 프로그램을 여기서 편집합니다. 오브젝트는 openMapper 자체 폴더로 복사되며 원본 파일은 그대로 남습니다.
+openMapper's copy	openMapper의 사본
+in its own file (a copy is made on saving)	자체 파일로 (저장할 때 사본을 만듭니다)
+Paths	경로
+Add a path	경로 추가
+Remove this path	이 경로 삭제
+0 is a straight line, above 0 turns right, below 0 left	0은 직선, 0보다 크면 우회전, 0보다 작으면 좌회전
+Direction	진행 방향
+Turn signal	방향지시등
+Keeps the junction clear	교차로를 비워 둠
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	이 경로에서 기다리는 차량이 다른 차량을 위해 교차로를 비워 둡니다 (`[crossingproblem]`)
+Blocks	차단
+Cycle	주기
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: 한 주기의 초. 설정하지 않으면 가장 긴 신호의 현시 합계
+The phases do not add up to the cycle: the last one holds to its end	현시 합계가 주기와 맞지 않아 마지막 현시가 주기 끝까지 계속됩니다
+(no name)	(이름 없음)
+Detector	검지 거리
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: 정지선 몇 미터 전에서 차량이 요청을 등록하는지
+A phase	현시
+Remove this light	이 신호등 삭제
+A light	신호등
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	신호등이 있는 교차로에는 지도의 신호등 헤드가 필요합니다. 게임은 헤드가 연결된 프로그램만 실행합니다
+Request loops	요청 루프
+Spline helpers	스플라인 연결점
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	지도의 도로가 교차로에 붙는 위치. x, 높이, 오브젝트 좌표계의 전방
+The road type it takes (a `.sli`)	받아들이는 도로 유형 (`.sli`)
+A helper	연결점
+At the picked end	선택한 끝에
+A helper where the picked path ends, facing out of the crossing	선택한 경로가 끝나는 곳, 교차로 바깥을 향한 연결점
+Save as a copy	사본으로 저장
+Write the paths into openMapper's copy of the object	오브젝트의 openMapper 사본에 경로 쓰기
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	오브젝트 폴더를 openMapper로 복사하고 그곳에 경로를 쓰며 지도의 오브젝트가 그곳을 가리키게 합니다. 원본 파일은 건드리지 않습니다
+Back to how the object was when it was opened (the file is not touched)	열었을 때의 상태로 되돌리기 (파일은 건드리지 않음)
+Zoom out	축소
+Zoom in	확대
+The whole crossing in view	교차로 전체 보기
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	끝을 끌어 이동합니다. Ctrl로 다른 경로의 끝에 붙습니다. 휠은 확대/축소, 오른쪽 또는 가운데 버튼 끌기는 화면 이동
+Back to how it was opened	열었을 때의 상태로
+Nothing to edit yet	아직 편집할 것이 없습니다
+Crossing paths…	교차로 경로…

@@ -2666,3 +2666,69 @@ Polygon: fill the selected splines, or click its corners	Veelhoek: vul de gesele
 Polygon: click its corners	Veelhoek: klik op de hoeken
 Polygon from it	Veelhoek hiervan
 Polygon from them	Veelhoek hiervan
+Saving…	Opslaan…
+Still saving	Nog bezig met opslaan
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik de spline waarop ze moeten staan. Elk volgt die weg en houdt zijn IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, en meer laden als u erheen gaat
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Een grote of zeer gedetailleerde kaart loopt soepeler met minder tegels: de rest laadt als u erheen gaat
+tiles round the camera are loaded; more load as you go there	tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Only the tiles round the camera are loaded; more load as you go there	Alleen de tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Een grote kaart 100 tegels tegelijk laden, zoals de editor van OMSI 2?\n\nAlleen de 100 tegels rond de camera blijven in het grafisch geheugen; de rest laadt als u erheen gaat. Zeer grote kaarten blijven zo licht. Altijd te wijzigen via Beeld > Alle tegels tegelijk laden (uit).
+Choose the OMSI installation first	Kies eerst de OMSI-installatie
+a file the object names is missing	een bestand dat het object noemt ontbreekt
+Another crossing file	Ander kruispuntbestand
+Crossing paths of the picked object…	Paden van het gekozen kruispuntobject…
+Crossing paths	Kruispuntpaden
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	De paden van een kruispunt- of knooppuntobject, hun blokkades en hun verkeerslichtprogramma, bewerkt in een kopie van het object - het origineel blijft zoals het is
+Footway	Voetpad
+Street	Rijbaan
+Against	Tegen de richting
+Both ways	Beide richtingen
+Along	Met de richting mee
+Left	Links
+Right	Rechts
+Red and yellow	Rood en geel
+Green and yellow	Groen en geel
+Off	Uit
+Select a crossing object, or pick one of these	Kies een kruispuntobject of een uit deze lijst
+Pick a crossing object of the map	Neem een kruispuntobject van de kaart
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Hier worden de paden, de blokkades en het verkeerslichtprogramma van een bestaand kruispunt bewerkt. Het object wordt naar openMappers eigen map gekopieerd; het originele bestand blijft zoals het is.
+openMapper's copy	openMappers kopie
+in its own file (a copy is made on saving)	in zijn eigen bestand (bij opslaan wordt een kopie gemaakt)
+Paths	Paden
+Add a path	Pad toevoegen
+Remove this path	Dit pad verwijderen
+0 is a straight line, above 0 turns right, below 0 left	0 is een rechte lijn, boven 0 buigt naar rechts, onder 0 naar links
+Direction	Richting
+Turn signal	Knipperlicht
+Keeps the junction clear	Houdt het kruispunt vrij
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Een voertuig dat op dit pad wacht houdt het kruispunt vrij voor de anderen (`[crossingproblem]`)
+Blocks	Blokkeert
+Cycle	Cyclus
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: de seconden van één ronde. Zonder opgave is dat de som van de fasen van het langste licht
+The phases do not add up to the cycle: the last one holds to its end	De fasen tellen niet op tot de cyclus: de laatste duurt tot het einde daarvan
+(no name)	(geen naam)
+Detector	Detector
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: hoeveel meter voor de stopstreep een voertuig een aanvraag doet
+A phase	Een fase
+Remove this light	Dit licht verwijderen
+A light	Een licht
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Een kruispunt met lichten heeft de seinhoofden op de kaart nodig: het spel draait alleen een programma waaraan hoofden gekoppeld zijn
+Request loops	Aanvraaglussen
+Spline helpers	Spline-hulppunten
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Waar een weg van de kaart aan het kruispunt vastklikt. x, hoogte, vooruit in het frame van het object
+The road type it takes (a `.sli`)	Het wegtype dat hij aanneemt (een `.sli`)
+A helper	Een hulppunt
+At the picked end	Aan het gekozen uiteinde
+A helper where the picked path ends, facing out of the crossing	Een hulppunt waar het gekozen pad eindigt, naar buiten het kruispunt
+Save as a copy	Opslaan als kopie
+Write the paths into openMapper's copy of the object	De paden in openMappers kopie van het object schrijven
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	De map van het object wordt naar openMapper gekopieerd, de paden daar geschreven en het object van de kaart ernaar verwezen: het originele bestand wordt niet aangeraakt
+Back to how the object was when it was opened (the file is not touched)	Terug naar hoe het object was bij het openen (het bestand wordt niet aangeraakt)
+Zoom out	Uitzoomen
+Zoom in	Inzoomen
+The whole crossing in view	Het hele kruispunt in beeld
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Sleep een uiteinde om het te verplaatsen. Ctrl klikt het vast aan het uiteinde van een ander pad. Wiel zoomt, rechts of midden slepen verschuift
+Back to how it was opened	Terug naar de stand bij het openen
+Nothing to edit yet	Nog niets te bewerken
+Crossing paths…	Kruispuntpaden…

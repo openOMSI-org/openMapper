@@ -2626,3 +2626,69 @@ Polygon: fill the selected splines, or click its corners	Polígon: omple els spl
 Polygon: click its corners	Polígon: fes clic a les cantonades
 Polygon from it	Polígon a partir d'ell
 Polygon from them	Polígon a partir d'ells
+Saving…	Desant…
+Still saving	Encara es desa
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Feu clic a l'spline on han de quedar. Cadascun segueix aquella via i conserva l'IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Desactivat: només es carreguen les tessel·les al voltant de la càmera, com a l'editor d'OMSI 2, i se'n carreguen més quan hi aneu
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Un mapa gran o molt detallat va més àgil amb menys tessel·les: la resta es carrega quan hi aneu
+tiles round the camera are loaded; more load as you go there	tessel·les al voltant de la càmera estan carregades; se'n carreguen més quan hi aneu
+Only the tiles round the camera are loaded; more load as you go there	Només les tessel·les al voltant de la càmera estan carregades; se'n carreguen més quan hi aneu
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Voleu carregar un mapa gran de 100 tessel·les alhora, com l'editor d'OMSI 2?\n\nNomés les 100 tessel·les al voltant de la càmera es queden a la memòria gràfica; les altres es carreguen quan hi aneu. Els mapes molt grans es mantenen lleugers. Es pot canviar quan vulgueu a Vista > Carrega totes les tessel·les alhora (desactivat).
+Choose the OMSI installation first	Tria primer la instal·lació de l'OMSI
+a file the object names is missing	falta un fitxer que l'objecte anomena
+Another crossing file	Un altre fitxer de cruïlla
+Crossing paths of the picked object…	Carrils de l'objecte de cruïlla triat…
+Crossing paths	Carrils de la cruïlla
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Els carrils d'un objecte de cruïlla o node, els seus bloquejos i el seu programa de semàfors, editats en una còpia de l'objecte: l'original queda com està
+Footway	Vorera
+Street	Calçada
+Against	En contra
+Both ways	En tots dos sentits
+Along	En el sentit
+Left	Esquerra
+Right	Dreta
+Red and yellow	Vermell i groc
+Green and yellow	Verd i groc
+Off	Apagat
+Select a crossing object, or pick one of these	Tria un objecte de cruïlla o agafa'n un d'aquests
+Pick a crossing object of the map	Agafa un objecte de cruïlla del mapa
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Aquí s'editen els carrils, els bloquejos i el programa de semàfors d'una cruïlla existent. L'objecte es copia a la carpeta pròpia de l'openMapper; el fitxer original queda com està.
+openMapper's copy	la còpia de l'openMapper
+in its own file (a copy is made on saving)	al seu propi fitxer (es fa una còpia en desar)
+Paths	Carrils
+Add a path	Afegeix un carril
+Remove this path	Treu aquest carril
+0 is a straight line, above 0 turns right, below 0 left	0 és una recta, per sobre de 0 gira a la dreta, per sota a l'esquerra
+Direction	Sentit
+Turn signal	Intermitent
+Keeps the junction clear	Manté la cruïlla lliure
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Un vehicle esperant en aquest carril manté la cruïlla lliure per als altres (`[crossingproblem]`)
+Blocks	Bloqueja
+Cycle	Cicle
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: els segons d'un cicle. Sense valor, és la suma de les fases del semàfor més llarg
+The phases do not add up to the cycle: the last one holds to its end	Les fases no sumen el cicle: l'última dura fins al seu final
+(no name)	(sense nom)
+Detector	Detector
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: a quants metres abans de la línia de parada un vehicle demana pas
+A phase	Una fase
+Remove this light	Treu aquest semàfor
+A light	Un semàfor
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Una cruïlla amb semàfors necessita els caps de senyal al mapa: el joc només executa un programa al qual hi hagi caps enllaçats
+Request loops	Llaços de petició
+Spline helpers	Punts d'unió dels splines
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	On una carretera del mapa s'enganxa a la cruïlla. x, alçada, endavant en el sistema de l'objecte
+The road type it takes (a `.sli`)	El tipus de carretera que accepta (un `.sli`)
+A helper	Un punt d'unió
+At the picked end	A l'extrem triat
+A helper where the picked path ends, facing out of the crossing	Un punt d'unió on acaba el carril triat, cap enfora de la cruïlla
+Save as a copy	Desa com a còpia
+Write the paths into openMapper's copy of the object	Escriu els carrils a la còpia de l'objecte de l'openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	La carpeta de l'objecte es copia a la de l'openMapper, els carrils s'hi escriuen i l'objecte del mapa passa a apuntar-hi: el fitxer original no es toca
+Back to how the object was when it was opened (the file is not touched)	Torna a com era l'objecte en obrir-lo (el fitxer no es toca)
+Zoom out	Allunya
+Zoom in	Apropa
+The whole crossing in view	Tota la cruïlla a la vista
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Arrossega un extrem per moure'l. Ctrl l'enganxa a l'extrem d'un altre carril. La roda apropa, el botó dret o del mig desplaça la vista
+Back to how it was opened	Torna a com era en obrir-lo
+Nothing to edit yet	Res a editar encara
+Crossing paths…	Carrils de la cruïlla…

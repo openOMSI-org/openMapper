@@ -2626,3 +2626,69 @@ Polygon: fill the selected splines, or click its corners	Polígono: rellena los 
 Polygon: click its corners	Polígono: haz clic en las esquinas
 Polygon from it	Polígono a partir de él
 Polygon from them	Polígono a partir de ellos
+Saving…	Guardando…
+Still saving	Aún guardando
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Haga clic en el spline sobre el que deben estar. Cada uno sigue esa vía y conserva su IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Desactivado: solo se cargan las teselas alrededor de la cámara, como en el editor de OMSI 2, y se cargan más al ir allí
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Un mapa grande o muy detallado va más fluido con menos tiles: el resto se carga al ir allí
+tiles round the camera are loaded; more load as you go there	teselas alrededor de la cámara están cargadas; se cargan más al ir allí
+Only the tiles round the camera are loaded; more load as you go there	Solo se cargan las teselas alrededor de la cámara; se cargan más al ir allí
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	¿Cargar un mapa grande de 100 teselas a la vez, como hace el editor de OMSI 2?\n\nSolo las 100 teselas alrededor de la cámara se quedan en la memoria gráfica; las demás se cargan al ir allí. Así los mapas muy grandes van ligeros. Puede cambiarlo cuando quiera en Vista > Cargar todas las teselas a la vez (desactivado).
+Choose the OMSI installation first	Elige primero la instalación de OMSI
+a file the object names is missing	falta un archivo que el objeto nombra
+Another crossing file	Otro archivo de cruce
+Crossing paths of the picked object…	Carriles del objeto de cruce elegido…
+Crossing paths	Carriles del cruce
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Los carriles de un objeto de cruce o nudo, sus bloqueos y su programa de semáforos, editados en una copia del objeto: el original queda como está
+Footway	Acera
+Street	Calzada
+Against	En contra
+Both ways	En ambos sentidos
+Along	En el sentido
+Left	Izquierda
+Right	Derecha
+Red and yellow	Rojo y amarillo
+Green and yellow	Verde y amarillo
+Off	Apagado
+Select a crossing object, or pick one of these	Elige un objeto de cruce o toma uno de estos
+Pick a crossing object of the map	Toma un objeto de cruce del mapa
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Aquí se editan los carriles, los bloqueos y el programa de semáforos de un cruce existente. El objeto se copia a la carpeta propia de openMapper; el archivo original queda como está.
+openMapper's copy	la copia de openMapper
+in its own file (a copy is made on saving)	en su propio archivo (se hace una copia al guardar)
+Paths	Carriles
+Add a path	Añadir un carril
+Remove this path	Quitar este carril
+0 is a straight line, above 0 turns right, below 0 left	0 es una recta, por encima de 0 gira a la derecha, por debajo a la izquierda
+Direction	Sentido
+Turn signal	Intermitente
+Keeps the junction clear	Mantiene el cruce libre
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Un vehículo que espera en este carril mantiene el cruce libre para los demás (`[crossingproblem]`)
+Blocks	Bloquea
+Cycle	Ciclo
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: los segundos de un ciclo. Sin valor, es la suma de las fases del semáforo más largo
+The phases do not add up to the cycle: the last one holds to its end	Las fases no suman el ciclo: la última dura hasta su final
+(no name)	(sin nombre)
+Detector	Detector
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: a cuántos metros antes de la línea de parada un vehículo pide paso
+A phase	Una fase
+Remove this light	Quitar este semáforo
+A light	Un semáforo
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Un cruce con semáforos necesita las cabezas de señal en el mapa: el juego solo ejecuta un programa al que hay cabezas enlazadas
+Request loops	Lazos de petición
+Spline helpers	Puntos de unión de splines
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Donde una carretera del mapa se engancha al cruce. x, altura, adelante en el sistema del objeto
+The road type it takes (a `.sli`)	El tipo de carretera que admite (un `.sli`)
+A helper	Un punto de unión
+At the picked end	En el extremo elegido
+A helper where the picked path ends, facing out of the crossing	Un punto de unión donde acaba el carril elegido, hacia fuera del cruce
+Save as a copy	Guardar como copia
+Write the paths into openMapper's copy of the object	Escribir los carriles en la copia del objeto de openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	La carpeta del objeto se copia a la de openMapper, allí se escriben los carriles y el objeto del mapa pasa a apuntar a ella: el archivo original no se toca
+Back to how the object was when it was opened (the file is not touched)	Volver a como estaba el objeto al abrirlo (el archivo no se toca)
+Zoom out	Alejar
+Zoom in	Acercar
+The whole crossing in view	Todo el cruce a la vista
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Arrastra un extremo para moverlo. Ctrl lo engancha al extremo de otro carril. La rueda acerca, el botón derecho o central desplaza la vista
+Back to how it was opened	Volver a como estaba al abrirlo
+Nothing to edit yet	Nada que editar todavía
+Crossing paths…	Carriles del cruce…
