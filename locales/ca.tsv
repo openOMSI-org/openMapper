@@ -2543,7 +2543,6 @@ That point is already joined	Aquest punt ja està unit
 Click an end point of a path	Feu clic a un punt final d'un camí
 Path connected	Camí connectat
 Connect the path	Connectar el camí
-There is no tile there	Allà no hi ha cap peça
 Click the other point	Feu clic a l'altre punt
 The graphics API changes the next time openMapper starts	L'API gràfica canviarà la propera vegada que s'iniciï openMapper
 Settings…	Configuració…
@@ -2628,3 +2627,9 @@ Polygon from it	Polígon a partir d'ell
 Polygon from them	Polígon a partir d'ells
 Saving…	Desant…
 Still saving	Encara es desa
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Desactivat: només es carreguen les tessel·les al voltant de la càmera, com a l'editor d'OMSI 2, i se'n carreguen més quan hi aneu
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Un mapa gran o molt detallat va més àgil amb menys tessel·les: la resta es carrega quan hi aneu
+tiles round the camera are loaded; more load as you go there	tessel·les al voltant de la càmera estan carregades; se'n carreguen més quan hi aneu
+Only the tiles round the camera are loaded; more load as you go there	Només les tessel·les al voltant de la càmera estan carregades; se'n carreguen més quan hi aneu
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Voleu carregar un mapa gran de 100 tessel·les alhora, com l'editor d'OMSI 2?\n\nNomés les 100 tessel·les al voltant de la càmera es queden a la memòria gràfica; les altres es carreguen quan hi aneu. Els mapes molt grans es mantenen lleugers. Es pot canviar quan vulgueu a Vista > Carrega totes les tessel·les alhora (desactivat).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Feu clic a l'spline on han de quedar. Cadascun segueix aquella via i conserva l'IDCode

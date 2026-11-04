@@ -429,3 +429,17 @@ fn pieces_of_other_bends_are_not_joined() {
     assert_eq!(doc.spline((0, 0), 1).unwrap().length, 130.0);
     assert!(doc.join_splines((0, 0), 1).is_err());
 }
+
+/// A map whose NextIDCode is behind the roads it already has still gets a fresh IDCode:
+/// the new spline is not the same one as a road that is already there.
+#[test]
+fn a_new_id_stays_above_ids_the_map_already_uses() {
+    use crate::selection::tests::{add_object, add_spline, flat_map};
+    let mut doc = flat_map(1);
+    doc.global.next_id_code = 1;
+    add_spline(&mut doc, (0, 0), 40, 10.0, 10.0, 0.0, 20.0, 0, 0);
+    add_object(&mut doc, (0, 0), 41, 5.0, 5.0);
+    assert_eq!(doc.new_id(), 42);
+    assert_eq!(doc.new_id(), 43);
+    assert!(doc.spline((0, 0), 40).is_some());
+}

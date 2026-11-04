@@ -97,7 +97,8 @@ pub struct App {
     /// A cursor held on the ground for a picture (OPENMAPPER_KNIFE), whatever the mouse does.
     pinned_cursor: Option<DVec3>,
     cam: Camera,
-    /// The place the loaded window of tiles is round (tile streaming on).
+    /// The place the loaded window of tiles was last centred on (tile streaming on). It follows
+    /// the camera, one tile at a time.
     stream_at: Option<DVec2>,
     /// When the last input came: a window nobody touches redraws slower.
     last_input: Instant,
@@ -370,28 +371,12 @@ impl App {
             .set_title("openMapper")
             .set_buttons(rfd::MessageButtons::YesNo)
             .set_description(tr(
-                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others are hidden until you click on the empty zone, where the next 100 are loaded. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).",
-                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные скрыты, пока вы не кликнете по пустой зоне: там загрузятся следующие 100. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать все тайлы сразу (выключено).",
+                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).",
+                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные загружаются, когда вы туда доходите. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать все тайлы сразу (выключено).",
             ))
             .show();
         self.prefs.tile_streaming = Some(yes == rfd::MessageDialogResult::Yes);
         self.prefs.save();
-    }
-
-    /// With tile streaming on, a click on ground whose tile is not loaded loads the 100 tiles
-    /// round that place instead (and is not a click on the map).
-    fn stream_click(&mut self) -> bool {
-        let Some(doc) = &self.ed.doc else { return false };
-        let Some((Some(set), _)) = &self.stream_set else { return false };
-        let Some(p) = self.grab_point() else { return false };
-        let at = DVec2::new(p.x, p.y);
-        let k = crate::doc::tile_of(at);
-        if set.contains(&k) || !doc.tiles.contains_key(&k) {
-            return false;
-        }
-        self.stream_at = Some(at);
-        self.ed.toast(format!("{} {}", stream_count(self.prefs.stream_tiles), tr("tiles are loaded round there, the others are hidden", "тайлов загружено вокруг этого места, остальные скрыты")));
-        true
     }
 
     fn after_open(&mut self, doc: Document) {
@@ -1757,14 +1742,14 @@ impl App {
                 self.prefs.save();
                 self.stream_at = None;
                 self.stream_set = None;
-                self.ed.toast(format!("{} {}", stream_count(n), tr("tiles round the camera are loaded; click on the empty zone to load the next ones", "тайлов вокруг камеры загружено; клик по пустой зоне загрузит следующие")));
+                self.ed.toast(format!("{} {}", stream_count(n), tr("tiles round the camera are loaded; more load as you go there", "тайлов вокруг камеры загружено; остальные подгружаются, когда вы туда доходите")));
             }
             Action::SetTileStreaming(on) => {
                 self.prefs.tile_streaming = Some(on);
                 self.prefs.save();
                 self.stream_at = None;
                 self.stream_set = None;
-                self.ed.toast(if on { tr("Only 100 tiles round the camera are loaded; click on the empty zone to load the next 100", "Загружены только 100 тайлов вокруг камеры; клик по пустой зоне загрузит следующие 100") } else { tr("All tiles are loaded", "Загружены все тайлы") }.to_string());
+                self.ed.toast(if on { tr("Only the tiles round the camera are loaded; more load as you go there", "Загружены только тайлы вокруг камеры; остальные подгружаются, когда вы туда доходите") } else { tr("All tiles are loaded", "Загружены все тайлы") }.to_string());
             }
             Action::SetOmsiControls(on) => {
                 self.prefs.omsi_controls = on;
@@ -3330,7 +3315,7 @@ impl ApplicationHandler for App {
                 let mut typing = g.egui_ctx.egui_wants_keyboard_input();
                 // (Ctrl/Cmd + Z, Y: the map's undo even from a text field, which lets go of
                 // the keyboard; its own text undo would only undo half of the edit)
-                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY)) {
+                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY) | Some(KeyCode::KeyD)) {
                     g.egui_ctx.memory_mut(|m| m.stop_text_input());
                     typing = false;
                 }
@@ -3390,8 +3375,6 @@ impl ApplicationHandler for App {
                         if pressed && !over_ui && self.ed.grab.is_some() {
                             // (a click lets the grab go, as Blender's does)
                             self.ed.grab_confirm();
-                        } else if pressed && !over_ui && self.prefs.tile_streaming == Some(true) && !self.keys.alt && self.stream_click() {
-                            // (loaded another window of tiles)
                         } else if pressed && !over_ui {
                             // (a handle of the Move / Rotate / Scale gizmo is taken, wherever it is)
                             let on_gizmo = self.ed.gizmo_under_cursor();
@@ -3646,11 +3629,18 @@ fn stream_count(setting: u32) -> usize {
     if setting == 0 { STREAM_TILES } else { setting.clamp(4, 2000) as usize }
 }
 
-/// The tiles to load, when that changed: the nearest `count` to the place the window
-/// is round (the camera's, until a click on the empty zone moves it), so they lie in a circle.
+/// The tiles to load, when that changed: the nearest `count` to the camera, so they lie in
+/// a circle and move with it. The window recentres when the camera enters another tile.
 /// `Some((None, _))`: everything (streaming off, or a map that small).
 fn stream_window(doc: &Document, on: bool, count: usize, at: &mut Option<DVec2>, cam: &Camera, seen: Option<(usize, u64, u64)>) -> Option<(Option<std::collections::HashSet<crate::doc::TileKey>>, (usize, u64, u64))> {
-    let centre = if on { *at.get_or_insert(DVec2::new(cam.target.x, cam.target.y)) } else { *at = None; DVec2::ZERO };
+    if on {
+        let cam_at = DVec2::new(cam.target.x, cam.target.y);
+        let moved = at.map(|p| crate::doc::tile_of(p) != crate::doc::tile_of(cam_at)).unwrap_or(true);
+        if moved {
+            *at = Some(cam_at);
+        }
+    }
+    let centre = if on { at.unwrap_or(DVec2::new(cam.target.x, cam.target.y)) } else { *at = None; DVec2::ZERO };
     let stamp = if on { (doc.tiles.len() + count * 1_000_000_000, centre.x.to_bits(), centre.y.to_bits()) } else { (0, 0, 0) };
     if seen == Some(stamp) {
         return None;

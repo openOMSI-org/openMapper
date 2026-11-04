@@ -303,7 +303,17 @@ pub enum Sample {
     Spline,
     Object,
     Either,
-    Attach(TileKey, i64),
+    /// The free objects in `Editor::attach_to` go onto the spline that is clicked.
+    Attach,
+}
+
+/// What a click is waiting to hear: one object, or every free object that was selected.
+pub(crate) fn attach_hint(n: usize) -> &'static str {
+    if n > 1 {
+        tr("Click the spline they should stand on. Each follows that road and keeps its IDCode", "Щёлкните сплайн, на котором они должны стоять. Каждый следует за этой дорогой и сохраняет IDCode")
+    } else {
+        tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode")
+    }
 }
 
 pub struct Editor {
@@ -619,6 +629,8 @@ pub struct Editor {
     pub link_pick: Option<(TileKey, i64)>,
     /// The next click reads an asset off the map, or puts an object onto the spline clicked.
     pub sample: Option<Sample>,
+    /// Free objects waiting for the spline they should stand on (`Sample::Attach`).
+    pub attach_to: Vec<(TileKey, i64)>,
     /// The dropper was pressed in the asset browser, so that panel is the one that jumps to the asset.
     pub sample_browser: bool,
     /// An asset to scroll to: its path, and whether the browser asked.
@@ -795,6 +807,7 @@ impl Default for Editor {
             picked: None,
             link_pick: None,
             sample: None,
+            attach_to: Vec::new(),
             sample_browser: false,
             reveal: None,
             aim: None,
@@ -1246,6 +1259,7 @@ impl Editor {
         self.water_pts.clear();
         self.link_pick = None;
         self.sample = None;
+        self.attach_to.clear();
         self.sample_browser = false;
         self.path_connect = None;
         self.cutting = false;
@@ -2226,16 +2240,17 @@ impl Editor {
             this.toast(say);
         };
         match mode {
-            Sample::Attach(k, id) => match hit {
+            Sample::Attach => match hit {
                 Some(Sel::Spline(sk, sid)) => {
                     self.sample_browser = false;
-                    if let Err(e) = self.attach_object_onto(lib, k, id, Some((sk, sid))) {
+                    let ids = std::mem::take(&mut self.attach_to);
+                    if let Err(e) = self.attach_objects_onto(lib, &ids, Some((sk, sid))) {
                         if !e.is_empty() {
                             self.toast(e);
                         }
                     }
                 }
-                _ => miss(self, tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode")),
+                _ => miss(self, attach_hint(self.attach_to.len())),
             },
             Sample::Spline => match hit {
                 Some(Sel::Spline(k, id)) => {
@@ -2323,6 +2338,7 @@ impl Editor {
             return false;
         }
         if self.sample.take().is_some() {
+            self.attach_to.clear();
             self.sample_browser = false;
             return false;
         }
@@ -7525,6 +7541,52 @@ impl Editor {
     /// that was clicked, as a `[splineAttachement]` record: from then on it stands on that road
     /// and follows it, keeping its IDCode. `Err` says why not.
     pub fn attach_object_onto(&mut self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
+        self.attach_objects_onto(lib, &[(k, id)], which)
+    }
+
+    /// The same, for every free object given, as one undo step. Each keeps its place beside
+    /// that spline and its IDCode.
+    pub fn attach_objects_onto(&mut self, lib: &Library, ids: &[(TileKey, i64)], which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
+        let mut planned = Vec::new();
+        let mut why = "";
+        for &(k, id) in ids {
+            match self.plan_onto(lib, k, id, which) {
+                Ok(p) => planned.push(p),
+                Err(e) if why.is_empty() => why = e,
+                Err(_) => {}
+            }
+        }
+        if planned.is_empty() {
+            return Err(why);
+        }
+        let Some(doc) = self.doc.as_mut() else { return Err("") };
+        self.history.begin(tr("Put on a road", "Поставить на дорогу"));
+        let mut placed = Vec::new();
+        for (from, onto, sid, u, rec) in planned {
+            self.history.touch_tile(doc, from);
+            self.history.touch_tile(doc, onto);
+            let Some(t) = doc.tiles.get_mut(&onto) else { continue };
+            let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else { continue };
+            let mut rec = rec;
+            rec.spline_index = idx as i32;
+            rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
+            let id = rec.id;
+            t.tile.spline_attachments.push(rec);
+            t.touch_content();
+            doc.delete_object(from, id);
+            placed.push(Sel::Attached(onto, id));
+        }
+        self.history.commit();
+        if placed.len() == 1 {
+            self.select(placed.pop());
+        } else {
+            self.set_selection(placed);
+        }
+        Ok(())
+    }
+
+    /// Where one free object would stand on `which` (or on the nearest road).
+    fn plan_onto(&self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(TileKey, TileKey, i64, f64, omsi_map::SplineAttachment), &'static str> {
         let Some(doc) = self.doc.as_ref() else { return Err("") };
         let Some(o) = doc.object(k, id).cloned() else {
             return Err(tr("Only a free object can be put on a road", "На дорогу можно поставить только свободный объект"));
@@ -7543,7 +7605,6 @@ impl Editor {
             let c = omsi_geometry::SplineCurve::from_map(s, torg);
             (sk, sid, u, beside, c.heading_at(u), c.point_at(u).z)
         } else {
-            // the nearest road's own spline, and where the object lies on it
             let mut best: Option<(f64, TileKey, i64, f64, f64, f64, f64)> = None;
             for (tk, t) in &doc.tiles {
                 let torg = tile_origin(*tk);
@@ -7580,23 +7641,28 @@ impl Editor {
             rules: o.rules.clone(),
             ..Default::default()
         };
-        let Some(doc) = self.doc.as_mut() else { return Err("") };
-        self.history.begin(tr("Put on a road", "Поставить на дорогу"));
-        self.history.touch_tile(doc, k);
-        self.history.touch_tile(doc, sk);
-        let Some(t) = doc.tiles.get_mut(&sk) else { return Err("") };
-        let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else {
-            return Err(tr("The road is gone", "Дороги уже нет"));
-        };
-        let mut rec = rec;
-        rec.spline_index = idx as i32;
-        rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
-        t.tile.spline_attachments.push(rec);
-        t.touch_content();
-        doc.delete_object(k, id);
-        self.history.commit();
-        self.select(Some(Sel::Attached(sk, id)));
-        Ok(())
+        Ok((k, sk, sid, u, rec))
+    }
+
+    /// Free objects in the selection: a spline click can take all of them on.
+    pub fn free_selected(&self) -> Vec<(TileKey, i64)> {
+        let Some(doc) = self.doc.as_ref() else { return Vec::new() };
+        self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => doc.object(k, id).filter(|o| o.parent_id.is_none()).map(|_| (k, id)),
+            _ => None,
+        }).collect()
+    }
+
+    /// The next click in the view chooses the spline these free objects stand on.
+    pub fn arm_attach(&mut self, ids: Vec<(TileKey, i64)>) {
+        if ids.is_empty() {
+            return;
+        }
+        let n = ids.len();
+        self.sample = Some(Sample::Attach);
+        self.sample_browser = false;
+        self.attach_to = ids;
+        self.toast(attach_hint(n));
     }
 
     /// Take a `[splineAttachement]` record off its road: it becomes a free object where its
@@ -9724,22 +9790,7 @@ fn path_ends_at(doc: &Document, assets: &mut Assets, held: &Origin, pos: DVec2, 
             let world = if model.abs_height { DVec3::new(pos.x, pos.y, z) } else { DVec3::new(pos.x, pos.y, doc.ground(pos) + z) };
             let pose = crate::place::Pose::of_object(world, [heading, o.rot[1], o.rot[2]]);
             Some(model.paths.iter().map(|p| {
-                let c = omsi_geometry::SplineCurve {
-                    start: DVec3::new(p.start[0] as f64, p.start[1] as f64, p.start[2] as f64),
-                    heading_deg: p.end[0] as f64,
-                    length: p.end[2] as f64,
-                    radius: p.end[1] as f64,
-                    grad_start: 0.0,
-                    grad_end: 0.0,
-                    delta_h: None,
-                    cant_start: 0.0,
-                    cant_end: 0.0,
-                    skew_start: 0.0,
-                    skew_end: 0.0,
-                    tex_offset: 0.0,
-                    seed: 0,
-                    half_cant_width: 0.0,
-                };
+                let c = crate::lanes::object_path_curve(p);
                 if c.length <= 0.05 {
                     return None;
                 }
@@ -11457,7 +11508,8 @@ mod tests {
             half_width: 4.0,
         };
         assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
-        ed.sample = Some(Sample::Attach((0, 0), 2));
+        ed.sample = Some(Sample::Attach);
+        ed.attach_to = vec![((0, 0), 2)];
         ed.hover_ray(&mut assets, &lib, DVec3::new(140.0, 130.0, 30.0), -DVec3::Z);
         ed.left_press(&mut assets, &lib, false);
         let d = ed.doc.as_ref().unwrap();
@@ -11466,6 +11518,43 @@ mod tests {
         assert_eq!(a.spline_index, idx as i32);
         assert!(a.offset[0] < -30.0, "it is the far spline, not the one 2 m away: {:?}", a.offset);
         assert!(ed.sample.is_none());
+    }
+
+    /// Several selected objects go onto the spline that was chosen, each where it already stood, in one step.
+    #[test]
+    fn several_objects_stand_on_the_spline_that_was_clicked() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 200.0, 0, 0);
+        add_spline(&mut doc, (0, 0), 3, 140.0, 100.0, 0.0, 200.0, 0, 0);
+        add_object(&mut doc, (0, 0), 2, 102.0, 120.0);
+        add_object(&mut doc, (0, 0), 4, 108.0, 150.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_selection(vec![Sel::Object((0, 0), 2), Sel::Object((0, 0), 4)]);
+        let free = ed.free_selected();
+        assert_eq!(free, vec![((0, 0), 2), ((0, 0), 4)]);
+        let lib = crate::library::Library::default();
+        ed.attach_objects_onto(&lib, &free, Some(((0, 0), 3))).unwrap();
+        {
+            let d = ed.doc.as_ref().unwrap();
+            let far = d.tiles[&(0, 0)].tile.splines.iter().position(|s| s.id == 3).unwrap() as i32;
+            for id in [2, 4] {
+                assert!(d.object((0, 0), id).is_none(), "{id} is no longer free");
+                let a = d.attachment((0, 0), id).expect("on the clicked spline");
+                assert_eq!(a.spline_index, far);
+                assert_eq!(a.id, id);
+            }
+            let a2 = d.attachment((0, 0), 2).unwrap();
+            let a4 = d.attachment((0, 0), 4).unwrap();
+            assert!(a2.offset[0] < -30.0 && a4.offset[0] < -30.0, "both on the far spline: {:?} {:?}", a2.offset, a4.offset);
+            assert!((a2.offset[2] - 20.0).abs() < 1e-3, "the first stays 20 m along: {:?}", a2.offset);
+            assert!((a4.offset[2] - 50.0).abs() < 1e-3, "the second stays 50 m along: {:?}", a4.offset);
+        }
+        assert!(ed.is_selected(Sel::Attached((0, 0), 2)) && ed.is_selected(Sel::Attached((0, 0), 4)));
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        assert!(d.object((0, 0), 2).is_some() && d.object((0, 0), 4).is_some());
+        assert!(d.attachment((0, 0), 2).is_none() && d.attachment((0, 0), 4).is_none());
     }
 
     /// The dropper reads the spline under the cursor into the road list, and a miss keeps waiting.
@@ -12696,6 +12785,105 @@ mod tests {
         ed.history.commit();
         let (k, id) = made[0];
         assert_eq!(ed.doc.as_ref().unwrap().spline(k, id).unwrap().prev_id, 0);
+    }
+
+    /// A new road, drawn where nothing is, keeps its own IDCode and no link, even when the
+    /// map's counter is still below IDs that are already in use. Deleting it leaves the
+    /// road that was already there, and that road's own next piece.
+    #[test]
+    fn a_new_road_does_not_take_an_existing_splines_id_or_its_link() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let doc = ed.doc.as_mut().unwrap();
+        doc.global.next_id_code = 1;
+        add_spline(doc, (0, 0), 40, 200.0, 10.0, 0.0, 40.0, 0, 41);
+        add_spline(doc, (0, 0), 41, 200.0, 50.0, 0.0, 40.0, 40, 0);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(20.0, 200.0), DVec2::new(20.0, 230.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(20.0, 200.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(id > 41, "{id}");
+        let fresh = doc.spline(k, id).unwrap();
+        assert_eq!((fresh.prev_id, fresh.next_id), (0, 0));
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+        assert_eq!(doc.spline((0, 0), 41).unwrap().prev_id, 40);
+        let ids: Vec<i64> = doc.tiles[&(0, 0)].tile.splines.iter().map(|s| s.id).collect();
+        let mut once = ids.clone();
+        once.sort();
+        once.dedup();
+        assert_eq!(ids.len(), once.len(), "{ids:?}");
+        ed.doc.as_mut().unwrap().delete_spline(k, id);
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(doc.spline(k, id).is_none());
+        assert!(doc.spline((0, 0), 40).is_some() && doc.spline((0, 0), 41).is_some());
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+    }
+
+    /// A road started at a free end is that road's next piece, and nothing else's.
+    #[test]
+    fn a_road_drawn_from_a_free_end_links_only_that_end() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // spline 3 runs north from (50, 50) for 30 m, so its free end is (50, 80)
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_ne!(id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, id);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
+    /// An end that already continues into another piece is left as it is: the new road
+    /// does not become that next piece.
+    #[test]
+    fn a_road_drawn_from_an_end_that_already_continues_stays_unlinked() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.iter_mut().find(|s| s.id == 3).unwrap().next_id = 9;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 0);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 9);
+    }
+
+    /// The pieces of one new road link only to each other, never to a road already on the map.
+    #[test]
+    fn a_new_roads_pieces_link_only_each_other() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().global.next_id_code = 1;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(10.0, 10.0), DVec2::new(10.0, 90.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(10.0, 10.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        assert!(made.len() >= 2, "{made:?}");
+        let doc = ed.doc.as_ref().unwrap();
+        let ids: Vec<i64> = made.iter().map(|m| m.1).collect();
+        assert!(ids.iter().all(|id| *id != 3));
+        for (i, (k, id)) in made.iter().enumerate() {
+            let s = doc.spline(*k, *id).unwrap();
+            let prev = if i == 0 { 0 } else { ids[i - 1] };
+            let next = if i + 1 == ids.len() { 0 } else { ids[i + 1] };
+            assert_eq!((s.prev_id, s.next_id), (prev, next), "{id}");
+        }
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
     }
 
     /// The junction options shown in the properties are those of the map open: another

@@ -2543,7 +2543,6 @@ That point is already joined	Ez a pont már össze van kötve
 Click an end point of a path	Kattintson egy út végpontjára
 Path connected	Út összekötve
 Connect the path	Út összekötése
-There is no tile there	Ott nincs csempe
 Click the other point	Kattintson a másik pontra
 The graphics API changes the next time openMapper starts	A grafikai API az openMapper következő indításakor változik
 Settings…	Beállítások…
@@ -2628,3 +2627,9 @@ Polygon from it	Sokszög ebből
 Polygon from them	Sokszög ezekből
 Saving…	Mentés…
 Still saving	Még ment
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Kikapcsolva: csak a kamera körüli csempék töltődnek be, mint az OMSI 2 szerkesztőjében, a többi akkor töltődik, amikor odamész
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Egy nagy vagy nagyon részletes térkép kevesebb csempével gyorsabb: a többi akkor töltődik be, amikor odamész
+tiles round the camera are loaded; more load as you go there	csempe van betöltve a kamera körül; a többi akkor töltődik, amikor odamész
+Only the tiles round the camera are loaded; more load as you go there	Csak a kamera körüli csempék vannak betöltve; a többi akkor töltődik, amikor odamész
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Egy nagy térképet 100 csempénként töltsön, mint az OMSI 2 szerkesztője?\n\nA grafikus memóriában csak a kamera körüli 100 csempe marad; a többi akkor töltődik be, amikor odamész. A nagyon nagy térképek így könnyűek maradnak. Bármikor módosítható: Nézet > Az összes csempe egyszerre (ki).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Kattintson a spline-ra, amelyen állniuk kell. Mindegyik követi azt az utat, és megtartja az IDCode-ját

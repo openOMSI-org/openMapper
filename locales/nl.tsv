@@ -2390,46 +2390,6 @@ Both ends alike	Beide einden gelijk
 Slide the bay to where it fits	Schuif de haven naar waar hij past
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Dicht bij het einde van een weg of kruispunt is er geen ruimte voor de overgang aan beide einden: de haven wordt langs de weg verschoven naar waar wel ruimte is
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Een haven krijgt altijd een overgang aan beide einden; waar er geen kan komen, verandert er niets.
-The road is too short here for a bay with a taper at both ends	De weg is hier te kort voor een haven met een overgang aan beide einden
-Too near the end of the road for the taper at both ends of the bay	Te dicht bij het einde van de weg voor de overgang aan beide einden van de haven
-The bay needs a taper at both ends and one could not be laid there	De haven heeft aan beide einden een overgang nodig en er kon er geen worden aangelegd
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Kies een stuk of een arm; sleep om te verplaatsen, sleep de punten aan de einden van het gekozen stuk om het te wijzigen; Delete verwijdert het
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Klik op het begin, een punt op de boog en dan op het einde. Begint het bij het einde van een stuk met Auto-Align aan, dan geven twee klikken een boog die er raakt aan sluit
-Curve	Kromme
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	Een vloeiend pad door alle aangeklikte punten, voor ingewikkelde bochten: Enter, een dubbelklik of de knop hieronder beëindigt het
-Finish the curve	Kromme afmaken
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Een stuk dat aan het einde van een ander begint, gaat in lijn daarmee verder: een lijn langs of dwars op de richting, een boog of kromme rakend eraan. Elders blijven lijnen op stappen van 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	Een weg met een andere breedte die aan het einde van een weg begint, houdt zijn rand aan de kant waarheen hij buigt, en er wordt een overgang aangelegd om daar te komen
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	De armen worden vanzelf gevonden: elk vrij einde van een weg is een plek waar een weg binnenkomt. Met de hand geplaatste armen blijven zoals ze zijn
-found from a road's free end	gevonden bij een vrij einde van een weg
-The whole drawing	De hele tekening
-Left and right swapped	Links en rechts verwisseld
-Turn 90°	Draai 90°
-Find the arms	Zoek de armen
-The free ends of roads become arms	De vrije einden van wegen worden armen
-segments	segmenten
-0: a straight; positive: turns right; negative: turns left	0: recht; positief: draait naar rechts; negatief: draait naar links
-Reverse	Omkeren
-Runs the other way: the piece's start and end swap	Loopt de andere kant op: begin en einde van het stuk wisselen
-Under the one before it	Onder het vorige
-Higher	Hoger
-Over the one after it	Boven het volgende
-Preview	Voorbeeld
-The junction as it will be: the roads running out of the arms, no grid or handles	Het kruispunt zoals het wordt: de wegen die uit de armen lopen, zonder raster of handvatten
-The lanes of the AI over the drawing, with the way they go	De rijstroken van de AI over de tekening, met hun richting
-Zoom out (-)	Uitzoomen (-)
-Zoom in (+)	Inzoomen (+)
-The whole drawing in view (F)	De hele tekening in beeld (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Voorbeeld: het kruispunt zoals het eruit komt te zien. Wiel zoomt, rechts of midden slepen verschuift
-Click the points the curve passes; Enter or a double click ends it	Klik op de punten waar de kromme langs gaat; Enter of een dubbelklik beëindigt
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	Wiel zoomt, rechts of midden slepen verschuift, F past in beeld, Ctrl+Z maakt ongedaan, Esc annuleert
-Taper in	Overgang in
-Metres of road the bay takes to open per metre it widens (more: gentler)	Meters weg die de haven nodig heeft om te openen per meter dat hij breder wordt (meer: zachter)
-out	uit
-Both ends alike	Beide einden gelijk
-Slide the bay to where it fits	Schuif de haven naar waar hij past
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Dicht bij het einde van een weg of kruispunt is er geen ruimte voor de overgang aan beide einden: de haven wordt langs de weg verschoven naar waar wel ruimte is
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Een haven krijgt altijd een overgang aan beide einden; waar er geen kan komen, verandert er niets.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Besturing zoals in de editor van OMSI 2: middelste knop draait, ingedrukte en bewogen rechterknop zoomt, een rechtsklik gaat erheen (Shift: menu)
 Controls as chosen under Camera	Besturing zoals gekozen onder Camera
 Advanced users	Gevorderde gebruikers
@@ -2583,7 +2543,6 @@ That point is already joined	Dat punt is al verbonden
 Click an end point of a path	Klik een eindpunt van een pad
 Path connected	Pad verbonden
 Connect the path	Pad verbinden
-There is no tile there	Daar ligt geen tegel
 Click the other point	Klik het andere punt
 The graphics API changes the next time openMapper starts	De grafische API verandert bij de volgende start van openMapper
 Settings…	Instellingen…
@@ -2668,3 +2627,9 @@ Polygon from it	Veelhoek hiervan
 Polygon from them	Veelhoek hiervan
 Saving…	Opslaan…
 Still saving	Nog bezig met opslaan
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Uit: alleen de tegels rond de camera worden geladen, zoals in de editor van OMSI 2, en meer laden als u erheen gaat
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Een grote of zeer gedetailleerde kaart loopt soepeler met minder tegels: de rest laadt als u erheen gaat
+tiles round the camera are loaded; more load as you go there	tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Only the tiles round the camera are loaded; more load as you go there	Alleen de tegels rond de camera zijn geladen; meer laden als u erheen gaat
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Een grote kaart 100 tegels tegelijk laden, zoals de editor van OMSI 2?\n\nAlleen de 100 tegels rond de camera blijven in het grafisch geheugen; de rest laadt als u erheen gaat. Zeer grote kaarten blijven zo licht. Altijd te wijzigen via Beeld > Alle tegels tegelijk laden (uit).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik de spline waarop ze moeten staan. Elk volgt die weg en houdt zijn IDCode

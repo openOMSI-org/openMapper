@@ -2545,7 +2545,6 @@ That point is already joined	这个点已经接上了
 Click an end point of a path	请点路径的端点
 Path connected	路径已连接
 Connect the path	连接路径
-There is no tile there	那里没有图块
 Click the other point	请点另一个点
 The graphics API changes the next time openMapper starts	图形 API 将在下次启动 openMapper 时更改
 Settings…	设置…
@@ -2625,3 +2624,9 @@ Polygon from it	由此创建多边形
 Polygon from them	由这些创建多边形
 Saving…	正在保存…
 Still saving	仍在保存
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	关闭：与 OMSI 2 的编辑器一样，只加载相机周围的图块，你走到哪里就加载哪里
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	大型或非常精细的地图在图块较少时更流畅：其余图块会在你走到那里时加载
+tiles round the camera are loaded; more load as you go there	个图块已载在相机周围；你走到哪里就再加载哪里
+Only the tiles round the camera are loaded; more load as you go there	只加载相机周围的图块；你走到哪里就加载哪里
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	要像 OMSI 2 的编辑器那样，一次加载 100 个图块吗？\n\n图形内存只保留相机周围的 100 个图块；其余会在你走到那里时加载。这样非常大的地图会更轻。随时可在「视图 > 一次加载所有图块」（关闭）更改。
+Click the spline they should stand on. Each follows that road and keeps its IDCode	点它们要依附的那条 Spline。每一个都会跟着那条路，并保留 IDCode

@@ -2543,7 +2543,6 @@ That point is already joined	Konekta na ang puntong iyon
 Click an end point of a path	I-click ang dulo ng isang landas
 Path connected	Nakonekta ang landas
 Connect the path	Ikonekta ang landas
-There is no tile there	Walang tile doon
 Click the other point	I-click ang isa pang punto
 The graphics API changes the next time openMapper starts	Magbabago ang graphics API sa susunod na pagsisimula ng openMapper
 Settings…	Mga Setting…
@@ -2628,3 +2627,9 @@ Polygon from it	Polygon mula rito
 Polygon from them	Polygon mula sa mga ito
 Saving…	Sine-save…
 Still saving	Sine-save pa
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Naka-off: ang mga tile lang sa paligid ng camera ang nilo-load, tulad ng sa editor ng OMSI 2, at may madaragdag kapag pumunta ka roon
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Mas magaan ang malaki o napakadetalyadong mapa kapag mas kaunti ang tile: ang iba ay naglo-load kapag pumunta ka roon
+tiles round the camera are loaded; more load as you go there	tile sa paligid ng camera ang naka-load; may madaragdag kapag pumunta ka roon
+Only the tiles round the camera are loaded; more load as you go there	Ang mga tile lang sa paligid ng camera ang naka-load; may madaragdag kapag pumunta ka roon
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	I-load ang malaking mapa nang 100 tile kada beses, tulad ng editor ng OMSI 2?\n\nAng 100 tile lang sa paligid ng camera ang nananatili sa graphics memory; ang iba ay naglo-load kapag pumunta ka roon. Nanatiling magaan ang napakalaking mapa. Mababago anumang oras sa View > I-load ang lahat ng tile nang sabay (naka-off).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	I-click ang spline na dapat nilang katayuan. Sinusunod ng bawat isa ang daang iyon at pinapanatili ang IDCode

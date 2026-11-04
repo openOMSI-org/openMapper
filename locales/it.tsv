@@ -2543,7 +2543,6 @@ That point is already joined	Quel punto è già collegato
 Click an end point of a path	Fai clic su un estremo di un percorso
 Path connected	Percorso collegato
 Connect the path	Collega il percorso
-There is no tile there	Lì non c'è una tessera
 Click the other point	Fai clic sull'altro punto
 The graphics API changes the next time openMapper starts	L'API grafica cambia al prossimo avvio di openMapper
 Settings…	Impostazioni…
@@ -2628,3 +2627,9 @@ Polygon from it	Poligono da questa
 Polygon from them	Poligono da queste
 Saving…	Salvataggio…
 Still saving	Salvataggio in corso
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Disattivato: vengono caricate solo le tessere attorno alla camera, come nell'editor di OMSI 2, e altre si caricano quando ci vai
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Una mappa grande o molto dettagliata è più leggera con meno tile: gli altri si caricano quando ci vai
+tiles round the camera are loaded; more load as you go there	tessere attorno alla camera sono caricate; altre si caricano quando ci vai
+Only the tiles round the camera are loaded; more load as you go there	Sono caricate solo le tessere attorno alla camera; altre si caricano quando ci vai
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Caricare una mappa grande 100 tessere alla volta, come fa l'editor di OMSI 2?\n\nSolo le 100 tessere attorno alla camera restano in memoria grafica; le altre si caricano quando ci vai. Le mappe molto grandi restano così leggere. Si può cambiare in qualsiasi momento in Vista > Carica tutte le tessere in una volta (disattivato).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Fare clic sullo spline su cui devono stare. Ognuno segue quella strada e mantiene il suo IDCode
