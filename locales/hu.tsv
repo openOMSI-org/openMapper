@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Vissza a megnyitáskori állapothoz
 Nothing to edit yet	Egyelőre nincs mit szerkeszteni
 Crossing paths…	Kereszteződés sávjai…
+Trains	Vonatok
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Láthatatlan vasúti sáv az MI vonatainak: a vágányok és váltók vasúti sávjaihoz ott csatlakozik, ahol azok véget érnek
 Keep the ground under roads	A talaj az utak alatt marad
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Be: az ecset nem emeli át a talajt az úton. Ki: az utak alatt és mellett ugyanolyan szabadon alakítja a talajt, mint bárhol máshol
 There are unsaved changes here: Save or Revert first	Vannak nem mentett módosítások: előbb mentse vagy vonja vissza őket
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	az ob
 what was written does not read back the same	a beírt adat nem ugyanúgy olvasható vissza
 its paths are in a file of their own (`[paths]`), which this editor does not read	az útvonalai külön fájlban vannak (`[paths]`), amelyet ez a szerkesztő nem olvas
 it has no path	nincs útvonala
-stop	állj
 jump	ugrás

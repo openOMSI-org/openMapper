@@ -2689,6 +2689,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Zurück zum Stand beim Öffnen
 Nothing to edit yet	Noch nichts zu bearbeiten
 Crossing paths…	Kreuzungspfade…
+Trains	Züge
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Eine unsichtbare Schienenspur für die KI-Züge: Sie schließt dort an die Schienenspuren von Gleisen und Weichen an, wo diese enden
 Keep the ground under roads	Boden unter Straßen halten
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	An: Der Pinsel hebt den Boden nicht durch eine Straße. Aus: Er formt den Boden unter und neben Straßen so frei wie überall sonst
 There are unsaved changes here: Save or Revert first	Hier gibt es ungespeicherte Änderungen: zuerst speichern oder zurücksetzen
@@ -2698,5 +2700,4 @@ the object names this file outside its own folder, which a copy would lose	das O
 what was written does not read back the same	das Geschriebene liest sich nicht gleich zurück
 its paths are in a file of their own (`[paths]`), which this editor does not read	seine Pfade liegen in einer eigenen Datei (`[paths]`), die dieser Editor nicht liest
 it has no path	es hat keinen Pfad
-stop	Halt
 jump	Sprung

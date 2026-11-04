@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Ашылған күйіне қайту
 Nothing to edit yet	Әзірге өңдейтін нәрсе жоқ
 Crossing paths…	Айқас жолдары…
+Trains	Пойыздар
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ЖИ пойыздарына арналған көрінбейтін рельс жолағы: жолдар мен бағыттамалардың рельс жолақтарына олар аяқталатын жерде қосылады
 Keep the ground under roads	Жерді жолдардың астында ұстау
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Қосулы: қылқалам жерді жол арқылы көтермейді. Өшірулі: жолдардың астындағы және жанындағы жерді басқа жердегідей еркін өзгертеді
 There are unsaved changes here: Save or Revert first	Сақталмаған өзгерістер бар: алдымен сақтаңыз немесе қайтарыңыз
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	ны�
 what was written does not read back the same	жазылған дерек сол қалпында оқылмайды
 its paths are in a file of their own (`[paths]`), which this editor does not read	оның жолдары бөлек файлда (`[paths]`), бұл редактор оны оқымайды
 it has no path	оның жолдары жоқ
-stop	тоқта
 jump	өту

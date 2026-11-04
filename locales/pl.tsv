@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Powrót do stanu otwarcia
 Nothing to edit yet	Na razie nie ma czego edytować
 Crossing paths…	Ścieżki skrzyżowania…
+Trains	Pociągi
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Niewidoczny pas szynowy dla pociągów SI: łączy się z pasami szynowymi torów i rozjazdów tam, gdzie się kończą
 Keep the ground under roads	Utrzymuj teren pod drogami
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Włączone: pędzel nie podnosi terenu przez drogę. Wyłączone: kształtuje teren pod drogami i obok nich tak swobodnie jak gdzie indziej
 There are unsaved changes here: Save or Revert first	Są niezapisane zmiany: najpierw je zapisz lub cofnij
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	obiek
 what was written does not read back the same	zapisane dane nie odczytują się tak samo
 its paths are in a file of their own (`[paths]`), which this editor does not read	jego ścieżki są w osobnym pliku (`[paths]`), którego ten edytor nie czyta
 it has no path	nie ma ścieżek
-stop	stop
 jump	skok

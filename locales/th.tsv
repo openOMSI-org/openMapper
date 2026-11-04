@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	กลับไปสู่สภาพตอนเปิด
 Nothing to edit yet	ยังไม่มีอะไรให้แก้ไข
 Crossing paths…	เส้นทางของทางแยก…
+Trains	รถไฟ
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ช่องรางที่มองไม่เห็นสำหรับรถไฟ AI: เชื่อมกับช่องรางของรางและประแจตรงจุดที่สิ้นสุด
 Keep the ground under roads	ให้พื้นดินอยู่ใต้ถนน
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	เปิด: แปรงจะไม่ยกพื้นดินทะลุถนน ปิด: แก้ไขพื้นดินใต้และข้างถนนได้อย่างอิสระเหมือนที่อื่น
 There are unsaved changes here: Save or Revert first	มีการแก้ไขที่ยังไม่ได้บันทึก: บันทึกหรือย้อนกลับก่อน
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	ว�
 what was written does not read back the same	สิ่งที่เขียนอ่านกลับมาไม่เหมือนเดิม
 its paths are in a file of their own (`[paths]`), which this editor does not read	เส้นทางของมันอยู่ในไฟล์แยก (`[paths]`) ซึ่งตัวแก้ไขนี้ไม่อ่าน
 it has no path	ไม่มีเส้นทาง
-stop	หยุด
 jump	ข้าม

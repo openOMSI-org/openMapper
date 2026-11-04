@@ -3496,6 +3496,10 @@ impl Editor {
     /// A path starts at a lane end of its own kind: near the end of a footway lane the path type
     /// becomes the footpath, near a street lane's the street.
     fn follow_lane_kind(&mut self, assets: &mut Assets, p: DVec2) {
+        // (a train's path stays one: a road's lane may well end beside a track)
+        if self.path_kind(assets) == 2 {
+            return;
+        }
         let Some(doc) = self.doc.as_ref() else { return };
         let (_, ends) = crate::lanes::near(doc, assets, p, 12.0);
         let near = ends.iter().filter(|e| e.kind < 2 && (e.pos.truncate() - p).length() < 3.0).min_by(|a, b| (a.pos.truncate() - p).length().total_cmp(&(b.pos.truncate() - p).length()));
@@ -5113,8 +5117,12 @@ impl Editor {
             let r = (cam.distance * 1.3).clamp(40.0, 500.0);
             let (lanes, ends) = crate::lanes::near(doc, assets, cam.target.truncate(), r);
             let lw = (cam.distance * 0.0012).clamp(0.03, 1.2) as f32;
-            for l in lanes.iter().filter(|l| l.kind != 2 && !(draft.is_some() && l.object == draft)) {
-                let color = if l.kind == 0 { [1.0, 0.78, 0.2, 0.9] } else { [0.35, 0.8, 1.0, 0.9] };
+            for l in lanes.iter().filter(|l| !(draft.is_some() && l.object == draft)) {
+                let color = match l.kind {
+                    0 => [1.0, 0.78, 0.2, 0.9],
+                    2 => [0.85, 0.5, 1.0, 0.9],
+                    _ => [0.35, 0.8, 1.0, 0.9],
+                };
                 let lift = DVec3::Z * 0.15;
                 for s in l.pts.windows(2) {
                     line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
@@ -5144,7 +5152,7 @@ impl Editor {
                     }
                 }
             }
-            for e in ends.iter().filter(|e| e.kind != 2) {
+            for e in &ends {
                 disc(&mut x.overlay, cam, e.pos + DVec3::Z * 0.2, lw * 1.2, if e.linked { [0.35, 0.85, 0.45, 0.95] } else { [0.95, 0.25, 0.2, 0.95] });
             }
         }
@@ -13217,6 +13225,32 @@ mod tests {
         assert!((a - 4.88).abs() < 0.35, "{a}");
         assert!((b - 4.88).abs() < 0.35, "{b}");
         assert!(doc.ground(DVec2::new(100.0, 20.0)).abs() < 0.05);
+    }
+
+    /// A rail lane shows among the AI's lanes, as a street's does; a path being drawn near a
+    /// road's lane end stays a rail one.
+    #[test]
+    fn rail_lanes_are_drawn_and_a_rail_path_stays_one() {
+        let rail = crate::assets::SplineModel {
+            def: omsi_scenery::Spline { only_editor: true, paths: vec![omsi_scenery::PathDef { kind: 2, width: 1.435, direction: 2, ..Default::default() }], ..Default::default() },
+            materials: Vec::new(),
+            half_width: 0.0,
+        };
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(rail)));
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 30.0, 0, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut cam = crate::camera::Camera::default();
+        cam.target = DVec3::new(100.0, 115.0, 0.0);
+        ed.show_lanes = false;
+        let without = ed.extras(&cam, &mut assets).overlay.len();
+        ed.show_lanes = true;
+        assert!(ed.extras(&cam, &mut assets).overlay.len() > without);
+        ed.path_type = Some("Splines\\road.sli".into());
+        ed.follow_lane_kind(&mut assets, DVec2::new(100.0, 100.0));
+        assert_eq!(ed.path_type.as_deref(), Some("Splines\\road.sli"));
     }
 
     /// The terrain brush stops under a road unless told not to, and then raises the ground

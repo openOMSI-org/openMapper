@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Tillbaka till läget vid öppningen
 Nothing to edit yet	Inget att redigera än
 Crossing paths…	Korsningsfält…
+Trains	Tåg
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Ett osynligt rälsfält för AI:ns tåg: det ansluter till rälsfälten på spår och växlar där de slutar
 Keep the ground under roads	Håll marken under vägarna
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	På: penseln lyfter inte marken genom en väg. Av: den formar marken under och bredvid vägar lika fritt som någon annanstans
 There are unsaved changes here: Save or Revert first	Det finns osparade ändringar: spara eller återställ först
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	objek
 what was written does not read back the same	det som skrevs läses inte tillbaka likadant
 its paths are in a file of their own (`[paths]`), which this editor does not read	dess vägar finns i en egen fil (`[paths]`), som den här redigeraren inte läser
 it has no path	den har ingen väg
-stop	stopp
 jump	hopp

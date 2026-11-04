@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Zpět do stavu při otevření
 Nothing to edit yet	Zatím není co upravovat
 Crossing paths…	Cesty křižovatky…
+Trains	Vlaky
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Neviditelný kolejový pruh pro vlaky AI: napojí se na kolejové pruhy tratí a výhybek tam, kde končí
 Keep the ground under roads	Držet terén pod silnicemi
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Zapnuto: štětec nezvedá terén skrz silnici. Vypnuto: terén pod silnicemi a vedle nich upravuje stejně volně jako kdekoli jinde
 There are unsaved changes here: Save or Revert first	Jsou tu neuložené změny: nejprve je uložte nebo vraťte zpět
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	objek
 what was written does not read back the same	zapsaná data se nenačítají stejně
 its paths are in a file of their own (`[paths]`), which this editor does not read	jeho cesty jsou ve vlastním souboru (`[paths]`), který tento editor nečte
 it has no path	nemá žádnou cestu
-stop	stop
 jump	skok

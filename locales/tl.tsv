@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Bumalik sa ayos noong binuksan
 Nothing to edit yet	Wala pang maaayos
 Crossing paths…	Mga landas ng sangandaan…
+Trains	Mga tren
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Isang di-nakikitang linya ng riles para sa mga tren ng AI: dumurugtong ito sa mga linya ng riles at palitan kung saan sila nagtatapos
 Keep the ground under roads	Panatilihin ang lupa sa ilalim ng mga kalsada
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Naka-on: hindi itinataas ng brush ang lupa nang tagos sa kalsada. Naka-off: hinuhubog nito ang lupa sa ilalim at tabi ng mga kalsada nang kasinglaya ng saanman
 There are unsaved changes here: Save or Revert first	May mga hindi pa nase-save na pagbabago: i-save o ibalik muna
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	tinut
 what was written does not read back the same	hindi pareho ang nabasa sa naisulat
 its paths are in a file of their own (`[paths]`), which this editor does not read	nasa sariling file (`[paths]`) ang mga path nito, na hindi binabasa ng editor na ito
 it has no path	wala itong path
-stop	hinto
 jump	talon

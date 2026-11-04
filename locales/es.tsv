@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Volver a como estaba al abrirlo
 Nothing to edit yet	Nada que editar todavía
 Crossing paths…	Carriles del cruce…
+Trains	Trenes
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Un carril ferroviario invisible para los trenes de la IA: se une a los carriles de las vías y los desvíos donde terminan
 Keep the ground under roads	Mantener el terreno bajo las carreteras
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Activado: el pincel no eleva el terreno a través de una carretera. Desactivado: modela el terreno bajo las carreteras y junto a ellas tan libremente como en cualquier otro lugar
 There are unsaved changes here: Save or Revert first	Hay cambios sin guardar: primero guárdalos o reviértelos
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	el ob
 what was written does not read back the same	lo escrito no se lee igual
 its paths are in a file of their own (`[paths]`), which this editor does not read	sus caminos están en un archivo propio (`[paths]`), que este editor no lee
 it has no path	no tiene caminos
-stop	parada
 jump	salto

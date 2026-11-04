@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	खोलते समय की स्थिति पर लौटें
 Nothing to edit yet	अभी संपादित करने को कुछ नहीं
 Crossing paths…	चौराहे के पथ…
+Trains	ट्रेनें
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	AI ट्रेनों के लिए एक अदृश्य रेल लेन: यह पटरियों और कांटों की रेल लेनों से वहाँ जुड़ती है जहाँ वे समाप्त होती हैं
 Keep the ground under roads	ज़मीन को सड़कों के नीचे रखें
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	चालू: ब्रश ज़मीन को सड़क के आर-पार नहीं उठाता। बंद: यह सड़कों के नीचे और बगल की ज़मीन को कहीं और की तरह ही स्वतंत्र रूप से बदलता है
 There are unsaved changes here: Save or Revert first	यहाँ बिना सहेजे बदलाव हैं: पहले सहेजें या वापस लें
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	ऑ�
 what was written does not read back the same	जो लिखा गया वह वैसा ही वापस नहीं पढ़ा जाता
 its paths are in a file of their own (`[paths]`), which this editor does not read	इसके पथ अलग फ़ाइल (`[paths]`) में हैं, जिसे यह संपादक नहीं पढ़ता
 it has no path	इसमें कोई पथ नहीं है
-stop	रुकें
 jump	छलांग

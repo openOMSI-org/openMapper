@@ -2689,6 +2689,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Назад до стану при відкритті
 Nothing to edit yet	Поки нема чого правити
 Crossing paths…	Шляхи перехрестя…
+Trains	Потяги
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Невидима рейкова смуга для потягів ШІ: приєднується до рейкових смуг колій і стрілок там, де вони закінчуються
 Keep the ground under roads	Тримати землю під дорогами
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Увімкнено: пензель не піднімає землю крізь дорогу. Вимкнено: земля під дорогами й поруч із ними змінюється так само вільно, як і деінде
 There are unsaved changes here: Save or Revert first	Тут є незбережені зміни: спочатку збережіть або скасуйте їх
@@ -2698,5 +2700,4 @@ the object names this file outside its own folder, which a copy would lose	об'
 what was written does not read back the same	записане читається не так, як записано
 its paths are in a file of their own (`[paths]`), which this editor does not read	його шляхи в окремому файлі (`[paths]`), який цей редактор не читає
 it has no path	у нього немає шляхів
-stop	стоп
 jump	перехід

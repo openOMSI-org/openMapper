@@ -2688,6 +2688,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	回到開啟時的狀態
 Nothing to edit yet	尚無可編輯的內容
 Crossing paths…	路口路徑…
+Trains	列車
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列車使用的隱形軌道車道：在軌道和道岔的軌道車道末端與之相接
 Keep the ground under roads	讓地面保持在道路下方
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	開啟：筆刷不會把地面抬高穿過道路。關閉：可像其他地方一樣自由修改道路下方和旁邊的地面
 There are unsaved changes here: Save or Revert first	這裡有未儲存的變更：請先儲存或還原
@@ -2697,5 +2699,4 @@ the object names this file outside its own folder, which a copy would lose	物�
 what was written does not read back the same	寫入的內容讀回後不一致
 its paths are in a file of their own (`[paths]`), which this editor does not read	其路徑位於獨立檔案（`[paths]`），此編輯器不會讀取
 it has no path	它沒有路徑
-stop	停止
 jump	跳轉

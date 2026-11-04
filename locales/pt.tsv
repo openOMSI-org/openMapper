@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Voltar a como estava ao abrir
 Nothing to edit yet	Nada para editar ainda
 Crossing paths…	Faixas do cruzamento…
+Trains	Trens
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Uma via férrea invisível para os trens da IA: liga-se às vias dos trilhos e desvios onde elas terminam
 Keep the ground under roads	Manter o terreno sob as estradas
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Ligado: o pincel não eleva o terreno através de uma estrada. Desligado: molda o terreno sob as estradas e ao lado delas tão livremente quanto em qualquer outro lugar
 There are unsaved changes here: Save or Revert first	Há alterações não salvas: salve ou reverta primeiro
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	o obj
 what was written does not read back the same	o que foi escrito não é lido da mesma forma
 its paths are in a file of their own (`[paths]`), which this editor does not read	seus caminhos estão em um arquivo próprio (`[paths]`), que este editor não lê
 it has no path	não tem caminhos
-stop	parada
 jump	salto

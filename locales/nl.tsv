@@ -2691,6 +2691,8 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Terug naar de stand bij het openen
 Nothing to edit yet	Nog niets te bewerken
 Crossing paths…	Kruispuntpaden…
+Trains	Treinen
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Een onzichtbare spoorbaan voor de AI-treinen: sluit aan op de spoorbanen van sporen en wissels waar die eindigen
 Keep the ground under roads	Grond onder wegen houden
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Aan: het penseel tilt de grond niet door een weg heen. Uit: het vormt de grond onder en naast wegen even vrij als overal elders
 There are unsaved changes here: Save or Revert first	Er zijn niet-opgeslagen wijzigingen: eerst opslaan of terugdraaien
@@ -2700,5 +2702,4 @@ the object names this file outside its own folder, which a copy would lose	het o
 what was written does not read back the same	wat is geschreven leest niet hetzelfde terug
 its paths are in a file of their own (`[paths]`), which this editor does not read	de paden staan in een eigen bestand (`[paths]`), dat deze editor niet leest
 it has no path	het heeft geen pad
-stop	stop
 jump	sprong
