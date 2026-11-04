@@ -458,7 +458,13 @@ impl Keymap {
     pub fn find(&self, code: KeyCode, ctrl: bool, shift: bool) -> Option<Cmd> {
         let exact = self.0.iter().find(|(_, k)| k.is_some_and(|k| k.code == code && k.ctrl == ctrl && k.shift == shift));
         let loose = || self.0.iter().find(|(c, k)| c.shift_free() && k.is_some_and(|k| k.code == code && k.ctrl == ctrl));
-        exact.or_else(loose).map(|(c, _)| *c)
+        let cmd = exact.or_else(loose).map(|(c, _)| *c);
+        // The menus say Ctrl+D. Blender's own key for this is Shift+D, and Ctrl+D is free
+        // there, so the key the menu shows still duplicates.
+        if cmd.is_none() && code == KeyCode::KeyD && ctrl && !shift && self.chord(Cmd::Duplicate).is_some() {
+            return Some(Cmd::Duplicate);
+        }
+        cmd
     }
 
     /// Whether `code` is the key of a command (whatever is held with it): for the keys
@@ -555,6 +561,7 @@ mod tests {
         assert_eq!(b.find(KeyCode::KeyX, false, false), Some(Cmd::Delete));
         assert_eq!(b.find(KeyCode::KeyA, false, true), Some(Cmd::NewObject));
         assert_eq!(b.find(KeyCode::KeyD, false, true), Some(Cmd::Duplicate));
+        assert_eq!(b.find(KeyCode::KeyD, true, false), Some(Cmd::Duplicate));
         assert_eq!(b.find(KeyCode::KeyR, false, false), Some(Cmd::Rotate));
         assert_eq!(b.find(KeyCode::Tab, false, false), Some(Cmd::EditMesh));
         assert_eq!(b.find(KeyCode::F3, false, false), Some(Cmd::Commands));
