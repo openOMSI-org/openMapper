@@ -990,10 +990,6 @@ impl App {
         if self.save_flight.is_some() && !self.finish_save() {
             return false;
         }
-        let pending = self.ed.doc.as_ref().map(|d| d.is_dirty() || d.source.is_some()).unwrap_or(false);
-        if !pending {
-            return self.ed.doc.is_some();
-        }
         self.save_blocking()
     }
 
@@ -1056,6 +1052,8 @@ impl App {
         crate::editor::sync_entry_points(doc);
         self.tt.before_save(doc, self.roots.as_ref());
         crate::timetable::follow_stop_tiles(doc);
+        let order = doc.order.clone();
+        doc.timetable.follow_order(&order);
         doc.sync_mask_slots();
         if let Some(r) = &self.roots {
             if !doc.traffic.signal_routes.is_empty() {
@@ -1083,10 +1081,7 @@ impl App {
         let Some(r) = done else { return };
         self.save_flight = None;
         match r {
-            Ok(stamp) => {
-                self.apply_stamp(stamp);
-                self.after_saved();
-            }
+            Ok(stamp) => self.save_landed(stamp),
             Err(e) => self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"))),
         }
     }
@@ -1096,8 +1091,7 @@ impl App {
         let Some(rx) = self.save_flight.take() else { return true };
         match rx.recv() {
             Ok(Ok(stamp)) => {
-                self.apply_stamp(stamp);
-                self.after_saved();
+                self.save_landed(stamp);
                 true
             }
             Ok(Err(e)) => {
@@ -1111,34 +1105,11 @@ impl App {
         }
     }
 
-    /// Forget the changes the finished save wrote, and only those: an edit made while it
-    /// wrote stays to be saved next time.
-    fn apply_stamp(&mut self, stamp: crate::doc::save::SaveStamp) {
+    /// A background save is on disk: its changes are forgotten, if this is still that map.
+    fn save_landed(&mut self, stamp: crate::doc::save::SaveStamp) {
         let Some(doc) = self.ed.doc.as_mut() else { return };
-        for (k, content, terrain, mask) in &stamp.tiles {
-            if let Some(t) = doc.tiles.get_mut(k) {
-                if t.content_rev == *content && t.terrain_rev == *terrain && t.mask_rev == *mask {
-                    t.dirty = false;
-                    t.tile.version = 14;
-                    t.tile.has_terrain = true;
-                }
-            }
-        }
-        if stamp.global_dirty && doc.global_rev == stamp.global_rev {
-            doc.global_dirty = false;
-        }
-        if stamp.tt_dirty && doc.timetable.edit == stamp.tt_gen {
-            crate::timetable::saved(&mut doc.timetable);
-        }
-        if stamp.traffic_dirty && doc.traffic.edit == stamp.traffic_gen {
-            crate::traffic::saved(&mut doc.traffic);
-        }
-        if stamp.desc_dirty && doc.descriptions.edit == stamp.desc_gen {
-            doc.descriptions.saved();
-        }
-        if doc.source == stamp.source {
-            doc.source = None;
-            doc.fresh = false;
+        if crate::doc::save::apply_stamp(doc, &stamp) {
+            self.after_saved();
         }
     }
 
@@ -1399,8 +1370,13 @@ impl App {
     }
 
     fn do_action(&mut self, a: Action, el: &ActiveEventLoop) {
-        let dirty = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
         let guarded = matches!(a, Action::Close | Action::Open(_) | Action::OpenDialog | Action::NewMap { .. } | Action::Quit | Action::RestoreBackup(_));
+        // (the map is about to be left or its files replaced: a save still writing lands first,
+        // so it is not cut short, nor counted as changes to lose)
+        if guarded {
+            self.finish_save();
+        }
+        let dirty = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
         if guarded {
             self.chrono.end_session(&mut self.ed);
         }

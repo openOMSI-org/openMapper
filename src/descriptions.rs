@@ -128,7 +128,7 @@ impl Descriptions {
 
     fn mark(&mut self) {
         self.dirty = true;
-        self.edit = self.edit.wrapping_add(1);
+        self.edit = crate::doc::next_rev();
     }
 
     pub fn saved(&mut self) {

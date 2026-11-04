@@ -504,9 +504,22 @@ pub fn plan(tt: &mut Timetable, map_dir: &Path, order: &[TileKey]) -> Vec<Op> {
 }
 
 impl Timetable {
+    /// (a number never given twice: undo puts an older timetable back, with its older count)
     pub(crate) fn mark(&mut self) {
         self.dirty = true;
-        self.edit = self.edit.wrapping_add(1);
+        self.edit = crate::doc::next_rev();
+    }
+
+    /// Bring the tile indices in line with the map's tile list here, where `plan` would on the
+    /// copy a background save writes from: this timetable must end up the same as the files.
+    pub(crate) fn follow_order(&mut self, order: &[TileKey]) {
+        let held = !(self.stops.is_empty() && self.links.is_empty() && self.tracks.is_empty());
+        if held && !self.order.is_empty() && self.order != order {
+            self.renumber_tiles(order);
+            self.mark();
+        } else {
+            self.order = order.to_vec();
+        }
     }
 }
 

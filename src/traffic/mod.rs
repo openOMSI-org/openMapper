@@ -125,7 +125,7 @@ impl Traffic {
 
     fn mark(&mut self) {
         self.dirty = true;
-        self.edit = self.edit.wrapping_add(1);
+        self.edit = crate::doc::next_rev();
     }
 
     pub fn touch(&mut self, f: File) {

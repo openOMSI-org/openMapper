@@ -42,8 +42,10 @@ pub(crate) fn header() -> String {
 /// newer landed while the files were being written.
 #[derive(Clone)]
 pub(crate) struct SaveStamp {
+    pub dir: PathBuf,
     pub tiles: Vec<(TileKey, u64, u64, u64)>,
-    pub global_rev: u64,
+    /// What `global.cfg` was written as: not every change to it counts a revision (a new IDCode).
+    pub global_text: String,
     pub global_dirty: bool,
     pub tt_gen: u64,
     pub tt_dirty: bool,
@@ -66,8 +68,9 @@ pub(crate) struct SaveJob {
 /// making their text and writing the files is [`SaveJob::run`], off the window's thread.
 pub(crate) fn prepare_save(doc: &Document) -> SaveJob {
     let stamp = SaveStamp {
+        dir: doc.dir.clone(),
         tiles: doc.tiles.iter().filter(|(_, t)| t.dirty).map(|(k, t)| (*k, t.content_rev, t.terrain_rev, t.mask_rev)).collect(),
-        global_rev: doc.global_rev,
+        global_text: global_text(doc),
         global_dirty: doc.global_dirty,
         tt_gen: doc.timetable.edit,
         tt_dirty: doc.timetable.dirty,
@@ -117,6 +120,40 @@ impl SaveJob {
         save_with(&mut self.doc, &self.known)?;
         Ok(self.stamp)
     }
+}
+
+/// Forget the changes a finished save wrote, and only those: an edit made while it wrote stays
+/// to be saved next time. False if the map open now is not the one that was saved.
+pub(crate) fn apply_stamp(doc: &mut Document, stamp: &SaveStamp) -> bool {
+    if doc.dir != stamp.dir {
+        return false;
+    }
+    for (k, content, terrain, mask) in &stamp.tiles {
+        if let Some(t) = doc.tiles.get_mut(k) {
+            if t.content_rev == *content && t.terrain_rev == *terrain && t.mask_rev == *mask {
+                t.dirty = false;
+                t.tile.version = 14;
+                t.tile.has_terrain = true;
+            }
+        }
+    }
+    if stamp.global_dirty && global_text(doc) == stamp.global_text {
+        doc.global_dirty = false;
+    }
+    if stamp.tt_dirty && doc.timetable.edit == stamp.tt_gen {
+        crate::timetable::saved(&mut doc.timetable);
+    }
+    if stamp.traffic_dirty && doc.traffic.edit == stamp.traffic_gen {
+        crate::traffic::saved(&mut doc.traffic);
+    }
+    if stamp.desc_dirty && doc.descriptions.edit == stamp.desc_gen {
+        doc.descriptions.saved();
+    }
+    if doc.source == stamp.source {
+        doc.source = None;
+        doc.fresh = false;
+    }
+    true
 }
 
 /// Save the map into its folder. Nothing is written unless all of it can be: the files

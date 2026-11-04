@@ -443,3 +443,75 @@ fn a_new_id_stays_above_ids_the_map_already_uses() {
     assert_eq!(doc.new_id(), 43);
     assert!(doc.spline((0, 0), 40).is_some());
 }
+
+/// A save writing in the background forgets only what it copied: what is edited meanwhile,
+/// even a new IDCode that counts no revision, is still a change when it lands.
+#[test]
+fn an_edit_made_while_a_save_writes_stays_to_be_saved() {
+    use super::save::{apply_stamp, prepare_save};
+    let mut doc = crate::selection::tests::flat_map(2);
+    let dir = std::env::temp_dir().join(format!("openmapper-save-flight-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    doc.dir = dir.clone();
+    doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
+    doc.tiles.get_mut(&(1, 0)).unwrap().touch_content();
+    doc.global_dirty = true;
+    doc.timetable.touch_calendar();
+    let job = prepare_save(&doc);
+    // (while it writes: one tile changes, an IDCode is given out, the timetable changes)
+    doc.tiles.get_mut(&(1, 0)).unwrap().touch_content();
+    doc.new_id();
+    doc.timetable.touch_calendar();
+    let stamp = job.run().unwrap();
+    assert!(apply_stamp(&mut doc, &stamp));
+    assert!(!doc.tiles[&(0, 0)].dirty, "what was written is forgotten");
+    assert!(doc.tiles[&(1, 0)].dirty, "the later edit stays");
+    assert!(doc.global_dirty, "the IDCode given out meanwhile stays");
+    assert!(doc.timetable.dirty, "the timetable's later edit stays");
+    // (the next one, with nothing edited meanwhile, leaves nothing)
+    let stamp = prepare_save(&doc).run().unwrap();
+    assert!(apply_stamp(&mut doc, &stamp));
+    assert!(!doc.is_dirty());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Undo during a save puts an older timetable back: its count must not look like the one written.
+#[test]
+fn a_timetable_put_back_is_not_taken_for_the_one_a_save_wrote() {
+    let mut doc = crate::selection::tests::flat_map(1);
+    let before = doc.timetable.clone();
+    doc.timetable.touch_calendar();
+    let written = doc.timetable.edit;
+    let old = std::mem::replace(&mut doc.timetable, before);
+    doc.timetable.restored(&old);
+    assert_ne!(doc.timetable.edit, written);
+}
+
+/// A save for another map, landing after that one was closed, leaves the map open now alone.
+#[test]
+fn a_save_of_another_map_does_not_touch_the_one_open() {
+    use super::save::{apply_stamp, prepare_save};
+    let mut doc = crate::selection::tests::flat_map(1);
+    doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
+    let stamp = prepare_save(&doc);
+    let dir = std::env::temp_dir().join(format!("openmapper-save-other-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    doc.dir = dir.clone();
+    let stamp = stamp.run();
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(!apply_stamp(&mut doc, &stamp.unwrap()));
+    assert!(doc.tiles[&(0, 0)].dirty);
+}
+
+/// A tile list that changed renumbers the timetable the window keeps, not only the copy written.
+#[test]
+fn the_timetable_follows_the_tile_list_before_a_background_save() {
+    let mut tt = crate::timetable::Timetable::default();
+    tt.order = vec![(0, 0), (1, 0)];
+    tt.stops.push(Default::default());
+    tt.stops[0].group = 1;
+    tt.follow_order(&[(1, 0)]);
+    assert_eq!(tt.stops[0].group, 0);
+    assert_eq!(tt.order, vec![(1, 0)]);
+    assert!(tt.dirty);
+}
