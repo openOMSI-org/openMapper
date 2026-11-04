@@ -577,7 +577,7 @@ fn run(s: Snapshot, roots: Vec<PathBuf>) -> Vec<Issue> {
         let Some(paths) = obj_paths.get(&o.file.to_lowercase()) else { continue };
         let pose = crate::place::Pose::of_object(DVec3::new(o.world.x, o.world.y, 0.0), o.rot);
         for p in paths {
-            let c = SplineCurve { start: DVec3::new(p.start[0] as f64, p.start[1] as f64, p.start[2] as f64), heading_deg: p.end[0] as f64, length: p.end[2] as f64, radius: p.end[1] as f64, grad_start: 0.0, grad_end: 0.0, delta_h: None, cant_start: 0.0, cant_end: 0.0, skew_start: 0.0, skew_end: 0.0, tex_offset: 0.0, seed: 0, half_cant_width: 0.0 };
+            let c = crate::lanes::object_path_curve(p);
             if !(c.length > 0.05 && c.length < 5000.0) {
                 continue;
             }
