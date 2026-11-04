@@ -2543,7 +2543,6 @@ That point is already joined	그 점은 이미 연결되어 있습니다
 Click an end point of a path	경로의 끝점을 클릭
 Path connected	경로가 연결됨
 Connect the path	경로 연결
-There is no tile there	거기에는 타일이 없습니다
 Click the other point	다른 점을 클릭
 The graphics API changes the next time openMapper starts	그래픽 API는 openMapper를 다음에 시작할 때 바뀝니다
 Settings…	설정…
@@ -2631,3 +2630,4 @@ A big or very detailed map is lighter with fewer tiles: the others load as you g
 tiles round the camera are loaded; more load as you go there	개의 타일이 카메라 주변에 불러와졌습니다. 가는 곳은 도착하면 더 불러옵니다
 Only the tiles round the camera are loaded; more load as you go there	카메라 주변의 타일만 불러왔습니다. 가는 곳은 도착하면 더 불러옵니다
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2 편집기처럼 큰 맵을 한 번에 100개 타일씩 불러올까요?\n\n그래픽 메모리에는 카메라 주변의 100개 타일만 남고, 나머지는 그곳으로 가면 불러옵니다. 아주 큰 맵이 가벼워집니다. 보기 > 모든 타일을 한 번에 불러오기(끔)에서 언제든 바꿀 수 있습니다.
+Click the spline they should stand on. Each follows that road and keeps its IDCode	그것들이 설 스플라인을 클릭하세요. 각각 그 길을 따르며 IDCode를 유지합니다

@@ -2543,7 +2543,6 @@ That point is already joined	Titik itu sudah tersambung
 Click an end point of a path	Klik titik ujung suatu jalur
 Path connected	Jalur tersambung
 Connect the path	Hubungkan jalur
-There is no tile there	Di sana tidak ada petak
 Click the other point	Klik titik yang lain
 The graphics API changes the next time openMapper starts	API grafis berubah saat openMapper dimulai berikutnya
 Settings…	Pengaturan…
@@ -2631,3 +2630,4 @@ A big or very detailed map is lighter with fewer tiles: the others load as you g
 tiles round the camera are loaded; more load as you go there	ubin di sekitar kamera sudah dimuat; yang lain dimuat saat Anda sampai di sana
 Only the tiles round the camera are loaded; more load as you go there	Hanya ubin di sekitar kamera yang dimuat; yang lain dimuat saat Anda sampai di sana
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Muat peta besar 100 ubin sekaligus, seperti editor OMSI 2?\n\nHanya 100 ubin di sekitar kamera yang tetap di memori grafis; yang lain dimuat saat Anda sampai di sana. Peta yang sangat besar tetap ringan. Bisa diubah kapan saja di Tampilan > Muat semua ubin sekaligus (mati).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik spline tempat mereka harus berdiri. Masing-masing mengikuti jalan itu dan menyimpan IDCode

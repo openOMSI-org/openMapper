@@ -3184,7 +3184,7 @@ impl ApplicationHandler for App {
                 let mut typing = g.egui_ctx.egui_wants_keyboard_input();
                 // (Ctrl/Cmd + Z, Y: the map's undo even from a text field, which lets go of
                 // the keyboard; its own text undo would only undo half of the edit)
-                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY)) {
+                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY) | Some(KeyCode::KeyD)) {
                     g.egui_ctx.memory_mut(|m| m.stop_text_input());
                     typing = false;
                 }

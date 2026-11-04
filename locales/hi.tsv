@@ -2543,7 +2543,6 @@ That point is already joined	यह बिंदु पहले से जु�
 Click an end point of a path	पथ का एक छोर चुनें
 Path connected	पथ जुड़ गया
 Connect the path	पथ जोड़ें
-There is no tile there	वहाँ कोई टाइल नहीं है
 Click the other point	दूसरा बिंदु चुनें
 The graphics API changes the next time openMapper starts	ग्राफ़िक्स API openMapper के अगली बार शुरू होने पर बदलेगा
 Settings…	सेटिंग…
@@ -2631,3 +2630,4 @@ A big or very detailed map is lighter with fewer tiles: the others load as you g
 tiles round the camera are loaded; more load as you go there	टाइलें कैमरे के आसपास लोड हैं; आप जहाँ जाएँ वहाँ और लोड होती हैं
 Only the tiles round the camera are loaded; more load as you go there	केवल कैमरे के आसपास की टाइलें लोड हैं; आप जहाँ जाएँ वहाँ और लोड होती हैं
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2 के एडिटर की तरह बड़ा मैप एक बार में 100 टाइल लोड करें?\n\nग्राफ़िक्स मेमोरी में केवल कैमरे के आसपास की 100 टाइलें रहती हैं; बाकी आप वहाँ जाने पर लोड होती हैं। बहुत बड़े मैप हल्के रहते हैं। दृश्य > सभी टाइलें एक साथ लोड करें (बंद) में कभी भी बदल सकते हैं।
+Click the spline they should stand on. Each follows that road and keeps its IDCode	उस स्पलाइन पर क्लिक करें जिस पर उन्हें खड़ा होना है। हर एक उस सड़क का अनुसरण करता है और अपना IDCode रखता है

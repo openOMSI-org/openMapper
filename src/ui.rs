@@ -2391,8 +2391,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     });
                 }
                 if att.is_none() && o.parent_id.is_none() {
-                    let armed = ed.sample == Some(Sample::Attach(k, id));
-                    let tip = tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode");
+                    let armed = ed.sample == Some(Sample::Attach) && ed.attach_to == [(k, id)];
+                    let tip = crate::editor::attach_hint(1);
                     if ui.add(egui::Button::new(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).selected(armed)).on_hover_text(tip).clicked() {
                         arm_attach = Some(!armed);
                     }
@@ -2671,12 +2671,11 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     if let Some(on) = arm_attach {
         if on {
             if let Sel::Object(k, id) = sel {
-                ed.sample = Some(Sample::Attach(k, id));
-                ed.sample_browser = false;
-                ed.toast(tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode"));
+                ed.arm_attach(vec![(k, id)]);
             }
         } else {
             ed.sample = None;
+            ed.attach_to.clear();
         }
     }
     // (an object's rules only where it has paths, or rules already)

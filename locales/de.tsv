@@ -2541,7 +2541,6 @@ That point is already joined	Dieser Punkt ist schon verbunden
 Click an end point of a path	Einen Endpunkt eines Pfades anklicken
 Path connected	Pfad verbunden
 Connect the path	Pfad verbinden
-There is no tile there	Dort liegt keine Kachel
 Click the other point	Den anderen Punkt anklicken
 The graphics API changes the next time openMapper starts	Die Grafik-API ändert sich beim nächsten Start von openMapper
 Settings…	Einstellungen…
@@ -2629,3 +2628,4 @@ A big or very detailed map is lighter with fewer tiles: the others load as you g
 tiles round the camera are loaded; more load as you go there	Kacheln um die Kamera sind geladen; weitere laden, wenn Sie hingehen
 Only the tiles round the camera are loaded; more load as you go there	Nur die Kacheln um die Kamera sind geladen; weitere laden, wenn Sie hingehen
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Eine große Karte wie im Editor von OMSI 2 jeweils 100 Kacheln laden?\n\nIm Grafikspeicher bleiben nur die 100 Kacheln um die Kamera; die übrigen laden, wenn Sie hingehen. Sehr große Karten bleiben dadurch leicht. Jederzeit änderbar unter Ansicht > Alle Kacheln auf einmal laden (aus).
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klicken Sie den Spline an, auf dem sie stehen sollen. Jeder folgt dieser Straße und behält seinen IDCode
