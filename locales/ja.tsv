@@ -2633,5 +2633,7 @@ tiles round the camera are loaded; more load as you go there	個のタイルを�
 Only the tiles round the camera are loaded; more load as you go there	カメラの周囲のタイルだけを読み込みました。移動先はそこへ行くと読み込まれます
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2のエディターと同じく、大きなマップを一度に100タイル読み込みますか？\n\nグラフィックメモリにはカメラの周囲の100タイルだけが残り、残りはそこへ行くと読み込まれます。とても大きなマップが軽くなります。表示 > すべてのタイルを一度に読み込む（オフ）でいつでも変更できます。
 Click the spline they should stand on. Each follows that road and keeps its IDCode	それらを置くスプラインをクリックします。それぞれがその道に沿い、IDCode を保ちます
+Trains	列車
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	AI列車用の見えない線路レーン: 線路や分岐器の線路レーンの端に接続します
 Keep the ground under roads	地面を道路の下に保つ
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	オン: ブラシは地面を道路より上に上げません。オフ: 道路の下や脇の地面も他の場所と同じように自由に編集します

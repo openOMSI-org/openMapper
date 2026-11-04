@@ -106,6 +106,8 @@ pub enum Action {
     PbrForSpline(String),
     /// The selected roads' lanes made into AI paths of their own.
     DetachLanes,
+    /// The Logic tool's AI paths drawn as rail lanes, from the openMapper spline made for it.
+    RailPathType,
     /// The relief of the whole map taken away, roads and paths laid on the flat ground.
     FlattenTerrain,
     /// The PBR window on a picture chosen from disk.
@@ -1569,6 +1571,15 @@ fn logic_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libra
                         ed.set_path_type(a.rel.clone());
                     }
                 }
+                // (a rail lane of the catalogue, else the one openMapper writes)
+                let rail = lib.assets.iter().find(|a| a.category == Category::Technical && a.lanes == (0, 0, a.lanes.2) && a.lanes.2 > 0);
+                let on = ed.path_type.as_deref().is_some_and(|p| rail.is_some_and(|a| p.eq_ignore_ascii_case(&a.rel)));
+                if ui.add(egui::Button::new(icons::labelled(Icon::Route, tr("Trains", "Поезда"))).selected(on).min_size(Vec2::new(90.0, 28.0))).on_hover_text(tr("An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end", "Невидимая рельсовая полоса для поездов ИИ: присоединяется к рельсовым полосам путей и стрелок там, где они заканчиваются")).clicked() {
+                    match rail {
+                        Some(a) => ed.set_path_type(a.rel.clone()),
+                        None => actions.push(Action::RailPathType),
+                    }
+                }
             });
             if ed.path_type.is_none() {
                 if let Some(a) = lib.find("Splines\\Marcel\\invis_street.sli") {
@@ -1594,7 +1605,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             Some(LogicMode::Start) => a.is_entry_point,
             Some(LogicMode::Stops) => a.is_bus_stop,
             Some(LogicMode::Parking) => a.is_car_park,
-            Some(LogicMode::Paths) => a.category == Category::Technical && (a.lanes.0 > 0 || a.lanes.1 > 0),
+            Some(LogicMode::Paths) => a.category == Category::Technical && (a.lanes.0 > 0 || a.lanes.1 > 0 || a.lanes.2 > 0),
             Some(LogicMode::Other) => a.category == Category::Technical && !a.is_car_park,
         }
     };

@@ -80,6 +80,22 @@ pub fn lane_free_copy(roots: &Roots, rel: &str) -> anyhow::Result<String> {
     Ok(format!("Splines\\openMapper\\{name}.sli"))
 }
 
+/// The invisible rail lane the Logic tool draws for the AI's trains, written into the content
+/// folder when it is first wanted (the installation has no such spline of its own to count on).
+/// Its relative path.
+pub fn rail_path_spline(roots: &Roots) -> anyhow::Result<String> {
+    const RAIL_PATH: &str = "Splines\\openMapper\\invis_rail.sli";
+    let path = omsi_cfg::resolve_path(&roots.content, RAIL_PATH);
+    if !path.is_file() {
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        let text = "File created with openMapper\n\n[onlyeditor]\n\n[path]\n2\n0\n0\n1.435\n2\n";
+        crate::doc::safe::write_atomic(&path, &omsi_cfg::encode_text(&text.replace('\n', "\r\n")))?;
+    }
+    Ok(RAIL_PATH.to_string())
+}
+
 /// One lane's spline: the road's piece offset sideways by `x` (m), run the way the lane
 /// goes (`reverse`: from the road's end back).
 fn lane_spline(s: &MapSpline, k: TileKey, x: f64, z: f64, reverse: bool, file: &str, id: i64) -> Option<(TileKey, MapSpline)> {
@@ -178,6 +194,19 @@ pub fn detach(doc: &mut Document, assets: &mut Assets, pieces: &[(TileKey, i64)]
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The rail lane's file reads back as an AI path that is a track, made once.
+    #[test]
+    fn the_rail_lane_is_an_invisible_track() {
+        let roots = crate::doc::tests::scratch("rail-lane");
+        let rel = rail_path_spline(&roots).unwrap();
+        assert_eq!(rail_path_spline(&roots).unwrap(), rel);
+        let mut assets = Assets::new(roots.omsi.clone(), roots.content.clone());
+        let m = assets.spline_wait(&rel, 5000).expect("it loads");
+        assert!(m.is_ai_path() && m.is_track());
+        assert_eq!((m.def.paths[0].kind, m.def.paths[0].direction), (2, 2));
+        let _ = std::fs::remove_dir_all(&roots.content);
+    }
 
     #[test]
     fn the_lanes_go_and_the_looks_stay() {

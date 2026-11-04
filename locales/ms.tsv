@@ -2633,5 +2633,7 @@ tiles round the camera are loaded; more load as you go there	jubin di sekitar ka
 Only the tiles round the camera are loaded; more load as you go there	Hanya jubin di sekitar kamera dimuatkan; lagi dimuatkan apabila anda pergi ke sana
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Muatkan peta besar 100 jubin setiap kali, seperti editor OMSI 2?\n\nHanya 100 jubin di sekitar kamera kekal dalam memori grafik; yang lain dimuatkan apabila anda pergi ke sana. Peta yang sangat besar kekal ringan. Boleh diubah bila-bila masa di Paparan > Muat semua jubin sekaligus (mati).
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik spline tempat mereka harus berdiri. Setiap satu mengikut jalan itu dan mengekalkan IDCode
+Trains	Kereta api
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Lorong rel halimunan untuk kereta api AI: bersambung ke lorong rel landasan dan suis di tempat ia berakhir
 Keep the ground under roads	Kekalkan tanah di bawah jalan
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Hidup: berus tidak menaikkan tanah menembusi jalan. Mati: berus membentuk tanah di bawah dan di sebelah jalan sebebas tempat lain

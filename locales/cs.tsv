@@ -2633,5 +2633,7 @@ tiles round the camera are loaded; more load as you go there	dlaždic kolem kame
 Only the tiles round the camera are loaded; more load as you go there	Načteny jsou jen dlaždice kolem kamery; další se načtou, když tam dojdete
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Načítat velkou mapu po 100 dlaždicích, jako editor OMSI 2?\n\nV grafické paměti zůstane jen 100 dlaždic kolem kamery; ostatní se načtou, když tam dojdete. Velmi velké mapy tak zůstanou lehké. Lze kdykoli změnit v Zobrazení > Načíst všechny dlaždice najednou (vypnuto).
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klikněte na spline, na kterém mají stát. Každý sleduje tu silnici a ponechá si IDCode
+Trains	Vlaky
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Neviditelný kolejový pruh pro vlaky AI: napojí se na kolejové pruhy tratí a výhybek tam, kde končí
 Keep the ground under roads	Držet terén pod silnicemi
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Zapnuto: štětec nezvedá terén skrz silnici. Vypnuto: terén pod silnicemi a vedle nich upravuje stejně volně jako kdekoli jinde

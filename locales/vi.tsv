@@ -2633,5 +2633,7 @@ tiles round the camera are loaded; more load as you go there	ô quanh camera đ�
 Only the tiles round the camera are loaded; more load as you go there	Chỉ các ô quanh camera được tải; sẽ tải thêm khi bạn đến đó
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Tải bản đồ lớn 100 ô mỗi lần, như trình sửa của OMSI 2?\n\nChỉ 100 ô quanh camera được giữ trong bộ nhớ đồ họa; các ô khác được tải khi bạn đến đó. Bản đồ rất lớn nhờ vậy vẫn nhẹ. Có thể đổi bất cứ lúc nào trong Xem > Tải mọi ô cùng lúc (tắt).
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Nhấp vào spline mà chúng sẽ đứng trên. Mỗi cái đi theo con đường đó và giữ IDCode
+Trains	Tàu hỏa
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Làn ray vô hình cho tàu AI: nối vào làn ray của đường ray và ghi tại nơi chúng kết thúc
 Keep the ground under roads	Giữ mặt đất dưới đường
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Bật: cọ không nâng mặt đất xuyên qua đường. Tắt: cọ chỉnh mặt đất dưới và cạnh đường tự do như ở nơi khác

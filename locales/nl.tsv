@@ -2633,5 +2633,7 @@ tiles round the camera are loaded; more load as you go there	tegels rond de came
 Only the tiles round the camera are loaded; more load as you go there	Alleen de tegels rond de camera zijn geladen; meer laden als u erheen gaat
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Een grote kaart 100 tegels tegelijk laden, zoals de editor van OMSI 2?\n\nAlleen de 100 tegels rond de camera blijven in het grafisch geheugen; de rest laadt als u erheen gaat. Zeer grote kaarten blijven zo licht. Altijd te wijzigen via Beeld > Alle tegels tegelijk laden (uit).
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Klik de spline waarop ze moeten staan. Elk volgt die weg en houdt zijn IDCode
+Trains	Treinen
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Een onzichtbare spoorbaan voor de AI-treinen: sluit aan op de spoorbanen van sporen en wissels waar die eindigen
 Keep the ground under roads	Grond onder wegen houden
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Aan: het penseel tilt de grond niet door een weg heen. Uit: het vormt de grond onder en naast wegen even vrij als overal elders
