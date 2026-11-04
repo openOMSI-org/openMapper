@@ -1681,6 +1681,17 @@ impl App {
                     self.ed.detach_lanes(a, r);
                 }
             }
+            Action::RailPathType => {
+                if let Some(r) = &self.roots {
+                    match crate::lanes_edit::rail_path_spline(r) {
+                        Ok(rel) => {
+                            self.ed.set_path_type(rel);
+                            self.lib.start_scan(r);
+                        }
+                        Err(e) => self.ed.error(format!("{e}")),
+                    }
+                }
+            }
             Action::PbrForSpline(rel) => {
                 if let (Some(a), Some(r)) = (self.assets.as_mut(), &self.roots) {
                     let textures = spline_textures(a, &rel);

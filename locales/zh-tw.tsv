@@ -2630,3 +2630,5 @@ tiles round the camera are loaded; more load as you go there	個圖磚已載在�
 Only the tiles round the camera are loaded; more load as you go there	只載入相機周圍的圖磚；你走到哪裡就載入哪裡
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	要像 OMSI 2 的編輯器那樣，一次載入 100 個圖塊嗎？\n\n圖形記憶體只保留相機周圍的 100 個圖塊；其餘會在你走到那裡時載入。這樣非常大的地圖會比較輕。隨時可在「檢視 > 一次載入所有圖塊」（關閉）更改。
 Click the spline they should stand on. Each follows that road and keeps its IDCode	點它們要依附的那條 Spline。每一個都會跟著那條路，並保留 IDCode
+Trains	列車
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列車使用的隱形軌道車道：在軌道和道岔的軌道車道末端與之相接

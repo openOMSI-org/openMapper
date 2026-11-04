@@ -2633,3 +2633,5 @@ tiles round the camera are loaded; more load as you go there	ไทล์รอ�
 Only the tiles round the camera are loaded; more load as you go there	โหลดเฉพาะไทล์รอบกล้อง จะโหลดเพิ่มเมื่อคุณไปถึงที่นั่น
 Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	โหลดแผนที่ขนาดใหญ่ครั้งละ 100 ไทล์ เหมือนตัวแก้ไขของ OMSI 2 หรือไม่?\n\nหน่วยความจำกราฟิกเก็บเฉพาะ 100 ไทล์รอบกล้อง ส่วนที่เหลือจะโหลดเมื่อคุณไปถึงที่นั่น แผนที่ขนาดใหญ่มากจึงยังเบา สามารถเปลี่ยนได้ตลอดที่ มุมมอง > โหลดทุกไทล์พร้อมกัน (ปิด)
 Click the spline they should stand on. Each follows that road and keeps its IDCode	คลิกสปลายน์ที่พวกมันจะยืน แต่ละชิ้นจะไปตามถนนนั้นและเก็บ IDCode
+Trains	รถไฟ
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	ช่องรางที่มองไม่เห็นสำหรับรถไฟ AI: เชื่อมกับช่องรางของรางและประแจตรงจุดที่สิ้นสุด
