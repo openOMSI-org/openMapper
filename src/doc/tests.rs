@@ -450,9 +450,8 @@ fn a_new_id_stays_above_ids_the_map_already_uses() {
 fn an_edit_made_while_a_save_writes_stays_to_be_saved() {
     use super::save::{apply_stamp, prepare_save};
     let mut doc = crate::selection::tests::flat_map(2);
-    let dir = std::env::temp_dir().join(format!("openmapper-save-flight-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    doc.dir = dir.clone();
+    let roots = scratch("save-flight");
+    doc.dir = roots.content.join("maps").join("flight");
     doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
     doc.tiles.get_mut(&(1, 0)).unwrap().touch_content();
     doc.global_dirty = true;
@@ -472,7 +471,7 @@ fn an_edit_made_while_a_save_writes_stays_to_be_saved() {
     let stamp = prepare_save(&doc).run().unwrap();
     assert!(apply_stamp(&mut doc, &stamp));
     assert!(!doc.is_dirty());
-    let _ = std::fs::remove_dir_all(&dir);
+    let _ = std::fs::remove_dir_all(&roots.content);
 }
 
 /// Undo during a save puts an older timetable back: its count must not look like the one written.
@@ -492,14 +491,14 @@ fn a_timetable_put_back_is_not_taken_for_the_one_a_save_wrote() {
 fn a_save_of_another_map_does_not_touch_the_one_open() {
     use super::save::{apply_stamp, prepare_save};
     let mut doc = crate::selection::tests::flat_map(1);
+    let roots = scratch("save-other");
+    doc.dir = roots.content.join("maps").join("one");
     doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
-    let stamp = prepare_save(&doc);
-    let dir = std::env::temp_dir().join(format!("openmapper-save-other-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    doc.dir = dir.clone();
-    let stamp = stamp.run();
-    let _ = std::fs::remove_dir_all(&dir);
-    assert!(!apply_stamp(&mut doc, &stamp.unwrap()));
+    let job = prepare_save(&doc);
+    doc.dir = roots.content.join("maps").join("other");
+    let stamp = job.run().unwrap();
+    let _ = std::fs::remove_dir_all(&roots.content);
+    assert!(!apply_stamp(&mut doc, &stamp));
     assert!(doc.tiles[&(0, 0)].dirty);
 }
 
