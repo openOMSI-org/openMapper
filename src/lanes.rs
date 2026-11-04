@@ -15,6 +15,33 @@ use crate::roads;
 /// How near two lane ends must lie to be linked (m).
 pub const LINK: f64 = 0.6;
 
+/// An object's `[path]` in its own frame. The two numbers after the length are the slope
+/// at the start and at the end, as rise per metre (a spline stores that same slope in
+/// percent, and its cant is already in the height of each lane). Without them the path
+/// stays at its start height, so a junction on a hill draws a flat lane through a sloping plate.
+pub fn object_path_curve(p: &omsi_scenery::PathDef) -> SplineCurve {
+    let (g0, g1) = match (p.params.get(6), p.params.get(7)) {
+        (Some(a), Some(b)) => (*a as f64 * 100.0, *b as f64 * 100.0),
+        _ => (0.0, 0.0),
+    };
+    SplineCurve {
+        start: DVec3::new(p.start[0] as f64, p.start[1] as f64, p.start[2] as f64),
+        heading_deg: p.end[0] as f64,
+        length: p.end[2] as f64,
+        radius: p.end[1] as f64,
+        grad_start: g0,
+        grad_end: g1,
+        delta_h: None,
+        cant_start: 0.0,
+        cant_end: 0.0,
+        skew_start: 0.0,
+        skew_end: 0.0,
+        tex_offset: 0.0,
+        seed: 0,
+        half_cant_width: 0.0,
+    }
+}
+
 /// One lane, as points along it in the way it is laid out (world).
 #[derive(Debug, Clone)]
 pub struct Lane {
@@ -148,22 +175,7 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
             }
             let pose = Pose::of_object(world, o.rot);
             for (index, p) in model.paths.iter().enumerate() {
-                let c = SplineCurve {
-                    start: DVec3::new(p.start[0] as f64, p.start[1] as f64, p.start[2] as f64),
-                    heading_deg: p.end[0] as f64,
-                    length: p.end[2] as f64,
-                    radius: p.end[1] as f64,
-                    grad_start: 0.0,
-                    grad_end: 0.0,
-                    delta_h: None,
-                    cant_start: 0.0,
-                    cant_end: 0.0,
-                    skew_start: 0.0,
-                    skew_end: 0.0,
-                    tex_offset: 0.0,
-                    seed: 0,
-                    half_cant_width: 0.0,
-                };
+                let c = object_path_curve(p);
                 if !(c.length > 0.05) {
                     continue;
                 }
@@ -201,4 +213,28 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
         ends[i].linked = hit;
     }
     (lanes, ends)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A road object's path climbs with the slope written after its length (rise per metre),
+    /// the same heights a spline's gradient gives, including a crest.
+    #[test]
+    fn an_object_path_follows_its_slope() {
+        let path = |g0: f32, g1: f32| omsi_scenery::PathDef {
+            start: [0.0, 0.0, 5.0],
+            end: [0.0, 0.0, 20.0],
+            params: vec![0.0, 0.0, 5.0, 0.0, 0.0, 20.0, g0, g1],
+            ..Default::default()
+        };
+        let z = |g0, g1, s: f64| object_path_curve(&path(g0, g1)).point_at(s).z;
+        assert!((z(0.04, 0.04, 0.0) - 5.0).abs() < 1e-6);
+        assert!((z(0.04, 0.04, 10.0) - 5.4).abs() < 1e-6);
+        assert!((z(0.04, 0.04, 20.0) - 5.8).abs() < 1e-6);
+        assert!((z(0.06, -0.04, 10.0) - 5.35).abs() < 1e-6);
+        assert!((z(0.06, -0.04, 20.0) - 5.2).abs() < 1e-6);
+        assert!((z(0.0, 0.0, 20.0) - 5.0).abs() < 1e-6);
+    }
 }
