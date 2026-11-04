@@ -36,6 +36,9 @@ pub struct CrossingPaths {
     pub open: bool,
     /// The object being edited.
     target: Option<Sel>,
+    /// The map it was opened on, and the `.sco` the object named then.
+    map_dir: std::path::PathBuf,
+    from_rel: String,
     /// The `.sco` the map names, and where it is.
     rel: String,
     abs: std::path::PathBuf,
@@ -68,6 +71,8 @@ impl Default for CrossingPaths {
             bytes: Vec::new(),
             sheet: None,
             seen: Crossing::default(),
+            map_dir: Default::default(),
+            from_rel: String::new(),
             selected: None,
             drag: None,
             scale: 14.0,
@@ -131,9 +136,24 @@ fn aspect_name(state: i32) -> &'static str {
 
 const ASPECTS: [i32; 6] = [0, 3, 6, 8, 9, 12];
 
+fn unsaved_text() -> &'static str {
+    tr("There are unsaved changes here: Save or Revert first", "Здесь есть несохранённые правки: сначала сохраните или отмените их")
+}
+
 impl CrossingPaths {
+    fn unsaved(&self) -> bool {
+        self.sheet.as_ref().is_some_and(|s| s.crossing != self.seen)
+    }
+
     /// Open on the selected object, or on a crossing picked from the map's list.
     pub fn request(&mut self, ed: &mut Editor, roots: &Roots, lib: &Library) {
+        // (what is being edited is not dropped for another object)
+        if self.unsaved() && !matches!((ed.selected, self.target), (Some(a), Some(b)) if a == b) {
+            self.open = true;
+            self.message = Some((unsaved_text().into(), true));
+            return;
+        }
+        self.sheet = None;
         if let Some(Sel::Object(k, id)) = ed.selected {
             if self.open_on(ed, roots, k, id) {
                 self.open = true;
@@ -174,6 +194,8 @@ impl CrossingPaths {
             Ok((abs, bytes, sheet)) => {
                 self.copied = sidecar(&abs).is_file();
                 self.target = Some(Sel::Object(k, id));
+                self.map_dir = doc.dir.clone();
+                self.from_rel = rel.clone();
                 self.rel = rel;
                 self.abs = abs;
                 self.bytes = bytes;
@@ -208,6 +230,8 @@ impl CrossingPaths {
             if let (Some(Sel::Object(k, id)), Some(sheet)) = (self.target, self.sheet.as_ref()) {
                 ed.crossing_draft = Some((k, id, sheet.crossing.paths.clone()));
             }
+        } else {
+            ed.crossing_draft = None;
         }
         let screen = ctx.content_rect().size();
         let size = Vec2::new((screen.x * 0.86).clamp(820.0, 1500.0), (screen.y * 0.86).clamp(540.0, 1000.0));
@@ -229,6 +253,11 @@ impl CrossingPaths {
                     });
                 });
             });
+        // (closed with edits in it: they are not dropped without a word)
+        if !open && self.unsaved() {
+            open = true;
+            self.message = Some((unsaved_text().into(), true));
+        }
         self.open = open;
         if !self.open {
             ed.crossing_draft = None;
@@ -549,7 +578,7 @@ impl CrossingPaths {
                 let mut stop_gone = None;
                 for (n, s) in sheet.crossing.stops.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new("stop").small().color(DIM));
+                        ui.label(RichText::new(tr("stop", "стоп")).small().color(DIM));
                         changed |= ui.add(egui::DragValue::new(&mut s[0]).speed(0.2).prefix("L")).changed();
                         changed |= ui.add(egui::DragValue::new(&mut s[1]).speed(0.2).suffix(" s")).changed();
                         changed |= ui.add(egui::DragValue::new(&mut s[2]).range(0.0..=1.0).speed(0.1).prefix("req ")).changed();
@@ -565,7 +594,7 @@ impl CrossingPaths {
                 let mut jump_gone = None;
                 for (n, j) in sheet.crossing.jumps.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new("jump").small().color(DIM));
+                        ui.label(RichText::new(tr("jump", "переход")).small().color(DIM));
                         changed |= ui.add(egui::DragValue::new(&mut j[0]).speed(0.2).prefix("L")).changed();
                         changed |= ui.add(egui::DragValue::new(&mut j[1]).speed(0.2).suffix(" s")).changed();
                         changed |= ui.add(egui::DragValue::new(&mut j[2]).range(0.0..=1.0).speed(0.1).prefix("req ")).changed();
@@ -685,7 +714,21 @@ impl CrossingPaths {
         let Some(Sel::Object(k, id)) = self.target else { return };
         let Some(sheet) = self.sheet.as_ref() else { return };
         let crossing = sheet.crossing.clone();
+        // (the object may not be what this was opened on any more: another map, or an undo that
+        // put the original back, which then gets the copy again)
+        let now = ed.doc.as_ref().filter(|d| d.dir == self.map_dir).and_then(|d| d.object(k, id)).map(|o| o.file.clone());
+        let on_ours = now.as_deref().is_some_and(|f| f.eq_ignore_ascii_case(&self.rel));
+        let on_original = now.as_deref().is_some_and(|f| f.eq_ignore_ascii_case(&self.from_rel));
+        if !on_ours && !on_original {
+            self.message = Some((tr("The map has changed since this was opened: open the object again", "Карта изменилась с момента открытия: откройте объект заново").into(), true));
+            return;
+        }
+        if crossing.helpers.iter().any(|h| h.spline.trim().is_empty()) {
+            self.message = Some((tr("A spline helper has no road type: pick one or remove it", "У точки привязки нет типа дороги: выберите его или удалите точку").into(), true));
+            return;
+        }
         let text = sheet.text();
+        let fresh = !self.copied;
         let (rel, abs) = if self.copied {
             (self.rel.clone(), self.abs.clone())
         } else {
@@ -702,17 +745,15 @@ impl CrossingPaths {
                 }
             }
         };
-        if let Err(e) = crossing_edit::write(&abs, &text, &self.bytes) {
-            self.message = Some((e.to_string(), true));
-            return;
-        }
-        if let Err(e) = crossing_edit::verify(&abs, &crossing) {
+        if let Err(e) = crossing_edit::write_checked(&abs, &text, &self.bytes, &crossing) {
+            if fresh {
+                crossing_edit::discard_copy(roots, &rel);
+            }
             self.message = Some((e.to_string(), true));
             return;
         }
         // (the mark that this file is the editor's own: the next save writes it in place)
-        let _ = std::fs::write(sidecar(&abs), format!("{{\"from\": {:?}}}", self.rel.replace('\\', "\\\\")));
-        let retarget = !self.copied;
+        let _ = std::fs::write(sidecar(&abs), format!("{{\"from\": {:?}}}", self.from_rel));
         self.copied = true;
         self.rel = rel.clone();
         self.abs = abs.clone();
@@ -723,7 +764,7 @@ impl CrossingPaths {
         crate::hot::own_change();
         assets.objects.remove(&rel.to_lowercase());
         let _ = assets.object(&rel);
-        if retarget {
+        if fresh || !on_ours {
             ed.set_object_file(k, id, &rel);
         }
         self.message = Some((tr("Saved", "Сохранено").into(), false));

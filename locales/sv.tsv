@@ -2390,46 +2390,6 @@ Both ends alike	Båda ändarna lika
 Slide the bay to where it fits	Skjut fickan dit den passar
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Nära slutet av en väg eller korsning finns det inte plats för övergången i båda ändar: fickan flyttas längs vägen till där det finns
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	En ficka får alltid en övergång i båda ändar; där ingen kan läggas ändras inget.
-The road is too short here for a bay with a taper at both ends	Vägen är för kort här för en ficka med övergång i båda ändar
-Too near the end of the road for the taper at both ends of the bay	För nära vägens slut för övergången i fickans båda ändar
-The bay needs a taper at both ends and one could not be laid there	Fickan behöver en övergång i båda ändar och ingen kunde läggas där
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Välj ett stycke eller en arm; dra för att flytta, dra punkterna i ändarna av det valda stycket för att ändra det; Delete tar bort det
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Klicka på start, en punkt på bågen och sedan slutet. Startad i slutet av ett stycke med Auto-Align på ger två klick en båge som tangerar det
-Curve	Kurva
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	En mjuk bana genom varje klickad punkt, för komplicerade svängar: Enter, ett dubbelklick eller knappen nedan avslutar den
-Finish the curve	Avsluta kurvan
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Ett stycke som startar i slutet av ett annat fortsätter i linje med det: en linje längs dess riktning eller tvärs över, en båge eller kurva som tangerar det. På andra ställen håller sig linjer till steg på 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	En väg med annan bredd som startar i slutet av en väg behåller kanten på den sida den svänger åt, och en övergång läggs för att komma dit
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	Armarna hittas av sig själva: varje fri ände på en väg är där en väg kommer in. Armar placerade för hand ligger kvar som de är
-found from a road's free end	hittad från en vägs fria ände
-The whole drawing	Hela ritningen
-Left and right swapped	Vänster och höger bytta
-Turn 90°	Vrid 90°
-Find the arms	Hitta armarna
-The free ends of roads become arms	Vägarnas fria ändar blir armar
-segments	segment
-0: a straight; positive: turns right; negative: turns left	0: rakt; positivt: svänger höger; negativt: svänger vänster
-Reverse	Vänd
-Runs the other way: the piece's start and end swap	Går åt andra hållet: styckets start och slut byter plats
-Under the one before it	Under det före
-Higher	Högre
-Over the one after it	Över det efter
-Preview	Förhandsvisning
-The junction as it will be: the roads running out of the arms, no grid or handles	Korsningen som den blir: vägarna som går ut från armarna, utan rutnät eller handtag
-The lanes of the AI over the drawing, with the way they go	AI:ns filer över ritningen, med riktningen de går
-Zoom out (-)	Zooma ut (-)
-Zoom in (+)	Zooma in (+)
-The whole drawing in view (F)	Hela ritningen i bild (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Förhandsvisning: korsningen som den kommer att se ut. Hjulet zoomar, höger- eller mittendragning panorerar
-Click the points the curve passes; Enter or a double click ends it	Klicka på punkterna kurvan går genom; Enter eller ett dubbelklick avslutar
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	Hjulet zoomar, höger- eller mittendragning panorerar, F anpassar, Ctrl+Z ångrar, Esc avbryter
-Taper in	Övergång in
-Metres of road the bay takes to open per metre it widens (more: gentler)	Meter väg som fickan behöver för att öppna sig per meter den blir bredare (mer: mjukare)
-out	ut
-Both ends alike	Båda ändarna lika
-Slide the bay to where it fits	Skjut fickan dit den passar
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Nära slutet av en väg eller korsning finns det inte plats för övergången i båda ändar: fickan flyttas längs vägen till där det finns
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	En ficka får alltid en övergång i båda ändar; där ingen kan läggas ändras inget.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Kontroller som i OMSI 2:s editor: mittknappen vrider, högerknappen hållen och förd zoomar, ett högerklick går dit (Shift: meny)
 Controls as chosen under Camera	Kontroller som valts under Kamera
 Advanced users	Avancerade användare
@@ -2583,7 +2543,6 @@ That point is already joined	Den punkten är redan kopplad
 Click an end point of a path	Klicka en ändpunkt på en bana
 Path connected	Banan kopplad
 Connect the path	Koppla banan
-There is no tile there	Där finns ingen ruta
 Click the other point	Klicka den andra punkten
 The graphics API changes the next time openMapper starts	Grafik-API:et ändras nästa gång openMapper startar
 Settings…	Inställningar…
@@ -2732,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Tillbaka till läget vid öppningen
 Nothing to edit yet	Inget att redigera än
 Crossing paths…	Korsningsfält…
+Keep the ground under roads	Håll marken under vägarna
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	På: penseln lyfter inte marken genom en väg. Av: den formar marken under och bredvid vägar lika fritt som någon annanstans
+There are unsaved changes here: Save or Revert first	Det finns osparade ändringar: spara eller återställ först
+The map has changed since this was opened: open the object again	Kartan har ändrats sedan detta öppnades: öppna objektet igen
+A spline helper has no road type: pick one or remove it	En splinehjälpare saknar vägtyp: välj en eller ta bort den
+the object names this file outside its own folder, which a copy would lose	objektet anger den här filen utanför sin mapp, en kopia skulle förlora den
+what was written does not read back the same	det som skrevs läses inte tillbaka likadant
+its paths are in a file of their own (`[paths]`), which this editor does not read	dess vägar finns i en egen fil (`[paths]`), som den här redigeraren inte läser
+it has no path	den har ingen väg
+stop	stopp
+jump	hopp

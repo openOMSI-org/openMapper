@@ -303,7 +303,17 @@ pub enum Sample {
     Spline,
     Object,
     Either,
-    Attach(TileKey, i64),
+    /// The free objects in `Editor::attach_to` go onto the spline that is clicked.
+    Attach,
+}
+
+/// What a click is waiting to hear: one object, or every free object that was selected.
+pub(crate) fn attach_hint(n: usize) -> &'static str {
+    if n > 1 {
+        tr("Click the spline they should stand on. Each follows that road and keeps its IDCode", "Щёлкните сплайн, на котором они должны стоять. Каждый следует за этой дорогой и сохраняет IDCode")
+    } else {
+        tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode")
+    }
 }
 
 pub struct Editor {
@@ -509,6 +519,9 @@ pub struct Editor {
     road_start: Option<(Anchor, bool)>,
     road_plan: Option<(Vec<Seg>, f64, f64, Option<Anchor>)>,
     pub follow_ground: bool,
+    /// The terrain brush keeps the ground from coming up through a road (off: it edits the
+    /// ground under and beside roads as anywhere else).
+    pub keep_ground_under_roads: bool,
     /// What is built follows the ground: new roads, paths and tracks take its height along their
     /// way (off: they run level from where they start). Only what is built from now on; what is
     /// there stays as it is.
@@ -623,6 +636,8 @@ pub struct Editor {
     pub link_pick: Option<(TileKey, i64)>,
     /// The next click reads an asset off the map, or puts an object onto the spline clicked.
     pub sample: Option<Sample>,
+    /// Free objects waiting for the spline they should stand on (`Sample::Attach`).
+    pub attach_to: Vec<(TileKey, i64)>,
     /// The dropper was pressed in the asset browser, so that panel is the one that jumps to the asset.
     pub sample_browser: bool,
     /// An asset to scroll to: its path, and whether the browser asked.
@@ -741,6 +756,7 @@ impl Default for Editor {
             road_start: None,
             road_plan: None,
             follow_ground: true,
+            keep_ground_under_roads: true,
             auto_junctions: true,
             auto_adapt: true,
             auto_terrain: true,
@@ -800,6 +816,7 @@ impl Default for Editor {
             picked: None,
             link_pick: None,
             sample: None,
+            attach_to: Vec::new(),
             sample_browser: false,
             reveal: None,
             aim: None,
@@ -1251,6 +1268,7 @@ impl Editor {
         self.water_pts.clear();
         self.link_pick = None;
         self.sample = None;
+        self.attach_to.clear();
         self.sample_browser = false;
         self.path_connect = None;
         self.cutting = false;
@@ -2231,16 +2249,17 @@ impl Editor {
             this.toast(say);
         };
         match mode {
-            Sample::Attach(k, id) => match hit {
+            Sample::Attach => match hit {
                 Some(Sel::Spline(sk, sid)) => {
                     self.sample_browser = false;
-                    if let Err(e) = self.attach_object_onto(lib, k, id, Some((sk, sid))) {
+                    let ids = std::mem::take(&mut self.attach_to);
+                    if let Err(e) = self.attach_objects_onto(lib, &ids, Some((sk, sid))) {
                         if !e.is_empty() {
                             self.toast(e);
                         }
                     }
                 }
-                _ => miss(self, tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode")),
+                _ => miss(self, attach_hint(self.attach_to.len())),
             },
             Sample::Spline => match hit {
                 Some(Sel::Spline(k, id)) => {
@@ -2328,6 +2347,7 @@ impl Editor {
             return false;
         }
         if self.sample.take().is_some() {
+            self.attach_to.clear();
             self.sample_browser = false;
             return false;
         }
@@ -2396,7 +2416,8 @@ impl Editor {
                 let sels = self.selection();
                 let arms = self.arms_for(&sels);
                 let Some(doc) = self.doc.as_mut() else { return };
-                let Some(pivot) = selection::centre(doc, &sels) else { return };
+                let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
+                let Some(pivot) = pivot else { return };
                 let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
                 // (one thing alone, with angle snapping on, comes to a whole step)
                 let deg = match (&from[..], self.snap_angle) {
@@ -4573,7 +4594,7 @@ impl Editor {
         let Some(doc) = self.doc.as_mut() else { return };
         let r = self.brush_radius as f64;
         // the roads near the brush: the ground is not raised up through them
-        let roads = road_points_near(doc, assets, c, r + 15.0);
+        let roads = if self.keep_ground_under_roads { road_points_near(doc, assets, c, r + 15.0) } else { Vec::new() };
         let strength = self.brush_strength as f64;
         let mode = self.terrain_mode;
         let flat = self.flatten_to.unwrap_or(0.0) as f64;
@@ -5817,7 +5838,8 @@ impl Editor {
     }
 
     /// The Move / Rotate / Scale handles of the selection (None: the Select tool's plain
-    /// mode, nothing selected, or a single road, which has grips of its own).
+    /// mode, nothing selected, or a single road being moved or scaled, which has grips of its
+    /// own for that; it can still be turned).
     pub fn gizmo(&self) -> Option<crate::gizmo::Gizmo> {
         use crate::gizmo::{Gizmo, Mode};
         if let Some(m) = self.mesh.as_ref().filter(|m| m.editing) {
@@ -5831,9 +5853,9 @@ impl Editor {
         if self.tool != Tool::Select || self.xform == Xform::Select || self.cutting || self.ruler.is_some() {
             return None;
         }
-        // (a road selected alone has no handles: read from the selection kept rather than from a
-        // copy of it made again - copies of a selection of thousands were most of a frame)
-        if matches!(self.selected, Some(Sel::Spline(..))) && self.also.iter().all(|s| Some(*s) == self.selected) {
+        // (a road selected alone has only the turning handle: read from the selection kept rather
+        // than from a copy of it made again - copies of a selection of thousands were most of a frame)
+        if self.xform != Xform::Rotate && matches!(self.selected, Some(Sel::Spline(..))) && self.also.iter().all(|s| Some(*s) == self.selected) {
             return None;
         }
         let sels = self.selection();
@@ -5848,7 +5870,8 @@ impl Editor {
         if pts.is_empty() {
             return None;
         }
-        let pivot = pts.iter().sum::<DVec3>() / pts.len() as f64;
+        let middle = pts.iter().sum::<DVec3>() / pts.len() as f64;
+        let pivot = if self.xform == Xform::Rotate { road_start(doc, &sels).unwrap_or(middle) } else { middle };
         let mode = match self.xform {
             Xform::Rotate => Mode::Rotate,
             Xform::Scale => Mode::Scale,
@@ -7557,6 +7580,52 @@ impl Editor {
     /// that was clicked, as a `[splineAttachement]` record: from then on it stands on that road
     /// and follows it, keeping its IDCode. `Err` says why not.
     pub fn attach_object_onto(&mut self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
+        self.attach_objects_onto(lib, &[(k, id)], which)
+    }
+
+    /// The same, for every free object given, as one undo step. Each keeps its place beside
+    /// that spline and its IDCode.
+    pub fn attach_objects_onto(&mut self, lib: &Library, ids: &[(TileKey, i64)], which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
+        let mut planned = Vec::new();
+        let mut why = "";
+        for &(k, id) in ids {
+            match self.plan_onto(lib, k, id, which) {
+                Ok(p) => planned.push(p),
+                Err(e) if why.is_empty() => why = e,
+                Err(_) => {}
+            }
+        }
+        if planned.is_empty() {
+            return Err(why);
+        }
+        let Some(doc) = self.doc.as_mut() else { return Err("") };
+        self.history.begin(tr("Put on a road", "Поставить на дорогу"));
+        let mut placed = Vec::new();
+        for (from, onto, sid, u, rec) in planned {
+            self.history.touch_tile(doc, from);
+            self.history.touch_tile(doc, onto);
+            let Some(t) = doc.tiles.get_mut(&onto) else { continue };
+            let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else { continue };
+            let mut rec = rec;
+            rec.spline_index = idx as i32;
+            rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
+            let id = rec.id;
+            t.tile.spline_attachments.push(rec);
+            t.touch_content();
+            doc.delete_object(from, id);
+            placed.push(Sel::Attached(onto, id));
+        }
+        self.history.commit();
+        if placed.len() == 1 {
+            self.select(placed.pop());
+        } else {
+            self.set_selection(placed);
+        }
+        Ok(())
+    }
+
+    /// Where one free object would stand on `which` (or on the nearest road).
+    fn plan_onto(&self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(TileKey, TileKey, i64, f64, omsi_map::SplineAttachment), &'static str> {
         let Some(doc) = self.doc.as_ref() else { return Err("") };
         let Some(o) = doc.object(k, id).cloned() else {
             return Err(tr("Only a free object can be put on a road", "На дорогу можно поставить только свободный объект"));
@@ -7575,7 +7644,6 @@ impl Editor {
             let c = omsi_geometry::SplineCurve::from_map(s, torg);
             (sk, sid, u, beside, c.heading_at(u), c.point_at(u).z)
         } else {
-            // the nearest road's own spline, and where the object lies on it
             let mut best: Option<(f64, TileKey, i64, f64, f64, f64, f64)> = None;
             for (tk, t) in &doc.tiles {
                 let torg = tile_origin(*tk);
@@ -7612,23 +7680,28 @@ impl Editor {
             rules: o.rules.clone(),
             ..Default::default()
         };
-        let Some(doc) = self.doc.as_mut() else { return Err("") };
-        self.history.begin(tr("Put on a road", "Поставить на дорогу"));
-        self.history.touch_tile(doc, k);
-        self.history.touch_tile(doc, sk);
-        let Some(t) = doc.tiles.get_mut(&sk) else { return Err("") };
-        let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else {
-            return Err(tr("The road is gone", "Дороги уже нет"));
-        };
-        let mut rec = rec;
-        rec.spline_index = idx as i32;
-        rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
-        t.tile.spline_attachments.push(rec);
-        t.touch_content();
-        doc.delete_object(k, id);
-        self.history.commit();
-        self.select(Some(Sel::Attached(sk, id)));
-        Ok(())
+        Ok((k, sk, sid, u, rec))
+    }
+
+    /// Free objects in the selection: a spline click can take all of them on.
+    pub fn free_selected(&self) -> Vec<(TileKey, i64)> {
+        let Some(doc) = self.doc.as_ref() else { return Vec::new() };
+        self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => doc.object(k, id).filter(|o| o.parent_id.is_none()).map(|_| (k, id)),
+            _ => None,
+        }).collect()
+    }
+
+    /// The next click in the view chooses the spline these free objects stand on.
+    pub fn arm_attach(&mut self, ids: Vec<(TileKey, i64)>) {
+        if ids.is_empty() {
+            return;
+        }
+        let n = ids.len();
+        self.sample = Some(Sample::Attach);
+        self.sample_browser = false;
+        self.attach_to = ids;
+        self.toast(attach_hint(n));
     }
 
     /// Take a `[splineAttachement]` record off its road: it becomes a free object where its
@@ -9550,6 +9623,13 @@ fn road_points_near(doc: &Document, assets: &mut Assets, c: DVec2, within: f64) 
         }
     }
     out
+}
+
+/// A road selected alone turns about its start, so it stays where the piece before it ends
+/// (a wall's next section at a right angle, a corner that closes).
+fn road_start(doc: &Document, sels: &[Sel]) -> Option<DVec3> {
+    let [Sel::Spline(k, id)] = sels else { return None };
+    doc.spline(*k, *id).map(|s| omsi_geometry::SplineCurve::from_map(s, tile_origin(*k)).point_at(0.0))
 }
 
 /// The highest the ground sample at `p` may lie without its triangles showing through a
@@ -11489,7 +11569,8 @@ mod tests {
             half_width: 4.0,
         };
         assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
-        ed.sample = Some(Sample::Attach((0, 0), 2));
+        ed.sample = Some(Sample::Attach);
+        ed.attach_to = vec![((0, 0), 2)];
         ed.hover_ray(&mut assets, &lib, DVec3::new(140.0, 130.0, 30.0), -DVec3::Z);
         ed.left_press(&mut assets, &lib, false);
         let d = ed.doc.as_ref().unwrap();
@@ -11498,6 +11579,43 @@ mod tests {
         assert_eq!(a.spline_index, idx as i32);
         assert!(a.offset[0] < -30.0, "it is the far spline, not the one 2 m away: {:?}", a.offset);
         assert!(ed.sample.is_none());
+    }
+
+    /// Several selected objects go onto the spline that was chosen, each where it already stood, in one step.
+    #[test]
+    fn several_objects_stand_on_the_spline_that_was_clicked() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 200.0, 0, 0);
+        add_spline(&mut doc, (0, 0), 3, 140.0, 100.0, 0.0, 200.0, 0, 0);
+        add_object(&mut doc, (0, 0), 2, 102.0, 120.0);
+        add_object(&mut doc, (0, 0), 4, 108.0, 150.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_selection(vec![Sel::Object((0, 0), 2), Sel::Object((0, 0), 4)]);
+        let free = ed.free_selected();
+        assert_eq!(free, vec![((0, 0), 2), ((0, 0), 4)]);
+        let lib = crate::library::Library::default();
+        ed.attach_objects_onto(&lib, &free, Some(((0, 0), 3))).unwrap();
+        {
+            let d = ed.doc.as_ref().unwrap();
+            let far = d.tiles[&(0, 0)].tile.splines.iter().position(|s| s.id == 3).unwrap() as i32;
+            for id in [2, 4] {
+                assert!(d.object((0, 0), id).is_none(), "{id} is no longer free");
+                let a = d.attachment((0, 0), id).expect("on the clicked spline");
+                assert_eq!(a.spline_index, far);
+                assert_eq!(a.id, id);
+            }
+            let a2 = d.attachment((0, 0), 2).unwrap();
+            let a4 = d.attachment((0, 0), 4).unwrap();
+            assert!(a2.offset[0] < -30.0 && a4.offset[0] < -30.0, "both on the far spline: {:?} {:?}", a2.offset, a4.offset);
+            assert!((a2.offset[2] - 20.0).abs() < 1e-3, "the first stays 20 m along: {:?}", a2.offset);
+            assert!((a4.offset[2] - 50.0).abs() < 1e-3, "the second stays 50 m along: {:?}", a4.offset);
+        }
+        assert!(ed.is_selected(Sel::Attached((0, 0), 2)) && ed.is_selected(Sel::Attached((0, 0), 4)));
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        assert!(d.object((0, 0), 2).is_some() && d.object((0, 0), 4).is_some());
+        assert!(d.attachment((0, 0), 2).is_none() && d.attachment((0, 0), 4).is_none());
     }
 
     /// The dropper reads the spline under the cursor into the road list, and a miss keeps waiting.
@@ -11913,6 +12031,38 @@ mod tests {
         let mut ed = Editor::default();
         ed.open(doc);
         ed
+    }
+
+    /// A road alone has the turning handle, about its start, and turns there by the R key too.
+    /// Moving and scaling keep to its grips.
+    #[test]
+    fn a_road_alone_turns_about_its_start() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.select(Some(Sel::Spline((0, 0), 3)));
+        ed.xform = Xform::Move;
+        assert!(ed.gizmo().is_none());
+        ed.xform = Xform::Scale;
+        assert!(ed.gizmo().is_none());
+        ed.xform = Xform::Rotate;
+        let g = ed.gizmo().expect("a turning handle");
+        assert!((g.pivot.truncate() - DVec2::new(50.0, 50.0)).length() < 1e-9, "{:?}", g.pivot);
+        assert_eq!(g.allowed, [false, false, true]);
+        ed.rotate(90.0);
+        let s = ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap();
+        assert!((s.pos[0] - 50.0).abs() < 1e-9 && (s.pos[1] - 50.0).abs() < 1e-9, "{:?}", s.pos);
+        assert!((s.heading - 90.0).abs() < 1e-9, "{}", s.heading);
+    }
+
+    /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.
+    #[test]
+    fn a_small_radius_stays_as_typed() {
+        let mut ed = editor();
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.shape_request = Some(((0, 0), 3, 1.0, 0.3));
+        ed.tick(&mut assets, 0.0, false);
+        assert!((ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap().radius - 0.3).abs() < 1e-9);
     }
 
     /// A road made longer by numbers: the road joined at its end starts where it now ends,
@@ -12730,6 +12880,105 @@ mod tests {
         assert_eq!(ed.doc.as_ref().unwrap().spline(k, id).unwrap().prev_id, 0);
     }
 
+    /// A new road, drawn where nothing is, keeps its own IDCode and no link, even when the
+    /// map's counter is still below IDs that are already in use. Deleting it leaves the
+    /// road that was already there, and that road's own next piece.
+    #[test]
+    fn a_new_road_does_not_take_an_existing_splines_id_or_its_link() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let doc = ed.doc.as_mut().unwrap();
+        doc.global.next_id_code = 1;
+        add_spline(doc, (0, 0), 40, 200.0, 10.0, 0.0, 40.0, 0, 41);
+        add_spline(doc, (0, 0), 41, 200.0, 50.0, 0.0, 40.0, 40, 0);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(20.0, 200.0), DVec2::new(20.0, 230.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(20.0, 200.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(id > 41, "{id}");
+        let fresh = doc.spline(k, id).unwrap();
+        assert_eq!((fresh.prev_id, fresh.next_id), (0, 0));
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+        assert_eq!(doc.spline((0, 0), 41).unwrap().prev_id, 40);
+        let ids: Vec<i64> = doc.tiles[&(0, 0)].tile.splines.iter().map(|s| s.id).collect();
+        let mut once = ids.clone();
+        once.sort();
+        once.dedup();
+        assert_eq!(ids.len(), once.len(), "{ids:?}");
+        ed.doc.as_mut().unwrap().delete_spline(k, id);
+        let doc = ed.doc.as_ref().unwrap();
+        assert!(doc.spline(k, id).is_none());
+        assert!(doc.spline((0, 0), 40).is_some() && doc.spline((0, 0), 41).is_some());
+        assert_eq!(doc.spline((0, 0), 40).unwrap().next_id, 41);
+    }
+
+    /// A road started at a free end is that road's next piece, and nothing else's.
+    #[test]
+    fn a_road_drawn_from_a_free_end_links_only_that_end() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // spline 3 runs north from (50, 50) for 30 m, so its free end is (50, 80)
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_ne!(id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 3);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, id);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
+    /// An end that already continues into another piece is left as it is: the new road
+    /// does not become that next piece.
+    #[test]
+    fn a_road_drawn_from_an_end_that_already_continues_stays_unlinked() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.iter_mut().find(|s| s.id == 3).unwrap().next_id = 9;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        let (k, id) = made[0];
+        let doc = ed.doc.as_ref().unwrap();
+        assert_eq!(doc.spline(k, id).unwrap().prev_id, 0);
+        assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 9);
+    }
+
+    /// The pieces of one new road link only to each other, never to a road already on the map.
+    #[test]
+    fn a_new_roads_pieces_link_only_each_other() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        ed.doc.as_mut().unwrap().global.next_id_code = 1;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let seg = roads::straight(DVec2::new(10.0, 10.0), DVec2::new(10.0, 90.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(10.0, 10.0, 0.0), heading: 0.0, ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        assert!(made.len() >= 2, "{made:?}");
+        let doc = ed.doc.as_ref().unwrap();
+        let ids: Vec<i64> = made.iter().map(|m| m.1).collect();
+        assert!(ids.iter().all(|id| *id != 3));
+        for (i, (k, id)) in made.iter().enumerate() {
+            let s = doc.spline(*k, *id).unwrap();
+            let prev = if i == 0 { 0 } else { ids[i - 1] };
+            let next = if i + 1 == ids.len() { 0 } else { ids[i + 1] };
+            assert_eq!((s.prev_id, s.next_id), (prev, next), "{id}");
+        }
+        assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, 0);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
     /// The junction options shown in the properties are those of the map open: another
     /// map's junction of the same IDCode does not show (and get made again with) them.
     #[test]
@@ -12968,6 +13217,41 @@ mod tests {
         assert!((a - 4.88).abs() < 0.35, "{a}");
         assert!((b - 4.88).abs() < 0.35, "{b}");
         assert!(doc.ground(DVec2::new(100.0, 20.0)).abs() < 0.05);
+    }
+
+    /// The terrain brush stops under a road unless told not to, and then raises the ground
+    /// right up to and past it.
+    #[test]
+    fn the_brush_raises_the_ground_at_a_road_only_when_that_is_turned_off() {
+        let raised = |keep: bool| {
+            let mut doc = flat_map(1);
+            add_spline(&mut doc, (0, 0), 1, 100.0, 80.0, 0.0, 40.0, 0, 0);
+            let mut ed = Editor::default();
+            ed.open(doc);
+            ed.keep_ground_under_roads = keep;
+            ed.terrain_mode = TerrainMode::Raise;
+            ed.brush_radius = 12.0;
+            ed.brush_strength = 1.0;
+            let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+            let road = crate::assets::SplineModel {
+                def: omsi_scenery::Spline {
+                    profiles: vec![omsi_scenery::SplineProfile {
+                        texture: 0,
+                        points: vec![omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() }, omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() }],
+                    }],
+                    ..Default::default()
+                },
+                materials: Vec::new(),
+                half_width: 4.0,
+            };
+            assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+            for _ in 0..10 {
+                ed.brush_terrain(&mut assets, DVec2::new(100.0, 100.0), 0.1);
+            }
+            ed.doc.as_ref().unwrap().ground(DVec2::new(100.0, 100.0))
+        };
+        assert!(raised(true) < 0.01, "{}", raised(true));
+        assert!(raised(false) > 1.0, "{}", raised(false));
     }
 
     #[test]

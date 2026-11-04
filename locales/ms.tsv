@@ -2543,7 +2543,6 @@ That point is already joined	Titik itu sudah disambung
 Click an end point of a path	Klik titik hujung satu laluan
 Path connected	Laluan disambung
 Connect the path	Sambung laluan
-There is no tile there	Tiada jubin di situ
 Click the other point	Klik titik yang satu lagi
 The graphics API changes the next time openMapper starts	API grafik berubah apabila openMapper dimulakan seterusnya
 Settings…	Tetapan…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Kembali kepada keadaan semasa dibuka
 Nothing to edit yet	Belum ada apa-apa untuk disunting
 Crossing paths…	Laluan persimpangan…
+Keep the ground under roads	Kekalkan tanah di bawah jalan
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Hidup: berus tidak menaikkan tanah menembusi jalan. Mati: berus membentuk tanah di bawah dan di sebelah jalan sebebas tempat lain
+There are unsaved changes here: Save or Revert first	Ada perubahan belum disimpan: simpan atau kembalikan dahulu
+The map has changed since this was opened: open the object again	Peta telah berubah sejak dibuka: buka objek semula
+A spline helper has no road type: pick one or remove it	Pembantu spline tiada jenis jalan: pilih satu atau buang
+the object names this file outside its own folder, which a copy would lose	objek menamakan fail ini di luar foldernya, salinan akan kehilangannya
+what was written does not read back the same	apa yang ditulis tidak dibaca semula sama
+its paths are in a file of their own (`[paths]`), which this editor does not read	laluannya dalam fail tersendiri (`[paths]`), yang tidak dibaca editor ini
+it has no path	ia tiada laluan
+stop	henti
+jump	lompat

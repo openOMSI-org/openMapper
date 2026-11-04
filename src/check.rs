@@ -1043,7 +1043,6 @@ pub fn apply(ed: &mut Editor, fix: &Fix) -> bool {
                 (Some(d), Some(t)) => {
                     t.ai_group = d;
                     doc.timetable.touch_line(line);
-                    doc.timetable.dirty = true;
                     ed.history.push_snapshot(tr("A depot for the tour", "Депо для выхода"), before);
                     true
                 }

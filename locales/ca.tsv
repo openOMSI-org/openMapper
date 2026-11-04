@@ -2543,7 +2543,6 @@ That point is already joined	Aquest punt ja està unit
 Click an end point of a path	Feu clic a un punt final d'un camí
 Path connected	Camí connectat
 Connect the path	Connectar el camí
-There is no tile there	Allà no hi ha cap peça
 Click the other point	Feu clic a l'altre punt
 The graphics API changes the next time openMapper starts	L'API gràfica canviarà la propera vegada que s'iniciï openMapper
 Settings…	Configuració…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Torna a com era en obrir-lo
 Nothing to edit yet	Res a editar encara
 Crossing paths…	Carrils de la cruïlla…
+Keep the ground under roads	Mantén el terreny sota les carreteres
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Activat: el pinzell no aixeca el terreny a través d'una carretera. Desactivat: modela el terreny sota les carreteres i al costat amb la mateixa llibertat que a qualsevol altre lloc
+There are unsaved changes here: Save or Revert first	Hi ha canvis sense desar: primer deseu-los o desfeu-los
+The map has changed since this was opened: open the object again	El mapa ha canviat des que es va obrir: torneu a obrir l'objecte
+A spline helper has no road type: pick one or remove it	Un punt d'ajuda d'spline no té tipus de carretera: trieu-ne un o elimineu-lo
+the object names this file outside its own folder, which a copy would lose	l'objecte anomena aquest fitxer fora de la seva carpeta, i una còpia el perdria
+what was written does not read back the same	el que s'ha escrit no es llegeix igual
+its paths are in a file of their own (`[paths]`), which this editor does not read	els seus camins són en un fitxer propi (`[paths]`), que aquest editor no llegeix
+it has no path	no té cap camí
+stop	parada
+jump	salt

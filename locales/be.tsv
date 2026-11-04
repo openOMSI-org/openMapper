@@ -2543,7 +2543,6 @@ That point is already joined	Гэтая кропка ўжо злучана
 Click an end point of a path	Пстрыкніце канцавую кропку шляху
 Path connected	Шлях злучаны
 Connect the path	Злучыць шлях
-There is no tile there	Там няма клеткі
 Click the other point	Пстрыкніце іншую кропку
 The graphics API changes the next time openMapper starts	Графічны API зменіцца пры наступным запуску openMapper
 Settings…	Налады…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Назад да стану пры адкрыцці
 Nothing to edit yet	Пакуль няма чаго правіць
 Crossing paths…	Шляхі скрыжавання…
+Keep the ground under roads	Трымаць зямлю пад дарогамі
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Уключана: пэндзаль не падымае зямлю скрозь дарогу. Выключана: зямля пад дарогамі і побач з імі змяняецца так жа свабодна, як і ўсюды
+There are unsaved changes here: Save or Revert first	Тут ёсць незахаваныя змены: спачатку захавайце або адмяніце іх
+The map has changed since this was opened: open the object again	Карта змянілася пасля адкрыцця: адкрыйце аб'ект зноў
+A spline helper has no road type: pick one or remove it	У пункта прывязкі няма тыпу дарогі: выберыце яго або выдаліце пункт
+the object names this file outside its own folder, which a copy would lose	аб'ект называе гэты файл па-за сваёй папкай, копія яго страціць
+what was written does not read back the same	запісанае чытаецца не так, як запісана
+its paths are in a file of their own (`[paths]`), which this editor does not read	яго шляхі ў асобным файле (`[paths]`), які гэты рэдактар не чытае
+it has no path	у яго няма шляхоў
+stop	стоп
+jump	пераход

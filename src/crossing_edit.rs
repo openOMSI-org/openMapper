@@ -45,14 +45,49 @@ fn owned(keyword: &str) -> bool {
     OWNED.contains(&keyword)
 }
 
-/// A number as OMSI writes it: four decimals, no trailing zeros, never `-0`.
+/// How many lines of values an owned keyword has, as the game reads it: what follows them is
+/// free text, which stays in the file.
+fn value_count(keyword: &str) -> usize {
+    match keyword {
+        "path" => 12,
+        "path_2" => 14,
+        "splinehelper" => 7,
+        "traffic_light_jump" => 4,
+        "traffic_light_stop" => 3,
+        "blockpath" | "phase" => 2,
+        "crossingproblem" => 0,
+        _ => 1,
+    }
+}
+
+/// Its first value is a text, which may be an empty line.
+fn starts_with_text(keyword: &str) -> bool {
+    matches!(keyword, "splinehelper" | "traffic_light")
+}
+
+/// Where a block's values end among the lines after its keyword.
+fn values_end(keyword: &str, block: &[String]) -> usize {
+    let mut left = value_count(keyword);
+    let mut at = 0;
+    if left > 0 && starts_with_text(keyword) && !block.is_empty() {
+        left -= 1;
+        at = 1;
+    }
+    while left > 0 && at < block.len() {
+        if !block[at].trim().is_empty() {
+            left -= 1;
+        }
+        at += 1;
+    }
+    at
+}
+
+/// A number as short as it reads back the same (a slope of 0.00004 stays one), never `-0`.
 pub fn num(v: f32) -> String {
-    let s = format!("{v:.4}");
-    let s = s.trim_end_matches('0').trim_end_matches('.');
-    if s.is_empty() || s == "-0" {
+    if v == 0.0 {
         "0".into()
     } else {
-        s.to_string()
+        v.to_string()
     }
 }
 
@@ -460,6 +495,8 @@ pub struct Sheet {
     rest: Vec<String>,
     /// Where in `rest` the owned blocks stood.
     at: usize,
+    /// The file's lines end in CR LF, as OMSI's own do.
+    crlf: bool,
     pub crossing: Crossing,
 }
 
@@ -467,7 +504,7 @@ impl Sheet {
     pub fn parse(text: &str) -> Sheet {
         let lines = omsi_cfg::split_lines(text);
         let keys: Vec<Option<String>> = lines.iter().map(|l| omsi_cfg::keyword_of(l).map(str::to_lowercase)).collect();
-        let mut sheet = Sheet { rest: Vec::new(), at: 0, crossing: Crossing::default() };
+        let mut sheet = Sheet { rest: Vec::new(), at: 0, crlf: text.contains("\r\n"), crossing: Crossing::default() };
         let mut at: Option<usize> = None;
         let mut i = 0;
         while i < lines.len() {
@@ -486,22 +523,35 @@ impl Sheet {
                 i = j;
                 continue;
             }
-            at.get_or_insert(sheet.rest.len());
             // the values stop before the blank lines that separate it from the next block
             let mut end = j;
             while end > i + 1 && lines[end - 1].trim().is_empty() {
                 end -= 1;
             }
-            sheet.take(key, &lines[i + 1..end]);
-            sheet.rest.extend(lines[end..j].iter().cloned());
+            let values = i + 1 + values_end(key, &lines[i + 1..end]);
+            if sheet.take(key, &lines[i + 1..values]) {
+                at.get_or_insert(sheet.rest.len());
+                // (a comment after its values, and the blank lines, stay in the file)
+                sheet.rest.extend(lines[values..j].iter().cloned());
+            } else {
+                // (nothing before it to belong to: it stays where it means what it meant,
+                // ahead of the blocks written back)
+                let place = at.unwrap_or(sheet.rest.len());
+                sheet.rest.splice(place..place, lines[i..j].iter().cloned());
+                if let Some(a) = at.as_mut() {
+                    *a += j - i;
+                }
+            }
             i = j;
         }
         sheet.at = at.unwrap_or(sheet.rest.len());
         sheet
     }
 
-    fn take(&mut self, key: &str, lines: &[String]) {
-        let v: Vec<&str> = lines.iter().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
+    /// Take in a block's values. False: it has no path or light before it to belong to.
+    fn take(&mut self, key: &str, lines: &[String]) -> bool {
+        let text_first = starts_with_text(key) && !lines.is_empty();
+        let v: Vec<&str> = lines.iter().enumerate().map(|(i, l)| (i, l.trim())).filter(|(i, l)| !l.is_empty() || (text_first && *i == 0)).map(|(_, l)| l).collect();
         let f = |i: usize| v.get(i).copied().map(omsi_cfg::parse_f32).unwrap_or(0.0);
         let n = |i: usize| v.get(i).copied().map(omsi_cfg::parse_i32).unwrap_or(0);
         match key {
@@ -514,24 +564,20 @@ impl Sheet {
                 self.crossing.paths.push(p);
             }
             "switchdir" => {
-                if let Some(p) = self.crossing.paths.last_mut() {
-                    p.switch_dir = Some(n(0));
-                }
+                let Some(p) = self.crossing.paths.last_mut() else { return false };
+                p.switch_dir = Some(n(0));
             }
             "blockpath" => {
-                if let Some(p) = self.crossing.paths.last_mut() {
-                    p.blocks.push((n(0), n(1)));
-                }
+                let Some(p) = self.crossing.paths.last_mut() else { return false };
+                p.blocks.push((n(0), n(1)));
             }
             "crossingproblem" => {
-                if let Some(p) = self.crossing.paths.last_mut() {
-                    p.crossing_problem = true;
-                }
+                let Some(p) = self.crossing.paths.last_mut() else { return false };
+                p.crossing_problem = true;
             }
             "use_traffic_light" => {
-                if let Some(p) = self.crossing.paths.last_mut() {
-                    p.light = Some(n(0));
-                }
+                let Some(p) = self.crossing.paths.last_mut() else { return false };
+                p.light = Some(n(0));
             }
             "traffic_lights_group" => self.crossing.cycle = Some(f(0)),
             "traffic_light" => {
@@ -539,14 +585,12 @@ impl Sheet {
                 self.crossing.lights.push(TrafficLight { name, ..Default::default() });
             }
             "phase" => {
-                if let Some(l) = self.crossing.lights.last_mut() {
-                    l.phases.push(TrafficLightPhase { state: n(0), duration: f(1) });
-                }
+                let Some(l) = self.crossing.lights.last_mut() else { return false };
+                l.phases.push(TrafficLightPhase { state: n(0), duration: f(1) });
             }
             "approachdist" => {
-                if let Some(l) = self.crossing.lights.last_mut() {
-                    l.approach_dist = Some(f(0));
-                }
+                let Some(l) = self.crossing.lights.last_mut() else { return false };
+                l.approach_dist = Some(f(0));
             }
             "traffic_light_stop" => self.crossing.stops.push([f(0), f(1), f(2)]),
             "traffic_light_jump" => self.crossing.jumps.push([f(0), f(1), f(2), f(3)]),
@@ -556,6 +600,7 @@ impl Sheet {
             }
             _ => {}
         }
+        true
     }
 
     /// The whole `.sco` with the owned blocks written back where they stood.
@@ -569,6 +614,9 @@ impl Sheet {
         for l in self.rest.iter().skip(self.at) {
             out.push_str(l);
             out.push('\n');
+        }
+        if self.crlf {
+            out = out.replace('\n', "\r\n");
         }
         out
     }
@@ -595,7 +643,13 @@ pub fn encode_like(text: &str, original: &[u8]) -> Vec<u8> {
         return out;
     }
     let page = omsi_cfg::codepage::detect(original);
-    let (b, _, _) = page.encoding().encode(text);
+    let (b, _, lost) = page.encoding().encode(text);
+    if lost {
+        // (a name that code page cannot hold: with a byte order mark nothing is lost)
+        let mut out = vec![0xEF, 0xBB, 0xBF];
+        out.extend_from_slice(text.as_bytes());
+        return out;
+    }
     b.into_owned()
 }
 
@@ -621,29 +675,125 @@ pub fn why_not(roots: &crate::install::Roots, rel: &str) -> Option<&'static str>
     }
     // `[paths]`: the paths live in a file of their own, which openMapper does not read
     if omsi_cfg::split_lines(&text).iter().any(|l| omsi_cfg::keyword_of(l).map(|k| k.eq_ignore_ascii_case("paths")).unwrap_or(false)) {
-        return Some("its paths are in a file of their own (`[paths]`), which this editor does not read");
+        return Some(crate::i18n::tr("its paths are in a file of their own (`[paths]`), which this editor does not read", "его пути в отдельном файле (`[paths]`), который этот редактор не читает"));
     }
-    Some("it has no path")
+    Some(crate::i18n::tr("it has no path", "у него нет путей"))
 }
 
-/// Copy the whole object folder - its `.sco`, its model, its textures, its scripts - into
-/// `Sceneryobjects/openMapper/<map>/<name>/` and give the `.sco`'s new relative path. Only
-/// copying the `.sco` would leave its model and its scripts behind: they are named relative
-/// to the file's own folder.
-pub fn copy_into(roots: &crate::install::Roots, rel: &str, map: &str, name: &str) -> anyhow::Result<String> {
-    let from = find(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: {}", crate::i18n::tr("file not found", "файл не найден")))?;
-    let src = from.parent().map(FsPath::to_path_buf).unwrap_or_default();
-    let new_rel = crate::editable::new_rel(roots, map, name);
-    let dst = omsi_cfg::resolve_path(&roots.content, &new_rel);
-    let dst_dir = dst.parent().map(FsPath::to_path_buf).unwrap_or_default();
-    crate::editable::copy_tree_missing(&src, &dst_dir);
-    // the original `.sco` copied along under its own name goes: this one is the object
-    if from.file_name() != dst.file_name() {
-        if let Some(n) = from.file_name() {
-            let _ = std::fs::remove_file(dst_dir.join(n));
+/// `..` taken out of a path by its words alone.
+fn tidy(p: &FsPath) -> PathBuf {
+    let mut out = PathBuf::new();
+    for c in p.components() {
+        match c {
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            std::path::Component::CurDir => {}
+            c => out.push(c),
         }
     }
+    out
+}
+
+/// The files an object's text names, found where the game looks from `dir`, and those their own
+/// lists name (a model's `.cfg`, a sound's): meshes, scripts, variable lists, sounds.
+fn named_files(text: &str, dir: &FsPath, depth: u32, out: &mut Vec<PathBuf>) {
+    for line in omsi_cfg::split_lines(text) {
+        let line = line.trim();
+        if line.is_empty() || omsi_cfg::keyword_of(line).is_some() || line.parse::<f64>().is_ok() || !line.contains('.') {
+            continue;
+        }
+        let found = [dir.to_path_buf(), dir.join("model"), dir.join("script"), dir.join("sound")].iter().map(|b| omsi_cfg::resolve_path(b, line)).find(|p| p.is_file());
+        let Some(found) = found.map(|p| tidy(&p)) else { continue };
+        if out.contains(&found) {
+            continue;
+        }
+        out.push(found.clone());
+        let list = found.extension().is_some_and(|x| x.eq_ignore_ascii_case("cfg") || x.eq_ignore_ascii_case("txt"));
+        if list && depth > 0 {
+            if let (Ok(b), Some(parent)) = (std::fs::read(&found), found.parent()) {
+                named_files(&omsi_cfg::decode_text(&b), parent, depth - 1, out);
+            }
+        }
+    }
+}
+
+fn copy_tree(from: &FsPath, to: &FsPath) -> anyhow::Result<()> {
+    std::fs::create_dir_all(to)?;
+    for e in std::fs::read_dir(from)? {
+        let e = e?;
+        let dst = to.join(e.file_name());
+        if e.path().is_dir() {
+            copy_tree(&e.path(), &dst)?;
+        } else if !dst.exists() {
+            std::fs::copy(e.path(), &dst).map_err(|err| anyhow::anyhow!("{}: {err}", e.path().display()))?;
+        }
+    }
+    Ok(())
+}
+
+/// Copy the object - its `.sco`, its model, its textures, its scripts - into
+/// `Sceneryobjects/openMapper/<map>/<name>/` and give the `.sco`'s new relative path. Only
+/// copying the `.sco` would leave its model and its scripts behind: they are named relative
+/// to the file's own folder. A folder of its own comes whole. A folder it shares with other
+/// objects (openMapper's own junctions are flat files of the map's folder, where the copy
+/// itself goes) gives only the files this one names, and the textures.
+pub fn copy_into(roots: &crate::install::Roots, rel: &str, map: &str, name: &str) -> anyhow::Result<String> {
+    let from = find(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: {}", crate::i18n::tr("file not found", "файл не найден")))?;
+    let src = tidy(from.parent().unwrap_or(FsPath::new("")));
+    let mut named = Vec::new();
+    named_files(&omsi_cfg::decode_text(&std::fs::read(&from)?), &src, 3, &mut named);
+    if let Some(out) = named.iter().find(|p| !p.starts_with(&src)) {
+        anyhow::bail!("{}: {}", out.display(), crate::i18n::tr("the object names this file outside its own folder, which a copy would lose", "объект называет этот файл вне своей папки, копия его потеряет"));
+    }
+    let new_rel = crate::editable::new_rel(roots, map, name);
+    let dst = omsi_cfg::resolve_path(&roots.content, &new_rel);
+    let dst_dir = tidy(dst.parent().unwrap_or(FsPath::new("")));
+    let others = std::fs::read_dir(&src)?.flatten().any(|e| {
+        let p = e.path();
+        p != from && p.is_file() && p.extension().is_some_and(|x| x.eq_ignore_ascii_case("sco"))
+    });
+    let copied = (|| -> anyhow::Result<()> {
+        if others || dst_dir.starts_with(&src) {
+            std::fs::create_dir_all(&dst_dir)?;
+            for f in &named {
+                let to = dst_dir.join(f.strip_prefix(&src)?);
+                if let Some(parent) = to.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::fs::copy(f, &to).map_err(|err| anyhow::anyhow!("{}: {err}", f.display()))?;
+            }
+            for e in std::fs::read_dir(&src)?.flatten() {
+                if e.path().is_dir() && e.file_name().to_string_lossy().eq_ignore_ascii_case("texture") {
+                    copy_tree(&e.path(), &dst_dir.join(e.file_name()))?;
+                }
+            }
+        } else {
+            copy_tree(&src, &dst_dir)?;
+            // the original `.sco` copied along under its own name goes: this one is the object
+            if from.file_name() != dst.file_name() {
+                if let Some(n) = from.file_name() {
+                    std::fs::remove_file(dst_dir.join(n))?;
+                }
+            }
+        }
+        Ok(())
+    })();
+    if let Err(e) = copied {
+        let _ = std::fs::remove_dir_all(&dst_dir);
+        return Err(e);
+    }
     Ok(new_rel)
+}
+
+/// Take away a copy `copy_into` made, when it did not come to be used. Only ever one of
+/// openMapper's own.
+pub fn discard_copy(roots: &crate::install::Roots, rel: &str) {
+    let dst = omsi_cfg::resolve_path(&roots.content, rel);
+    let own = tidy(&omsi_cfg::resolve_path(&roots.content, "Sceneryobjects\\openMapper"));
+    if let Some(dir) = dst.parent().map(tidy).filter(|d| d.starts_with(&own) && *d != own) {
+        let _ = std::fs::remove_dir_all(dir);
+    }
 }
 
 /// Write the text into `abs`, encoded as the file it came from was.
@@ -652,21 +802,23 @@ pub fn write(abs: &FsPath, text: &str, original: &[u8]) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Write the text beside `abs`, read it back, and only if it checks out put it in place: a
+/// save that fails leaves the file as it was.
+pub fn write_checked(abs: &FsPath, text: &str, original: &[u8], crossing: &Crossing) -> anyhow::Result<()> {
+    let trial = abs.with_extension("crossing-check.sco");
+    let done = write(&trial, text, original).and_then(|_| verify(&trial, crossing)).and_then(|_| std::fs::rename(&trial, abs).map_err(Into::into));
+    if done.is_err() {
+        let _ = std::fs::remove_file(&trial);
+    }
+    done
+}
+
 /// Read a written `.sco` back and check that the game would still find everything: the paths
 /// and the lights are the ones just written, and every mesh the file names is there.
 pub fn verify(abs: &FsPath, crossing: &Crossing) -> anyhow::Result<()> {
     let sco = omsi_scenery::SceneryObject::load(abs).map_err(|e| anyhow::anyhow!("{e}"))?;
-    if sco.paths_file.is_some() {
-        anyhow::bail!("the written object names its paths in another file");
-    }
-    if sco.paths.len() != crossing.paths.len() {
-        anyhow::bail!("{} paths were written, {} were read back", crossing.paths.len(), sco.paths.len());
-    }
-    if sco.traffic_lights.len() != crossing.lights.len() {
-        anyhow::bail!("{} lights were written, {} were read back", crossing.lights.len(), sco.traffic_lights.len());
-    }
-    if sco.spline_helpers.len() != crossing.helpers.len() {
-        anyhow::bail!("{} helpers were written, {} were read back", crossing.helpers.len(), sco.spline_helpers.len());
+    if sco.paths_file.is_some() || sco.paths.len() != crossing.paths.len() || sco.traffic_lights.len() != crossing.lights.len() || sco.spline_helpers.len() != crossing.helpers.len() {
+        anyhow::bail!("{}", crate::i18n::tr("what was written does not read back the same", "записанное читается не так, как записано"));
     }
     let dir = abs.parent().map(FsPath::to_path_buf).unwrap_or_default();
     let model = dir.join("model");

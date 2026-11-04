@@ -2543,7 +2543,6 @@ That point is already joined	यह बिंदु पहले से जु�
 Click an end point of a path	पथ का एक छोर चुनें
 Path connected	पथ जुड़ गया
 Connect the path	पथ जोड़ें
-There is no tile there	वहाँ कोई टाइल नहीं है
 Click the other point	दूसरा बिंदु चुनें
 The graphics API changes the next time openMapper starts	ग्राफ़िक्स API openMapper के अगली बार शुरू होने पर बदलेगा
 Settings…	सेटिंग…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	खोलते समय की स्थिति पर लौटें
 Nothing to edit yet	अभी संपादित करने को कुछ नहीं
 Crossing paths…	चौराहे के पथ…
+Keep the ground under roads	ज़मीन को सड़कों के नीचे रखें
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	चालू: ब्रश ज़मीन को सड़क के आर-पार नहीं उठाता। बंद: यह सड़कों के नीचे और बगल की ज़मीन को कहीं और की तरह ही स्वतंत्र रूप से बदलता है
+There are unsaved changes here: Save or Revert first	यहाँ बिना सहेजे बदलाव हैं: पहले सहेजें या वापस लें
+The map has changed since this was opened: open the object again	खोलने के बाद मैप बदल गया है: ऑब्जेक्ट फिर से खोलें
+A spline helper has no road type: pick one or remove it	एक स्पलाइन हेल्पर का कोई सड़क प्रकार नहीं है: एक चुनें या उसे हटाएँ
+the object names this file outside its own folder, which a copy would lose	ऑब्जेक्ट इस फ़ाइल को अपने फ़ोल्डर के बाहर बताता है, कॉपी में यह खो जाएगी
+what was written does not read back the same	जो लिखा गया वह वैसा ही वापस नहीं पढ़ा जाता
+its paths are in a file of their own (`[paths]`), which this editor does not read	इसके पथ अलग फ़ाइल (`[paths]`) में हैं, जिसे यह संपादक नहीं पढ़ता
+it has no path	इसमें कोई पथ नहीं है
+stop	रुकें
+jump	छलांग

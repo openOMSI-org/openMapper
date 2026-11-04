@@ -2541,7 +2541,6 @@ That point is already joined	Dieser Punkt ist schon verbunden
 Click an end point of a path	Einen Endpunkt eines Pfades anklicken
 Path connected	Pfad verbunden
 Connect the path	Pfad verbinden
-There is no tile there	Dort liegt keine Kachel
 Click the other point	Den anderen Punkt anklicken
 The graphics API changes the next time openMapper starts	Die Grafik-API ändert sich beim nächsten Start von openMapper
 Settings…	Einstellungen…
@@ -2690,3 +2689,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Zurück zum Stand beim Öffnen
 Nothing to edit yet	Noch nichts zu bearbeiten
 Crossing paths…	Kreuzungspfade…
+Keep the ground under roads	Boden unter Straßen halten
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	An: Der Pinsel hebt den Boden nicht durch eine Straße. Aus: Er formt den Boden unter und neben Straßen so frei wie überall sonst
+There are unsaved changes here: Save or Revert first	Hier gibt es ungespeicherte Änderungen: zuerst speichern oder zurücksetzen
+The map has changed since this was opened: open the object again	Die Karte hat sich seit dem Öffnen geändert: Objekt erneut öffnen
+A spline helper has no road type: pick one or remove it	Ein Spline-Helfer hat keinen Straßentyp: einen wählen oder ihn entfernen
+the object names this file outside its own folder, which a copy would lose	das Objekt nennt diese Datei außerhalb seines Ordners, eine Kopie würde sie verlieren
+what was written does not read back the same	das Geschriebene liest sich nicht gleich zurück
+its paths are in a file of their own (`[paths]`), which this editor does not read	seine Pfade liegen in einer eigenen Datei (`[paths]`), die dieser Editor nicht liest
+it has no path	es hat keinen Pfad
+stop	Halt
+jump	Sprung

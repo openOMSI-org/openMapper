@@ -2543,7 +2543,6 @@ That point is already joined	그 점은 이미 연결되어 있습니다
 Click an end point of a path	경로의 끝점을 클릭
 Path connected	경로가 연결됨
 Connect the path	경로 연결
-There is no tile there	거기에는 타일이 없습니다
 Click the other point	다른 점을 클릭
 The graphics API changes the next time openMapper starts	그래픽 API는 openMapper를 다음에 시작할 때 바뀝니다
 Settings…	설정…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	열었을 때의 상태로
 Nothing to edit yet	아직 편집할 것이 없습니다
 Crossing paths…	교차로 경로…
+Keep the ground under roads	지면을 도로 아래로 유지
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	켜짐: 브러시가 지면을 도로 위로 올리지 않습니다. 꺼짐: 도로 아래와 옆의 지면도 다른 곳처럼 자유롭게 다듬습니다
+There are unsaved changes here: Save or Revert first	저장하지 않은 변경 사항이 있습니다: 먼저 저장하거나 되돌리세요
+The map has changed since this was opened: open the object again	연 이후 맵이 변경되었습니다: 오브젝트를 다시 여세요
+A spline helper has no road type: pick one or remove it	스플라인 헬퍼에 도로 유형이 없습니다: 선택하거나 제거하세요
+the object names this file outside its own folder, which a copy would lose	오브젝트가 자기 폴더 밖의 이 파일을 지정하고 있어 복사본에서 사라집니다
+what was written does not read back the same	쓴 내용이 같게 다시 읽히지 않습니다
+its paths are in a file of their own (`[paths]`), which this editor does not read	경로가 별도 파일(`[paths]`)에 있어 이 편집기가 읽지 않습니다
+it has no path	경로가 없습니다
+stop	정지
+jump	점프

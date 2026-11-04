@@ -2543,7 +2543,6 @@ That point is already joined	Bu nokta zaten bağlı
 Click an end point of a path	Bir yolun uç noktasına tıklayın
 Path connected	Yol bağlandı
 Connect the path	Yolu bağla
-There is no tile there	Orada karo yok
 Click the other point	Diğer noktaya tıklayın
 The graphics API changes the next time openMapper starts	Grafik API'si openMapper bir sonraki başlatıldığında değişir
 Settings…	Ayarlar…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Açıldığı hâle dön
 Nothing to edit yet	Henüz düzenlenecek bir şey yok
 Crossing paths…	Kavşak yolları…
+Keep the ground under roads	Zemini yolların altında tut
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Açık: fırça zemini yolun içinden yükseltmez. Kapalı: yolların altındaki ve yanındaki zemini başka her yerdeki kadar serbestçe şekillendirir
+There are unsaved changes here: Save or Revert first	Kaydedilmemiş değişiklikler var: önce kaydedin veya geri alın
+The map has changed since this was opened: open the object again	Harita açıldığından beri değişti: nesneyi yeniden açın
+A spline helper has no road type: pick one or remove it	Bir spline yardımcısının yol türü yok: birini seçin veya kaldırın
+the object names this file outside its own folder, which a copy would lose	nesne bu dosyayı kendi klasörünün dışında belirtiyor, bir kopya onu kaybeder
+what was written does not read back the same	yazılan aynı şekilde geri okunmuyor
+its paths are in a file of their own (`[paths]`), which this editor does not read	yolları kendi dosyasındadır (`[paths]`), bu düzenleyici onu okumaz
+it has no path	yolu yok
+stop	dur
+jump	atlama

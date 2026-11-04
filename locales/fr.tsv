@@ -2541,7 +2541,6 @@ That point is already joined	Ce point est déjà relié
 Click an end point of a path	Cliquez une extrémité d'un chemin
 Path connected	Chemin relié
 Connect the path	Relier le chemin
-There is no tile there	Il n'y a pas de dalle là
 Click the other point	Cliquez l'autre point
 The graphics API changes the next time openMapper starts	L'API graphique change au prochain démarrage d'openMapper
 Settings…	Réglages…
@@ -2690,3 +2689,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Retour à l'état de l'ouverture
 Nothing to edit yet	Rien à modifier pour l'instant
 Crossing paths…	Voies du carrefour…
+Keep the ground under roads	Garder le terrain sous les routes
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Activé : le pinceau ne soulève pas le terrain à travers une route. Désactivé : il façonne le terrain sous les routes et à côté aussi librement qu'ailleurs
+There are unsaved changes here: Save or Revert first	Il y a des modifications non enregistrées : enregistrez-les ou annulez-les d'abord
+The map has changed since this was opened: open the object again	La carte a changé depuis l'ouverture : rouvrez l'objet
+A spline helper has no road type: pick one or remove it	Un point d'aide de spline n'a pas de type de route : choisissez-en un ou supprimez-le
+the object names this file outside its own folder, which a copy would lose	l'objet nomme ce fichier hors de son dossier, une copie le perdrait
+what was written does not read back the same	ce qui a été écrit ne se relit pas à l'identique
+its paths are in a file of their own (`[paths]`), which this editor does not read	ses chemins sont dans un fichier à part (`[paths]`), que cet éditeur ne lit pas
+it has no path	il n'a aucun chemin
+stop	arrêt
+jump	saut

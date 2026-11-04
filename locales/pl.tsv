@@ -2390,46 +2390,6 @@ Both ends alike	Oba końce jednakowo
 Slide the bay to where it fits	Przesuń zatokę tam, gdzie się mieści
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Blisko końca drogi lub skrzyżowania nie ma miejsca na przejścia na obu końcach: zatoka jest przesuwana wzdłuż drogi tam, gdzie jest
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Zatoka zawsze dostaje przejście na obu końcach; gdzie nie da się go ułożyć, nic się nie zmienia.
-The road is too short here for a bay with a taper at both ends	Droga jest tu za krótka na zatokę z przejściem na obu końcach
-Too near the end of the road for the taper at both ends of the bay	Za blisko końca drogi na przejścia na obu końcach zatoki
-The bay needs a taper at both ends and one could not be laid there	Zatoka wymaga przejścia na obu końcach, a nie dało się go tu ułożyć
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Wybierz odcinek lub ramię; przeciągnij, aby przesunąć, przeciągnij kropki na końcach wybranego odcinka, aby go zmienić; Delete usuwa
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Kliknij początek, punkt na łuku, potem koniec. Rozpoczęty na końcu odcinka przy włączonym Auto-Align, dwa kliknięcia dają łuk styczny do niego
-Curve	Krzywa
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	Gładka ścieżka przez wszystkie klikane punkty, do złożonych zakrętów: kończy ją Enter, dwukrotne kliknięcie lub przycisk poniżej
-Finish the curve	Zakończ krzywą
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Odcinek zaczęty na końcu innego biegnie dalej w jednej linii z nim: prosta wzdłuż jego kierunku lub w poprzek, łuk lub krzywa styczna do niego. Gdzie indziej linie trzymają się kroków co 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	Droga o innej szerokości zaczęta na końcu drogi zachowuje krawędź po stronie, w którą skręca, a aby tam dojść, układane jest przejście
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	Ramiona są znajdowane automatycznie: każdy wolny koniec drogi to miejsce, gdzie wjeżdża droga. Ramiona ustawione ręcznie zostają bez zmian
-found from a road's free end	znalezione z wolnego końca drogi
-The whole drawing	Cały rysunek
-Left and right swapped	Lewa i prawa zamienione
-Turn 90°	Obróć o 90°
-Find the arms	Znajdź ramiona
-The free ends of roads become arms	Wolne końce dróg stają się ramionami
-segments	segmenty
-0: a straight; positive: turns right; negative: turns left	0: prosta; dodatnie: skręca w prawo; ujemne: skręca w lewo
-Reverse	Odwróć
-Runs the other way: the piece's start and end swap	Biegnie w drugą stronę: początek i koniec odcinka zamieniają się
-Under the one before it	Pod poprzednim
-Higher	Wyżej
-Over the one after it	Nad następnym
-Preview	Podgląd
-The junction as it will be: the roads running out of the arms, no grid or handles	Skrzyżowanie takie, jakie będzie: drogi wychodzące z ramion, bez siatki i uchwytów
-The lanes of the AI over the drawing, with the way they go	Pasy AI nad rysunkiem, z kierunkiem jazdy
-Zoom out (-)	Oddal (-)
-Zoom in (+)	Przybliż (+)
-The whole drawing in view (F)	Cały rysunek w widoku (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Podgląd: skrzyżowanie tak, jak będzie wyglądać. Kółko zmienia powiększenie, przeciąganie prawym lub środkowym przyciskiem przesuwa
-Click the points the curve passes; Enter or a double click ends it	Klikaj punkty, przez które przechodzi krzywa; Enter lub dwukrotne kliknięcie kończy
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	Kółko zmienia powiększenie, przeciąganie prawym lub środkowym przyciskiem przesuwa, F dopasowuje, Ctrl+Z cofa, Esc anuluje
-Taper in	Przejście wejściowe
-Metres of road the bay takes to open per metre it widens (more: gentler)	Metry drogi, na których zatoka się otwiera, na metr poszerzenia (więcej: łagodniej)
-out	wyjście
-Both ends alike	Oba końce jednakowo
-Slide the bay to where it fits	Przesuń zatokę tam, gdzie się mieści
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Blisko końca drogi lub skrzyżowania nie ma miejsca na przejścia na obu końcach: zatoka jest przesuwana wzdłuż drogi tam, gdzie jest
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Zatoka zawsze dostaje przejście na obu końcach; gdzie nie da się go ułożyć, nic się nie zmienia.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Sterowanie jak w edytorze OMSI 2: środkowy przycisk obraca, przytrzymany i przesuwany prawy przycisk przybliża, kliknięcie prawym przenosi w dane miejsce (Shift: menu)
 Controls as chosen under Camera	Sterowanie wybrane w sekcji Kamera
 Advanced users	Zaawansowani użytkownicy
@@ -2583,7 +2543,6 @@ That point is already joined	Ten punkt jest już połączony
 Click an end point of a path	Kliknij punkt końcowy ścieżki
 Path connected	Ścieżka połączona
 Connect the path	Połącz ścieżkę
-There is no tile there	Tam nie ma kafelka
 Click the other point	Kliknij drugi punkt
 The graphics API changes the next time openMapper starts	Interfejs graficzny zmieni się po następnym uruchomieniu openMappera
 Settings…	Ustawienia…
@@ -2732,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Powrót do stanu otwarcia
 Nothing to edit yet	Na razie nie ma czego edytować
 Crossing paths…	Ścieżki skrzyżowania…
+Keep the ground under roads	Utrzymuj teren pod drogami
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Włączone: pędzel nie podnosi terenu przez drogę. Wyłączone: kształtuje teren pod drogami i obok nich tak swobodnie jak gdzie indziej
+There are unsaved changes here: Save or Revert first	Są niezapisane zmiany: najpierw je zapisz lub cofnij
+The map has changed since this was opened: open the object again	Mapa zmieniła się od otwarcia: otwórz obiekt ponownie
+A spline helper has no road type: pick one or remove it	Punkt pomocniczy splajnu nie ma typu drogi: wybierz go lub usuń punkt
+the object names this file outside its own folder, which a copy would lose	obiekt wskazuje ten plik poza swoim folderem, kopia by go utraciła
+what was written does not read back the same	zapisane dane nie odczytują się tak samo
+its paths are in a file of their own (`[paths]`), which this editor does not read	jego ścieżki są w osobnym pliku (`[paths]`), którego ten edytor nie czyta
+it has no path	nie ma ścieżek
+stop	stop
+jump	skok

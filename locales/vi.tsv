@@ -2543,7 +2543,6 @@ That point is already joined	Điểm đó đã được nối
 Click an end point of a path	Nhấn một đầu đường
 Path connected	Đã nối đường
 Connect the path	Nối đường
-There is no tile there	Ở đó không có ô
 Click the other point	Nhấn điểm kia
 The graphics API changes the next time openMapper starts	API đồ họa sẽ thay đổi vào lần khởi động openMapper tiếp theo
 Settings…	Cài đặt…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Trở về trạng thái khi mở
 Nothing to edit yet	Chưa có gì để sửa
 Crossing paths…	Làn của giao lộ…
+Keep the ground under roads	Giữ mặt đất dưới đường
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Bật: cọ không nâng mặt đất xuyên qua đường. Tắt: cọ chỉnh mặt đất dưới và cạnh đường tự do như ở nơi khác
+There are unsaved changes here: Save or Revert first	Có thay đổi chưa lưu: hãy lưu hoặc hoàn tác trước
+The map has changed since this was opened: open the object again	Bản đồ đã thay đổi từ khi mở: hãy mở lại đối tượng
+A spline helper has no road type: pick one or remove it	Điểm trợ giúp spline chưa có loại đường: hãy chọn hoặc xóa nó
+the object names this file outside its own folder, which a copy would lose	đối tượng trỏ đến tệp này ngoài thư mục của nó, bản sao sẽ mất tệp
+what was written does not read back the same	nội dung đã ghi đọc lại không giống
+its paths are in a file of their own (`[paths]`), which this editor does not read	các đường của nó nằm trong tệp riêng (`[paths]`), trình chỉnh sửa này không đọc
+it has no path	nó không có đường nào
+stop	dừng
+jump	nhảy

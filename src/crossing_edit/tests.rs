@@ -359,3 +359,96 @@ fn a_saved_copy_keeps_the_object_together() {
     assert_eq!(std::fs::read(&sco).unwrap(), bytes);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+fn scratch_roots(name: &str) -> crate::install::Roots {
+    let dir = std::env::temp_dir().join(format!("om-crossing-{}-{name}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("content")).unwrap();
+    crate::install::Roots { omsi: dir.join("omsi"), content: dir.join("content") }
+}
+
+const SMALL: &str = "[mesh]\nplate.x\n\n[path]\n0\n0\n0\n0\n0\n10\n0\n0\n0\n3\n0\n0\n\n";
+
+/// One of openMapper's own junctions is a flat file of the folder the copy goes in: it does not
+/// copy itself into itself, and brings only what it names.
+#[test]
+fn a_flat_junction_is_not_copied_into_itself() {
+    let roots = scratch_roots("flat");
+    let map = roots.content.join("Sceneryobjects").join("openMapper").join("TestMap");
+    std::fs::create_dir_all(map.join("model")).unwrap();
+    std::fs::create_dir_all(map.join("texture")).unwrap();
+    std::fs::write(map.join("junction_1.sco"), SMALL).unwrap();
+    std::fs::write(map.join("junction_2.sco"), SMALL.replace("plate.x", "other.x")).unwrap();
+    std::fs::write(map.join("model").join("plate.x"), b"x").unwrap();
+    std::fs::write(map.join("model").join("other.x"), b"x").unwrap();
+    std::fs::write(map.join("texture").join("a.png"), b"x").unwrap();
+    let rel = copy_into(&roots, "Sceneryobjects\\openMapper\\TestMap\\junction_1.sco", "TestMap", "junction_1").unwrap();
+    let dir = omsi_cfg::resolve_path(&roots.content, &rel).parent().unwrap().to_path_buf();
+    assert!(dir.join("model").join("plate.x").is_file());
+    assert!(dir.join("texture").join("a.png").is_file());
+    assert!(!dir.join("model").join("other.x").exists(), "another object's model");
+    assert!(!dir.join("junction_2.sco").exists(), "another object");
+    assert!(!dir.join("TestMap").exists() && !dir.join("junction_1").exists(), "nested");
+    let _ = std::fs::remove_dir_all(roots.content.parent().unwrap());
+}
+
+/// A file named outside the object's folder would be lost by a copy: nothing is copied, and it says so.
+#[test]
+fn a_file_outside_the_folder_stops_the_copy() {
+    let roots = scratch_roots("outside");
+    let base = roots.content.join("Sceneryobjects").join("Test");
+    std::fs::create_dir_all(base.join("X")).unwrap();
+    std::fs::write(base.join("shared.osc"), b"x").unwrap();
+    std::fs::write(base.join("X").join("x.sco"), format!("[script]\n1\n..\\shared.osc\n\n{SMALL}")).unwrap();
+    assert!(copy_into(&roots, "Sceneryobjects\\Test\\X\\x.sco", "TestMap", "x").is_err());
+    assert!(!roots.content.join("Sceneryobjects").join("openMapper").join("TestMap").join("x").exists());
+    let _ = std::fs::remove_dir_all(roots.content.parent().unwrap());
+}
+
+/// What fails its check does not replace the file.
+#[test]
+fn a_write_that_fails_its_check_leaves_the_file() {
+    let roots = scratch_roots("checked");
+    let abs = roots.content.join("x.sco");
+    std::fs::write(&abs, SMALL).unwrap();
+    let s = Sheet::parse(SMALL);
+    let mut wrong = s.crossing.clone();
+    wrong.paths.clear();
+    assert!(write_checked(&abs, "[path]\n", SMALL.as_bytes(), &wrong).is_err());
+    assert_eq!(std::fs::read_to_string(&abs).unwrap(), SMALL);
+    assert_eq!(std::fs::read_dir(&roots.content).unwrap().count(), 1, "nothing left beside it");
+    let _ = std::fs::remove_dir_all(roots.content.parent().unwrap());
+}
+
+/// CR LF stays, a comment after a block's values stays, and a keyword with nothing before it to
+/// belong to stays ahead of the paths.
+#[test]
+fn line_ends_comments_and_early_keywords_survive() {
+    let text = "[crossingproblem]\n\n[path]\n0\n0\n0\n0\n0\n10\n0\n0\n0\n3\n0\n0\nthe main way\n\n[phase]\n0\n5\n".replace('\n', "\r\n");
+    let out = Sheet::parse(&text).text();
+    assert!(out.contains("\r\n") && !out.replace("\r\n", "").contains('\n'), "{out:?}");
+    assert!(out.contains("the main way"), "{out:?}");
+    let back = Sheet::parse(&out);
+    assert_eq!(back.crossing.paths.len(), 1);
+    assert!(!back.crossing.paths[0].crossing_problem, "it was not this path's");
+    assert!(out.find("[crossingproblem]").unwrap() < out.find("[path]").unwrap());
+    assert!(out.find("[phase]").unwrap() < out.find("[path]").unwrap());
+}
+
+/// A helper with an empty road type keeps its numbers in their places.
+#[test]
+fn a_blank_helper_spline_does_not_shift_its_numbers() {
+    let s = Sheet::parse("[splinehelper]\n\n1\n2\n3\n4\n5\n6\n");
+    assert_eq!(s.crossing.helpers[0].spline, "");
+    assert_eq!(s.crossing.helpers[0].x, 1.0);
+    assert_eq!(s.crossing.helpers[0].radius, 6.0);
+}
+
+/// A very small slope is written as it is, and a name its code page cannot hold is not lost.
+#[test]
+fn small_numbers_and_foreign_names_are_kept() {
+    assert_eq!(num(0.00004), "0.00004");
+    assert_eq!(num(-0.0), "0");
+    let bytes = encode_like("Светофор", b"plain ascii");
+    assert_eq!(omsi_cfg::decode_text(&bytes), "Светофор");
+}

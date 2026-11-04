@@ -2390,46 +2390,6 @@ Both ends alike	Ambas as pontas iguais
 Slide the bay to where it fits	Deslizar a baía para onde cabe
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Perto do fim de uma estrada ou de um cruzamento não há espaço para a transição nas duas pontas: a baía é deslocada ao longo da estrada para onde há
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Uma baía tem sempre transição nas duas pontas; onde não for possível colocar uma, nada é alterado.
-The road is too short here for a bay with a taper at both ends	A estrada é demasiado curta aqui para uma baía com transição nas duas pontas
-Too near the end of the road for the taper at both ends of the bay	Demasiado perto do fim da estrada para a transição nas duas pontas da baía
-The bay needs a taper at both ends and one could not be laid there	A baía precisa de transição nas duas pontas e não foi possível colocar uma aqui
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Escolha um troço ou um braço; arraste para o mover, arraste os pontos nas pontas do troço escolhido para o alterar; Delete remove-o
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Clique no início, num ponto do arco e depois no fim. Começado no fim de um troço com Auto-Align ativo, dois cliques fazem um arco tangente a ele
-Curve	Curva
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	Um trajeto suave por todos os pontos clicados, para curvas complexas: Enter, um duplo clique ou o botão abaixo termina-o
-Finish the curve	Concluir a curva
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Um troço começado no fim de outro continua alinhado com ele: uma reta ao longo do seu sentido ou de través, um arco ou uma curva tangente a ele. Noutros sítios as retas seguem passos de 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	Uma estrada de outra largura começada no fim de uma estrada mantém a berma do lado para onde curva, e é colocada uma transição para lá chegar
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	Os braços são encontrados automaticamente: cada ponta livre de uma estrada é onde entra uma estrada. Os braços postos à mão ficam como estão
-found from a road's free end	encontrado a partir da ponta livre de uma estrada
-The whole drawing	Todo o desenho
-Left and right swapped	Esquerda e direita trocadas
-Turn 90°	Rodar 90°
-Find the arms	Encontrar braços
-The free ends of roads become arms	As pontas livres das estradas passam a braços
-segments	segmentos
-0: a straight; positive: turns right; negative: turns left	0: reta; positivo: vira à direita; negativo: vira à esquerda
-Reverse	Inverter
-Runs the other way: the piece's start and end swap	Segue no outro sentido: o início e o fim do troço trocam
-Under the one before it	Por baixo do anterior
-Higher	Mais alto
-Over the one after it	Por cima do seguinte
-Preview	Pré-visualização
-The junction as it will be: the roads running out of the arms, no grid or handles	O cruzamento como ficará: as estradas que saem dos braços, sem grelha nem pegas
-The lanes of the AI over the drawing, with the way they go	As faixas da IA sobre o desenho, com o sentido em que seguem
-Zoom out (-)	Reduzir (-)
-Zoom in (+)	Ampliar (+)
-The whole drawing in view (F)	Todo o desenho à vista (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Pré-visualização: o cruzamento como vai ficar. A roda faz zoom, arrastar com o botão direito ou do meio desloca
-Click the points the curve passes; Enter or a double click ends it	Clique nos pontos por onde passa a curva; Enter ou um duplo clique termina
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	A roda faz zoom, arrastar com o botão direito ou do meio desloca, F ajusta, Ctrl+Z desfaz, Esc cancela
-Taper in	Transição de entrada
-Metres of road the bay takes to open per metre it widens (more: gentler)	Metros de estrada que a baía leva a abrir por cada metro que alarga (mais: mais suave)
-out	saída
-Both ends alike	Ambas as pontas iguais
-Slide the bay to where it fits	Deslizar a baía para onde cabe
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Perto do fim de uma estrada ou de um cruzamento não há espaço para a transição nas duas pontas: a baía é deslocada ao longo da estrada para onde há
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Uma baía tem sempre transição nas duas pontas; onde não for possível colocar uma, nada é alterado.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Controlos como no editor do OMSI 2: o botão do meio roda, o botão direito premido e movido faz zoom, um clique direito vai até lá (Shift: menu)
 Controls as chosen under Camera	Controlos conforme escolhido em Câmara
 Advanced users	Utilizadores avançados
@@ -2583,7 +2543,6 @@ That point is already joined	Esse ponto já está ligado
 Click an end point of a path	Clique numa extremidade de um caminho
 Path connected	Caminho ligado
 Connect the path	Ligar o caminho
-There is no tile there	Não há uma peça ali
 Click the other point	Clique no outro ponto
 The graphics API changes the next time openMapper starts	A API gráfica muda na próxima vez que o openMapper arrancar
 Settings…	Definições…
@@ -2732,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Voltar a como estava ao abrir
 Nothing to edit yet	Nada para editar por agora
 Crossing paths…	Vias do cruzamento…
+Keep the ground under roads	Manter o terreno sob as estradas
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Ligado: o pincel não eleva o terreno através de uma estrada. Desligado: molda o terreno sob as estradas e ao lado delas tão livremente como em qualquer outro lugar
+There are unsaved changes here: Save or Revert first	Há alterações por guardar: guarde-as ou reverta-as primeiro
+The map has changed since this was opened: open the object again	O mapa mudou desde que foi aberto: abra o objeto novamente
+A spline helper has no road type: pick one or remove it	Um auxiliar de spline não tem tipo de estrada: escolha um ou remova-o
+the object names this file outside its own folder, which a copy would lose	o objeto indica este ficheiro fora da sua pasta, e uma cópia iria perdê-lo
+what was written does not read back the same	o que foi escrito não se lê da mesma forma
+its paths are in a file of their own (`[paths]`), which this editor does not read	os seus caminhos estão num ficheiro próprio (`[paths]`), que este editor não lê
+it has no path	não tem caminhos
+stop	paragem
+jump	salto

@@ -2543,7 +2543,6 @@ That point is already joined	จุดนั้นเชื่อมอยู่
 Click an end point of a path	คลิกจุดปลายของเส้นทาง
 Path connected	เชื่อมเส้นทางแล้ว
 Connect the path	เชื่อมเส้นทาง
-There is no tile there	ตรงนั้นไม่มีแผ่น
 Click the other point	คลิกจุดอีกจุด
 The graphics API changes the next time openMapper starts	API กราฟิกจะเปลี่ยนเมื่อเปิด openMapper ครั้งถัดไป
 Settings…	การตั้งค่า…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	กลับไปสู่สภาพตอนเปิด
 Nothing to edit yet	ยังไม่มีอะไรให้แก้ไข
 Crossing paths…	เส้นทางของทางแยก…
+Keep the ground under roads	ให้พื้นดินอยู่ใต้ถนน
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	เปิด: แปรงจะไม่ยกพื้นดินทะลุถนน ปิด: แก้ไขพื้นดินใต้และข้างถนนได้อย่างอิสระเหมือนที่อื่น
+There are unsaved changes here: Save or Revert first	มีการแก้ไขที่ยังไม่ได้บันทึก: บันทึกหรือย้อนกลับก่อน
+The map has changed since this was opened: open the object again	แผนที่เปลี่ยนไปตั้งแต่เปิด: เปิดวัตถุอีกครั้ง
+A spline helper has no road type: pick one or remove it	ตัวช่วยสไปลน์ไม่มีประเภทถนน: เลือกหรือลบออก
+the object names this file outside its own folder, which a copy would lose	วัตถุอ้างถึงไฟล์นี้นอกโฟลเดอร์ของตน สำเนาจะทำไฟล์นี้หาย
+what was written does not read back the same	สิ่งที่เขียนอ่านกลับมาไม่เหมือนเดิม
+its paths are in a file of their own (`[paths]`), which this editor does not read	เส้นทางของมันอยู่ในไฟล์แยก (`[paths]`) ซึ่งตัวแก้ไขนี้ไม่อ่าน
+it has no path	ไม่มีเส้นทาง
+stop	หยุด
+jump	ข้าม

@@ -2545,7 +2545,6 @@ That point is already joined	這個點已經接上了
 Click an end point of a path	請點路徑的端點
 Path connected	路徑已連接
 Connect the path	連接路徑
-There is no tile there	那裡沒有圖塊
 Click the other point	請點另一個點
 The graphics API changes the next time openMapper starts	圖形 API 將在下次啟動 openMapper 時變更
 Settings…	設定…
@@ -2689,3 +2688,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	回到開啟時的狀態
 Nothing to edit yet	尚無可編輯的內容
 Crossing paths…	路口路徑…
+Keep the ground under roads	讓地面保持在道路下方
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	開啟：筆刷不會把地面抬高穿過道路。關閉：可像其他地方一樣自由修改道路下方和旁邊的地面
+There are unsaved changes here: Save or Revert first	這裡有未儲存的變更：請先儲存或還原
+The map has changed since this was opened: open the object again	地圖在開啟後已變更：請重新開啟物件
+A spline helper has no road type: pick one or remove it	有樣條輔助點沒有道路類型：請選擇一種或將其移除
+the object names this file outside its own folder, which a copy would lose	物件引用了其資料夾外的此檔案，複本會遺失它
+what was written does not read back the same	寫入的內容讀回後不一致
+its paths are in a file of their own (`[paths]`), which this editor does not read	其路徑位於獨立檔案（`[paths]`），此編輯器不會讀取
+it has no path	它沒有路徑
+stop	停止
+jump	跳轉

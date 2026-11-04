@@ -2543,7 +2543,6 @@ That point is already joined	その点は既につながっています
 Click an end point of a path	経路の端の点をクリック
 Path connected	経路を接続しました
 Connect the path	経路を接続
-There is no tile there	そこにタイルがありません
 Click the other point	もう一方の点をクリック
 The graphics API changes the next time openMapper starts	グラフィックスAPIはopenMapperの次回起動時に変わります
 Settings…	設定…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	開いたときの状態に戻す
 Nothing to edit yet	まだ編集できるものがありません
 Crossing paths…	交差点の経路…
+Keep the ground under roads	地面を道路の下に保つ
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	オン: ブラシは地面を道路より上に上げません。オフ: 道路の下や脇の地面も他の場所と同じように自由に編集します
+There are unsaved changes here: Save or Revert first	未保存の変更があります: 先に保存するか元に戻してください
+The map has changed since this was opened: open the object again	開いた後にマップが変更されました: オブジェクトを開き直してください
+A spline helper has no road type: pick one or remove it	スプラインヘルパーに道路タイプがありません: 選択するか削除してください
+the object names this file outside its own folder, which a copy would lose	オブジェクトは自身のフォルダー外のこのファイルを参照しており、コピーでは失われます
+what was written does not read back the same	書き込んだ内容が同じように読み戻せません
+its paths are in a file of their own (`[paths]`), which this editor does not read	パスは別ファイル (`[paths]`) にあり、このエディターでは読み込めません
+it has no path	パスがありません
+stop	停止
+jump	ジャンプ

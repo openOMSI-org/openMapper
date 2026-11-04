@@ -2543,7 +2543,6 @@ That point is already joined	Tento bod je už spojen
 Click an end point of a path	Klikněte na koncový bod cesty
 Path connected	Cesta spojena
 Connect the path	Spojit cestu
-There is no tile there	Tam není dlaždice
 Click the other point	Klikněte na druhý bod
 The graphics API changes the next time openMapper starts	Grafické API se změní při příštím spuštění openMapperu
 Settings…	Nastavení…
@@ -2692,3 +2691,14 @@ Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right 
 Back to how it was opened	Zpět do stavu při otevření
 Nothing to edit yet	Zatím není co upravovat
 Crossing paths…	Cesty křižovatky…
+Keep the ground under roads	Držet terén pod silnicemi
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Zapnuto: štětec nezvedá terén skrz silnici. Vypnuto: terén pod silnicemi a vedle nich upravuje stejně volně jako kdekoli jinde
+There are unsaved changes here: Save or Revert first	Jsou tu neuložené změny: nejprve je uložte nebo vraťte zpět
+The map has changed since this was opened: open the object again	Mapa se od otevření změnila: otevřete objekt znovu
+A spline helper has no road type: pick one or remove it	Pomocný bod spline nemá typ silnice: vyberte ho nebo bod odstraňte
+the object names this file outside its own folder, which a copy would lose	objekt odkazuje na tento soubor mimo svou složku, kopie by o něj přišla
+what was written does not read back the same	zapsaná data se nenačítají stejně
+its paths are in a file of their own (`[paths]`), which this editor does not read	jeho cesty jsou ve vlastním souboru (`[paths]`), který tento editor nečte
+it has no path	nemá žádnou cestu
+stop	stop
+jump	skok

@@ -1022,7 +1022,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 });
                 let streaming = prefs.tile_streaming == Some(true);
                 let mut all_at_once = !streaming;
-                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные скрыты, пока вы не кликнете по пустой зоне")).clicked() {
+                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные подгружаются, когда вы туда доходите")).clicked() {
                     actions.push(Action::SetTileStreaming(!all_at_once));
                 }
                 ui.menu_button(tr("Tiles loaded at once", "Тайлов загружено сразу"), |ui| {
@@ -1032,7 +1032,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetStreamTiles(n));
                         }
                     }
-                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others are hidden until you click on the empty zone", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные скрыты, пока вы не кликнете по пустой зоне")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(TEXT_DIM));
                 });
                 ui.menu_button(tr("Time of day", "Время суток"), |ui| {
                     if radio(ui, st.daytime.is_none(), tr("Plain day (as the game by day)", "Обычный день (как в игре днём)")).clicked() {
@@ -1947,6 +1947,10 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
             }
         }
     }
+    if matches!(ed.terrain_mode, TerrainMode::Raise | TerrainMode::Smooth | TerrainMode::Flatten | TerrainMode::Roughen) {
+        let r = check(ui, &mut ed.keep_ground_under_roads, tr("Keep the ground under roads", "Держать землю под дорогами"));
+        help(st, &r, tr("On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else", "Включено: кисть не поднимает землю сквозь дорогу. Выключено: земля под дорогами и рядом с ними меняется так же свободно, как и везде"));
+    }
     if ed.terrain_mode == TerrainMode::Flatten {
         ui.horizontal(|ui| {
             let mut fixed = ed.flatten_fixed.is_some();
@@ -2404,8 +2408,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     });
                 }
                 if att.is_none() && o.parent_id.is_none() {
-                    let armed = ed.sample == Some(Sample::Attach(k, id));
-                    let tip = tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode");
+                    let armed = ed.sample == Some(Sample::Attach) && ed.attach_to == [(k, id)];
+                    let tip = crate::editor::attach_hint(1);
                     if ui.add(egui::Button::new(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).selected(armed)).on_hover_text(tip).clicked() {
                         arm_attach = Some(!armed);
                     }
@@ -2560,7 +2564,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                             let mut side = if s.radius == 0.0 { 0.0 } else { s.radius.signum() };
                             let mut changed = false;
                             if side != 0.0 {
-                                changed = ui.add(egui::DragValue::new(&mut r).speed(0.5).range(s.radius.abs().min(3.0)..=s.radius.abs().max(20000.0)).max_decimals(1).suffix(" m")).changed() && r != s.radius.abs();
+                                // (any radius, to the decimal: a thin wall's pillar has one of 0.3 m)
+                                changed = ui.add(egui::DragValue::new(&mut r).speed((s.radius.abs() * 0.02).clamp(0.005, 0.5)).range(s.radius.abs().min(0.01)..=s.radius.abs().max(20000.0)).max_decimals(3).suffix(" m")).changed() && r != s.radius.abs();
                             }
                             egui::ComboBox::from_id_salt("bend").selected_text(if side > 0.0 { tr("right", "вправо") } else if side < 0.0 { tr("left", "влево") } else { tr("straight", "прямая") }).width(80.0).show_ui(ui, |ui| {
                                 for (v, name) in [(0.0, tr("straight", "прямая")), (-1.0, tr("left", "влево")), (1.0, tr("right", "вправо"))] {
@@ -2684,12 +2689,11 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     if let Some(on) = arm_attach {
         if on {
             if let Sel::Object(k, id) = sel {
-                ed.sample = Some(Sample::Attach(k, id));
-                ed.sample_browser = false;
-                ed.toast(tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode"));
+                ed.arm_attach(vec![(k, id)]);
             }
         } else {
             ed.sample = None;
+            ed.attach_to.clear();
         }
     }
     // (an object's rules only where it has paths, or rules already)
