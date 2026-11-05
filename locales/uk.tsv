@@ -2541,7 +2541,6 @@ That point is already joined	Ця точка вже з'єднана
 Click an end point of a path	Клацніть кінцеву точку шляху
 Path connected	Шлях з'єднано
 Connect the path	З'єднати шлях
-There is no tile there	Там немає клітини
 Click the other point	Клацніть іншу точку
 The graphics API changes the next time openMapper starts	Графічний API зміниться під час наступного запуску openMapper
 Settings…	Налаштування…
@@ -2627,3 +2626,81 @@ Polygon from them	Багатокутник із них
 Use dependencies	Використовувати залежності
 I hold the redistribution rights	Я маю права на повторне розповсюдження
 Yes	Так
+Saving…	Збереження…
+Still saving	Ще зберігається
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Клацніть сплайн, на якому вони мають стояти. Кожен іде за цією дорогою і зберігає IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Вимкнено: завантажуються лише тайли навколо камери, як у редакторі OMSI 2, решта завантажується, коли ви туди доходите
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Велика або дуже детальна карта працює легше з меншою кількістю тайлів: решта завантажується, коли ви туди доходите
+tiles round the camera are loaded; more load as you go there	тайлів навколо камери завантажено; решта завантажується, коли ви туди доходите
+Only the tiles round the camera are loaded; more load as you go there	Завантажено лише тайли навколо камери; решта завантажується, коли ви туди доходите
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Завантажувати велику карту по 100 тайлів, як редактор OMSI 2?\n\nУ графічній пам’яті лишаються лише 100 тайлів навколо камери; решта завантажується, коли ви туди доходите. Дуже великі карти лишаються легкими. Можна змінити будь-коли: Вигляд > Завантажувати всі тайли одразу (вимкнено).
+Choose the OMSI installation first	Спочатку вкажіть установку OMSI
+a file the object names is missing	файл, названий об'єктом, загублено
+Another crossing file	Інший файл перехрестя
+Crossing paths of the picked object…	Шляхи вибраного перехрестя…
+Crossing paths	Шляхи перехрестя
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Шляхи об'єкта перехрестя чи розв'язки, їхні блокування та програму світлофора правлять у копії об'єкта — оригінал лишається як був
+Footway	Тротуар
+Street	Проїзна частина
+Against	Проти напрямку
+Both ways	В обидва боки
+Along	За напрямком
+Left	Ліворуч
+Right	Праворуч
+Red and yellow	Червоний і жовтий
+Green and yellow	Зелений і жовтий
+Off	Вимкнено
+Select a crossing object, or pick one of these	Виберіть об'єкт перехрестя або візьміть один із цих
+Pick a crossing object of the map	Візьміть об'єкт перехрестя на карті
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Тут правлять шляхи, блокування та програму світлофора готового перехрестя. Об'єкт копіюється до папки openMapper, початковий файл лишається як був.
+openMapper's copy	Копія openMapper
+in its own file (a copy is made on saving)	у своєму файлі (копія робиться під час збереження)
+Paths	Шляхи
+Add a path	Додати шлях
+Remove this path	Вилучити цей шлях
+0 is a straight line, above 0 turns right, below 0 left	0 — пряма, більше 0 — праворуч, менше 0 — ліворуч
+Direction	Напрямок руху
+Turn signal	Поворот
+Keeps the junction clear	Тримає перехрестя вільним
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Машина на цьому шляху тримає перехрестя вільним для інших (`[crossingproblem]`)
+Blocks	Блокує
+Cycle	Цикл
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: секунди одного кола. Якщо не задано — сума фаз найдовшої програми
+The phases do not add up to the cycle: the last one holds to its end	Фази не складаються в цикл: остання триває до його кінця
+(no name)	(без імені)
+Detector	Детектор
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: за скільки метрів до стоп-лінії машина запитує
+A phase	Фаза
+Remove this light	Вилучити цей світлофор
+A light	Світлофор
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Перехрестю зі світлофором потрібні головки на карті: гра запускає програму, лише якщо до неї прив'язані головки
+Request loops	Петлі запиту
+Spline helpers	Точки прив'язки сплайнів
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Де дорога карти пристиковується до перехрестя. x, висота, вперед у системі об'єкта
+The road type it takes (a `.sli`)	Тип дороги, який він приймає (`.sli`)
+A helper	Точка
+At the picked end	Біля вибраного кінця
+A helper where the picked path ends, facing out of the crossing	Точка там, де закінчується вибраний шлях, назовні від перехрестя
+Save as a copy	Зберегти копію
+Write the paths into openMapper's copy of the object	Записати шляхи в копію об'єкта openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Папка об'єкта копіюється в openMapper, шляхи пишуться туди, об'єкт карти починає посилатися на неї: початковий файл не чіпається
+Back to how the object was when it was opened (the file is not touched)	Назад до того, яким об'єкт був при відкритті (файл не чіпається)
+Zoom out	Віддалити
+Zoom in	Наблизити
+The whole crossing in view	Усе перехрестя у вікні
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Тягніть кінець, щоб зсунути його. Ctrl притягує до кінця іншого шляху. Колесо — масштаб, права чи середня кнопка — зсув
+Back to how it was opened	Назад до стану при відкритті
+Nothing to edit yet	Поки нема чого правити
+Crossing paths…	Шляхи перехрестя…
+Trains	Потяги
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Невидима рейкова смуга для потягів ШІ: приєднується до рейкових смуг колій і стрілок там, де вони закінчуються
+Keep the ground under roads	Тримати землю під дорогами
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Увімкнено: пензель не піднімає землю крізь дорогу. Вимкнено: земля під дорогами й поруч із ними змінюється так само вільно, як і деінде
+There are unsaved changes here: Save or Revert first	Тут є незбережені зміни: спочатку збережіть або скасуйте їх
+The map has changed since this was opened: open the object again	Карта змінилася після відкриття: відкрийте об'єкт знову
+A spline helper has no road type: pick one or remove it	Точка прив'язки не має типу дороги: виберіть його або видаліть точку
+the object names this file outside its own folder, which a copy would lose	об'єкт називає цей файл поза своєю текою, копія його втратить
+what was written does not read back the same	записане читається не так, як записано
+its paths are in a file of their own (`[paths]`), which this editor does not read	його шляхи в окремому файлі (`[paths]`), який цей редактор не читає
+it has no path	у нього немає шляхів
+jump	перехід

@@ -1371,7 +1371,7 @@ pub(crate) fn add_depot(doc: &mut Document) {
     for l in touched {
         tt.touch_line(&l);
     }
-    tt.dirty = true;
+    tt.mark();
 }
 
 /// Minutes as m:ss.

@@ -94,6 +94,8 @@ pub enum Action {
     RoadTypes,
     /// The complex junction editor window.
     ComplexJunctions,
+    /// The crossing path editor window on the picked object (or a crossing picked there).
+    CrossingPaths,
     /// A complex junction drawing put on the map as splines, turned by so many degrees.
     PlaceComplex(Box<crate::cjunction::Layout>, f64),
     /// A drawing written as a custom junction (an object, and a layout for automatic junctions).
@@ -106,6 +108,8 @@ pub enum Action {
     PbrForSpline(String),
     /// The selected roads' lanes made into AI paths of their own.
     DetachLanes,
+    /// The Logic tool's AI paths drawn as rail lanes, from the openMapper spline made for it.
+    RailPathType,
     /// The relief of the whole map taken away, roads and paths laid on the flat ground.
     FlattenTerrain,
     /// The PBR window on a picture chosen from disk.
@@ -1020,7 +1024,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 });
                 let streaming = prefs.tile_streaming == Some(true);
                 let mut all_at_once = !streaming;
-                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные скрыты, пока вы не кликнете по пустой зоне")).clicked() {
+                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные подгружаются, когда вы туда доходите")).clicked() {
                     actions.push(Action::SetTileStreaming(!all_at_once));
                 }
                 ui.menu_button(tr("Tiles loaded at once", "Тайлов загружено сразу"), |ui| {
@@ -1030,7 +1034,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetStreamTiles(n));
                         }
                     }
-                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others are hidden until you click on the empty zone", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные скрыты, пока вы не кликнете по пустой зоне")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(TEXT_DIM));
                 });
                 ui.menu_button(tr("Time of day", "Время суток"), |ui| {
                     if radio(ui, st.daytime.is_none(), tr("Plain day (as the game by day)", "Обычный день (как в игре днём)")).clicked() {
@@ -1124,6 +1128,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 }
                 if menu_item(ui, Some(Icon::Junction), tr("Complex junction editor…", "Редактор сложных перекрёстков…"), "", true) {
                     actions.push(Action::ComplexJunctions);
+                }
+                if menu_item(ui, Some(Icon::Route), tr("Crossing paths of the picked object…", "Пути выбранного перекрёстка…"), "", true) {
+                    actions.push(Action::CrossingPaths);
                 }
                 if menu_item(ui, Some(Icon::Layers), tr("PBR maps for a picture…", "PBR-карты для картинки…"), "", true) {
                     actions.push(Action::PbrMaker);
@@ -1569,6 +1576,15 @@ fn logic_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libra
                         ed.set_path_type(a.rel.clone());
                     }
                 }
+                // (a rail lane of the catalogue, else the one openMapper writes)
+                let rail = lib.assets.iter().find(|a| a.category == Category::Technical && a.lanes == (0, 0, a.lanes.2) && a.lanes.2 > 0);
+                let on = ed.path_type.as_deref().is_some_and(|p| rail.is_some_and(|a| p.eq_ignore_ascii_case(&a.rel)));
+                if ui.add(egui::Button::new(icons::labelled(Icon::Route, tr("Trains", "Поезда"))).selected(on).min_size(Vec2::new(90.0, 28.0))).on_hover_text(tr("An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end", "Невидимая рельсовая полоса для поездов ИИ: присоединяется к рельсовым полосам путей и стрелок там, где они заканчиваются")).clicked() {
+                    match rail {
+                        Some(a) => ed.set_path_type(a.rel.clone()),
+                        None => actions.push(Action::RailPathType),
+                    }
+                }
             });
             if ed.path_type.is_none() {
                 if let Some(a) = lib.find("Splines\\Marcel\\invis_street.sli") {
@@ -1594,7 +1610,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             Some(LogicMode::Start) => a.is_entry_point,
             Some(LogicMode::Stops) => a.is_bus_stop,
             Some(LogicMode::Parking) => a.is_car_park,
-            Some(LogicMode::Paths) => a.category == Category::Technical && (a.lanes.0 > 0 || a.lanes.1 > 0),
+            Some(LogicMode::Paths) => a.category == Category::Technical && (a.lanes.0 > 0 || a.lanes.1 > 0 || a.lanes.2 > 0),
             Some(LogicMode::Other) => a.category == Category::Technical && !a.is_car_park,
         }
     };
@@ -1942,6 +1958,10 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
             }
         }
     }
+    if matches!(ed.terrain_mode, TerrainMode::Raise | TerrainMode::Smooth | TerrainMode::Flatten | TerrainMode::Roughen) {
+        let r = check(ui, &mut ed.keep_ground_under_roads, tr("Keep the ground under roads", "Держать землю под дорогами"));
+        help(st, &r, tr("On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else", "Включено: кисть не поднимает землю сквозь дорогу. Выключено: земля под дорогами и рядом с ними меняется так же свободно, как и везде"));
+    }
     if ed.terrain_mode == TerrainMode::Flatten {
         ui.horizontal(|ui| {
             let mut fixed = ed.flatten_fixed.is_some();
@@ -2272,6 +2292,14 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 if r.clicked() {
                     actions.push(Action::PbrForObject(o.file.clone()));
                 }
+                // its paths, if it is a crossing: edited in a copy of the object
+                if matches!(sel, Sel::Object(..)) {
+                    let r = ui.button(icons::labelled(Icon::Route, tr("Crossing paths", "Пути перекрёстка")));
+                    help(st, &r, tr("The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is", "Пути перекрёстка или перекрёстка-объекта, их блокировки и программу светофора правят в копии объекта, исходный остаётся как был"));
+                    if r.clicked() {
+                        actions.push(Action::CrossingPaths);
+                    }
+                }
                 ui.add_space(4.0);
                 egui::Grid::new("obj").num_columns(2).spacing(Vec2::new(8.0, 5.0)).show(ui, |ui| {
                     prop_row(ui, tr("Type", "Тип"), |ui| {
@@ -2391,8 +2419,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     });
                 }
                 if att.is_none() && o.parent_id.is_none() {
-                    let armed = ed.sample == Some(Sample::Attach(k, id));
-                    let tip = tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode");
+                    let armed = ed.sample == Some(Sample::Attach) && ed.attach_to == [(k, id)];
+                    let tip = crate::editor::attach_hint(1);
                     if ui.add(egui::Button::new(icons::labelled(Icon::Road, tr("Attach to the spline", "Прикрепить к сплайну"))).selected(armed)).on_hover_text(tip).clicked() {
                         arm_attach = Some(!armed);
                     }
@@ -2547,7 +2575,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                             let mut side = if s.radius == 0.0 { 0.0 } else { s.radius.signum() };
                             let mut changed = false;
                             if side != 0.0 {
-                                changed = ui.add(egui::DragValue::new(&mut r).speed(0.5).range(s.radius.abs().min(3.0)..=s.radius.abs().max(20000.0)).max_decimals(1).suffix(" m")).changed() && r != s.radius.abs();
+                                // (any radius, to the decimal: a thin wall's pillar has one of 0.3 m)
+                                changed = ui.add(egui::DragValue::new(&mut r).speed((s.radius.abs() * 0.02).clamp(0.005, 0.5)).range(s.radius.abs().min(0.01)..=s.radius.abs().max(20000.0)).max_decimals(3).suffix(" m")).changed() && r != s.radius.abs();
                             }
                             egui::ComboBox::from_id_salt("bend").selected_text(if side > 0.0 { tr("right", "вправо") } else if side < 0.0 { tr("left", "влево") } else { tr("straight", "прямая") }).width(80.0).show_ui(ui, |ui| {
                                 for (v, name) in [(0.0, tr("straight", "прямая")), (-1.0, tr("left", "влево")), (1.0, tr("right", "вправо"))] {
@@ -2671,12 +2700,11 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     if let Some(on) = arm_attach {
         if on {
             if let Sel::Object(k, id) = sel {
-                ed.sample = Some(Sample::Attach(k, id));
-                ed.sample_browser = false;
-                ed.toast(tr("Click the spline it should stand on. It follows that road and keeps its IDCode", "Щёлкните сплайн, на котором он должен стоять. Он следует за этой дорогой и сохраняет IDCode"));
+                ed.arm_attach(vec![(k, id)]);
             }
         } else {
             ed.sample = None;
+            ed.attach_to.clear();
         }
     }
     // (an object's rules only where it has paths, or rules already)

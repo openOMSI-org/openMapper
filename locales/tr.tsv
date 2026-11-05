@@ -2543,7 +2543,6 @@ That point is already joined	Bu nokta zaten bağlı
 Click an end point of a path	Bir yolun uç noktasına tıklayın
 Path connected	Yol bağlandı
 Connect the path	Yolu bağla
-There is no tile there	Orada karo yok
 Click the other point	Diğer noktaya tıklayın
 The graphics API changes the next time openMapper starts	Grafik API'si openMapper bir sonraki başlatıldığında değişir
 Settings…	Ayarlar…
@@ -2629,3 +2628,81 @@ Polygon from them	Onlardan çokgen
 Use dependencies	Bağımlılıkları kullan
 I hold the redistribution rights	Yeniden dağıtım haklarına sahibim
 Yes	Evet
+Saving…	Kaydediliyor…
+Still saving	Hâlâ kaydediliyor
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Durmaları gereken spline'a tıklayın. Her biri o yolu izler ve IDCode'unu korur
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Kapalı: OMSI 2'nin düzenleyicisindeki gibi yalnızca kameranın çevresindeki karolar yüklenir, oraya gittiğinizde daha fazlası yüklenir
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Büyük veya çok ayrıntılı bir harita daha az karoyla daha akıcı çalışır: diğerleri oraya gittiğinizde yüklenir
+tiles round the camera are loaded; more load as you go there	karo kameranın çevresinde yüklü; oraya gittiğinizde daha fazlası yüklenir
+Only the tiles round the camera are loaded; more load as you go there	Yalnızca kameranın çevresindeki karolar yüklü; oraya gittiğinizde daha fazlası yüklenir
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Büyük bir harita, OMSI 2'nin düzenleyicisi gibi her seferinde 100 karo yüklensin mi?\n\nGrafik belleğinde yalnızca kameranın çevresindeki 100 karo kalır; diğerleri oraya gittiğinizde yüklenir. Çok büyük haritalar böylece hafif kalır. İstediğiniz zaman Görünüm > Tüm karoları birden yükle (kapalı) bölümünden değiştirebilirsiniz.
+Choose the OMSI installation first	Önce OMSI kurulumunu seçin
+a file the object names is missing	nesnenin adlandırdığı bir dosya eksik
+Another crossing file	Başka bir kavşak dosyası
+Crossing paths of the picked object…	Seçilen kavşak nesnesinin yolları…
+Crossing paths	Kavşak yolları
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Bir kavşak veya düğüm nesnesinin yolları, blokajları ve trafik lambası programı nesnenin bir kopyasında düzenlenir - aslı olduğu gibi kalır
+Footway	Yaya yolu
+Street	Taşıt yolu
+Against	Yönün tersine
+Both ways	İki yönde
+Along	Yönünde
+Left	Sol
+Right	Sağ
+Red and yellow	Kırmızı ve sarı
+Green and yellow	Yeşil ve sarı
+Off	Kapalı
+Select a crossing object, or pick one of these	Bir kavşak nesnesi seçin veya bunlardan birini alın
+Pick a crossing object of the map	Haritadan bir kavşak nesnesi alın
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Burada mevcut bir kavşağın yolları, blokajları ve trafik lambası programı düzenlenir. Nesne openMapper'ın kendi klasörüne kopyalanır; özgün dosya olduğu gibi kalır.
+openMapper's copy	openMapper'ın kopyası
+in its own file (a copy is made on saving)	kendi dosyasında (kaydederken kopya çıkarılır)
+Paths	Yollar
+Add a path	Yol ekle
+Remove this path	Bu yolu kaldır
+0 is a straight line, above 0 turns right, below 0 left	0 düz çizgidir, 0 üstü sağa, 0 altı sola döner
+Direction	Yön
+Turn signal	Sinyal
+Keeps the junction clear	Kavşağı boş tutar
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Bu yolda bekleyen araç kavşağı diğerleri için boş tutar (`[crossingproblem]`)
+Blocks	Bloke eder
+Cycle	Devir
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: bir devrin saniyeleri. Verilmezse en uzun lambanın fazlarının toplamıdır
+The phases do not add up to the cycle: the last one holds to its end	Fazlar devri tutmuyor: sonuncusu devrin sonuna kadar sürer
+(no name)	(adı yok)
+Detector	Dedektör
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: dur çizgisinden kaç metre önce araç istek bildirir
+A phase	Bir faz
+Remove this light	Bu lambayı kaldır
+A light	Bir lamba
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Lambalı bir kavşak haritadaki sinyal başlıklarına ihtiyaç duyar: oyun yalnızca başlıkların bağlı olduğu bir programı çalıştırır
+Request loops	İstek döngüleri
+Spline helpers	Spline bağlantı noktaları
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Haritadaki bir yolun kavşağa bağlandığı yer. x, yükseklik, nesnenin sisteminde ileri
+The road type it takes (a `.sli`)	Kabul ettiği yol tipi (bir `.sli`)
+A helper	Bir bağlantı noktası
+At the picked end	Seçilen uçta
+A helper where the picked path ends, facing out of the crossing	Seçilen yolun bittiği yerde, kavşaktan dışarı bakan bir bağlantı noktası
+Save as a copy	Kopya olarak kaydet
+Write the paths into openMapper's copy of the object	Yolları nesnenin openMapper kopyasına yaz
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Nesnenin klasörü openMapper'ınkine kopyalanır, yollar oraya yazılır ve haritadaki nesne oraya yönlendirilir: özgün dosyaya dokunulmaz
+Back to how the object was when it was opened (the file is not touched)	Nesnenin açıldığı hâline dön (dosyaya dokunulmaz)
+Zoom out	Uzaklaştır
+Zoom in	Yakınlaştır
+The whole crossing in view	Bütün kavşak görünümde
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Taşımak için bir ucu sürükleyin. Ctrl, başka bir yolun ucuna oturtur. Tekerlek yakınlaştırır, sağ veya orta tuğla kaydırır
+Back to how it was opened	Açıldığı hâle dön
+Nothing to edit yet	Henüz düzenlenecek bir şey yok
+Crossing paths…	Kavşak yolları…
+Trains	Trenler
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Yapay zekâ trenleri için görünmez bir ray şeridi: rayların ve makasların ray şeritlerine bittikleri yerde bağlanır
+Keep the ground under roads	Zemini yolların altında tut
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Açık: fırça zemini yolun içinden yükseltmez. Kapalı: yolların altındaki ve yanındaki zemini başka her yerdeki kadar serbestçe şekillendirir
+There are unsaved changes here: Save or Revert first	Kaydedilmemiş değişiklikler var: önce kaydedin veya geri alın
+The map has changed since this was opened: open the object again	Harita açıldığından beri değişti: nesneyi yeniden açın
+A spline helper has no road type: pick one or remove it	Bir spline yardımcısının yol türü yok: birini seçin veya kaldırın
+the object names this file outside its own folder, which a copy would lose	nesne bu dosyayı kendi klasörünün dışında belirtiyor, bir kopya onu kaybeder
+what was written does not read back the same	yazılan aynı şekilde geri okunmuyor
+its paths are in a file of their own (`[paths]`), which this editor does not read	yolları kendi dosyasındadır (`[paths]`), bu düzenleyici onu okumaz
+it has no path	yolu yok
+jump	atlama

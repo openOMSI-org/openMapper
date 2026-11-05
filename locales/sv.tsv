@@ -2390,46 +2390,6 @@ Both ends alike	Båda ändarna lika
 Slide the bay to where it fits	Skjut fickan dit den passar
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Nära slutet av en väg eller korsning finns det inte plats för övergången i båda ändar: fickan flyttas längs vägen till där det finns
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	En ficka får alltid en övergång i båda ändar; där ingen kan läggas ändras inget.
-The road is too short here for a bay with a taper at both ends	Vägen är för kort här för en ficka med övergång i båda ändar
-Too near the end of the road for the taper at both ends of the bay	För nära vägens slut för övergången i fickans båda ändar
-The bay needs a taper at both ends and one could not be laid there	Fickan behöver en övergång i båda ändar och ingen kunde läggas där
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Välj ett stycke eller en arm; dra för att flytta, dra punkterna i ändarna av det valda stycket för att ändra det; Delete tar bort det
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Klicka på start, en punkt på bågen och sedan slutet. Startad i slutet av ett stycke med Auto-Align på ger två klick en båge som tangerar det
-Curve	Kurva
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	En mjuk bana genom varje klickad punkt, för komplicerade svängar: Enter, ett dubbelklick eller knappen nedan avslutar den
-Finish the curve	Avsluta kurvan
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Ett stycke som startar i slutet av ett annat fortsätter i linje med det: en linje längs dess riktning eller tvärs över, en båge eller kurva som tangerar det. På andra ställen håller sig linjer till steg på 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	En väg med annan bredd som startar i slutet av en väg behåller kanten på den sida den svänger åt, och en övergång läggs för att komma dit
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	Armarna hittas av sig själva: varje fri ände på en väg är där en väg kommer in. Armar placerade för hand ligger kvar som de är
-found from a road's free end	hittad från en vägs fria ände
-The whole drawing	Hela ritningen
-Left and right swapped	Vänster och höger bytta
-Turn 90°	Vrid 90°
-Find the arms	Hitta armarna
-The free ends of roads become arms	Vägarnas fria ändar blir armar
-segments	segment
-0: a straight; positive: turns right; negative: turns left	0: rakt; positivt: svänger höger; negativt: svänger vänster
-Reverse	Vänd
-Runs the other way: the piece's start and end swap	Går åt andra hållet: styckets start och slut byter plats
-Under the one before it	Under det före
-Higher	Högre
-Over the one after it	Över det efter
-Preview	Förhandsvisning
-The junction as it will be: the roads running out of the arms, no grid or handles	Korsningen som den blir: vägarna som går ut från armarna, utan rutnät eller handtag
-The lanes of the AI over the drawing, with the way they go	AI:ns filer över ritningen, med riktningen de går
-Zoom out (-)	Zooma ut (-)
-Zoom in (+)	Zooma in (+)
-The whole drawing in view (F)	Hela ritningen i bild (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Förhandsvisning: korsningen som den kommer att se ut. Hjulet zoomar, höger- eller mittendragning panorerar
-Click the points the curve passes; Enter or a double click ends it	Klicka på punkterna kurvan går genom; Enter eller ett dubbelklick avslutar
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	Hjulet zoomar, höger- eller mittendragning panorerar, F anpassar, Ctrl+Z ångrar, Esc avbryter
-Taper in	Övergång in
-Metres of road the bay takes to open per metre it widens (more: gentler)	Meter väg som fickan behöver för att öppna sig per meter den blir bredare (mer: mjukare)
-out	ut
-Both ends alike	Båda ändarna lika
-Slide the bay to where it fits	Skjut fickan dit den passar
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Nära slutet av en väg eller korsning finns det inte plats för övergången i båda ändar: fickan flyttas längs vägen till där det finns
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	En ficka får alltid en övergång i båda ändar; där ingen kan läggas ändras inget.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Kontroller som i OMSI 2:s editor: mittknappen vrider, högerknappen hållen och förd zoomar, ett högerklick går dit (Shift: meny)
 Controls as chosen under Camera	Kontroller som valts under Kamera
 Advanced users	Avancerade användare
@@ -2583,7 +2543,6 @@ That point is already joined	Den punkten är redan kopplad
 Click an end point of a path	Klicka en ändpunkt på en bana
 Path connected	Banan kopplad
 Connect the path	Koppla banan
-There is no tile there	Där finns ingen ruta
 Click the other point	Klicka den andra punkten
 The graphics API changes the next time openMapper starts	Grafik-API:et ändras nästa gång openMapper startar
 Settings…	Inställningar…
@@ -2669,3 +2628,81 @@ Polygon from them	Polygon av dem
 Use dependencies	Använd beroenden
 I hold the redistribution rights	Jag har rätt att återdistribuera
 Yes	Ja
+Saving…	Sparar…
+Still saving	Sparar fortfarande
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klicka på den spline de ska stå på. Var och en följer den vägen och behåller sitt IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Av: bara rutorna runt kameran läses in, som i OMSI 2:s redigerare, och fler läses in när du går dit
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	En stor eller mycket detaljerad karta går lättare med färre kartrutor: de övriga läses in när du går dit
+tiles round the camera are loaded; more load as you go there	kartrutor runt kameran är inlästa; fler läses in när du går dit
+Only the tiles round the camera are loaded; more load as you go there	Bara kartrutorna runt kameran är inlästa; fler läses in när du går dit
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Läsa in en stor karta 100 rutor i taget, som OMSI 2:s redigerare?\n\nBara de 100 rutorna runt kameran ligger kvar i grafikminnet; de andra läses in när du går dit. Mycket stora kartor hålls lätta så. Du kan ändra det när som helst under Visa > Läs in alla rutor på en gång (av).
+Choose the OMSI installation first	Välj OMSI-installationen först
+a file the object names is missing	en fil som objektet anger saknas
+Another crossing file	En annan korsningsfil
+Crossing paths of the picked object…	Korsningens körfält för det valda objektet…
+Crossing paths	Korsningsfält
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Fälten hos ett korsnings- eller knutpunktsobjekt, deras spärrar och deras trafikljusprogram, redigerade i en kopia av objektet - originalet lämnas som det är
+Footway	Gångbana
+Street	Körbana
+Against	Mot riktningen
+Both ways	Båda riktningarna
+Along	Med riktningen
+Left	Vänster
+Right	Höger
+Red and yellow	Rött och gult
+Green and yellow	Grönt och gult
+Off	Släckt
+Select a crossing object, or pick one of these	Välj ett korsningsobjekt eller ta ett av dessa
+Pick a crossing object of the map	Ta ett korsningsobjekt från kartan
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Här redigeras fälten, spärrarna och trafikljusprogrammet hos en befintlig korsning. Objektet kopieras till openMappers egen mapp; originalfilen lämnas som den är.
+openMapper's copy	openMappers kopia
+in its own file (a copy is made on saving)	i sin egen fil (en kopia görs vid sparning)
+Paths	Fält
+Add a path	Lägg till ett fält
+Remove this path	Ta bort det här fältet
+0 is a straight line, above 0 turns right, below 0 left	0 är en rak linje, över 0 svänger höger, under 0 vänster
+Direction	Riktning
+Turn signal	Blinkers
+Keeps the junction clear	Håller korsningen fri
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Ett fordon som väntar på det här fältet håller korsningen fri för de andra (`[crossingproblem]`)
+Blocks	Spärrar
+Cycle	Cykel
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: sekunderna i en omgång. Utan värde blir det summan av den längsta signalens faser
+The phases do not add up to the cycle: the last one holds to its end	Faserna summerar inte till cykeln: den sista varar till dess slut
+(no name)	(inget namn)
+Detector	Detektor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: hur många meter före stopplinjen ett fordon begär
+A phase	En fas
+Remove this light	Ta bort den här signalen
+A light	En signal
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	En korsning med signaler behöver signalhuvudena på kartan: spelet kör bara ett program som huvuden är kopplade till
+Request loops	Beställningsslingor
+Spline helpers	Spline-hjälppunkter
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Där en väg på kartan fäster vid korsningen. x, höjd, framåt i objektets system
+The road type it takes (a `.sli`)	Den vägtyp den tar (en `.sli`)
+A helper	En hjälppunkt
+At the picked end	Vid den valda änden
+A helper where the picked path ends, facing out of the crossing	En hjälppunkt där det valda fältet slutar, ut från korsningen
+Save as a copy	Spara som kopia
+Write the paths into openMapper's copy of the object	Skriv fälten i openMappers kopia av objektet
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Objektets mapp kopieras till openMappers, fälten skrivs där och kartans objekt pekas om dit: originalfilen rörs inte
+Back to how the object was when it was opened (the file is not touched)	Tillbaka till hur objektet var när det öppnades (filen rörs inte)
+Zoom out	Zooma ut
+Zoom in	Zooma in
+The whole crossing in view	Hela korsningen i bild
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Dra en ände för att flytta den. Ctrl fäster den vid en annan fälts ände. Hjulet zoomar, höger eller mitten drar skjuter vyn
+Back to how it was opened	Tillbaka till läget vid öppningen
+Nothing to edit yet	Inget att redigera än
+Crossing paths…	Korsningsfält…
+Trains	Tåg
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Ett osynligt rälsfält för AI:ns tåg: det ansluter till rälsfälten på spår och växlar där de slutar
+Keep the ground under roads	Håll marken under vägarna
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	På: penseln lyfter inte marken genom en väg. Av: den formar marken under och bredvid vägar lika fritt som någon annanstans
+There are unsaved changes here: Save or Revert first	Det finns osparade ändringar: spara eller återställ först
+The map has changed since this was opened: open the object again	Kartan har ändrats sedan detta öppnades: öppna objektet igen
+A spline helper has no road type: pick one or remove it	En splinehjälpare saknar vägtyp: välj en eller ta bort den
+the object names this file outside its own folder, which a copy would lose	objektet anger den här filen utanför sin mapp, en kopia skulle förlora den
+what was written does not read back the same	det som skrevs läses inte tillbaka likadant
+its paths are in a file of their own (`[paths]`), which this editor does not read	dess vägar finns i en egen fil (`[paths]`), som den här redigeraren inte läser
+it has no path	den har ingen väg
+jump	hopp

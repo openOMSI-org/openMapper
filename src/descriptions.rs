@@ -19,6 +19,8 @@ pub struct Descriptions {
     /// Language code: (name, description).
     pub langs: BTreeMap<String, (String, String)>,
     pub dirty: bool,
+    /// Counts each change, so a save that is still writing can tell a later edit from the one it copied.
+    pub edit: u64,
     changed: BTreeSet<String>,
     removed: BTreeSet<String>,
 }
@@ -86,14 +88,14 @@ impl Descriptions {
         self.langs.insert(code.to_string(), (name, description));
         self.changed.insert(code.to_string());
         self.removed.remove(code);
-        self.dirty = true;
+        self.mark();
     }
 
     pub fn remove(&mut self, code: &str) {
         if self.langs.remove(code).is_some() {
             self.removed.insert(code.to_string());
             self.changed.remove(code);
-            self.dirty = true;
+            self.mark();
         }
     }
 
@@ -103,7 +105,7 @@ impl Descriptions {
         // (and those still to be taken away, of either state: removed and not saved since)
         let pending = std::mem::take(&mut self.removed);
         self.removed = replaced.langs.keys().chain(&pending).chain(&replaced.removed).filter(|k| !self.langs.contains_key(*k)).cloned().collect();
-        self.dirty = true;
+        self.mark();
     }
 
     /// What saving writes and takes away in the map folder.
@@ -122,6 +124,11 @@ impl Descriptions {
             }
         }
         ops
+    }
+
+    fn mark(&mut self) {
+        self.dirty = true;
+        self.edit = crate::doc::next_rev();
     }
 
     pub fn saved(&mut self) {

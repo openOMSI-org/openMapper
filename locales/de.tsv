@@ -2541,7 +2541,6 @@ That point is already joined	Dieser Punkt ist schon verbunden
 Click an end point of a path	Einen Endpunkt eines Pfades anklicken
 Path connected	Pfad verbunden
 Connect the path	Pfad verbinden
-There is no tile there	Dort liegt keine Kachel
 Click the other point	Den anderen Punkt anklicken
 The graphics API changes the next time openMapper starts	Die Grafik-API ändert sich beim nächsten Start von openMapper
 Settings…	Einstellungen…
@@ -2627,3 +2626,81 @@ Polygon from them	Polygon daraus
 Use dependencies	Abhängigkeiten verwenden
 I hold the redistribution rights	Ich besitze die Weiterverbreitungsrechte
 Yes	Ja
+Saving…	Speichern…
+Still saving	Speichert noch
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Klicken Sie den Spline an, auf dem sie stehen sollen. Jeder folgt dieser Straße und behält seinen IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Aus: Nur die Kacheln um die Kamera werden geladen, wie im Editor von OMSI 2, weitere laden, wenn Sie hingehen
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Eine große oder sehr detailreiche Karte läuft mit weniger Kacheln flüssiger: Die übrigen laden, wenn Sie hingehen
+tiles round the camera are loaded; more load as you go there	Kacheln um die Kamera sind geladen; weitere laden, wenn Sie hingehen
+Only the tiles round the camera are loaded; more load as you go there	Nur die Kacheln um die Kamera sind geladen; weitere laden, wenn Sie hingehen
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Eine große Karte wie im Editor von OMSI 2 jeweils 100 Kacheln laden?\n\nIm Grafikspeicher bleiben nur die 100 Kacheln um die Kamera; die übrigen laden, wenn Sie hingehen. Sehr große Karten bleiben dadurch leicht. Jederzeit änderbar unter Ansicht > Alle Kacheln auf einmal laden (aus).
+Choose the OMSI installation first	Wähle zuerst die OMSI-Installation
+a file the object names is missing	eine Datei, die das Objekt nennt, fehlt
+Another crossing file	Andere Kreuzungsdatei
+Crossing paths of the picked object…	Pfade des gewählten Kreuzungsobjekts…
+Crossing paths	Kreuzungspfade
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Die Pfade eines Kreuzungs- oder Knotenobjekts, ihre Sperren und ihr Ampelprogramm, bearbeitet in einer Kopie des Objekts - das Original bleibt, wie es ist
+Footway	Gehweg
+Street	Fahrbahn
+Against	Gegen die Richtung
+Both ways	Beide Richtungen
+Along	In Richtung
+Left	Links
+Right	Rechts
+Red and yellow	Rot und Gelb
+Green and yellow	Grün und Gelb
+Off	Aus
+Select a crossing object, or pick one of these	Wähle ein Kreuzungsobjekt oder eines aus dieser Liste
+Pick a crossing object of the map	Nimm ein Kreuzungsobjekt der Karte
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Hier werden die Pfade, die Sperren und das Ampelprogramm einer vorhandenen Kreuzung bearbeitet. Das Objekt wird in openMappers eigenen Ordner kopiert; die Originaldatei bleibt, wie sie ist.
+openMapper's copy	openMappers Kopie
+in its own file (a copy is made on saving)	in seiner eigenen Datei (beim Speichern wird eine Kopie angelegt)
+Paths	Pfade
+Add a path	Pfad hinzufügen
+Remove this path	Diesen Pfad entfernen
+0 is a straight line, above 0 turns right, below 0 left	0 ist eine Gerade, über 0 biegt nach rechts, unter 0 nach links
+Direction	Richtung
+Turn signal	Blinker
+Keeps the junction clear	Hält die Kreuzung frei
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Ein Fahrzeug, das auf diesem Pfad wartet, hält die Kreuzung für die anderen frei (`[crossingproblem]`)
+Blocks	Sperrt
+Cycle	Umlauf
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: die Sekunden eines Umlaufs. Ohne Angabe ergibt sie sich aus den Phasen der längsten Ampel
+The phases do not add up to the cycle: the last one holds to its end	Die Phasen ergeben nicht den Umlauf: die letzte hält bis zu dessen Ende
+(no name)	(ohne Namen)
+Detector	Melder
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: wie viele Meter vor der Haltlinie ein Fahrzeug eine Anforderung stellt
+A phase	Eine Phase
+Remove this light	Diese Ampel entfernen
+A light	Eine Ampel
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Eine Kreuzung mit Ampeln braucht die Signalgeber auf der Karte: das Spiel führt nur ein Programm aus, mit dem Geber verknüpft sind
+Request loops	Anforderungsschleifen
+Spline helpers	Spline-Hilfspunkte
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Wo eine Straße der Karte an die Kreuzung andockt. x, Höhe, vorwärts im System des Objekts
+The road type it takes (a `.sli`)	Der Straßentyp, den er annimmt (eine `.sli`)
+A helper	Ein Hilfspunkt
+At the picked end	Am gewählten Ende
+A helper where the picked path ends, facing out of the crossing	Ein Hilfspunkt am Ende des gewählten Pfads, aus der Kreuzung hinaus
+Save as a copy	Als Kopie speichern
+Write the paths into openMapper's copy of the object	Die Pfade in openMappers Kopie des Objekts schreiben
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Der Ordner des Objekts wird in openMappers Ordner kopiert, die Pfade dort geschrieben und das Objekt der Karte darauf verwiesen: die Originaldatei wird nicht angefasst
+Back to how the object was when it was opened (the file is not touched)	Zurück zu dem Stand beim Öffnen (die Datei wird nicht angefasst)
+Zoom out	Verkleinern
+Zoom in	Vergrößern
+The whole crossing in view	Die ganze Kreuzung im Blick
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Ziehe ein Ende, um es zu verschieben. Strg rastet es am Ende eines anderen Pfads ein. Rad zoomt, rechte oder mittlere Taste verschiebt den Blick
+Back to how it was opened	Zurück zum Stand beim Öffnen
+Nothing to edit yet	Noch nichts zu bearbeiten
+Crossing paths…	Kreuzungspfade…
+Trains	Züge
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Eine unsichtbare Schienenspur für die KI-Züge: Sie schließt dort an die Schienenspuren von Gleisen und Weichen an, wo diese enden
+Keep the ground under roads	Boden unter Straßen halten
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	An: Der Pinsel hebt den Boden nicht durch eine Straße. Aus: Er formt den Boden unter und neben Straßen so frei wie überall sonst
+There are unsaved changes here: Save or Revert first	Hier gibt es ungespeicherte Änderungen: zuerst speichern oder zurücksetzen
+The map has changed since this was opened: open the object again	Die Karte hat sich seit dem Öffnen geändert: Objekt erneut öffnen
+A spline helper has no road type: pick one or remove it	Ein Spline-Helfer hat keinen Straßentyp: einen wählen oder ihn entfernen
+the object names this file outside its own folder, which a copy would lose	das Objekt nennt diese Datei außerhalb seines Ordners, eine Kopie würde sie verlieren
+what was written does not read back the same	das Geschriebene liest sich nicht gleich zurück
+its paths are in a file of their own (`[paths]`), which this editor does not read	seine Pfade liegen in einer eigenen Datei (`[paths]`), die dieser Editor nicht liest
+it has no path	es hat keinen Pfad
+jump	Sprung

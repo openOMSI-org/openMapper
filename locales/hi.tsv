@@ -2543,7 +2543,6 @@ That point is already joined	यह बिंदु पहले से जु�
 Click an end point of a path	पथ का एक छोर चुनें
 Path connected	पथ जुड़ गया
 Connect the path	पथ जोड़ें
-There is no tile there	वहाँ कोई टाइल नहीं है
 Click the other point	दूसरा बिंदु चुनें
 The graphics API changes the next time openMapper starts	ग्राफ़िक्स API openMapper के अगली बार शुरू होने पर बदलेगा
 Settings…	सेटिंग…
@@ -2629,3 +2628,81 @@ Polygon from them	इनसे बहुभुज
 Use dependencies	निर्भरताओं का उपयोग करें
 I hold the redistribution rights	मेरे पास पुनर्वितरण के अधिकार हैं
 Yes	हाँ
+Saving…	सहेजा जा रहा है…
+Still saving	अभी भी सहेजा जा रहा है
+Click the spline they should stand on. Each follows that road and keeps its IDCode	उस स्पलाइन पर क्लिक करें जिस पर उन्हें खड़ा होना है। हर एक उस सड़क का अनुसरण करता है और अपना IDCode रखता है
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	बंद: केवल कैमरे के आसपास की टाइलें लोड होती हैं, जैसे OMSI 2 के एडिटर में, और आप जहाँ जाएँ वहाँ और लोड होती हैं
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	बड़ा या बहुत विस्तृत मैप कम टाइलों के साथ हल्का चलता है: बाकी टाइलें आप वहाँ जाने पर लोड होती हैं
+tiles round the camera are loaded; more load as you go there	टाइलें कैमरे के आसपास लोड हैं; आप जहाँ जाएँ वहाँ और लोड होती हैं
+Only the tiles round the camera are loaded; more load as you go there	केवल कैमरे के आसपास की टाइलें लोड हैं; आप जहाँ जाएँ वहाँ और लोड होती हैं
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	OMSI 2 के एडिटर की तरह बड़ा मैप एक बार में 100 टाइल लोड करें?\n\nग्राफ़िक्स मेमोरी में केवल कैमरे के आसपास की 100 टाइलें रहती हैं; बाकी आप वहाँ जाने पर लोड होती हैं। बहुत बड़े मैप हल्के रहते हैं। दृश्य > सभी टाइलें एक साथ लोड करें (बंद) में कभी भी बदल सकते हैं।
+Choose the OMSI installation first	पहले OMSI का इंस्टॉलेशन चुनें
+a file the object names is missing	ऑब्जेक्ट जिस फ़ाइल का नाम देता है वह मौजूद नहीं है
+Another crossing file	दूसरी चौराहा फ़ाइल
+Crossing paths of the picked object…	चुने हुए चौराहा ऑब्जेक्ट के पथ…
+Crossing paths	चौराहे के पथ
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	चौराहा या जंक्शन ऑब्जेक्ट के पथ, उसकी रोक और उसका सिग्नल कार्यक्रम, ऑब्जेक्ट की एक प्रति में संपादित होते हैं - मूल जैसा है वैसा ही रहता है
+Footway	पैदल पथ
+Street	वाहन मार्ग
+Against	विपरीत दिशा
+Both ways	दोनों दिशाएँ
+Along	दिशा के साथ
+Left	बाएँ
+Right	दाएँ
+Red and yellow	लाल और पीला
+Green and yellow	हरा और पीला
+Off	बंद
+Select a crossing object, or pick one of these	कोई चौराहा ऑब्जेक्ट चुनें, या इनमें से एक लें
+Pick a crossing object of the map	नक्शे से चौराहा ऑब्जेक्ट लें
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	यहाँ किसी मौजूदा चौराहे के पथ, रोक और सिग्नल कार्यक्रम संपादित होते हैं। ऑब्जेक्ट openMapper के अपने फ़ोल्डर में प्रतिलिपित होता है; मूल फ़ाइल जैसी है वैसी रहती है।
+openMapper's copy	openMapper की प्रति
+in its own file (a copy is made on saving)	अपनी फ़ाइल में (सहेजते समय प्रति बनती है)
+Paths	पथ
+Add a path	पथ जोड़ें
+Remove this path	यह पथ हटाएँ
+0 is a straight line, above 0 turns right, below 0 left	0 सीधा है, 0 से अधिक दाएँ मुड़ता है, 0 से कम बाएँ
+Direction	दिशा
+Turn signal	मोड़ संकेत
+Keeps the junction clear	जंक्शन खाली रखता है
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	इस पथ पर रुका वाहन दूसरों के लिए चौराहा खाली रखता है (`[crossingproblem]`)
+Blocks	रोकता है
+Cycle	चक्र
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: एक दौर के सेकंड। खाली हो तो सबसे लंबी बत्ती के चरणों का योग
+The phases do not add up to the cycle: the last one holds to its end	चरण चक्र के बराबर नहीं हैं: अंतिम चरण चक्र के अंत तक रहता है
+(no name)	(कोई नाम नहीं)
+Detector	संसूचक
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: स्टॉप लाइन से कितने मीटर पहले वाहन अनुरोध दर्ज करता है
+A phase	चरण
+Remove this light	यह बत्ती हटाएँ
+A light	बत्ती
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	बत्तियों वाले चौराहे को नक्शे पर सिग्नल हेड चाहिए: खेल केवल वही कार्यक्रम चलाता है जिससे हेड जुड़े हों
+Request loops	अनुरोध लूप
+Spline helpers	स्प्लाइन जोड़ बिंदु
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	नक्शे की सड़क चौराहे से कहाँ जुड़ती है। x, ऊँचाई, ऑब्जेक्ट के ढाँचे में आगे
+The road type it takes (a `.sli`)	जो सड़क प्रकार वह लेता है (एक `.sli`)
+A helper	जोड़ बिंदु
+At the picked end	चुने हुए सिरे पर
+A helper where the picked path ends, facing out of the crossing	जहाँ चुना पथ समाप्त होता है, चौराहे से बाहर की ओर एक जोड़ बिंदु
+Save as a copy	प्रति के रूप में सहेजें
+Write the paths into openMapper's copy of the object	पथ openMapper की ऑब्जेक्ट प्रति में लिखें
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	ऑब्जेक्ट का फ़ोल्डर openMapper में प्रतिलिपित होता है, पथ वहाँ लिखे जाते हैं, और नक्शे का ऑब्जेक्ट उसी की ओर इशारा करता है: मूल फ़ाइल को छुआ नहीं जाता
+Back to how the object was when it was opened (the file is not touched)	ऑब्जेक्ट जैसा खोलते समय था वैसा करें (फ़ाइल को छुआ नहीं जाता)
+Zoom out	दूर करें
+Zoom in	पास लाएँ
+The whole crossing in view	पूरा चौराहा दृश्य में
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	सिरे को खींचकर हिलाएँ। Ctrl इसे दूसरे पथ के सिरे पर चिपका देता है। पहिया ज़ूम करता है, दायाँ या मध्य खींचना खिसकाता है
+Back to how it was opened	खोलते समय की स्थिति पर लौटें
+Nothing to edit yet	अभी संपादित करने को कुछ नहीं
+Crossing paths…	चौराहे के पथ…
+Trains	ट्रेनें
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	AI ट्रेनों के लिए एक अदृश्य रेल लेन: यह पटरियों और कांटों की रेल लेनों से वहाँ जुड़ती है जहाँ वे समाप्त होती हैं
+Keep the ground under roads	ज़मीन को सड़कों के नीचे रखें
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	चालू: ब्रश ज़मीन को सड़क के आर-पार नहीं उठाता। बंद: यह सड़कों के नीचे और बगल की ज़मीन को कहीं और की तरह ही स्वतंत्र रूप से बदलता है
+There are unsaved changes here: Save or Revert first	यहाँ बिना सहेजे बदलाव हैं: पहले सहेजें या वापस लें
+The map has changed since this was opened: open the object again	खोलने के बाद मैप बदल गया है: ऑब्जेक्ट फिर से खोलें
+A spline helper has no road type: pick one or remove it	एक स्पलाइन हेल्पर का कोई सड़क प्रकार नहीं है: एक चुनें या उसे हटाएँ
+the object names this file outside its own folder, which a copy would lose	ऑब्जेक्ट इस फ़ाइल को अपने फ़ोल्डर के बाहर बताता है, कॉपी में यह खो जाएगी
+what was written does not read back the same	जो लिखा गया वह वैसा ही वापस नहीं पढ़ा जाता
+its paths are in a file of their own (`[paths]`), which this editor does not read	इसके पथ अलग फ़ाइल (`[paths]`) में हैं, जिसे यह संपादक नहीं पढ़ता
+it has no path	इसमें कोई पथ नहीं है
+jump	छलांग

@@ -107,6 +107,11 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 actions.push(Action::FocusSelection);
                 done = true;
             }
+            let one_object = matches!(ed.selected, Some(crate::doc::Sel::Object(..))) && sels.len() == 1;
+            if item(ui, Icon::Route, tr("Crossing paths…", "Пути перекрёстка…"), "", one_object) {
+                actions.push(Action::CrossingPaths);
+                done = true;
+            }
             let splines = sels.iter().any(|s| matches!(s, crate::doc::Sel::Spline(..)));
             if item(ui, Icon::Add, tr("From the selected splines", "По выделенным сплайнам"), "P", splines) {
                 actions.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines));

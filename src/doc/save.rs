@@ -2,8 +2,9 @@
 //! `.terrain` height fields and the painting masks. A map read from the installation is
 //! first copied whole into the content folder, so the original is never written to.
 
+use std::collections::HashSet;
 use std::fmt::Write as _;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use omsi_map::{MapObject, MapRule, MapSpline, SplineAttachment, Tile};
 
@@ -37,10 +38,136 @@ pub(crate) fn header() -> String {
     format!("File created with openMapper {}\n\n", env!("CARGO_PKG_VERSION"))
 }
 
+/// Which revisions a save copied, so the window can forget a change only when nothing
+/// newer landed while the files were being written.
+#[derive(Clone)]
+pub(crate) struct SaveStamp {
+    pub dir: PathBuf,
+    pub tiles: Vec<(TileKey, u64, u64, u64)>,
+    /// What `global.cfg` was written as: not every change to it counts a revision (a new IDCode).
+    pub global_text: String,
+    pub global_dirty: bool,
+    pub tt_gen: u64,
+    pub tt_dirty: bool,
+    pub traffic_gen: u64,
+    pub traffic_dirty: bool,
+    pub desc_gen: u64,
+    pub desc_dirty: bool,
+    pub source: Option<PathBuf>,
+}
+
+/// The changed tiles and the rest of the map, copied so the files can be made on another
+/// thread. Clean tiles are not copied; `known` is every tile the map has, for `global.cfg`.
+pub(crate) struct SaveJob {
+    doc: Document,
+    known: HashSet<TileKey>,
+    stamp: SaveStamp,
+}
+
+/// Copy what a save writes. Only the changed tiles are copied, which is the quick part;
+/// making their text and writing the files is [`SaveJob::run`], off the window's thread.
+pub(crate) fn prepare_save(doc: &Document) -> SaveJob {
+    let stamp = SaveStamp {
+        dir: doc.dir.clone(),
+        tiles: doc.tiles.iter().filter(|(_, t)| t.dirty).map(|(k, t)| (*k, t.content_rev, t.terrain_rev, t.mask_rev)).collect(),
+        global_text: global_text(doc),
+        global_dirty: doc.global_dirty,
+        tt_gen: doc.timetable.edit,
+        tt_dirty: doc.timetable.dirty,
+        traffic_gen: doc.traffic.edit,
+        traffic_dirty: doc.traffic.dirty,
+        desc_gen: doc.descriptions.edit,
+        desc_dirty: doc.descriptions.dirty,
+        source: doc.source.clone(),
+    };
+    let copy = Document {
+        _publisher_mounts: doc._publisher_mounts.clone(),
+        global: doc.global.clone(),
+        tiles: doc
+            .tiles
+            .iter()
+            .filter(|(_, t)| t.dirty)
+            .map(|(k, t)| {
+                (*k, super::TileDoc {
+                    tile: t.tile.clone(),
+                    terrain: t.terrain.clone(),
+                    masks: t.masks.clone(),
+                    chrono: Vec::new(),
+                    water: t.water,
+                    terrain_rev: t.terrain_rev,
+                    mask_rev: t.mask_rev,
+                    content_rev: t.content_rev,
+                    dirty: true,
+                })
+            })
+            .collect(),
+        order: doc.order.clone(),
+        dir: doc.dir.clone(),
+        source: doc.source.clone(),
+        global_dirty: doc.global_dirty,
+        fresh: doc.fresh,
+        global_rev: doc.global_rev,
+        timetable: doc.timetable.clone(),
+        traffic: doc.traffic.clone(),
+        descriptions: doc.descriptions.clone(),
+        groups: Vec::new(),
+        _publisher_protected_source: doc._publisher_protected_source,
+    };
+    SaveJob { doc: copy, known: doc.tiles.keys().copied().collect(), stamp }
+}
+
+impl SaveJob {
+    /// Write the copied map. The window goes on drawing meanwhile.
+    pub(crate) fn run(mut self) -> anyhow::Result<SaveStamp> {
+        save_with(&mut self.doc, &self.known)?;
+        Ok(self.stamp)
+    }
+}
+
+/// Forget the changes a finished save wrote, and only those: an edit made while it wrote stays
+/// to be saved next time. False if the map open now is not the one that was saved.
+pub(crate) fn apply_stamp(doc: &mut Document, stamp: &SaveStamp) -> bool {
+    if doc.dir != stamp.dir {
+        return false;
+    }
+    for (k, content, terrain, mask) in &stamp.tiles {
+        if let Some(t) = doc.tiles.get_mut(k) {
+            if t.content_rev == *content && t.terrain_rev == *terrain && t.mask_rev == *mask {
+                t.dirty = false;
+                t.tile.version = 14;
+                t.tile.has_terrain = true;
+            }
+        }
+    }
+    if stamp.global_dirty && global_text(doc) == stamp.global_text {
+        doc.global_dirty = false;
+    }
+    if stamp.tt_dirty && doc.timetable.edit == stamp.tt_gen {
+        crate::timetable::saved(&mut doc.timetable);
+    }
+    if stamp.traffic_dirty && doc.traffic.edit == stamp.traffic_gen {
+        crate::traffic::saved(&mut doc.traffic);
+    }
+    if stamp.desc_dirty && doc.descriptions.edit == stamp.desc_gen {
+        doc.descriptions.saved();
+    }
+    if doc.source == stamp.source {
+        doc.source = None;
+        doc.fresh = false;
+    }
+    true
+}
+
 /// Save the map into its folder. Nothing is written unless all of it can be: the files
 /// go under temporary names first, and what they replace is kept in a backup of this save
 /// (see `safe`).
 pub fn save(doc: &mut Document) -> anyhow::Result<()> {
+    let known: HashSet<TileKey> = doc.tiles.keys().copied().collect();
+    save_with(doc, &known)
+}
+
+fn save_with(doc: &mut Document, known: &HashSet<TileKey>) -> anyhow::Result<()> {
+    // (here, not in `save`, so the save made on another thread is stopped too)
     if doc._publisher_protected_source {
         anyhow::bail!("publisher-protected maps cannot be saved as plaintext");
     }
@@ -53,7 +180,7 @@ pub fn save(doc: &mut Document) -> anyhow::Result<()> {
             // the template's own tile is not one of ours
             if doc.fresh {
                 for f in ["tile_0_0.map", "tile_0_0.map.terrain", "tile_0_0.map.LM.bmp"] {
-                    if !doc.tiles.contains_key(&(0, 0)) {
+                    if !known.contains(&(0, 0)) {
                         let _ = std::fs::remove_file(doc.dir.join(f));
                     }
                 }
@@ -64,7 +191,11 @@ pub fn save(doc: &mut Document) -> anyhow::Result<()> {
     }
     doc.fresh = false;
     doc.sync_mask_slots();
-    let (mut ops, written) = plan(doc, &doc.dir, false);
+    let (mut ops, written) = if known.len() == doc.tiles.len() && doc.tiles.keys().all(|k| known.contains(k)) {
+        plan(doc, &doc.dir, false)
+    } else {
+        plan_known(doc, &doc.dir, false, &|k| known.contains(k))
+    };
     // the timetable's and the traffic's files go with the map's, all or nothing
     let (dir, order) = (doc.dir.clone(), doc.order.clone());
     crate::timetable::follow_stop_tiles(doc);

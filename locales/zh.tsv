@@ -2545,7 +2545,6 @@ That point is already joined	这个点已经接上了
 Click an end point of a path	请点路径的端点
 Path connected	路径已连接
 Connect the path	连接路径
-There is no tile there	那里没有图块
 Click the other point	请点另一个点
 The graphics API changes the next time openMapper starts	图形 API 将在下次启动 openMapper 时更改
 Settings…	设置…
@@ -2626,3 +2625,81 @@ Polygon from them	由这些创建多边形
 Use dependencies	使用依赖项
 I hold the redistribution rights	我拥有再分发的权利
 Yes	是
+Saving…	正在保存…
+Still saving	仍在保存
+Click the spline they should stand on. Each follows that road and keeps its IDCode	点它们要依附的那条 Spline。每一个都会跟着那条路，并保留 IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	关闭：与 OMSI 2 的编辑器一样，只加载相机周围的图块，你走到哪里就加载哪里
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	大型或非常精细的地图在图块较少时更流畅：其余图块会在你走到那里时加载
+tiles round the camera are loaded; more load as you go there	个图块已载在相机周围；你走到哪里就再加载哪里
+Only the tiles round the camera are loaded; more load as you go there	只加载相机周围的图块；你走到哪里就加载哪里
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	要像 OMSI 2 的编辑器那样，一次加载 100 个图块吗？\n\n图形内存只保留相机周围的 100 个图块；其余会在你走到那里时加载。这样非常大的地图会更轻。随时可在「视图 > 一次加载所有图块」（关闭）更改。
+Choose the OMSI installation first	请先选择 OMSI 安装位置
+a file the object names is missing	对象指定的文件不存在
+Another crossing file	另一个路口文件
+Crossing paths of the picked object…	所选路口对象的路径…
+Crossing paths	路口路径
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	路口或交叉对象的路径、封锁与红绿灯配时，在对象的副本中编辑，原始文件保持不变
+Footway	人行道
+Street	车道
+Against	逆向
+Both ways	双向
+Along	顺向
+Left	左
+Right	右
+Red and yellow	红与黄
+Green and yellow	绿与黄
+Off	熄灭
+Select a crossing object, or pick one of these	请选择路口对象，或从下列挑一个
+Pick a crossing object of the map	在地图上挑选路口对象
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	在此编辑既有路口的路径、封锁与红绿灯配时。对象会复制到 openMapper 自己的资料库，原始文件保持不变。
+openMapper's copy	openMapper 的副本
+in its own file (a copy is made on saving)	存成自己的文件（保存时会建立副本）
+Paths	路径
+Add a path	新增路径
+Remove this path	删除此路径
+0 is a straight line, above 0 turns right, below 0 left	0 为直线，大于 0 右转，小于 0 左转
+Direction	行车方向
+Turn signal	转向灯
+Keeps the junction clear	保持路口净空
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	停在此路径的车辆会为其他车辆保留路口净空（`[crossingproblem]`）
+Blocks	封锁
+Cycle	周期
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`：一轮的秒数。未设置时取最长信号配时之和
+The phases do not add up to the cycle: the last one holds to its end	各阶段之和不等于周期：最后一个阶段会持续到周期结束
+(no name)	（无名称）
+Detector	检测距离
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`：车辆在停止线前多少米提出请求
+A phase	阶段
+Remove this light	删除此信号灯
+A light	信号灯
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	有信号灯的路口需要地图上的灯头：游戏只会运行已连接灯头的配时
+Request loops	请求感应线圈
+Spline helpers	曲线辅助点
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	地图道路接上路口的所在。x、高度、对象坐标中的前方
+The road type it takes (a `.sli`)	它承接的道路类型（`.sli`）
+A helper	辅助点
+At the picked end	在所选端点
+A helper where the picked path ends, facing out of the crossing	在所选路径终点、朝路口外侧的辅助点
+Save as a copy	另存为副本
+Write the paths into openMapper's copy of the object	将路径写入对象在 openMapper 的副本
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	对象文件夹会复制到 openMapper 的资料库，路径写入其中，地图对象改指向该处：原始文件不会被更动
+Back to how the object was when it was opened (the file is not touched)	回到打开时的状态（不会更动文件）
+Zoom out	缩小
+Zoom in	放大
+The whole crossing in view	查看整个路口
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	拖动端点可移动。Ctrl 可吸附到另一条路径的端点。滚轮缩放，右键或中键拖动平移
+Back to how it was opened	回到打开时的状态
+Nothing to edit yet	尚无可编辑的内容
+Crossing paths…	路口路径…
+Trains	列车
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列车使用的隐形轨道车道：在轨道和道岔的轨道车道末端与之相接
+Keep the ground under roads	让地面保持在道路下方
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	开启：笔刷不会把地面抬高穿过道路。关闭：可像其他地方一样自由修改道路下方和旁边的地面
+There are unsaved changes here: Save or Revert first	这里有未保存的更改：请先保存或还原
+The map has changed since this was opened: open the object again	地图在打开后已更改：请重新打开对象
+A spline helper has no road type: pick one or remove it	有样条辅助点没有道路类型：请选择一种或将其移除
+the object names this file outside its own folder, which a copy would lose	对象引用了其文件夹外的此文件，副本会丢失它
+what was written does not read back the same	写入的内容读回后不一致
+its paths are in a file of their own (`[paths]`), which this editor does not read	其路径位于单独文件（`[paths]`），此编辑器不会读取
+it has no path	它没有路径
+jump	跳转

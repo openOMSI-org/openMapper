@@ -4,6 +4,27 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.1.22 - 2026-11-04
+
+### Added
+- **Crossing paths**: edit a crossing object's paths, blocking, traffic lights and spline helpers (Tools > Crossing paths of the picked object…, its properties, or a right-click), on a drawing from above. The object is copied into openMapper's own folder and the map pointed at the copy; the original file is never touched.
+- **Trains** in the AI paths tool: an invisible rail lane for the AI's trains, and rail paths in its catalogue.
+- **Keep the ground under roads** in the terrain tool: turned off, the brush shapes the ground under and beside roads as freely as anywhere else.
+- Attach to the spline takes every free object selected, in one undo step.
+
+### Changed
+- Ctrl+S writes the map on another thread, so the view keeps drawing. A test drive, an export, closing or quitting waits until the files are on disk, and an edit made during the write is kept for the next save.
+- With a limited number of tiles loaded, the tiles round the camera load as it moves; a click on empty ground is no longer needed.
+- Junctions of the same shape share one object, wherever they lie, whichever way they face and whichever road came first. A junction made from now on is that object turned into place, and its kerb texture starts afresh at each arm.
+- A road's radius can be typed down to 0.01 m, to three decimals.
+- Ctrl+D duplicates in every key set, also while a text field has the keyboard.
+
+### Fixed
+- **A single road can be turned**: C shows the turning handle, and it and R turn the road about its start.
+- **Rail lanes are shown** among the AI's lanes, in their own colour.
+- A new spline or object gets an IDCode above every one on the map, so it is no longer the same record as an existing road when a map's NextIDCode is behind.
+- Lanes through an object road follow the slope stored in its paths, so they meet a sloping or banked spline at the height of its lane.
+
 ## 0.1.21 - 2026-11-02
 
 ### Added

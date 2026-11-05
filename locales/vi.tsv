@@ -2543,7 +2543,6 @@ That point is already joined	Điểm đó đã được nối
 Click an end point of a path	Nhấn một đầu đường
 Path connected	Đã nối đường
 Connect the path	Nối đường
-There is no tile there	Ở đó không có ô
 Click the other point	Nhấn điểm kia
 The graphics API changes the next time openMapper starts	API đồ họa sẽ thay đổi vào lần khởi động openMapper tiếp theo
 Settings…	Cài đặt…
@@ -2629,3 +2628,81 @@ Polygon from them	Đa giác từ chúng
 Use dependencies	Dùng các phần phụ thuộc
 I hold the redistribution rights	Tôi có quyền phân phối lại
 Yes	Có
+Saving…	Đang lưu…
+Still saving	Vẫn đang lưu
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Nhấp vào spline mà chúng sẽ đứng trên. Mỗi cái đi theo con đường đó và giữ IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Tắt: chỉ tải các ô quanh camera, như trình sửa của OMSI 2, và tải thêm khi bạn đến đó
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Bản đồ lớn hoặc rất chi tiết sẽ nhẹ hơn khi có ít ô hơn: các ô còn lại được tải khi bạn đến đó
+tiles round the camera are loaded; more load as you go there	ô quanh camera đã được tải; sẽ tải thêm khi bạn đến đó
+Only the tiles round the camera are loaded; more load as you go there	Chỉ các ô quanh camera được tải; sẽ tải thêm khi bạn đến đó
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Tải bản đồ lớn 100 ô mỗi lần, như trình sửa của OMSI 2?\n\nChỉ 100 ô quanh camera được giữ trong bộ nhớ đồ họa; các ô khác được tải khi bạn đến đó. Bản đồ rất lớn nhờ vậy vẫn nhẹ. Có thể đổi bất cứ lúc nào trong Xem > Tải mọi ô cùng lúc (tắt).
+Choose the OMSI installation first	Hãy chọn nơi cài OMSI trước
+a file the object names is missing	thiếu một tệp mà đối tượng chỉ tên
+Another crossing file	Tệp giao lộ khác
+Crossing paths of the picked object…	Làn của giao lộ đã chọn…
+Crossing paths	Làn của giao lộ
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Các làn của một đối tượng giao lộ hay nút giao, việc chặn và chương trình đèn tín hiệu của nó, được sửa trong một bản sao của đối tượng - bản gốc giữ nguyên
+Footway	Vỉa hè
+Street	Lòng đường
+Against	Ngược chiều
+Both ways	Hai chiều
+Along	Xuôi chiều
+Left	Trái
+Right	Phải
+Red and yellow	Đỏ và vàng
+Green and yellow	Xanh và vàng
+Off	Tắt
+Select a crossing object, or pick one of these	Chọn một đối tượng giao lộ, hoặc lấy một trong những cái này
+Pick a crossing object of the map	Lấy một đối tượng giao lộ trên bản đồ
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Các làn, việc chặn và chương trình đèn tín hiệu của giao lộ có sẵn được sửa ở đây. Đối tượng được sao vào thư mục riêng của openMapper; tệp gốc giữ nguyên.
+openMapper's copy	bản sao của openMapper
+in its own file (a copy is made on saving)	trong tệp riêng (bản sao được tạo khi lưu)
+Paths	Các làn
+Add a path	Thêm làn
+Remove this path	Bỏ làn này
+0 is a straight line, above 0 turns right, below 0 left	0 là thẳng, lớn hơn 0 rẽ phải, nhỏ hơn 0 rẽ trái
+Direction	Chiều đi
+Turn signal	Xi nhan
+Keeps the junction clear	Giữ nút giao trống
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Xe đang chờ trên làn này giữ giao lộ trống cho các xe khác (`[crossingproblem]`)
+Blocks	Chặn
+Cycle	Chu kỳ
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: số giây của một vòng. Nếu không đặt, bằng tổng các pha của đèn dài nhất
+The phases do not add up to the cycle: the last one holds to its end	Các pha không khớp với chu kỳ: pha cuối kéo dài đến hết chu kỳ
+(no name)	(không tên)
+Detector	Cảm biến
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: xe đăng ký yêu cầu trước vạch dừng bao nhiêu mét
+A phase	Pha
+Remove this light	Bỏ đèn này
+A light	Đèn
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Giao lộ có đèn cần các đầu đèn trên bản đồ: trò chơi chỉ chạy chương trình mà các đầu đèn được liên kết vào
+Request loops	Vòng yêu cầu
+Spline helpers	Điểm nối spline
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Nơi đường của bản đồ gắn vào giao lộ. x, độ cao, phía trước trong hệ của đối tượng
+The road type it takes (a `.sli`)	Loại đường nó nhận (một `.sli`)
+A helper	Điểm nối
+At the picked end	Ở đầu đã chọn
+A helper where the picked path ends, facing out of the crossing	Điểm nối nơi làn đã chọn kết thúc, hướng ra ngoài giao lộ
+Save as a copy	Lưu thành bản sao
+Write the paths into openMapper's copy of the object	Ghi các làn vào bản sao đối tượng của openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Thư mục của đối tượng được sao vào openMapper, các làn được ghi ở đó, và đối tượng trên bản đồ trỏ tới đó: tệp gốc không bị đụng tới
+Back to how the object was when it was opened (the file is not touched)	Trở về trạng thái đối tượng khi mở (tệp không bị đụng tới)
+Zoom out	Thu nhỏ
+Zoom in	Phóng to
+The whole crossing in view	Toàn bộ giao lộ trong khung
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Kéo một đầu để dời đi. Ctrl hút nó vào đầu của làn khác. Con lăn phóng thu, kéo chuột phải hoặc giữa để dịch khung
+Back to how it was opened	Trở về trạng thái khi mở
+Nothing to edit yet	Chưa có gì để sửa
+Crossing paths…	Làn của giao lộ…
+Trains	Tàu hỏa
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Làn ray vô hình cho tàu AI: nối vào làn ray của đường ray và ghi tại nơi chúng kết thúc
+Keep the ground under roads	Giữ mặt đất dưới đường
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Bật: cọ không nâng mặt đất xuyên qua đường. Tắt: cọ chỉnh mặt đất dưới và cạnh đường tự do như ở nơi khác
+There are unsaved changes here: Save or Revert first	Có thay đổi chưa lưu: hãy lưu hoặc hoàn tác trước
+The map has changed since this was opened: open the object again	Bản đồ đã thay đổi từ khi mở: hãy mở lại đối tượng
+A spline helper has no road type: pick one or remove it	Điểm trợ giúp spline chưa có loại đường: hãy chọn hoặc xóa nó
+the object names this file outside its own folder, which a copy would lose	đối tượng trỏ đến tệp này ngoài thư mục của nó, bản sao sẽ mất tệp
+what was written does not read back the same	nội dung đã ghi đọc lại không giống
+its paths are in a file of their own (`[paths]`), which this editor does not read	các đường của nó nằm trong tệp riêng (`[paths]`), trình chỉnh sửa này không đọc
+it has no path	nó không có đường nào
+jump	nhảy

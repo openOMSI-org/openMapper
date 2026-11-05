@@ -2390,46 +2390,6 @@ Both ends alike	Oba końce jednakowo
 Slide the bay to where it fits	Przesuń zatokę tam, gdzie się mieści
 Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Blisko końca drogi lub skrzyżowania nie ma miejsca na przejścia na obu końcach: zatoka jest przesuwana wzdłuż drogi tam, gdzie jest
 A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Zatoka zawsze dostaje przejście na obu końcach; gdzie nie da się go ułożyć, nic się nie zmienia.
-The road is too short here for a bay with a taper at both ends	Droga jest tu za krótka na zatokę z przejściem na obu końcach
-Too near the end of the road for the taper at both ends of the bay	Za blisko końca drogi na przejścia na obu końcach zatoki
-The bay needs a taper at both ends and one could not be laid there	Zatoka wymaga przejścia na obu końcach, a nie dało się go tu ułożyć
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	Wybierz odcinek lub ramię; przeciągnij, aby przesunąć, przeciągnij kropki na końcach wybranego odcinka, aby go zmienić; Delete usuwa
-Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	Kliknij początek, punkt na łuku, potem koniec. Rozpoczęty na końcu odcinka przy włączonym Auto-Align, dwa kliknięcia dają łuk styczny do niego
-Curve	Krzywa
-A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	Gładka ścieżka przez wszystkie klikane punkty, do złożonych zakrętów: kończy ją Enter, dwukrotne kliknięcie lub przycisk poniżej
-Finish the curve	Zakończ krzywą
-A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	Odcinek zaczęty na końcu innego biegnie dalej w jednej linii z nim: prosta wzdłuż jego kierunku lub w poprzek, łuk lub krzywa styczna do niego. Gdzie indziej linie trzymają się kroków co 15°
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	Droga o innej szerokości zaczęta na końcu drogi zachowuje krawędź po stronie, w którą skręca, a aby tam dojść, układane jest przejście
-The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	Ramiona są znajdowane automatycznie: każdy wolny koniec drogi to miejsce, gdzie wjeżdża droga. Ramiona ustawione ręcznie zostają bez zmian
-found from a road's free end	znalezione z wolnego końca drogi
-The whole drawing	Cały rysunek
-Left and right swapped	Lewa i prawa zamienione
-Turn 90°	Obróć o 90°
-Find the arms	Znajdź ramiona
-The free ends of roads become arms	Wolne końce dróg stają się ramionami
-segments	segmenty
-0: a straight; positive: turns right; negative: turns left	0: prosta; dodatnie: skręca w prawo; ujemne: skręca w lewo
-Reverse	Odwróć
-Runs the other way: the piece's start and end swap	Biegnie w drugą stronę: początek i koniec odcinka zamieniają się
-Under the one before it	Pod poprzednim
-Higher	Wyżej
-Over the one after it	Nad następnym
-Preview	Podgląd
-The junction as it will be: the roads running out of the arms, no grid or handles	Skrzyżowanie takie, jakie będzie: drogi wychodzące z ramion, bez siatki i uchwytów
-The lanes of the AI over the drawing, with the way they go	Pasy AI nad rysunkiem, z kierunkiem jazdy
-Zoom out (-)	Oddal (-)
-Zoom in (+)	Przybliż (+)
-The whole drawing in view (F)	Cały rysunek w widoku (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	Podgląd: skrzyżowanie tak, jak będzie wyglądać. Kółko zmienia powiększenie, przeciąganie prawym lub środkowym przyciskiem przesuwa
-Click the points the curve passes; Enter or a double click ends it	Klikaj punkty, przez które przechodzi krzywa; Enter lub dwukrotne kliknięcie kończy
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	Kółko zmienia powiększenie, przeciąganie prawym lub środkowym przyciskiem przesuwa, F dopasowuje, Ctrl+Z cofa, Esc anuluje
-Taper in	Przejście wejściowe
-Metres of road the bay takes to open per metre it widens (more: gentler)	Metry drogi, na których zatoka się otwiera, na metr poszerzenia (więcej: łagodniej)
-out	wyjście
-Both ends alike	Oba końce jednakowo
-Slide the bay to where it fits	Przesuń zatokę tam, gdzie się mieści
-Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is	Blisko końca drogi lub skrzyżowania nie ma miejsca na przejścia na obu końcach: zatoka jest przesuwana wzdłuż drogi tam, gdzie jest
-A bay always gets a taper at both ends; where one cannot be laid nothing is changed.	Zatoka zawsze dostaje przejście na obu końcach; gdzie nie da się go ułożyć, nic się nie zmienia.
 Controls as in OMSI 2's editor: middle button turns, right button held and moved zooms, a right click goes there (Shift: menu)	Sterowanie jak w edytorze OMSI 2: środkowy przycisk obraca, przytrzymany i przesuwany prawy przycisk przybliża, kliknięcie prawym przenosi w dane miejsce (Shift: menu)
 Controls as chosen under Camera	Sterowanie wybrane w sekcji Kamera
 Advanced users	Zaawansowani użytkownicy
@@ -2583,7 +2543,6 @@ That point is already joined	Ten punkt jest już połączony
 Click an end point of a path	Kliknij punkt końcowy ścieżki
 Path connected	Ścieżka połączona
 Connect the path	Połącz ścieżkę
-There is no tile there	Tam nie ma kafelka
 Click the other point	Kliknij drugi punkt
 The graphics API changes the next time openMapper starts	Interfejs graficzny zmieni się po następnym uruchomieniu openMappera
 Settings…	Ustawienia…
@@ -2669,3 +2628,81 @@ Polygon from them	Wielokąt z nich
 Use dependencies	Użyj zależności
 I hold the redistribution rights	Mam prawa do redystrybucji
 Yes	Tak
+Saving…	Zapisywanie…
+Still saving	Nadal trwa zapis
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Kliknij splajn, na którym mają stać. Każdy podąża za tą drogą i zachowuje IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Wyłączone: wczytywane są tylko kafelki wokół kamery, jak w edytorze OMSI 2, a kolejne wczytują się, gdy tam dojdziesz
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Duża lub bardzo szczegółowa mapa działa lżej z mniejszą liczbą kafelków: pozostałe wczytują się, gdy tam dojdziesz
+tiles round the camera are loaded; more load as you go there	kafelków wokół kamery jest wczytanych; kolejne wczytują się, gdy tam dojdziesz
+Only the tiles round the camera are loaded; more load as you go there	Wczytane są tylko kafelki wokół kamery; kolejne wczytują się, gdy tam dojdziesz
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Wczytywać dużą mapę po 100 kafelków, jak edytor OMSI 2?\n\nW pamięci grafiki zostaje tylko 100 kafelków wokół kamery; pozostałe wczytują się, gdy tam dojdziesz. Bardzo duże mapy zostają dzięki temu lekkie. Można to zmienić w każdej chwili: Widok > Wczytaj wszystkie kafelki naraz (wyłączone).
+Choose the OMSI installation first	Najpierw wskaż instalację OMSI
+a file the object names is missing	brak pliku, który obiekt wymienia
+Another crossing file	Inny plik skrzyżowania
+Crossing paths of the picked object…	Ścieżki wybranego obiektu skrzyżowania…
+Crossing paths	Ścieżki skrzyżowania
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Ścieżki obiektu skrzyżowania lub węzła, ich blokady i program sygnalizacji, edytowane w kopii obiektu — oryginał zostaje bez zmian
+Footway	Chodnik
+Street	Jezdnia
+Against	Pod prąd
+Both ways	W obie strony
+Along	Zgodnie z kierunkiem
+Left	Lewo
+Right	Prawo
+Red and yellow	Czerwone i żółte
+Green and yellow	Zielone i żółte
+Off	Wyłączone
+Select a crossing object, or pick one of these	Wybierz obiekt skrzyżowania albo jeden z tych
+Pick a crossing object of the map	Wskaż obiekt skrzyżowania na mapie
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Tutaj edytuje się ścieżki, blokady i program sygnalizacji istniejącego skrzyżowania. Obiekt jest kopiowany do własnego folderu openMappera; plik oryginalny zostaje bez zmian.
+openMapper's copy	kopia openMappera
+in its own file (a copy is made on saving)	we własnym pliku (kopia powstaje przy zapisie)
+Paths	Ścieżki
+Add a path	Dodaj ścieżkę
+Remove this path	Usuń tę ścieżkę
+0 is a straight line, above 0 turns right, below 0 left	0 to linia prosta, powyżej 0 skręt w prawo, poniżej 0 w lewo
+Direction	Kierunek
+Turn signal	Kierunkowskaz
+Keeps the junction clear	Utrzymuje skrzyżowanie wolne
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Pojazd czekający na tej ścieżce trzyma skrzyżowanie wolne dla innych (`[crossingproblem]`)
+Blocks	Blokuje
+Cycle	Cykl
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`: sekundy jednego cyklu. Bez wartości to suma faz najdłuższego sygnalizatora
+The phases do not add up to the cycle: the last one holds to its end	Fazy nie sumują się do cyklu: ostatnia trwa do jego końca
+(no name)	(bez nazwy)
+Detector	Detektor
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`: ile metrów przed linią zatrzymania pojazd zgłasza zapotrzebowanie
+A phase	Faza
+Remove this light	Usuń ten sygnalizator
+A light	Sygnalizator
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Skrzyżowanie z sygnalizacją potrzebuje głowic na mapie: gra uruchamia tylko program, do którego głowice są przypisane
+Request loops	Pętle zgłoszeń
+Spline helpers	Punkty przyczepu splajnów
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Gdzie droga z mapy dopina się do skrzyżowania. x, wysokość, do przodu w układzie obiektu
+The road type it takes (a `.sli`)	Typ drogi, który przyjmuje (plik `.sli`)
+A helper	Punkt przyczepu
+At the picked end	Na wybranym końcu
+A helper where the picked path ends, facing out of the crossing	Punkt przyczepu na końcu wybranej ścieżki, na zewnątrz skrzyżowania
+Save as a copy	Zapisz jako kopię
+Write the paths into openMapper's copy of the object	Zapisz ścieżki w kopii obiektu openMappera
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Folder obiektu jest kopiowany do openMappera, tam zapisywane są ścieżki, a obiekt mapy zaczyna na niego wskazywać: plik oryginalny pozostaje nietknięty
+Back to how the object was when it was opened (the file is not touched)	Powrót do stanu z chwili otwarcia (plik pozostaje nietknięty)
+Zoom out	Pomniejsz
+Zoom in	Powiększ
+The whole crossing in view	Całe skrzyżowanie w widoku
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Przeciągnij koniec, aby go przesunąć. Ctrl przyciąga go do końca innej ścieżki. Kółko zmienia skalę, prawy lub środkowy przycisk przesuwa widok
+Back to how it was opened	Powrót do stanu otwarcia
+Nothing to edit yet	Na razie nie ma czego edytować
+Crossing paths…	Ścieżki skrzyżowania…
+Trains	Pociągi
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Niewidoczny pas szynowy dla pociągów SI: łączy się z pasami szynowymi torów i rozjazdów tam, gdzie się kończą
+Keep the ground under roads	Utrzymuj teren pod drogami
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Włączone: pędzel nie podnosi terenu przez drogę. Wyłączone: kształtuje teren pod drogami i obok nich tak swobodnie jak gdzie indziej
+There are unsaved changes here: Save or Revert first	Są niezapisane zmiany: najpierw je zapisz lub cofnij
+The map has changed since this was opened: open the object again	Mapa zmieniła się od otwarcia: otwórz obiekt ponownie
+A spline helper has no road type: pick one or remove it	Punkt pomocniczy splajnu nie ma typu drogi: wybierz go lub usuń punkt
+the object names this file outside its own folder, which a copy would lose	obiekt wskazuje ten plik poza swoim folderem, kopia by go utraciła
+what was written does not read back the same	zapisane dane nie odczytują się tak samo
+its paths are in a file of their own (`[paths]`), which this editor does not read	jego ścieżki są w osobnym pliku (`[paths]`), którego ten edytor nie czyta
+it has no path	nie ma ścieżek
+jump	skok

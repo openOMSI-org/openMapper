@@ -97,7 +97,8 @@ pub struct App {
     /// A cursor held on the ground for a picture (OPENMAPPER_KNIFE), whatever the mouse does.
     pinned_cursor: Option<DVec3>,
     cam: Camera,
-    /// The place the loaded window of tiles is round (tile streaming on).
+    /// The place the loaded window of tiles was last centred on (tile streaming on). It follows
+    /// the camera, one tile at a time.
     stream_at: Option<DVec2>,
     /// When the last input came: a window nobody touches redraws slower.
     last_input: Instant,
@@ -127,6 +128,8 @@ pub struct App {
     /// `OPENMAPPER_SHOT=file.png`: save the window's picture after that many frames and end.
     shot: Option<(PathBuf, u64)>,
     autosave: crate::doc::autosave::Timer,
+    /// Ctrl+S writing the map on its own thread: the view keeps drawing until it finishes.
+    save_flight: Option<std::sync::mpsc::Receiver<anyhow::Result<crate::doc::save::SaveStamp>>>,
     /// An autosave left by a session that did not end normally, offered back.
     recover: Option<crate::doc::autosave::Meta>,
     /// The Lines window.
@@ -136,6 +139,7 @@ pub struct App {
     pbr: crate::ui_pbr::PbrWindow,
     road_types: crate::ui_roads::RoadTypes,
     cj: crate::ui_cjunction::ComplexJunctions,
+    crossing: crate::ui_crossing::CrossingPaths,
     scripts: crate::ui_script::ScriptsUi,
     map_settings: crate::ui_mapsettings::MapSettings,
     calendar: crate::ui_calendar::CalendarWindow,
@@ -201,6 +205,7 @@ impl App {
             pbr: Default::default(),
             road_types: Default::default(),
             cj: Default::default(),
+            crossing: Default::default(),
             scripts: Default::default(),
             map_settings: Default::default(),
             calendar: Default::default(),
@@ -218,6 +223,7 @@ impl App {
             unguarded: false,
             shot: std::env::var_os("OPENMAPPER_SHOT").map(|p| (PathBuf::from(p), std::env::var("OPENMAPPER_SHOT_FRAMES").ok().and_then(|n| n.parse().ok()).unwrap_or(90))),
             autosave: Default::default(),
+            save_flight: None,
             recover: None,
         };
         crate::logging::stage("looking for OMSI 2 and the content");
@@ -367,28 +373,12 @@ impl App {
             .set_title("openMapper")
             .set_buttons(rfd::MessageButtons::YesNo)
             .set_description(tr(
-                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others are hidden until you click on the empty zone, where the next 100 are loaded. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).",
-                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные скрыты, пока вы не кликнете по пустой зоне: там загрузятся следующие 100. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать все тайлы сразу (выключено).",
+                "Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).",
+                "Загружать большую карту по 100 тайлов, как в редакторе OMSI 2?\n\nВ графической памяти остаются только 100 тайлов вокруг камеры, остальные загружаются, когда вы туда доходите. Это сильно облегчает очень большие карты. Можно изменить в любой момент: Вид > Загружать все тайлы сразу (выключено).",
             ))
             .show();
         self.prefs.tile_streaming = Some(yes == rfd::MessageDialogResult::Yes);
         self.prefs.save();
-    }
-
-    /// With tile streaming on, a click on ground whose tile is not loaded loads the 100 tiles
-    /// round that place instead (and is not a click on the map).
-    fn stream_click(&mut self) -> bool {
-        let Some(doc) = &self.ed.doc else { return false };
-        let Some((Some(set), _)) = &self.stream_set else { return false };
-        let Some(p) = self.grab_point() else { return false };
-        let at = DVec2::new(p.x, p.y);
-        let k = crate::doc::tile_of(at);
-        if set.contains(&k) || !doc.tiles.contains_key(&k) {
-            return false;
-        }
-        self.stream_at = Some(at);
-        self.ed.toast(format!("{} {}", stream_count(self.prefs.stream_tiles), tr("tiles are loaded round there, the others are hidden", "тайлов загружено вокруг этого места, остальные скрыты")));
-        true
     }
 
     fn after_open(&mut self, doc: Document) {
@@ -1033,13 +1023,74 @@ impl App {
             self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
             return false;
         }
-        // (a scenario's things being edited on the map are not the map's)
+        if self.save_flight.is_some() && !self.finish_save() {
+            return false;
+        }
+        self.save_blocking()
+    }
+
+    /// Ctrl+S: the files are written on another thread, and the view keeps drawing.
+    fn save_smooth(&mut self) {
+        if self.collab.is_guest() {
+            self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+            return;
+        }
+        if self.save_flight.is_some() {
+            self.ed.toast(tr("Still saving", "Ещё сохраняется"));
+            return;
+        }
+        if !self.prepare_for_save() {
+            return;
+        }
+        let Some(doc) = self.ed.doc.as_ref() else { return };
+        let job = crate::doc::save::prepare_save(doc);
+        let (tx, rx) = std::sync::mpsc::channel();
+        if std::thread::Builder::new().name("save".into()).spawn(move || {
+            let _ = tx.send(job.run());
+        }).is_err() {
+            self.ed.error(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"));
+            return;
+        }
+        self.save_flight = Some(rx);
+        self.ed.toast(tr("Saving…", "Сохранение…"));
+    }
+
+    /// A save that has to be finished before the next step (a test drive, closing).
+    fn save_blocking(&mut self) -> bool {
+        if self.collab.is_guest() {
+            self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+            return false;
+        }
+        if !self.prepare_for_save() {
+            return false;
+        }
+        let Some(doc) = self.ed.doc.as_mut() else { return false };
+        crate::logging::busy("saving the map");
+        let saved = crate::doc::save(doc);
+        crate::logging::busy("");
+        match saved {
+            Ok(()) => {
+                self.after_saved();
+                true
+            }
+            Err(e) => {
+                self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")));
+                false
+            }
+        }
+    }
+
+    /// Bookkeeping the files do not contain: the history closed, start points, signal routes.
+    fn prepare_for_save(&mut self) -> bool {
         self.chrono.end_session(&mut self.ed);
         let Some(doc) = self.ed.doc.as_mut() else { return false };
         self.ed.history.commit();
         crate::editor::sync_entry_points(doc);
         self.tt.before_save(doc, self.roots.as_ref());
-        // (the signal routes' pieces counted again among their tiles' paths: tiles change)
+        crate::timetable::follow_stop_tiles(doc);
+        let order = doc.order.clone();
+        doc.timetable.follow_order(&order);
+        doc.sync_mask_slots();
         if let Some(r) = &self.roots {
             if !doc.traffic.signal_routes.is_empty() {
                 let mut routes = std::mem::take(&mut doc.traffic.signal_routes);
@@ -1050,38 +1101,75 @@ impl App {
                 }
             }
         }
-        crate::logging::busy("saving the map");
-        let saved = crate::doc::save(doc);
-        crate::logging::busy("");
-        match saved {
-            Ok(()) => {
-                omsi_cfg::content_changed();
-                if let (Some(r), None) = (&self.roots, &self.recover) {
-                    crate::doc::autosave::clear(&r.content);
-                }
-                self.autosave.reset();
-                let cfg = doc.dir.join("global.cfg");
-                let dir = doc.dir.display().to_string();
-                let has_start = !doc.global.entry_points.is_empty();
-                self.prefs.push_recent(&cfg);
-                if let Some(r) = &self.roots {
-                    self.ui.maps = install::list_maps(r);
-                }
-                self.ed.toast(format!("{} {dir}", tr("Saved:", "Сохранено:")));
-                // (junction plates nothing uses any more, from earlier sessions)
-                let gone = self.ed.clean_junction_files();
-                if gone > 0 {
-                    log::info!("removed {gone} unused junction file(s)");
-                }
-                if !has_start {
-                    self.ed.toast(tr("Tip: place a start point (Game logic > Start points) so the bus has somewhere to appear", "Совет: поставьте точку старта (Служебное > Точки старта), чтобы автобусу было где появиться"));
-                }
+        true
+    }
+
+    /// A background save that has finished since the last frame.
+    fn poll_save(&mut self) {
+        let done = match self.save_flight.as_ref() {
+            Some(rx) => match rx.try_recv() {
+                Ok(r) => Some(r),
+                Err(std::sync::mpsc::TryRecvError::Empty) => None,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(Err(anyhow::anyhow!(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")))),
+            },
+            None => return,
+        };
+        let Some(r) = done else { return };
+        self.save_flight = None;
+        match r {
+            Ok(stamp) => self.save_landed(stamp),
+            Err(e) => self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"))),
+        }
+    }
+
+    /// Wait for the background save (a test drive or closing must not go on without the files).
+    fn finish_save(&mut self) -> bool {
+        let Some(rx) = self.save_flight.take() else { return true };
+        match rx.recv() {
+            Ok(Ok(stamp)) => {
+                self.save_landed(stamp);
                 true
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 self.ed.error(format!("{}: {e}", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")));
                 false
             }
+            Err(_) => {
+                self.ed.error(tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)"));
+                false
+            }
+        }
+    }
+
+    /// A background save is on disk: its changes are forgotten, if this is still that map.
+    fn save_landed(&mut self, stamp: crate::doc::save::SaveStamp) {
+        let Some(doc) = self.ed.doc.as_mut() else { return };
+        if crate::doc::save::apply_stamp(doc, &stamp) {
+            self.after_saved();
+        }
+    }
+
+    fn after_saved(&mut self) {
+        let Some(doc) = self.ed.doc.as_ref() else { return };
+        omsi_cfg::content_changed();
+        if let (Some(r), None) = (&self.roots, &self.recover) {
+            crate::doc::autosave::clear(&r.content);
+        }
+        self.autosave.reset();
+        let cfg = doc.dir.join("global.cfg");
+        let dir = doc.dir.display().to_string();
+        let has_start = !doc.global.entry_points.is_empty();
+        self.prefs.push_recent(&cfg);
+        if let Some(r) = &self.roots {
+            self.ui.maps = install::list_maps(r);
+        }
+        self.ed.toast(format!("{} {dir}", tr("Saved:", "Сохранено:")));
+        let gone = self.ed.clean_junction_files();
+        if gone > 0 {
+            log::info!("removed {gone} unused junction file(s)");
+        }
+        if !has_start {
+            self.ed.toast(tr("Tip: place a start point (Game logic > Start points) so the bus has somewhere to appear", "Совет: поставьте точку старта (Служебное > Точки старта), чтобы автобусу было где появиться"));
         }
     }
 
@@ -1318,8 +1406,13 @@ impl App {
     }
 
     fn do_action(&mut self, a: Action, el: &ActiveEventLoop) {
-        let dirty = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
         let guarded = matches!(a, Action::Close | Action::Open(_) | Action::OpenDialog | Action::NewMap { .. } | Action::Quit | Action::RestoreBackup(_));
+        // (the map is about to be left or its files replaced: a save still writing lands first,
+        // so it is not cut short, nor counted as changes to lose)
+        if guarded {
+            self.finish_save();
+        }
+        let dirty = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
         if guarded {
             self.chrono.end_session(&mut self.ed);
         }
@@ -1354,7 +1447,7 @@ impl App {
                 }
             }
             Action::Save => {
-                self.save();
+                self.save_smooth();
             }
             Action::RestoreBackup(b) => {
                 let Some(dir) = self.ed.doc.as_ref().map(|d| d.dir.clone()) else { return };
@@ -1522,6 +1615,16 @@ impl App {
             }
             Action::RoadTypes => self.road_types.open = !self.road_types.open,
             Action::ComplexJunctions => self.cj.open = !self.cj.open,
+            Action::CrossingPaths => {
+                // (its copy of the object would be on this disk only, and the map's others would get a path they lack)
+                if self.collab.is_guest() {
+                    self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
+                } else if let Some(roots) = self.roots.clone() {
+                    self.crossing.request(&mut self.ed, &roots, &self.lib);
+                } else {
+                    self.ed.toast(tr("Choose the OMSI installation first", "Сначала укажите установку OMSI"));
+                }
+            }
             Action::PlaceComplex(layout, turn) => {
                 let at = self.cam.target.truncate();
                 if let Some(assets) = self.assets.as_mut() {
@@ -1624,6 +1727,17 @@ impl App {
                     self.ed.detach_lanes(a, r);
                 }
             }
+            Action::RailPathType => {
+                if let Some(r) = &self.roots {
+                    match crate::lanes_edit::rail_path_spline(r) {
+                        Ok(rel) => {
+                            self.ed.set_path_type(rel);
+                            self.lib.start_scan(r);
+                        }
+                        Err(e) => self.ed.error(format!("{e}")),
+                    }
+                }
+            }
             Action::PbrForSpline(rel) => {
                 if let (Some(a), Some(r)) = (self.assets.as_mut(), &self.roots) {
                     let textures = spline_textures(a, &rel);
@@ -1661,14 +1775,14 @@ impl App {
                 self.prefs.save();
                 self.stream_at = None;
                 self.stream_set = None;
-                self.ed.toast(format!("{} {}", stream_count(n), tr("tiles round the camera are loaded; click on the empty zone to load the next ones", "тайлов вокруг камеры загружено; клик по пустой зоне загрузит следующие")));
+                self.ed.toast(format!("{} {}", stream_count(n), tr("tiles round the camera are loaded; more load as you go there", "тайлов вокруг камеры загружено; остальные подгружаются, когда вы туда доходите")));
             }
             Action::SetTileStreaming(on) => {
                 self.prefs.tile_streaming = Some(on);
                 self.prefs.save();
                 self.stream_at = None;
                 self.stream_set = None;
-                self.ed.toast(if on { tr("Only 100 tiles round the camera are loaded; click on the empty zone to load the next 100", "Загружены только 100 тайлов вокруг камеры; клик по пустой зоне загрузит следующие 100") } else { tr("All tiles are loaded", "Загружены все тайлы") }.to_string());
+                self.ed.toast(if on { tr("Only the tiles round the camera are loaded; more load as you go there", "Загружены только тайлы вокруг камеры; остальные подгружаются, когда вы туда доходите") } else { tr("All tiles are loaded", "Загружены все тайлы") }.to_string());
             }
             Action::SetOmsiControls(on) => {
                 self.prefs.omsi_controls = on;
@@ -2088,6 +2202,7 @@ impl App {
     // ------------------------------------------------------------------ frame
 
     fn frame(&mut self, el: &ActiveEventLoop) {
+        self.poll_save();
         let now = Instant::now();
         let gap = (now - self.last).as_secs_f64();
         // (a frame that took far longer than a frame: the first ones build the map's picture
@@ -2378,6 +2493,7 @@ impl App {
                 self.pbr.window(&ctx, self.roots.as_ref(), &mut actions);
                 self.road_types.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.cj.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref().map(|r| &r.content), self.assets.as_mut(), &mut actions);
+                self.crossing.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), self.assets.as_mut(), &mut actions);
                 let folder = self.map_folder();
                 self.scripts.window(&ctx, &mut self.ed, self.roots.as_ref(), &folder, &mut actions);
                 self.map_settings.window(&ctx, &mut self.ed, self.roots.as_ref());
@@ -3233,7 +3349,7 @@ impl ApplicationHandler for App {
                 let mut typing = g.egui_ctx.egui_wants_keyboard_input();
                 // (Ctrl/Cmd + Z, Y: the map's undo even from a text field, which lets go of
                 // the keyboard; its own text undo would only undo half of the edit)
-                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY)) {
+                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY) | Some(KeyCode::KeyD)) {
                     g.egui_ctx.memory_mut(|m| m.stop_text_input());
                     typing = false;
                 }
@@ -3293,8 +3409,6 @@ impl ApplicationHandler for App {
                         if pressed && !over_ui && self.ed.grab.is_some() {
                             // (a click lets the grab go, as Blender's does)
                             self.ed.grab_confirm();
-                        } else if pressed && !over_ui && self.prefs.tile_streaming == Some(true) && !self.keys.alt && self.stream_click() {
-                            // (loaded another window of tiles)
                         } else if pressed && !over_ui {
                             // (a handle of the Move / Rotate / Scale gizmo is taken, wherever it is)
                             let on_gizmo = self.ed.gizmo_under_cursor();
@@ -3505,7 +3619,8 @@ impl ApplicationHandler for App {
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
         // (nobody at the mouse or keys, the view still: a few frames a second are enough)
-        let idle = self.last_input.elapsed().as_secs_f32() > 3.0 && !self.cam.is_moving() && !self.lib.scanning && self.assets.as_ref().map(|a| a.pending == 0).unwrap_or(true) && self.shot.is_none() && !crate::render::profile::enabled();
+        self.poll_save();
+        let idle = self.save_flight.is_none() && self.last_input.elapsed().as_secs_f32() > 3.0 && !self.cam.is_moving() && !self.lib.scanning && self.assets.as_ref().map(|a| a.pending == 0).unwrap_or(true) && self.shot.is_none() && !crate::render::profile::enabled();
         if idle {
             if self.last.elapsed().as_millis() >= 50 {
                 if let Some(g) = &self.gfx {
@@ -3548,11 +3663,18 @@ fn stream_count(setting: u32) -> usize {
     if setting == 0 { STREAM_TILES } else { setting.clamp(4, 2000) as usize }
 }
 
-/// The tiles to load, when that changed: the nearest `count` to the place the window
-/// is round (the camera's, until a click on the empty zone moves it), so they lie in a circle.
+/// The tiles to load, when that changed: the nearest `count` to the camera, so they lie in
+/// a circle and move with it. The window recentres when the camera enters another tile.
 /// `Some((None, _))`: everything (streaming off, or a map that small).
 fn stream_window(doc: &Document, on: bool, count: usize, at: &mut Option<DVec2>, cam: &Camera, seen: Option<(usize, u64, u64)>) -> Option<(Option<std::collections::HashSet<crate::doc::TileKey>>, (usize, u64, u64))> {
-    let centre = if on { *at.get_or_insert(DVec2::new(cam.target.x, cam.target.y)) } else { *at = None; DVec2::ZERO };
+    if on {
+        let cam_at = DVec2::new(cam.target.x, cam.target.y);
+        let moved = at.map(|p| crate::doc::tile_of(p) != crate::doc::tile_of(cam_at)).unwrap_or(true);
+        if moved {
+            *at = Some(cam_at);
+        }
+    }
+    let centre = if on { at.unwrap_or(DVec2::new(cam.target.x, cam.target.y)) } else { *at = None; DVec2::ZERO };
     let stamp = if on { (doc.tiles.len() + count * 1_000_000_000, centre.x.to_bits(), centre.y.to_bits()) } else { (0, 0, 0) };
     if seen == Some(stamp) {
         return None;
