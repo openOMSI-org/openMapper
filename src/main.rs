@@ -21,6 +21,7 @@ mod doc;
 mod drive;
 mod draw;
 mod export;
+mod export_policy;
 mod gamecheck;
 mod icon;
 mod geo;
@@ -38,6 +39,8 @@ mod i18n;
 mod icons;
 mod import;
 mod import_image;
+mod provenance;
+mod publisher;
 mod install;
 mod junction;
 mod lanes;
@@ -145,6 +148,20 @@ fn main() {
     logging::init("info,wgpu_core=warn,wgpu_hal=warn,naga=warn");
     // `openmapper --check path/to/global.cfg` checks a map and prints what it found
     let args: Vec<std::ffi::OsString> = std::env::args_os().collect();
+    if args.get(1).is_some_and(|a| a == "--publish-pack") {
+        let (Some(spec), Some(out), Some(signing)) = (args.get(2), args.get(3), args.get(4)) else {
+            eprintln!("openmapper --publish-pack spec.json out.oopp signing.pk8 [new-content-key.bin]");
+            std::process::exit(2);
+        };
+        std::process::exit(publisher::cli(std::path::Path::new(spec), std::path::Path::new(out), std::path::Path::new(signing), args.get(5).map(std::path::Path::new)));
+    }
+    if args.get(1).is_some_and(|a| a == "--publish-licensed-packs") {
+        let (Some(spec), Some(out), Some(signing), Some(licences), Some(expires), None) = (args.get(2), args.get(3), args.get(4), args.get(5), args.get(6), args.get(7)) else {
+            eprintln!("openmapper --publish-licensed-packs spec.json out-folder signing.pk8 licence-ids.txt expiry-unix");
+            std::process::exit(2);
+        };
+        std::process::exit(publisher::licensed_cli(std::path::Path::new(spec), std::path::Path::new(out), std::path::Path::new(signing), std::path::Path::new(licences), expires));
+    }
     if args.get(1).map(|a| a == "--check").unwrap_or(false) {
         let Some(cfg) = args.get(2) else {
             eprintln!("openmapper --check path/to/global.cfg");
@@ -162,7 +179,7 @@ fn main() {
     }
     // `openmapper --export path/to/global.cfg out.zip` / `--import file` (no window)
     match (args.get(1).and_then(|a| a.to_str()), args.get(2), args.get(3)) {
-        (Some("--export"), Some(cfg), Some(out)) => std::process::exit(export::cli_export(std::path::Path::new(cfg), std::path::Path::new(out))),
+        (Some("--export"), Some(cfg), Some(out)) => std::process::exit(export::cli_export(std::path::Path::new(cfg), std::path::Path::new(out), args.get(4).is_some_and(|a| a == "--i-hold-the-rights"))),
         (Some("--import"), Some(f), _) => std::process::exit(export::cli_import(std::path::Path::new(f))),
         // `openmapper --plan path/to/global.cfg out.svg`: a plan of the map
         (Some("--plan"), Some(cfg), Some(out)) => std::process::exit(plan::cli(std::path::Path::new(cfg), std::path::Path::new(out))),

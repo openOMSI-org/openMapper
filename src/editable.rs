@@ -206,6 +206,10 @@ pub fn save(roots: &Roots, rel: &str, src: &Source) -> anyhow::Result<()> {
 /// [`save`], the modifiers that follow the ground given the ground under it where it stands
 /// (its height under a point of its frame, 0 under its origin).
 pub fn save_on(roots: &Roots, rel: &str, src: &Source, ground: Option<&dyn Fn(glam::Vec2) -> f32>) -> anyhow::Result<()> {
+    let target = omsi_cfg::resolve_path(&roots.content, rel);
+    if omsi_cfg::vfs::is_sealed(&target) {
+        anyhow::bail!("publisher-protected objects cannot be edited or overwritten");
+    }
     let (dir, stem) = folder_of(roots, rel);
     std::fs::create_dir_all(dir.join("model"))?;
     std::fs::create_dir_all(dir.join("texture"))?;
@@ -444,13 +448,16 @@ pub fn sco_path(roots: &Roots, rel: &str) -> Option<PathBuf> {
 /// their materials, and the rest of its `.sco` kept as it was. The files it uses (textures,
 /// scripts) are copied into `dir`, where the new object will be.
 pub fn source_of(roots: &Roots, rel: &str, dir: &Path) -> anyhow::Result<Source> {
+    let path = sco_path(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: {}", tr("file not found", "файл не найден")))?;
+    if omsi_cfg::vfs::is_sealed(&path) {
+        anyhow::bail!("publisher-protected objects cannot be copied for editing");
+    }
     if let Some(src) = load(roots, rel) {
         let (from, _) = folder_of(roots, rel);
         copy_tree_missing(&from.join("texture"), &dir.join("texture"));
         copy_tree_missing(&from.join("script"), &dir.join("script"));
         return Ok(src);
     }
-    let path = sco_path(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: {}", tr("file not found", "файл не найден")))?;
     let sco = omsi_scenery::sco::SceneryObject::load(&path).map_err(|e| anyhow::anyhow!("{e}"))?;
     if sco.model_file.is_some() {
         anyhow::bail!("{}", tr("this object takes its model from a model file and cannot be edited here", "модель этого объекта лежит в отдельном файле модели: её нельзя редактировать здесь"));
@@ -460,17 +467,23 @@ pub fn source_of(roots: &Roots, rel: &str, dir: &Path) -> anyhow::Result<Source>
     let defs: Vec<&omsi_model::MeshDef> = if model.lods.is_empty() { model.meshes.iter().collect() } else { model.lod_meshes(0).iter().collect() };
     let tex_dirs = crate::assets::texture_dirs(&roots.omsi, &roots.content, &sco_dir);
     let refs: Vec<&Path> = tex_dirs.iter().map(PathBuf::as_path).collect();
-    std::fs::create_dir_all(dir.join("texture"))?;
     let name = if sco.friendly_name.trim().is_empty() { path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default() } else { sco.friendly_name.trim().to_string() };
     let mut out = Source { name, abs_height: sco.absolute_height(), ..Default::default() };
+    let mut textures = Vec::new();
     for md in defs {
         let in_model = omsi_cfg::resolve_path(&omsi_cfg::resolve_path(&sco_dir, "model"), &md.file);
         let mesh_path = if omsi_cfg::vfs::is_file(&in_model) { in_model } else { omsi_cfg::resolve_path(&sco_dir, &md.file) };
+        if omsi_cfg::vfs::is_sealed(&mesh_path) {
+            anyhow::bail!("publisher-protected model files cannot be copied for editing");
+        }
         let Ok(m) = omsi_o3d::load_mesh(&mesh_path) else { continue };
         let mats = materials_of(&m, &md.materials);
         for mat in &mats {
             for t in [&mat.texture, &mat.night_map, &mat.light_map].into_iter().flatten() {
-                copy_texture(t, &refs, &dir.join("texture"));
+                if omsi_texture::find_texture(t, &refs).is_some_and(|p| omsi_cfg::vfs::is_sealed(&p)) {
+                    anyhow::bail!("publisher-protected textures cannot be copied for editing");
+                }
+                textures.push(t.clone());
             }
         }
         let offset = out.model.materials.len() as u32;
@@ -496,6 +509,12 @@ pub fn source_of(roots: &Roots, rel: &str, dir: &Path) -> anyhow::Result<Source>
     out.extra = kept_lines(&omsi_cfg::decode_text(&std::fs::read(&path)?), &sco_dir, dir);
     if out.model.parts.is_empty() {
         anyhow::bail!("{}", tr("the object has no mesh to edit", "у объекта нет меша для редактирования"));
+    }
+    if !textures.is_empty() {
+        std::fs::create_dir_all(dir.join("texture"))?;
+        for texture in &textures {
+            copy_texture(texture, &refs, &dir.join("texture"));
+        }
     }
     merge_materials(&mut out.model);
     Ok(out)
@@ -693,6 +712,7 @@ mod tests {
         (dir.clone(), Roots { omsi: dir.join("omsi"), content: dir.join("content") })
     }
 
+
     #[test]
     fn a_primitive_is_written_as_an_object_openomsi_reads_and_read_back() {
         let (dir, roots) = roots("prim");
@@ -722,6 +742,55 @@ mod tests {
         let vol: f32 = t.indices.chunks(3).map(|c| t.positions[c[0] as usize].dot(t.positions[c[1] as usize].cross(t.positions[c[2] as usize]))).sum::<f32>() / 6.0;
         assert!((vol - 6.0).abs() < 1e-3, "{vol}");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn protected_virtual_mesh_cannot_be_copied_by_editing_or_overwritten_by_save() {
+        use std::sync::Arc;
+
+        let (dir, roots) = roots("protected-source");
+        let package = dir.join("publisher-fixture");
+        std::fs::create_dir_all(&package).unwrap();
+        let object = omsi_cfg::encode_text("[friendlyname]\r\nOwned fixture\r\n[mesh]\r\nmodel/sign.x\r\n");
+        let cube = openmapper_mesh::primitives::Primitive::Cube { size: Vec3::ONE }.build();
+        let mesh = openmapper_mesh::export::to_x(&cube, &[Material::default()]).0.into_bytes();
+        let key = Arc::new(omsi_cfg::vfs::SealKey::new(&omsi_cfg::vfs::random_key().unwrap()));
+        let files = [
+            ("Sceneryobjects/Protected/sign.sco", object.clone()),
+            ("Sceneryobjects/Fixture/model/sign.x", mesh),
+        ].into_iter().enumerate().map(|(i, (rel, plain))| {
+            let aad = format!("fixture asset {i}").into_bytes();
+            let blob = package.join(format!("{i}.sealed"));
+            std::fs::write(&blob, omsi_cfg::vfs::seal(&key, &aad, &plain).unwrap()).unwrap();
+            omsi_cfg::vfs::SealedFile { rel: rel.into(), blob, aad, size: plain.len() as u64 }
+        }).collect();
+        let mount = roots.content.join("Packs/fixture.oopp/.mount");
+        omsi_cfg::vfs::mount_sealed(&mount, key, files);
+        omsi_cfg::add_content_root(roots.content.clone());
+        omsi_cfg::add_content_root(mount.clone());
+
+        let ordinary = "Sceneryobjects\\Fixture\\sign.sco";
+        let ordinary_file = roots.content.join(ordinary.replace('\\', "/"));
+        std::fs::create_dir_all(ordinary_file.parent().unwrap()).unwrap();
+        std::fs::write(&ordinary_file, &object).unwrap();
+        let mesh_path = omsi_cfg::resolve_path(&ordinary_file.parent().unwrap().join("model"), "sign.x");
+        assert!(omsi_cfg::vfs::is_sealed(&mesh_path));
+        assert!(omsi_o3d::load_mesh(&mesh_path).is_ok());
+
+        let output = dir.join("converted");
+        let source_refused = source_of(&roots, ordinary, &output).is_err();
+        let copied_to_edit_folder = output.exists();
+        let protected = "Sceneryobjects\\Protected\\sign.sco";
+        let save_refused = save(&roots, protected, &Source::default()).is_err();
+        let wrote_into_pack_folder = mount.join("Sceneryobjects/Protected/sign.openmapper.json").exists();
+        omsi_cfg::vfs::unmount_sealed(&mount);
+        omsi_cfg::remove_content_root(&mount);
+        omsi_cfg::remove_content_root(&roots.content);
+        std::fs::remove_dir_all(dir).unwrap();
+        assert!(source_refused, "the editor copied a mesh from a protected pack");
+        assert!(!copied_to_edit_folder, "the editor left a copy of a protected object on disk");
+        assert!(save_refused, "the editor overwrote an object in a protected pack");
+        assert!(!wrote_into_pack_folder, "the editor wrote plaintext into the protected package directory");
     }
 
     #[test]

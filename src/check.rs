@@ -1382,6 +1382,8 @@ mod tests {
     fn doc_with(tiles: &[TileKey]) -> Document {
         let mut doc = Document {
             global: Default::default(),
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: PathBuf::new(),

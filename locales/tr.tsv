@@ -2625,6 +2625,9 @@ Polygon: fill the selected splines, or click its corners	Çokgen: seçili spline
 Polygon: click its corners	Çokgen: köşelere tıkla
 Polygon from it	Ondan çokgen
 Polygon from them	Onlardan çokgen
+Use dependencies	Bağımlılıkları kullan
+I hold the redistribution rights	Yeniden dağıtım haklarına sahibim
+Yes	Evet
 Saving…	Kaydediliyor…
 Still saving	Hâlâ kaydediliyor
 Click the spline they should stand on. Each follows that road and keeps its IDCode	Durmaları gereken spline'a tıklayın. Her biri o yolu izler ve IDCode'unu korur

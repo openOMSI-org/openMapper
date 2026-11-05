@@ -2622,6 +2622,9 @@ Polygon: fill the selected splines, or click its corners	多邊形：填滿選�
 Polygon: click its corners	多邊形：點擊各轉角
 Polygon from it	由此建立多邊形
 Polygon from them	由這些建立多邊形
+Use dependencies	使用相依套件
+I hold the redistribution rights	我擁有再散布的權利
+Yes	是
 Saving…	儲存中…
 Still saving	仍在儲存
 Click the spline they should stand on. Each follows that road and keeps its IDCode	點它們要依附的那條 Spline。每一個都會跟著那條路，並保留 IDCode
