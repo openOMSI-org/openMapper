@@ -11,7 +11,7 @@ use crate::doc::{tile_of, tile_origin, tile_size, Document, Sel, TileKey};
 use crate::history::History;
 use crate::i18n::tr;
 use crate::library::{Asset, Library};
-use crate::render::{object_matrix, Brush, FrameExtras, Ghost, OverlayPoint};
+use crate::render::{object_matrix, Brush, FrameExtras, Ghost, OverlayPoint, NEIGHBOUR_POINTS};
 use crate::reshape::{self, Handle};
 use crate::roads::{self, Anchor, Seg};
 use crate::selection::{self, Origin};
@@ -337,6 +337,18 @@ pub struct Editor {
     /// them, so the map shows the change before it is saved (and the object's own lanes are
     /// not drawn a second time under them).
     pub crossing_draft: Option<(TileKey, i64, Vec<crate::crossing_edit::Path>)>,
+    /// Which of the crossing's paths the window has picked, so the map draws it picked too.
+    pub crossing_selected: Option<usize>,
+    /// The crossing editor is open: the map is held, so nothing of it is picked or hovered
+    /// (an object, a spline, and not the crossing's own object either).
+    pub crossing_hold: bool,
+    /// The ends of the paths near the crossing being edited, where they were drawn, and the
+    /// joint a click on that dot takes. The joint is kept with the dot so a click hits the
+    /// circle that was seen, not a later list that loading a model has reordered.
+    pub crossing_nearby: Vec<(DVec3, crate::crossing_edit::Joint)>,
+    /// Where the crossing stood and how it was turned when the last frame was drawn: the same
+    /// place the click is judged by, so a green circle is exactly where it was seen.
+    pub crossing_world: Option<(DVec3, glam::Mat4)>,
     /// Where the selection stood when a move began.
     move_from: Vec<Origin>,
     /// A reshape being dragged: its plan, or why it cannot be.
@@ -662,6 +674,10 @@ impl Default for Editor {
             select_box: None,
             clip: None,
             crossing_draft: None,
+            crossing_selected: None,
+            crossing_hold: false,
+            crossing_nearby: Vec::new(),
+            crossing_world: None,
             move_from: Vec::new(),
             press_drags: true,
             reshape: None,
@@ -1881,6 +1897,15 @@ impl Editor {
         self.hover = None;
         self.hover_stack.clear();
         self.hover_tile = None;
+        // (the crossing editor holds the map: nothing under the cursor is hovered or picked
+        // there - no object, no spline, and not the crossing's own object either - so the map
+        // does not even answer the pointer while its paths are being edited)
+        if self.crossing_hold {
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
         match self.acts_as() {
             Tool::Select => {
                 if self.drag == Drag::None {
@@ -5100,6 +5125,17 @@ impl Editor {
         out
     }
 
+    /// The camera distance the neighbour paths were last gathered with.
+    pub fn note_view_distance(&self, distance: f64) {
+        self.view_distance.set(distance);
+    }
+
+    /// How far from the crossing its neighbour paths are gathered and drawn, from the
+    /// distance [`Editor::note_view_distance`] last recorded.
+    pub fn neighbour_reach(&self) -> f64 {
+        crate::lanes::neighbour_reach(self.view_distance.get())
+    }
+
     pub fn extras(&self, cam: &crate::camera::Camera, assets: &mut Assets) -> FrameExtras {
         self.view_distance.set(cam.distance);
         let mut x = FrameExtras { grid: self.show_grid, selected: self.selected, selected_more: self.selection().into_iter().skip(1).collect(), hover: self.hover, ..Default::default() };
@@ -5164,21 +5200,102 @@ impl Editor {
                 let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
                 let lift = DVec3::Z * 0.25;
                 let lw = (cam.distance * 0.0016).clamp(0.04, 1.6) as f32;
-                for p in paths {
+                let picked = self.crossing_selected;
+                for (i, p) in paths.iter().enumerate() {
                     let color = match p.kind() {
                         1 => [0.42, 0.74, 0.92, 0.95],
                         2 => [0.78, 0.58, 0.84, 0.95],
                         _ => [0.98, 0.72, 0.22, 0.95],
                     };
                     let pts: Vec<DVec3> = p.points(0.5).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    // (the picked path shows through a wider, paler line under its own)
+                    if picked == Some(i) {
+                        let halo = [1.0, 0.58, 0.16, 0.42];
+                        for s in pts.windows(2) {
+                            line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw * 3.2, halo);
+                        }
+                    }
                     for s in pts.windows(2) {
                         line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
                     }
                     // the ends, where they are dragged in the window
+                    let a = if picked == Some(i) { lw * 2.6 } else { lw * 1.8 };
                     for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
-                        disc(&mut x.overlay, cam, at + lift, lw * 1.8, color);
+                        disc(&mut x.overlay, cam, at + lift, a, color);
                     }
                 }
+            }
+            // (the paths of everything around it - other objects' and the roads' own lanes -
+            // paler and lower: the crossing is seen in place among its neighbours, and its
+            // own paths are what stand out)
+            if !(self.tool == Tool::Logic || self.show_lanes) {
+                if let Some(o) = doc.object(k, id) {
+                    let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                    let centre = doc.object_world(k, o, abs).truncate();
+                    let radius = crate::lanes::neighbour_reach(cam.distance);
+                    let lw = (cam.distance * 0.0016).clamp(0.04, 1.4) as f32;
+                    let lift = DVec3::Z * 0.1;
+                    let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
+                    // (nearest first: a long spline used to fill the buffer before the roads
+                    // that actually meet the crossing were drawn)
+                    let mut ranked: Vec<(f64, &crate::lanes::Lane)> = Vec::new();
+                    for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
+                        if let Some((_, _, d)) = crate::lanes::visible_span(&l.pts, centre, radius) {
+                            ranked.push((d, l));
+                        }
+                    }
+                    ranked.sort_by(|a, b| a.0.total_cmp(&b.0));
+                    let mut drawn = 0usize;
+                    let mut shown = 0usize;
+                    for (_, l) in &ranked {
+                        if drawn > NEIGHBOUR_POINTS {
+                            break;
+                        }
+                        let Some((lo, hi, _)) = crate::lanes::visible_span(&l.pts, centre, radius) else { continue };
+                        shown += 1;
+                        let color = match (l.kind, l.spline.is_some()) {
+                            (1, _) => [0.35, 0.85, 1.0, 0.8],
+                            (2, _) => [0.85, 0.55, 1.0, 0.8],
+                            // (a road's lane is a little paler than another object's)
+                            (_, true) => [0.45, 0.85, 0.5, 0.55],
+                            _ => [0.45, 0.95, 0.55, 0.8],
+                        };
+                        // (only the part inside the reach, and not every sample: a kilometre
+                        // of road sampled every 3 m used up the buffer on its own)
+                        let mut i = lo;
+                        while i < hi {
+                            if drawn > NEIGHBOUR_POINTS {
+                                break;
+                            }
+                            let mut j = i + 1;
+                            while j < hi && (l.pts[j].truncate() - l.pts[i].truncate()).length() < 5.0 {
+                                j += 1;
+                            }
+                            drawn += 6;
+                            line(&mut x.overlay, cam, l.pts[i] + lift, l.pts[j] + lift, lw, color);
+                            i = j;
+                        }
+                        // (their real ends, when the end itself is in reach: a clip of the
+                        // line is not an end, and is not a green circle)
+                        for at in [l.pts.first().copied(), l.pts.last().copied()].into_iter().flatten() {
+                            if (at.truncate() - centre).length() > radius || drawn > NEIGHBOUR_POINTS {
+                                continue;
+                            }
+                            drawn += 60;
+                            disc(&mut x.overlay, cam, at + lift, lw * 1.5, color);
+                        }
+                    }
+                    log::trace!("crossing neighbours: {shown} of {} paths within {radius} m", ranked.len());
+                }
+            }
+            // (the ends a new path is being started from: green, with the way each runs, so
+            // the one to click is seen)
+            for (pos, j) in &self.crossing_nearby {
+                // (the disc drawn on top of this lift is what a click is aimed at)
+                let lift = DVec3::Z * 0.4;
+                disc(&mut x.overlay, cam, *pos + lift, (cam.distance * 0.004).clamp(0.12, 3.0) as f32, [0.36, 0.95, 0.45, 1.0]);
+                let d = crate::roads::dir(j.heading) * (cam.distance * 0.02).clamp(0.6, 6.0);
+                line(&mut x.overlay, cam, *pos + lift, *pos + lift + DVec3::new(d.x, d.y, 0.0), (cam.distance * 0.0016).clamp(0.04, 1.2) as f32, [0.36, 0.95, 0.45, 1.0]);
             }
         }
         // an AI path has nothing to see: the picked and the hovered one drawn as lines

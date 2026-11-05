@@ -831,7 +831,44 @@ impl App {
             if let [x, y] = v[..] {
                 let z = self.ed.doc.as_ref().map(|d| d.ground(DVec2::new(x, y))).unwrap_or(0.0);
                 let placed = self.add_map_object_at(&rel, DVec3::new(x, y, z));
+                if let Some(sel) = placed {
+                    self.ed.select(Some(sel));
+                }
                 log::info!("put: {} placed", placed.is_some());
+            }
+        }
+        // OPENMAPPER_CROSSING=paths|lights: the crossing editor open on the selected object,
+        // or on the first crossing of the map's list (checks of the window without a person
+        // at the screen)
+        if let Ok(page) = std::env::var("OPENMAPPER_CROSSING") {
+            if let Some(roots) = self.roots.clone() {
+                while self.lib.scanning {
+                    self.lib.poll();
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                self.crossing.open_page(page.eq_ignore_ascii_case("lights"));
+                self.crossing.request(&mut self.ed, &roots, &self.lib);
+                if !self.crossing.has_sheet() {
+                    self.crossing.open_first_candidate(&mut self.ed, &roots);
+                }
+                // (`3d`: the paths on the map itself, in 3D - a check of that view)
+                if page.eq_ignore_ascii_case("3d") {
+                    self.crossing.show_on_map();
+                }
+                // (`OPENMAPPER_NEARBY`: the nearby-path mode on, a check of it)
+                if std::env::var_os("OPENMAPPER_NEARBY").is_some() {
+                    self.crossing.set_from_nearby(true);
+                }
+                // (`OPENMAPPER_COMPLETE`: the complete-to mode on, a check of it)
+                if std::env::var_os("OPENMAPPER_COMPLETE").is_some() {
+                    self.crossing.set_complete_to(true);
+                }
+                // (the crossing editor holds the map: the object's own selection is let go, so
+                // its gizmo cannot move it while its paths are being edited)
+                if self.crossing.open {
+                    self.ed.select(None);
+                }
+                log::info!("crossing editor: {page}, window {}, a crossing: {}, selected {:?}", self.crossing.open, self.crossing.has_sheet(), self.ed.selected);
             }
         }
         // OPENMAPPER_AUTOPAINT=<layer>: the Paint tool's rule by slope and height applied to that layer
@@ -1499,8 +1536,18 @@ impl App {
                     }
                 }
             }
-            Action::Undo => self.ed.undo(),
-            Action::Redo => self.ed.redo(),
+            Action::Undo => {
+                // (the crossing being edited has its own steps: the map's are not what takes
+                // the key while its window is open)
+                if !(self.crossing.open && self.crossing.undo()) {
+                    self.ed.undo();
+                }
+            }
+            Action::Redo => {
+                if !(self.crossing.open && self.crossing.redo()) {
+                    self.ed.redo();
+                }
+            }
             Action::Mesh(a) => self.mesh_action(a),
             Action::Import => {
                 let files = rfd::FileDialog::new().add_filter(tr("Mods, models and pictures", "Моды, модели и картинки"), &["zip", "obj", "gltf", "glb", "fbx", "x", "o3d", "sco", "sli", "png", "jpg", "jpeg", "webp", "bmp", "tga", "tif"]).set_title(tr("Import assets", "Импорт ассетов")).pick_files();
@@ -1587,6 +1634,11 @@ impl App {
                     self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
                 } else if let Some(roots) = self.roots.clone() {
                     self.crossing.request(&mut self.ed, &roots, &self.lib);
+                    // (the crossing editor holds the map while it is open: the object is let
+                    // go of, so no gizmo of the map's own can move or turn it)
+                    if self.crossing.open {
+                        self.ed.select(None);
+                    }
                 } else {
                     self.ed.toast(tr("Choose the OMSI installation first", "Сначала укажите установку OMSI"));
                 }
@@ -1826,6 +1878,14 @@ impl App {
                     }
                 }
             }
+            Action::CrossingFrame => {
+                // (the crossing, seen from above and close: its paths fill the view)
+                if let Some((world, _)) = self.crossing_place() {
+                    let span = self.crossing.span();
+                    self.cam.target = world;
+                    self.cam.distance = (span * 1.15).clamp(14.0, 220.0);
+                }
+            }
             Action::Timetable => self.tt.open = !self.tt.open,
             Action::Traffic => self.traffic.open = !self.traffic.open,
             Action::Geo => self.geo.open = !self.geo.open,
@@ -1949,6 +2009,17 @@ impl App {
         }
         if self.ed.grab.is_some() && !self.keys.ctrl {
             self.grab_key(code);
+            return;
+        }
+        // (the crossing editor: N adds a path carried on from the picked one, as its "+"
+        // does - before the map's own "new object" takes the key)
+        if self.crossing.open
+            && code == Some(KeyCode::KeyN)
+            && !self.keys.ctrl
+            && !self.keys.alt
+            && !self.keys.shift
+            && self.crossing.continue_path()
+        {
             return;
         }
         let ctrl = self.keys.ctrl;
@@ -2165,6 +2236,242 @@ impl App {
         Some(self.cam.ray(self.mouse.pos.0 - v.min.x, self.mouse.pos.1 - v.min.y, v.width(), v.height()))
     }
 
+    /// The point of the 3D view a world point is drawn at (the interface's points). The view
+    /// matrix is relative to the camera's render origin (f32 precision), so
+    /// [`Camera::project`] is what works it out: doing it here without that origin put every
+    /// click metres from the path it was aimed at.
+    fn view_point(&self, w: DVec3) -> Option<(f32, f32)> {
+        let v = self.view;
+        if !v.is_positive() {
+            return None;
+        }
+        let (x, y) = self.cam.project(w, v.width(), v.height())?;
+        Some((v.min.x + x, v.min.y + y))
+    }
+
+    /// Where the crossing being edited stands on the map, and how the object's own frame
+    /// lies there (the paths of the window are written in that frame).
+    fn crossing_place(&mut self) -> Option<(DVec3, glam::Mat4)> {
+        let Sel::Object(k, id) = self.crossing.object()? else { return None };
+        let (file, rot) = {
+            let doc = self.ed.doc.as_ref()?;
+            let o = doc.object(k, id)?;
+            (o.file.clone(), o.rot)
+        };
+        let abs = self.assets.as_mut().and_then(|a| a.object(&file)).map(|m| m.abs_height).unwrap_or(true);
+        let doc = self.ed.doc.as_ref()?;
+        let o = doc.object(k, id)?;
+        let world = doc.object_world(k, o, abs);
+        Some((world, crate::render::object_matrix(DVec3::ZERO, rot)))
+    }
+
+    /// Puts the nearby ends the window just gathered onto the map, at the crossing's place
+    /// now. Done after the window, so the circles drawn this frame are the ones a click hits.
+    fn sync_crossing_nearby(&mut self) {
+        if !self.crossing.open {
+            self.ed.crossing_nearby.clear();
+            self.ed.crossing_world = None;
+            return;
+        }
+        let place = self.crossing_place();
+        self.ed.crossing_world = place;
+        self.ed.crossing_nearby.clear();
+        if !self.crossing.wants_nearby() {
+            return;
+        }
+        let Some((world, m)) = place else { return };
+        self.ed.crossing_nearby = self
+            .crossing
+            .neighbours()
+            .iter()
+            .map(|j| (world + m.transform_point3(j.pos.as_vec3()).as_dvec3(), *j))
+            .collect();
+    }
+
+    /// How wide a green circle is on the screen, in pixels, with room for its tick and for
+    /// a click that lands on the circle rather than on its exact centre.
+    fn nearby_hit_px(&self, at: DVec3) -> f32 {
+        let r = (self.cam.distance * 0.004).clamp(0.12, 3.0);
+        let tick = (self.cam.distance * 0.02).clamp(0.6, 6.0);
+        let Some(a) = self.view_point(at) else { return 40.0 };
+        let Some(b) = self.view_point(at + DVec3::X * r.max(tick)) else { return 40.0 };
+        let d = ((a.0 - b.0).powi(2) + (a.1 - b.1).powi(2)).sqrt();
+        (d + 18.0).clamp(32.0, 96.0)
+    }
+
+    /// A click on the map of the crossing being edited: an end of a path is taken (the drag
+    /// then moves it), or a path is picked. False when nothing of the crossing is there.
+    ///
+    /// The crossing editor holds the map while it is open (no object or spline is picked or
+    /// moved), so its paths answer the click with whatever tool is chosen.
+    fn crossing_pick_on_map(&mut self) -> bool {
+        if !self.crossing.on_map() || self.keys.alt {
+            return false;
+        }
+        // (a gizmo handle under the cursor belongs to the map's own move, turn and scale)
+        if self.ed.gizmo_under_cursor() {
+            return false;
+        }
+        // (the place the frame was drawn with: a green circle is judged by exactly where it
+        // was seen, not by a place worked out again - which may differ once a model has
+        // loaded in the background)
+        let place = self.ed.crossing_world.or_else(|| self.crossing_place());
+        let Some((world, m)) = place else { return false };
+        let p = self.mouse.pos;
+        let screen_of = |q: DVec3, world: DVec3, m: glam::Mat4| -> Option<(f32, f32)> {
+            self.view_point(world + m.transform_point3(q.as_vec3()).as_dvec3())
+        };
+        let dist = |s: (f32, f32)| ((s.0 - p.0).powi(2) + (s.1 - p.1).powi(2)).sqrt();
+        // (a nearby end picked: the green circles are the ones the frame drew, judged where
+        // they were seen - not worked out again from the object's place, which a model
+        // finishing its load in the background can shift)
+        if self.crossing.wants_nearby() {
+            let mut pick: Option<(f32, crate::crossing_edit::Joint)> = None;
+            for (w, j) in &self.ed.crossing_nearby {
+                // (the circle is drawn 0.55 m up: disc() adds 0.15 on a lift of 0.4. Judging
+                // the click on the ground put it tens of pixels off the circle when the
+                // view is low, so the circle was seen and the click missed)
+                let at = *w + DVec3::Z * 0.55;
+                let Some(s) = self.view_point(at) else { continue };
+                let d = dist(s);
+                if d <= self.nearby_hit_px(at) && pick.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                    pick = Some((d, *j));
+                }
+            }
+            if let Some((_, j)) = pick {
+                self.crossing.take_nearby(j);
+                return true;
+            }
+        }
+        // (an end: nearer than a path's line, since it is what is dragged)
+        let mut best: Option<(f32, (usize, bool))> = None;
+        for (i, at_end, q) in self.crossing.map_ends() {
+            let Some(s) = screen_of(q, world, m) else { continue };
+            let d = dist(s);
+            if d <= 14.0 && best.map(|b| d < b.0).unwrap_or(true) {
+                best = Some((d, (i, at_end)));
+            }
+        }
+        if let Some((_, hit)) = best {
+            self.crossing.push_undo();
+            return self.crossing.take_map_end(Some(hit));
+        }
+        // (otherwise the path itself: the nearest point of its line, not only its samples,
+        // so a click between two samples still lands on it)
+        let mut best: Option<(f32, usize)> = None;
+        for (i, pts) in self.crossing.map_paths() {
+            let line: Vec<(f32, f32)> = pts.iter().filter_map(|q| screen_of(*q, world, m)).collect();
+            for w in line.windows(2) {
+                let d = dist_to_segment(p, w[0], w[1]);
+                if d <= 9.0 && best.map(|b| d < b.0).unwrap_or(true) {
+                    best = Some((d, i));
+                }
+            }
+        }
+        best.is_some_and(|(_, i)| self.crossing.select_on_map(Some(i)))
+    }
+
+    /// The end the map took, moved to where the cursor is: on the crossing's own level, so a
+    /// path stays where the object has it. It snaps to another path's end - the crossing's
+    /// own, or a nearby object's, which can be joined but not changed - unless Ctrl is held.
+    fn crossing_drag_end(&mut self) {
+        if self.crossing.map_dragging().is_none() {
+            return;
+        }
+        let Some((i, at_end)) = self.crossing.map_dragging() else { return };
+        let Some((world, m)) = self.crossing_place() else { return };
+        let Some((o, d)) = self.view_ray() else { return };
+        // (the disc is drawn just above the end: the ray meets that height, not the object's
+        // own ground — meeting the ground put the point tens of metres from the cursor
+        // whenever the path sat above the pivot)
+        let handle = self.crossing.map_ends().into_iter().find(|(ii, ae, _)| *ii == i && *ae == at_end).map(|(_, _, q)| q);
+        let Some(q) = handle else { return };
+        let handle_w = world + m.transform_point3(q.as_vec3()).as_dvec3();
+        let plane_z = self.crossing.map_drag_plane(handle_w.z + 0.4);
+        let at = if d.z.abs() > 0.02 {
+            let t = (plane_z - o.z) / d.z;
+            if t > 0.0 { o + d * t } else { return }
+        } else {
+            return;
+        };
+        if (at - o).length() > 8_000.0 {
+            return;
+        };
+        let joint = self.crossing_snap_end(at, world, m);
+        let local = m.inverse().transform_point3((at - world).as_vec3()).as_dvec3();
+        // (put onto another end: the local frame is what the path is written in)
+        let joint = joint.map(|j| {
+            let local = m.inverse().transform_point3((j.pos - world).as_vec3()).as_dvec3();
+            crate::crossing_edit::Joint { pos: local, heading: j.heading, slope: j.slope }
+        });
+        self.crossing.drag_map_end(local, joint);
+    }
+
+    /// The point a dragged end is taken to: the nearest end of the crossing's own paths or of
+    /// a nearby object's, when one is within a few pixels of the cursor - with the way that
+    /// path runs away from it, and its rise, so the two pieces meet smoothly. Ctrl keeps the
+    /// end where the mouse is.
+    fn crossing_snap_end(&mut self, at: DVec3, world: DVec3, m: glam::Mat4) -> Option<crate::crossing_edit::Joint> {
+        if self.keys.ctrl {
+            return None;
+        }
+        let skip = self.crossing.map_dragging();
+        let mouse = self.mouse.pos;
+        let mut best: Option<(f32, crate::crossing_edit::Joint)> = None;
+        let mut consider = |s: Option<(f32, f32)>, j: crate::crossing_edit::Joint, best: &mut Option<(f32, crate::crossing_edit::Joint)>| {
+            let Some(s) = s else { return };
+            let d = ((s.0 - mouse.0).powi(2) + (s.1 - mouse.1).powi(2)).sqrt();
+            if d <= 12.0 && best.map(|b| d < b.0).unwrap_or(true) {
+                *best = Some((d, j));
+            }
+        };
+        for (i, at_end, q) in self.crossing.map_ends() {
+            // (the end being dragged is not a target: it is where the cursor already is)
+            if skip == Some((i, at_end)) {
+                continue;
+            }
+            let w = world + m.transform_point3(q.as_vec3()).as_dvec3();
+            let Some(j) = self.crossing.joint_at(i, at_end) else { continue };
+            consider(self.view_point(w), j, &mut best);
+        }
+        for j in self.crossing_neighbour_joints() {
+            consider(self.view_point(j.pos), j, &mut best);
+        }
+        best.map(|b| b.1)
+    }
+
+    /// The ends of the paths around the crossing being edited - other objects' and the roads'
+    /// own lanes - with the way each runs away from its end and its rise: they are shown on
+    /// the map, and a path can be put onto one, but they are not changed from here.
+    fn crossing_neighbour_joints(&mut self) -> Vec<crate::crossing_edit::Joint> {
+        let Some(Sel::Object(k, id)) = self.crossing.object() else { return Vec::new() };
+        let Some(doc) = self.ed.doc.as_ref() else { return Vec::new() };
+        let Some(o) = doc.object(k, id) else { return Vec::new() };
+        let file = o.file.clone();
+        let abs = self.assets.as_mut().and_then(|a| a.object(&file)).map(|m| m.abs_height).unwrap_or(true);
+        let centre = doc.object_world(k, o, abs).truncate();
+        let radius = (self.cam.distance * 2.0).clamp(80.0, 260.0);
+        let Some(assets) = self.assets.as_mut() else { return Vec::new() };
+        let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
+        // (roads' lanes as well as other objects': a crossing's end is put onto either. Their
+        // way and rise come from the lane's own points, so a path put onto one meets it in
+        // more than the point)
+        let mut out = Vec::new();
+        for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
+            for (at, away) in [(l.pts.first().copied(), 1usize), (l.pts.last().copied(), 0usize)] {
+                let Some(pos) = at else { continue };
+                let n = l.pts.len();
+                let (a, b) = if away == 1 { (l.pts[0], l.pts[n.min(2) - 1]) } else { (l.pts[n.saturating_sub(2)], l.pts[n - 1]) };
+                let d = b - a;
+                let len = d.truncate().length().max(1e-6);
+                let heading = crate::roads::heading_of(d.truncate());
+                let slope = d.z / len;
+                out.push(crate::crossing_edit::Joint { pos, heading, slope });
+            }
+        }
+        out
+    }
+
     // ------------------------------------------------------------------ frame
 
     fn frame(&mut self, el: &ActiveEventLoop) {
@@ -2279,6 +2586,14 @@ impl App {
         }
         // the editor
         let t_ed = Instant::now();
+        // (while the crossing editor is open the map is held: nothing on it answers the
+        // pointer, and the crossing's own paths are what is picked)
+        self.ed.crossing_hold = self.crossing.open;
+        // (gathered in the window below, from this same distance, then placed on the map)
+        self.ed.note_view_distance(self.cam.distance);
+        self.ed.crossing_nearby.clear();
+        let place = self.crossing_place();
+        self.ed.crossing_world = if self.crossing.open { place } else { None };
         self.ed.cursor_in_view = !self.mouse.over_ui || self.pinned_cursor.is_some();
         self.ed.set_gizmo_view(&self.cam, self.view.width(), self.view.height(), self.mouse.pos.0 - self.view.min.x, self.mouse.pos.1 - self.view.min.y);
         if let Some(p) = self.pinned_cursor {
@@ -2460,6 +2775,7 @@ impl App {
                 self.road_types.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.cj.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref().map(|r| &r.content), self.assets.as_mut(), &mut actions);
                 self.crossing.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), self.assets.as_mut(), &mut actions);
+                self.sync_crossing_nearby();
                 let folder = self.map_folder();
                 self.scripts.window(&ctx, &mut self.ed, self.roots.as_ref(), &folder, &mut actions);
                 self.map_settings.window(&ctx, &mut self.ed, self.roots.as_ref());
@@ -3189,6 +3505,16 @@ impl App {
 
 /// The textures a map's ground can be painted with: the installation's and the content
 /// folder's `Texture` folders (pictures only).
+/// How far a point of the window is from a line on the screen: the nearest point of the
+/// segment `a`–`b` (a click between two samples of a path still lands on it).
+fn dist_to_segment(p: (f32, f32), a: (f32, f32), b: (f32, f32)) -> f32 {
+    let (ab, ap) = ((b.0 - a.0, b.1 - a.1), (p.0 - a.0, p.1 - a.1));
+    let len2 = ab.0 * ab.0 + ab.1 * ab.1;
+    let t = if len2 < 1e-9 { 0.0 } else { ((ap.0 * ab.0 + ap.1 * ab.1) / len2).clamp(0.0, 1.0) };
+    let q = (a.0 + ab.0 * t, a.1 + ab.1 * t);
+    ((q.0 - p.0).powi(2) + (q.1 - p.1).powi(2)).sqrt()
+}
+
 fn ground_texture_files(roots: &Roots) -> Vec<String> {
     // the installation's ground textures first; then those of the objects and splines
     // (ballast, cobbles, slabs: maps paint with them too, Spandau with `Schotter.bmp`)
@@ -3331,6 +3657,10 @@ impl ApplicationHandler for App {
                 if let Some(b) = &mut self.ed.select_box {
                     b[1] = p;
                 }
+                // (a path's end of the crossing being edited, taken on the map: it follows)
+                if self.crossing.map_dragging().is_some() {
+                    self.crossing_drag_end();
+                }
                 let h = self.view.height().max(1.0);
                 let unity = self.fly_style();
                 if self.mouse.right {
@@ -3372,9 +3702,23 @@ impl ApplicationHandler for App {
                 let over_ui = self.mouse.over_ui;
                 match button {
                     MouseButton::Left => {
-                        if pressed && !over_ui && self.ed.grab.is_some() {
+                        if pressed && !over_ui && self.crossing_pick_on_map() {
+                            // (an end of the crossing's paths, taken on the map: the drag
+                            // moves it, and no tool of the map does anything with the click)
+                        } else if pressed && !over_ui && self.ed.grab.is_some() {
                             // (a click lets the grab go, as Blender's does)
                             self.ed.grab_confirm();
+                        } else if pressed && !over_ui && self.crossing.open {
+                            // (the crossing editor holds the map while it is open: nothing on
+                            // it is picked and nothing is moved - no object, no spline, and
+                            // not the crossing's own object either. Dragging still pans, so
+                            // the crossing can be looked at from another place)
+                            if self.keys.alt {
+                                self.mouse.alt_orbit = true;
+                            } else {
+                                self.mouse.grab = true;
+                                self.mouse.grab_anchor = self.grab_point();
+                            }
                         } else if pressed && !over_ui {
                             // (a handle of the Move / Rotate / Scale gizmo is taken, wherever it is)
                             let on_gizmo = self.ed.gizmo_under_cursor();
@@ -3417,6 +3761,8 @@ impl ApplicationHandler for App {
                                 }
                             }
                         } else if !pressed {
+                            // (the end of the crossing's path is let go where it stands)
+                            self.crossing.let_go();
                             if self.ed.select_box.is_some() {
                                 let v = self.view;
                                 if let Some(assets) = self.assets.as_mut() {
@@ -3460,8 +3806,12 @@ impl ApplicationHandler for App {
                                 g.window.set_cursor_visible(true);
                                 let _ = g.window.set_cursor_position(winit::dpi::PhysicalPosition::new((self.mouse.pos.0 * scale) as f64, (self.mouse.pos.1 * scale) as f64));
                             }
-                            let menu = self.mouse.right_moved < 5.0 && self.ed.right_click();
-                            if menu && self.prefs.omsi_controls && !self.keys.shift {
+                            // (the crossing editor holds the map: no right-click menu of it,
+                            // and nothing of the map is picked by one)
+                            let menu = !self.crossing.open && self.mouse.right_moved < 5.0 && self.ed.right_click();
+                            if self.crossing.open {
+                                // (nothing)
+                            } else if menu && self.prefs.omsi_controls && !self.keys.shift {
                                 // (OMSI 2's editor: a right click on the ground goes there; Shift opens the menu)
                                 if let Some(c) = self.ed.cursor {
                                     let d = self.cam.distance;

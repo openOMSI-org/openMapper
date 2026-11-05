@@ -251,6 +251,19 @@ impl Camera {
         (a.as_dvec3() + o, (b - a).normalize().as_dvec3())
     }
 
+    /// The window point a world point is drawn at (pixels from the view's top left), or None
+    /// behind the eye. The inverse of [`Camera::ray`]: everything is taken from the render
+    /// origin, as the matrices are.
+    pub fn project(&self, w: DVec3, w_px: f32, h_px: f32) -> Option<(f32, f32)> {
+        let vp = self.proj(w_px / h_px.max(1.0)) * self.view();
+        let c = vp * (w - self.origin()).as_vec3().extend(1.0);
+        if c.w <= 1e-5 {
+            return None;
+        }
+        let n = c.truncate() / c.w;
+        Some(((n.x * 0.5 + 0.5) * w_px, (0.5 - n.y * 0.5) * h_px))
+    }
+
     /// Pan by screen pixels (middle button, two fingers on a trackpad, dragging the empty
     /// ground): the view slides across the screen, the point grabbed staying under the cursor
     /// at the pivot's distance. Looking down steeply it slides over the ground.
@@ -369,6 +382,28 @@ mod tests {
         c.fly(1.0, 0.0, 0.0, false, 1.0, 0.0);
         let d = c.wanted_eye() - eye;
         assert!(d.y > 29.0 && d.x.abs() < 1e-6 && d.z.abs() < 1e-6, "{d:?}");
+    }
+
+    /// A point projected and aimed at again is the point itself: the two take the same render
+    /// origin (an origin left out of the projection puts the click metres from the path).
+    #[test]
+    fn a_projected_point_is_the_one_the_ray_meets() {
+        let mut c = Camera::default();
+        // (far from the map's origin, where the render origin is not zero)
+        c.target = DVec3::new(5384.0, -2917.0, 2.0);
+        c.distance = 60.0;
+        c.yaw = 0.7;
+        c.pitch = -55.0;
+        c.snap();
+        let (w, h) = (1200.0f32, 800.0f32);
+        for p in [c.target, c.target + DVec3::new(8.0, -3.0, 0.5), c.target + DVec3::new(-15.0, 9.0, 0.0)] {
+            let (x, y) = c.project(p, w, h).expect("the point is in front of the eye");
+            let (o, d) = c.ray(x, y, w, h);
+            // (the ray passes through the point: its nearest approach is nothing)
+            let t = (p - o).dot(d);
+            let gap = ((o + d * t) - p).length();
+            assert!(gap < 0.05, "{p:?} is {gap} from the ray through ({x}, {y})");
+        }
     }
 
     #[test]
