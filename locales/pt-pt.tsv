@@ -2759,3 +2759,7 @@ Start a new path at the end of a path nearby. Click one of the green circles	Sta
 Complete to a nearby path	Complete to a nearby path
 Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles
 Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is
+Even grade	Inclinação uniforme
+Both ends take the one rise between their heights	As duas pontas tomam a mesma subida entre as suas alturas
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	Como esta via parte, em graus. O ponto fica; uma curva que um só arco não faz é dividida em troços
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Como esta via chega, em graus. O ponto fica; uma curva que um só arco não faz é dividida em troços

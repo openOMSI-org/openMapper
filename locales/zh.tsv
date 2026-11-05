@@ -2756,3 +2756,7 @@ Start a new path at the end of a path nearby. Click one of the green circles	在
 Complete to a nearby path	连接至附近路径
 Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	将所选路径延接至附近路径的端点：所选路径的端点、方向及坡度保持不变，以一或两段连接。点选绿色圆圈即可
 Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	点选绿色圆圈：会从所选路径端点向该点新增一或两段，所选路径保持不变
+Even grade	两端均匀坡度
+Both ends take the one rise between their heights	两端取两高度之间的同一坡度
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	此路径出去的方向（度）。点留在原处；一段弧做不到的转角会拆成几段
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	此路径进来的方向（度）。点留在原处；一段弧做不到的转角会拆成几段

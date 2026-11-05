@@ -119,8 +119,8 @@ By slope and height	依斜度與高度
 The chosen layer painted over the whole map where the ground is so steep (and so high)	將所選圖層塗在整張地圖中地面斜度（與高度）達此條件之處
 Slope	斜度
 Even grade	兩端均勻斜度
-How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	呢段路徑離開嘅方向（度）。個點留喺原位；一段弧做唔到嘅轉角會拆成幾段
-How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	呢段路徑到達嘅方向（度）。個點留喺原位；一段弧做唔到嘅轉角會拆成幾段
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	此路徑離開的方向（度）。該點留在原處；一段弧做不到的轉角會分作幾段
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	此路徑到達的方向（度）。該點留在原處；一段弧做不到的轉角會分作幾段
 Both ends take the one rise between their heights	兩端用同一斜度，即兩點高度之差
 Height	高度
 Fade	漸變
