@@ -590,7 +590,7 @@ fn copy_texture(name: &str, dirs: &[&Path], to: &Path) {
     }
 }
 
-fn copy_tree_missing(from: &Path, to: &Path) {
+pub(crate) fn copy_tree_missing(from: &Path, to: &Path) {
     let Ok(rd) = std::fs::read_dir(from) else { return };
     let _ = std::fs::create_dir_all(to);
     for e in rd.flatten() {

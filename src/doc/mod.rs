@@ -423,12 +423,35 @@ impl Document {
         self.global_dirty || self.timetable.dirty || self.traffic.dirty || self.descriptions.dirty || self.tiles.values().any(|t| t.dirty)
     }
 
-    /// A fresh IDCode for a new object or spline.
+    /// A fresh IDCode for a new object or spline. Maps often keep `NextIDCode` below an
+    /// IDCode that is already in use: a new spline would then be the same one as a road
+    /// that is already there, drawn on top of it, and deleting it would take that road.
     pub fn new_id(&mut self) -> i64 {
+        let highest = self.highest_id();
+        if self.global.next_id_code <= highest {
+            self.global.next_id_code = highest + 1;
+        }
         let id = self.global.next_id_code.max(1);
         self.global.next_id_code = id + 1;
         self.global_dirty = true;
         id
+    }
+
+    /// The greatest IDCode any object or spline on the map already has.
+    fn highest_id(&self) -> i64 {
+        let mut m = 0i64;
+        for t in self.tiles.values() {
+            for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
+                m = m.max(o.id);
+            }
+            for s in &t.tile.splines {
+                m = m.max(s.id);
+            }
+            for a in &t.tile.spline_attachments {
+                m = m.max(a.id);
+            }
+        }
+        m
     }
 
     /// Add a tile of flat ground at the mean height of its neighbours' edges.

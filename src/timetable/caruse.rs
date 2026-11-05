@@ -101,7 +101,7 @@ impl Timetable {
     pub fn touch_car_use(&mut self, file: &str) {
         self.car_changed.insert(file.to_lowercase());
         self.car_removed.remove(&file.to_lowercase());
-        self.dirty = true;
+        self.mark();
     }
 
     /// A new, empty assignment for `line` valid for all years (its file name made unique).
@@ -123,7 +123,7 @@ impl Timetable {
         let c = self.car_use.remove(i);
         self.car_changed.remove(&c.file.to_lowercase());
         self.car_removed.insert(c.file.to_lowercase());
-        self.dirty = true;
+        self.mark();
     }
 
     /// Files of a line that was renamed follow it; those of one that was deleted go.

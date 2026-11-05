@@ -2541,7 +2541,6 @@ That point is already joined	Ce point est déjà relié
 Click an end point of a path	Cliquez une extrémité d'un chemin
 Path connected	Chemin relié
 Connect the path	Relier le chemin
-There is no tile there	Il n'y a pas de dalle là
 Click the other point	Cliquez l'autre point
 The graphics API changes the next time openMapper starts	L'API graphique change au prochain démarrage d'openMapper
 Settings…	Réglages…
@@ -2627,3 +2626,81 @@ Polygon from them	Polygone à partir d'eux
 Use dependencies	Utiliser les dépendances
 I hold the redistribution rights	Je dispose des droits de redistribution
 Yes	Oui
+Saving…	Enregistrement…
+Still saving	Encore en cours
+Click the spline they should stand on. Each follows that road and keeps its IDCode	Cliquez le spline sur lequel ils doivent se tenir. Chacun suit cette route et garde son IDCode
+Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there	Désactivé : seules les tuiles autour de la caméra sont chargées, comme dans l'éditeur d'OMSI 2, et d'autres se chargent quand vous y allez
+A big or very detailed map is lighter with fewer tiles: the others load as you go there	Une carte grande ou très détaillée est plus fluide avec moins de tuiles : les autres se chargent quand vous y allez
+tiles round the camera are loaded; more load as you go there	tuiles autour de la caméra sont chargées ; d'autres se chargent quand vous y allez
+Only the tiles round the camera are loaded; more load as you go there	Seules les tuiles autour de la caméra sont chargées ; d'autres se chargent quand vous y allez
+Load a big map 100 tiles at a time, as OMSI 2's own editor does?\n\nOnly the 100 tiles round the camera are kept in graphics memory; the others load as you go there. It keeps very big maps light. You can change it any time in View > Load all tiles at once (off).	Charger une grande carte 100 tuiles à la fois, comme l'éditeur d'OMSI 2 ?\n\nSeules les 100 tuiles autour de la caméra restent en mémoire graphique ; les autres se chargent quand vous y allez. Les très grandes cartes restent ainsi légères. Modifiable à tout moment dans Vue > Charger toutes les tuiles d'un coup (désactivé).
+Choose the OMSI installation first	Choisissez d'abord l'installation d'OMSI
+a file the object names is missing	un fichier nommé par l'objet manque
+Another crossing file	Un autre fichier de carrefour
+Crossing paths of the picked object…	Voies de l'objet carrefour choisi…
+Crossing paths	Voies du carrefour
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	Les voies d'un objet carrefour ou nœud, leurs blocages et leur programme de feux, modifiés dans une copie de l'objet - l'original reste tel quel
+Footway	Trottoir
+Street	Chaussée
+Against	À contresens
+Both ways	Dans les deux sens
+Along	Dans le sens
+Left	À gauche
+Right	À droite
+Red and yellow	Rouge et jaune
+Green and yellow	Vert et jaune
+Off	Éteint
+Select a crossing object, or pick one of these	Choisissez un objet carrefour, ou prenez-en un dans cette liste
+Pick a crossing object of the map	Prenez un objet carrefour de la carte
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	Ici se modifient les voies, les blocages et le programme de feux d'un carrefour existant. L'objet est copié dans le dossier propre à openMapper ; le fichier d'origine reste tel quel.
+openMapper's copy	la copie d'openMapper
+in its own file (a copy is made on saving)	dans son propre fichier (une copie est faite à l'enregistrement)
+Paths	Voies
+Add a path	Ajouter une voie
+Remove this path	Supprimer cette voie
+0 is a straight line, above 0 turns right, below 0 left	0 est une ligne droite, au-dessus de 0 tourne à droite, en dessous à gauche
+Direction	Sens
+Turn signal	Clignotant
+Keeps the junction clear	Garde le carrefour libre
+A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	Un véhicule qui attend sur cette voie garde le carrefour libre pour les autres (`[crossingproblem]`)
+Blocks	Bloque
+Cycle	Cycle
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]` : les secondes d'un cycle. Sans valeur, c'est la somme des phases du feu le plus long
+The phases do not add up to the cycle: the last one holds to its end	Les phases ne font pas le cycle : la dernière tient jusqu'à sa fin
+(no name)	(sans nom)
+Detector	Détecteur
+`[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]` : à combien de mètres avant la ligne d'arrêt un véhicule demande le passage
+A phase	Une phase
+Remove this light	Supprimer ce feu
+A light	Un feu
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	Un carrefour à feux a besoin des têtes de signal sur la carte : le jeu n'exécute qu'un programme auquel des têtes sont reliées
+Request loops	Boucles de demande
+Spline helpers	Points d'accroche des splines
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	Où une route de la carte vient s'accrocher au carrefour. x, hauteur, avant dans le repère de l'objet
+The road type it takes (a `.sli`)	Le type de route qu'il accepte (un `.sli`)
+A helper	Un point d'accroche
+At the picked end	À l'extrémité choisie
+A helper where the picked path ends, facing out of the crossing	Un point d'accroche là où finit la voie choisie, vers l'extérieur du carrefour
+Save as a copy	Enregistrer comme copie
+Write the paths into openMapper's copy of the object	Écrire les voies dans la copie de l'objet d'openMapper
+The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	Le dossier de l'objet est copié chez openMapper, les voies y sont écrites et l'objet de la carte pointe dessus : le fichier d'origine n'est pas touché
+Back to how the object was when it was opened (the file is not touched)	Revenir à l'état de l'ouverture (le fichier n'est pas touché)
+Zoom out	Zoom arrière
+Zoom in	Zoom avant
+The whole crossing in view	Tout le carrefour en vue
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	Glissez une extrémité pour la déplacer. Ctrl l'accroche à l'extrémité d'une autre voie. La molette zoome, le bouton droit ou du milieu déplace la vue
+Back to how it was opened	Retour à l'état de l'ouverture
+Nothing to edit yet	Rien à modifier pour l'instant
+Crossing paths…	Voies du carrefour…
+Trains	Trains
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	Une voie ferrée invisible pour les trains de l'IA : elle rejoint les voies des rails et des aiguillages là où elles finissent
+Keep the ground under roads	Garder le terrain sous les routes
+On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	Activé : le pinceau ne soulève pas le terrain à travers une route. Désactivé : il façonne le terrain sous les routes et à côté aussi librement qu'ailleurs
+There are unsaved changes here: Save or Revert first	Il y a des modifications non enregistrées : enregistrez-les ou annulez-les d'abord
+The map has changed since this was opened: open the object again	La carte a changé depuis l'ouverture : rouvrez l'objet
+A spline helper has no road type: pick one or remove it	Un point d'aide de spline n'a pas de type de route : choisissez-en un ou supprimez-le
+the object names this file outside its own folder, which a copy would lose	l'objet nomme ce fichier hors de son dossier, une copie le perdrait
+what was written does not read back the same	ce qui a été écrit ne se relit pas à l'identique
+its paths are in a file of their own (`[paths]`), which this editor does not read	ses chemins sont dans un fichier à part (`[paths]`), que cet éditeur ne lit pas
+it has no path	il n'a aucun chemin
+jump	saut
