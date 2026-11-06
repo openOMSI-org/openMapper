@@ -140,9 +140,10 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
             }
         }
     };
+    let offset = s.centerline();
     if two_way {
-        lanes(-gap - s.lanes_back as f32 * s.lane_width, s.lanes_back, false);
-        lanes(gap, s.lanes_fwd, true);
+        lanes(offset - gap - s.lanes_back as f32 * s.lane_width, s.lanes_back, false);
+        lanes(offset + gap, s.lanes_fwd, true);
         if mid <= 0.0 && !s.marked {
             dash(-0.1, yellow, true);
             dash(0.1, yellow, true);
@@ -243,12 +244,13 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         p.text(Pos2::new(c, y), egui::Align2::CENTER_CENTER, if fwd { Icon::Up.ch() } else { Icon::Down.ch() }, Icon::font(14.0), col);
         p.line_segment([Pos2::new(x(left), base - 8.0), Pos2::new(x(left), base)], Stroke::new(1.0, Color32::from_gray(200)));
     };
+    let offset = s.centerline();
     if two_way {
         for i in 0..s.lanes_back {
-            lane(-gap - (s.lanes_back - i) as f32 * s.lane_width, false);
+            lane(offset - gap - (s.lanes_back - i) as f32 * s.lane_width, false);
         }
         for i in 0..s.lanes_fwd {
-            lane(gap + i as f32 * s.lane_width, true);
+            lane(offset + gap + i as f32 * s.lane_width, true);
         }
     } else {
         for i in 0..(s.lanes_fwd + s.lanes_back) {
