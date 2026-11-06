@@ -312,11 +312,16 @@ impl Path {
         let half = d.abs().to_radians();
         let r = c / (2.0 * half.sin());
         let length = 2.0 * half * r;
-        if !length.is_finite() || !r.is_finite() || length > c * 4.0 {
-            // (as above: no finite arc keeps this way, so a straight to the same end)
-            self.v[3] = norm_deg(phi) as f32;
-            self.v[4] = 0.0;
-            self.v[5] = c as f32;
+        if !length.is_finite() || !r.is_finite() || length > c * 8.0 {
+            // (a point almost directly behind cannot be reached without a loop: the widest turn
+            // that still leaves in `start_deg` is taken, and the end stops where that arc
+            // reaches. Turning the path round to face the point would silently change the
+            // rotate the user set)
+            let half = 75f64.to_radians();
+            let r = c / (2.0 * half.sin());
+            self.v[3] = norm_deg(start_deg) as f32;
+            self.v[4] = (r * d.signum()) as f32;
+            self.v[5] = (2.0 * half * r) as f32;
             return;
         }
         self.v[3] = norm_deg(start_deg) as f32;
@@ -347,6 +352,14 @@ impl Path {
             self.v[7] = (2.0 * (end_z - z) / l - slope) as f32;
         }
     }
+
+    /// The heading traffic moves in at one of the path's ends: the way the geometry runs there,
+    /// or the other way when the path is driven against it (both ways: along it).
+    pub fn travel_at(&self, at_end: bool) -> f64 {
+        let c = self.curve();
+        let h = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
+        if self.direction() == 1 { norm_deg(h + 180.0) } else { h }
+    }
 }
 
 /// An end of another path a drag has snapped onto, with the way that path runs away from it
@@ -364,26 +377,49 @@ pub struct Joint {
     /// path's traffic arrives at the joint and drives on into the new one, 1 when it leaves the
     /// joint (so the new path is driven towards the joint), 2 when both.
     pub flow: i32,
+    /// The other path's own `direction` (0 along, 1 against, 2 both). A new path laid out of
+    /// this joint takes it as it stands: a path carried on from another is driven the way that
+    /// one is, not turned round by the geometry of the joint.
+    pub dir: i32,
+    /// The heading traffic actually moves in at the joint, along the other path: `heading` is
+    /// only the line the path lies on, and a path may be driven either way along it. A new path
+    /// is given a `direction` that puts its traffic the same way round as this.
+    pub travel: f64,
 }
 
 impl Joint {
-    /// The way traffic crosses this joint: along the other path's body when that path's traffic
-    /// leaves the joint, back along it when its traffic arrives. A path put on the joint is
-    /// tangent to that line, and `heading` alone does not say which of its two directions it is
-    /// - this does. Arriving head-on, a join can never be made without looping right round.
+    /// The way traffic crosses this joint - the other path's own travel there.
     pub fn through(self) -> f64 {
-        match self.flow {
-            0 => norm_deg(self.heading + 180.0),
-            _ => norm_deg(self.heading),
-        }
+        self.travel
     }
 
     /// The way a path *begun* at this joint runs: back along the other path's body, so it
-    /// leaves the joint outward rather than along the path it is put on. Whether traffic is
-    /// driven along it or against it is what `flow` says.
+    /// leaves the joint outward rather than along the path it is put on.
     pub fn outward(self) -> f64 {
         norm_deg(self.heading + 180.0)
     }
+
+    /// The `direction` for a path whose geometry leaves the joint in `heading`: 0 when that runs
+    /// with the traffic here, 1 when it runs against it, 2 when the other path is both ways.
+    /// This is what keeps a path drawn out of a lane pointing the same way the lane does instead
+    /// of backwards.
+    pub fn direction_for(self, heading: f64) -> i32 {
+        if self.dir == 2 {
+            return 2;
+        }
+        let d = norm_deg(heading - self.travel + 180.0) - 180.0;
+        if d.abs() <= 90.0 { 0 } else { 1 }
+    }
+}
+
+/// The `direction` a path whose geometry leaves a joint in `heading` should have, given the
+/// heading traffic moves in there (`travel`) and whether the other path is both ways.
+pub fn direction_towards(heading: f64, travel: f64, both: bool) -> i32 {
+    if both {
+        return 2;
+    }
+    let d = norm_deg(heading - travel + 180.0) - 180.0;
+    if d.abs() <= 90.0 { 0 } else { 1 }
 }
 
 /// The `direction` (0 along, 1 against, 2 both) a new path laid outward from a joint of another
@@ -558,7 +594,7 @@ impl Crossing {
         } else {
             (norm_deg(c.heading_at(0.0)), q.slope_start())
         };
-        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end) })
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end) })
     }
 
     /// The text of the blocks this editor owns, in the order it writes them.

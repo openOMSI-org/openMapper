@@ -31,19 +31,6 @@ const GOOD: Color32 = Color32::from_rgb(120, 200, 130);
 /// How near a click must be to an end to take it (pixels).
 const GRAB: f32 = 9.0;
 
-/// Where a dragged end set out from. `spawned` is how many pieces were inserted after `root`
-/// on the last rebuild, so the next move replaces them instead of piling more on.
-#[derive(Clone)]
-struct ReachAnchor {
-    root: usize,
-    start: DVec2,
-    heading: f64,
-    z: f64,
-    /// The rise the path had at its start when it was taken.
-    slope: f64,
-    spawned: usize,
-}
-
 /// The crossing path editor's window and its state.
 pub struct CrossingPaths {
     pub open: bool,
@@ -94,9 +81,6 @@ pub struct CrossingPaths {
     /// The height (world) the map drag keeps the ray on: the end's own height when it was
     /// taken, so the point stays under the cursor instead of sliding on the object's ground.
     map_drag_plane: Option<f64>,
-    /// Where a dragged end set out from, so the piece can be rebuilt as several forward
-    /// pieces instead of one loop, and the extras from the last rebuild can be replaced.
-    drag_anchor: Option<ReachAnchor>,
     /// A drag of the start or end rotation, so the pieces it splits into can be rebuilt
     /// from the path as the drag began.
     rot_drag: Option<RotGesture>,
@@ -197,7 +181,6 @@ impl Default for CrossingPaths {
             nearby: Vec::new(),
             map_drag: None,
             map_drag_plane: None,
-            drag_anchor: None,
             rot_drag: None,
             side: Side::Auto,
             surface: std::sync::Arc::new(Vec::new()),
@@ -352,13 +335,23 @@ fn snap_joint(crossing: &Crossing, i: usize, q: DVec2, reach: f64, ctrl: bool) -
 }
 
 /// Put path `i`'s start onto a joint: at its point, in its way, and at its rise - so the
-/// piece joins the next one smoothly instead of merely touching it. An end is not turned
-/// this way: see [`apply_reach`], which splits it into pieces instead.
+/// piece joins the next one smoothly instead of merely touching it.
 fn join_start(crossing: &mut Crossing, i: usize, j: Joint) {
     let Some(p) = crossing.paths.get_mut(i) else { return };
     p.set_start(DVec3::new(j.pos.x, j.pos.y, j.pos.z));
     p.fit_start_tangent(j.outward());
     p.set_start_height_and_slope(j.pos.z, j.slope);
+}
+
+/// Put path `i`'s end onto a joint: its point and its rise. The way the path leaves its start
+/// is kept - a drag moves an end, and turning the other end round to match the joint would
+/// silently change the rotate the user set.
+fn join_end(crossing: &mut Crossing, i: usize, j: Joint) {
+    let Some(p) = crossing.paths.get_mut(i) else { return };
+    let leave = p.heading();
+    p.set_end(DVec3::new(j.pos.x, j.pos.y, p.end().z));
+    p.fit_start_tangent(leave);
+    p.set_end_height_and_slope(j.pos.z, j.slope);
 }
 
 /// The steepest rise a join's piece may take (m per metre). A piece of a few centimetres cannot
@@ -965,45 +958,6 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
     out
 }
 
-/// Replace `anchor.root` with the pieces that reach `aim`, deleting the ones the previous
-/// move inserted. `joint` is the other path's end when the drag has snapped onto one: the
-/// pieces then arrive in its way and at its height. The departure the path had is kept
-/// either way - the end is split into pieces rather than the path turned round. The last
-/// piece's index is returned.
-fn apply_reach(crossing: &mut Crossing, anchor: &mut ReachAnchor, aim: DVec2, tris: &[f32], joint: Option<Joint>, side: Side) -> Option<usize> {
-    if anchor.root >= crossing.paths.len() {
-        return None;
-    }
-    let template = crossing.paths[anchor.root].clone();
-    drop_inserted(&mut crossing.paths, anchor.root + 1, anchor.spawned);
-    anchor.spawned = 0;
-    let segs = match joint {
-        Some(j) => connect_segs(anchor.start, anchor.heading, aim, j.through(), side),
-        None => forward_segs(anchor.start, anchor.heading, aim, side),
-    };
-    if segs.is_empty() {
-        return None;
-    }
-    let end = match joint {
-        Some(j) => PieceEnd::At { z: j.pos.z, slope: j.slope },
-        None => PieceEnd::Surface,
-    };
-    let a = DVec3::new(anchor.start.x, anchor.start.y, anchor.z);
-    let pieces = lay_join(&template, a, anchor.slope, &segs, end, true, tris);
-    if pieces.is_empty() {
-        return None;
-    }
-    let mut made = pieces.into_iter();
-    if let Some(first) = made.next() {
-        crossing.paths[anchor.root] = first;
-    }
-    for (k, q) in made.enumerate() {
-        crossing.paths.insert(anchor.root + 1 + k, q);
-        anchor.spawned += 1;
-    }
-    Some(anchor.root + segs.len() - 1)
-}
-
 /// A path carried on from the end of path `i`: it leaves in the way that one arrives, at
 /// the same rise, on the same radius, a short piece (not a copy of a kilometre-long path,
 /// and not straightened — a straight piece is only what the previous one already was).
@@ -1039,13 +993,13 @@ fn continue_path(crossing: &mut Crossing, i: Option<usize>) -> Option<usize> {
 /// Move one end to `q` and put it on the object's surface: the end sits where the deck is, and
 /// the rise between the two ends is what the path climbs at. A drag that only kept the height
 /// the end already had left a path floating over the deck or sunk into it.
-fn move_end_on_surface(crossing: &mut Crossing, i: usize, at_end: bool, q: DVec2, tris: &[f32]) {
+fn move_end_on_surface(crossing: &mut Crossing, i: usize, at_end: bool, q: DVec2, tris: &[f32], hint: Option<f64>) {
     if at_end {
         move_end(crossing, i, at_end, q);
         let Some(p) = crossing.paths.get_mut(i) else { return };
         // (the dragged end takes the deck's height, at one grade)
-        if let Some(z) = surface_z(tris, p.end().truncate()) {
-            set_end_height(p, z);
+        if let Some(z) = surface_z(tris, p.end().truncate()).or(hint) {
+            climb_to(p, z);
         }
     } else {
         // (the far end stays where it is, at its own height: the start is put on the deck and
@@ -1053,7 +1007,7 @@ fn move_end_on_surface(crossing: &mut Crossing, i: usize, at_end: bool, q: DVec2
         move_end(crossing, i, at_end, q);
         let Some(p) = crossing.paths.get_mut(i) else { return };
         let (end_z, end_rise) = (p.end().z, p.slope_end() as f64);
-        let Some(z) = surface_z(tris, p.start().truncate()) else { return };
+        let Some(z) = surface_z(tris, p.start().truncate()).or(hint) else { return };
         p.v[2] = z as f32;
         let l = p.length();
         if l > 1e-3 {
@@ -1261,7 +1215,7 @@ impl CrossingPaths {
         } else {
             (p.start(), crate::roads::norm_deg(c.heading_at(0.0)), p.slope_start())
         };
-        Some(Joint { pos, heading, slope, flow: outward_flow(p.direction(), at_end) })
+        Some(Joint { pos, heading, slope, flow: outward_flow(p.direction(), at_end), dir: p.direction(), travel: p.travel_at(at_end) })
     }
 
     // ---------------------------------------------------------------- undo
@@ -1475,6 +1429,39 @@ impl CrossingPaths {
         self.side
     }
 
+    /// The height of whatever a point of the object's frame sits on: the object's own mesh
+    /// where it has one, else the road or ground of the map under it (the top of the nearest
+    /// lane's points). This is what a dragged end is seated on, so a path dragged off the
+    /// object still lies on the road rather than floating where its height was.
+    pub fn deck_at(&self, ed: &mut Editor, mut assets: Option<&mut Assets>, local: DVec2) -> Option<f64> {
+        if let Some(z) = surface_z(&self.surface, local) {
+            return Some(z);
+        }
+        let Sel::Object(k, id) = self.target? else { return None };
+        let doc = ed.doc.as_ref()?;
+        let o = doc.object(k, id)?;
+        let file = o.file.clone();
+        let abs = assets.as_deref_mut().and_then(|a| a.object(&file)).map(|m| m.abs_height).unwrap_or(true);
+        let world = doc.object_world(k, o, abs);
+        let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
+        let at = world + m.transform_point3(DVec3::new(local.x, local.y, 0.0).as_vec3()).as_dvec3();
+        let mut z = None;
+        if let Some(assets) = assets {
+            let (lanes, _) = crate::lanes::near(doc, assets, at.truncate(), 8.0);
+            for l in &lanes {
+                for p in &l.pts {
+                    if (p.truncate() - at.truncate()).length() <= 5.0 {
+                        // (the highest lane there: where a wheel would rest)
+                        z = Some(z.map_or(p.z, |b: f64| b.max(p.z)));
+                    }
+                }
+            }
+        }
+        let z = z.unwrap_or_else(|| doc.ground(at.truncate()));
+        let back = m.inverse().transform_point3((DVec3::new(at.x, at.y, z) - world).as_vec3());
+        Some(back.z as f64)
+    }
+
     /// Delete the picked path, as the list's bin does. True when one was taken out (one step
     /// back for Ctrl+Z, the pick moved to the path that took its place).
     pub fn delete_picked(&mut self) -> bool {
@@ -1488,7 +1475,6 @@ impl CrossingPaths {
         sheet.crossing.remove_path(i);
         self.selected = if sheet.crossing.paths.is_empty() { None } else { Some(i.min(sheet.crossing.paths.len() - 1)) };
         self.drag = None;
-        self.drag_anchor = None;
         self.rot_drag = None;
         true
     }
@@ -1543,20 +1529,28 @@ impl CrossingPaths {
             if n < 2 {
                 continue;
             }
-            // (both ends, and at each the way is *away* from the joint along the lane: at the
-            // start that is against the lane's own travel, at the end it is with it)
-            for (pos, (a, b), at_end) in [(l.pts[0], (l.pts[1], l.pts[0]), false), (l.pts[n - 1], (l.pts[n - 2], l.pts[n - 1]), true)] {
+            // (both ends. `heading` is the way the lane runs *into* its own body from there, as
+            // the crossing's own ends have it - so `outward()` is out of the lane, where a new
+            // path goes. `travel` is the way traffic actually moves there, which is the other
+            // way round when the lane is driven against its geometry)
+            for (pos, geom, at_end) in [
+                (l.pts[0], crate::roads::heading_of((l.pts[1] - l.pts[0]).truncate()), false),
+                (l.pts[n - 1], crate::roads::heading_of((l.pts[n - 1] - l.pts[n - 2]).truncate()), true),
+            ] {
                 // (an end a kilometre down a long spline is not a circle on this crossing)
                 if (pos.truncate() - world.truncate()).length() > reach {
                     continue;
                 }
-                let d = b - a;
+                let d = if at_end { pos - l.pts[n - 2] } else { l.pts[1] - pos };
                 let len = d.truncate().length().max(1e-6);
                 let local = inv.transform_point3((pos - world).as_vec3()).as_dvec3();
-                // (the object's turn is taken out of the lane's heading, the path being
+                // (the object's turn is taken out of the lane's headings, the path being
                 // written in the object's frame)
-                let heading = crate::roads::norm_deg(crate::roads::heading_of(d.truncate()) - rot[0]);
-                out.push(Joint { pos: local, heading, slope: d.z / len, flow: crate::crossing_edit::outward_flow(l.direction, at_end) });
+                let geom = crate::roads::norm_deg(geom - rot[0]);
+                // (into the lane's own body from this end, as the crossing's own ends have it)
+                let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
+                let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
+                out.push(Joint { pos: local, heading, slope: d.z / len, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel });
             }
         }
         log::debug!("crossing nearby: {} ends within {reach} m", out.len());
@@ -1565,8 +1559,8 @@ impl CrossingPaths {
 
     /// Start a new path from a nearby path's end: it leaves in that path's way, at its rise,
     /// ten metres long (its numbers are there to be changed after). Its traffic direction is
-    /// the join's (`Joint::flow`), so it follows the way the other path is driven rather than
-    /// always being one way.
+    /// set from the way the other path is driven, compared with the new path's own geometry, so
+    /// it points the same way the lane does rather than backwards.
     pub fn start_from_joint(&mut self, j: Joint) -> Option<usize> {
         if !self.wants_nearby() {
             return None;
@@ -1587,7 +1581,7 @@ impl CrossingPaths {
         p.v[5] = 10.0;
         p.v[6] = j.slope as f32;
         p.v[7] = j.slope as f32;
-        p.v[10] = j.flow as f32;
+        p.v[10] = j.direction_for(j.outward()) as f32;
         let at = {
             let Some(sheet) = self.sheet.as_mut() else { return None };
             sheet.crossing.paths.push(p);
@@ -1626,7 +1620,6 @@ impl CrossingPaths {
         self.drag = None;
         self.map_drag = None;
         self.map_drag_plane = None;
-        self.drag_anchor = None;
         self.draw_from = None;
         self.edge = None;
     }
@@ -1675,10 +1668,6 @@ impl CrossingPaths {
         self.map_drag = Some((i, at_end));
         // (a new grab is judged on this end's own height, not the one a previous drag locked)
         self.map_drag_plane = None;
-        self.drag_anchor = at_end.then(|| {
-            let p = self.sheet.as_ref().and_then(|s| s.crossing.paths.get(i))?;
-            Some(ReachAnchor { root: i, start: p.start().truncate(), heading: p.heading(), z: p.start().z, slope: p.slope_start(), spawned: 0 })
-        }).flatten();
         true
     }
 
@@ -1695,51 +1684,29 @@ impl CrossingPaths {
     pub fn let_go(&mut self) {
         self.map_drag = None;
         self.map_drag_plane = None;
-        self.drag_anchor = None;
     }
 
     /// Drag the end the map took to this point of the object's frame, as the drawing in the
-    /// window does. `snap` is how near another end must be to be taken (None: no snapping,
-    /// which is what holding Ctrl gives).
-    pub fn drag_map_end(&mut self, at: DVec3, joint: Option<Joint>) -> bool {
+    /// window does. `joint` is the end it has snapped onto, when it has.
+    ///
+    /// This only ever moves the one path: an end is not split into pieces to reach a point.
+    /// Pieces belong to a join (`Complete to a nearby path`), where a path has to leave in one
+    /// way and arrive in another. A drag that split instead piled pieces on top of each other
+    /// and turned little circles.
+    pub fn drag_map_end(&mut self, at: DVec3, joint: Option<Joint>, hint: Option<f64>) -> bool {
         let Some((i, at_end)) = self.map_drag else { return false };
         if self.sheet.as_ref().is_none_or(|s| i >= s.crossing.paths.len()) {
             self.map_drag = None;
             self.map_drag_plane = None;
-            self.drag_anchor = None;
             return false;
         }
-        if at_end {
-            // (the end is rebuilt as pieces from where the path set out: the way it leaves,
-            // and the point it starts at, are not turned to make one piece reach the joint)
-            if self.drag_anchor.is_none() {
-                let p = self.sheet.as_ref().and_then(|s| s.crossing.paths.get(i)).map(|p| (p.start(), p.heading(), p.slope_start()));
-                if let Some((start, heading, slope)) = p {
-                    self.drag_anchor = Some(ReachAnchor { root: i, start: start.truncate(), heading, z: start.z, slope, spawned: 0 });
-                }
-            }
-            let aim = joint.map(|j| j.pos.truncate()).unwrap_or(at.truncate());
-            return self.reach_aim(aim, joint);
-        }
+        let tris = std::sync::Arc::clone(&self.surface);
         let Some(sheet) = self.sheet.as_mut() else { return false };
         match joint {
+            Some(j) if at_end => join_end(&mut sheet.crossing, i, j),
             Some(j) => join_start(&mut sheet.crossing, i, j),
-            None => move_end_on_surface(&mut sheet.crossing, i, at_end, at.truncate(), &std::sync::Arc::clone(&self.surface)),
+            None => move_end_on_surface(&mut sheet.crossing, i, at_end, at.truncate(), &tris, hint),
         }
-        true
-    }
-
-    /// Rebuild the dragged end as forward pieces (or pieces that arrive in `joint`'s way),
-    /// on the surface.
-    fn reach_aim(&mut self, aim: DVec2, joint: Option<Joint>) -> bool {
-        let Some(mut anchor) = self.drag_anchor.clone() else { return false };
-        let tris = std::sync::Arc::clone(&self.surface);
-        let Some(last) = self.sheet.as_mut().and_then(|s| apply_reach(&mut s.crossing, &mut anchor, aim, &tris, joint, self.side)) else {
-            return false;
-        };
-        self.drag_anchor = Some(anchor);
-        self.selected = Some(last);
-        self.map_drag = Some((last, true));
         true
     }
 
@@ -1922,6 +1889,9 @@ impl CrossingPaths {
         let mut save = false;
         let mut revert = false;
         let mut assets = assets;
+        // (the object's own mesh, read here rather than in the drawing: a drag on the map has
+        // to follow the surface even when the crossing is not drawn from above)
+        self.load_mesh(assets.as_deref_mut());
         // (a new path started from a nearby path: its ends are gathered here, so the drawing
         // and the map both know what can be clicked)
         if self.wants_nearby() && self.sheet.is_some() {
@@ -1947,12 +1917,13 @@ impl CrossingPaths {
                 // its own top-down layout: put straight into the row below, the left side
                 // would lay its labels out sideways and push the view off the window)
                 ui.spacing_mut().item_spacing = Vec2::new(4.0, 3.0);
-                let body = if beside {
-                    Vec2::new(ui.available_width().max(320.0), ui.available_height().max(400.0))
-                } else {
-                    Vec2::new(ui.available_width().max(800.0), ui.available_height().max(440.0))
-                };
-                ui.set_min_size(body);
+                // (the content is held to the width the window has: no minimum taken from the
+                // available width, which made the window grow a little every frame, and no
+                // ceiling of its own, which let a long hint run on and pulled the window out
+                // to that width)
+                let room = if beside { (size.x - 16.0).max(320.0) } else { ui.available_width().clamp(320.0, 1200.0) };
+                ui.set_max_width(room);
+                ui.set_min_height(400.0);
                 let Some(mut sheet) = self.sheet.take() else {
                     self.no_target(ui, ed, roots, lib);
                     return;
@@ -1968,7 +1939,8 @@ impl CrossingPaths {
                         // (the panel's whole height scrolls: the numbers of the picked path -
                         // its radius and length among them - are always within reach)
                         egui::ScrollArea::vertical().id_salt("crossing 3d side").auto_shrink([false, false]).show(ui, |ui| {
-                            ui.set_width(320.0);
+                            ui.set_max_width(340.0);
+                            ui.set_min_width(340.0);
                             ui.horizontal(|ui| {
                                 if ui.button(tr("Back to 2D", "К 2D")).on_hover_text(tr("Draw the crossing from above, in the window, and lay paths there", "Рисовать перекрёсток сверху, в окне, и проводить пути там")).clicked() {
                                     self.view_3d = false;
@@ -2179,9 +2151,9 @@ impl CrossingPaths {
         }
     }
 
-    /// The paths page: the list and its numbers on the left, the crossing drawn on the right.
-    fn paths_body(&mut self, ui: &mut egui::Ui, ed: &mut Editor, sheet: &mut Sheet, body: Vec2, mut assets: Option<&mut Assets>) {
-        // (the object's own mesh, read once for the drawing: the crossing seen under its paths)
+    /// The object's own mesh: read once, for drawing the crossing under its paths and for
+    /// seating a dragged end on its surface.
+    fn load_mesh(&mut self, mut assets: Option<&mut Assets>) {
         if self.footprint.as_ref().map(|f| f.0 != self.rel).unwrap_or(true) {
             self.footprint = assets.as_deref_mut().and_then(|a| footprint_of(a, &self.rel));
         }
@@ -2190,6 +2162,11 @@ impl CrossingPaths {
             self.surface = std::sync::Arc::new(assets.and_then(|a| surface_tris(a, &rel)).unwrap_or_default());
             self.surface_for = rel;
         }
+    }
+
+    /// The paths page: the list and its numbers on the left, the crossing drawn on the right.
+    fn paths_body(&mut self, ui: &mut egui::Ui, ed: &mut Editor, sheet: &mut Sheet, body: Vec2, assets: Option<&mut Assets>) {
+        let mut assets = assets;
         let (left, rest) = (320.0f32, (body.x - 334.0).max(400.0));
         ui.horizontal_top(|ui| {
             ui.allocate_ui_with_layout(Vec2::new(left, body.y), egui::Layout::top_down(egui::Align::Min), |ui| {
@@ -2203,7 +2180,7 @@ impl CrossingPaths {
             ui.separator();
             ui.allocate_ui_with_layout(Vec2::new(rest, body.y), egui::Layout::top_down(egui::Align::Min), |ui| {
                 self.view_bar(ui);
-                self.canvas_ui(ui, sheet);
+                self.canvas_ui(ui, sheet, ed, assets.as_deref_mut());
             });
         });
     }
@@ -2506,6 +2483,9 @@ impl CrossingPaths {
             egui::Grid::new("crossing numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
                 ui.label(RichText::new(tr("Start point", "Начало")).small().color(DIM));
                 ui.horizontal(|ui| {
+                    // (four numbers and a rotation in one row: narrow fields, so the row fits
+                    // the panel instead of widening the window every frame)
+                    ui.spacing_mut().interact_size.x = 50.0;
                     changed |= ui.add(egui::DragValue::new(&mut p.v[0]).speed(0.05).prefix("x ")).changed();
                     changed |= ui.add(egui::DragValue::new(&mut p.v[1]).speed(0.05).prefix("y ")).changed();
                     changed |= ui.add(egui::DragValue::new(&mut p.v[2]).speed(0.05).prefix("z ")).changed();
@@ -2522,6 +2502,7 @@ impl CrossingPaths {
                 let mut end = p.end();
                 let (mut ex, mut ey, mut ez) = (end.x, end.y, end.z);
                 ui.horizontal(|ui| {
+                    ui.spacing_mut().interact_size.x = 50.0;
                     let cx = ui.add(egui::DragValue::new(&mut ex).speed(0.05).prefix("x ")).changed();
                     let cy = ui.add(egui::DragValue::new(&mut ey).speed(0.05).prefix("y ")).changed();
                     let cz = ui.add(egui::DragValue::new(&mut ez).speed(0.05).prefix("z ")).changed();
@@ -3176,7 +3157,7 @@ impl CrossingPaths {
         self.scale = (s as f32).clamp(0.6, 400.0);
     }
 
-    fn canvas_ui(&mut self, ui: &mut egui::Ui, sheet: &mut Sheet) {
+    fn canvas_ui(&mut self, ui: &mut egui::Ui, sheet: &mut Sheet, ed: &mut Editor, assets: Option<&mut Assets>) {
         let size = Vec2::new(ui.available_width().max(320.0), ui.available_height().max(320.0));
         #[cfg(test)]
         {
@@ -3466,42 +3447,20 @@ impl CrossingPaths {
                     self.snap_mark = joint.map(|j| j.pos);
                     match joint {
                         Some(j) if at_end => {
-                            // (a snapped end: pieces from where the path set out, arriving in
-                            // the other path's way - not the path turned round onto the point)
-                            if self.drag_anchor.as_ref().is_none_or(|a| a.root != i) {
-                                if let Some(p) = sheet.crossing.paths.get(i) {
-                                    self.drag_anchor = Some(ReachAnchor { root: i, start: p.start().truncate(), heading: p.heading(), z: p.start().z, slope: p.slope_start(), spawned: 0 });
-                                }
-                            }
-                            if let Some(mut anchor) = self.drag_anchor.clone() {
-                                let tris = std::sync::Arc::clone(&self.surface);
-                                if let Some(last) = apply_reach(&mut sheet.crossing, &mut anchor, j.pos.truncate(), &tris, Some(j), self.side) {
-                                    self.drag_anchor = Some(anchor);
-                                    self.selected = Some(last);
-                                }
-                            }
+                            // (a snapped end: the end goes onto the joint's point, its way and
+                            // its rise. One path - nothing is split here; pieces belong to
+                            // `Complete to a nearby path`)
+                            join_end(&mut sheet.crossing, i, j);
+                            self.selected = Some(i);
                         }
                         Some(j) => join_start(&mut sheet.crossing, i, j),
-                        None if at_end => {
-                            if self.drag_anchor.as_ref().is_none_or(|a| a.root != i) {
-                                if let Some(p) = sheet.crossing.paths.get(i) {
-                                    self.drag_anchor = Some(ReachAnchor { root: i, start: p.start().truncate(), heading: p.heading(), z: p.start().z, slope: p.slope_start(), spawned: 0 });
-                                }
-                            }
-                            if let Some(mut anchor) = self.drag_anchor.clone() {
-                                let tris = std::sync::Arc::clone(&self.surface);
-                                if let Some(last) = apply_reach(&mut sheet.crossing, &mut anchor, q, &tris, None, self.side) {
-                                    self.drag_anchor = Some(anchor);
-                                    self.selected = Some(last);
-                                }
-                            }
-                        }
                         None => {
-                            // (a free end: it follows the object's surface, so its height - and
-                            // the rise between the two ends - is the deck's, not whatever the
-                            // path had before it was dragged)
+                            // (a free end: it follows whatever is under it - the object's own
+                            // mesh, or the road or ground of the map - so its height, and the
+                            // rise between the two ends, are the deck's)
                             let tris = std::sync::Arc::clone(&self.surface);
-                            move_end_on_surface(&mut sheet.crossing, i, at_end, q, &tris);
+                            let hint = self.deck_at(ed, assets, q);
+                            move_end_on_surface(&mut sheet.crossing, i, at_end, q, &tris, hint);
                         }
                     }
                 }
@@ -3509,7 +3468,6 @@ impl CrossingPaths {
         }
         if resp.drag_stopped_by(egui::PointerButton::Primary) {
             self.drag = None;
-            self.drag_anchor = None;
             self.snap_mark = None;
         }
         // (let go: the path laid is the crossing's, and it is the one picked)
@@ -3540,9 +3498,10 @@ impl CrossingPaths {
                                 None => PieceEnd::Surface,
                             };
                             let a = DVec3::new(from.x, from.y, j.pos.z);
-                            // (driven the way the path it was laid out of is driven)
+                            // (driven the way the path it was laid out of is driven, compared
+                            // with the new pieces' own geometry)
                             for mut piece in lay_join(&p, a, j.slope, &pieces, end, false, &self.surface) {
-                                piece.v[10] = j.flow as f32;
+                                piece.v[10] = j.direction_for(piece.heading()) as f32;
                                 sheet.crossing.paths.push(piece);
                             }
                             self.selected = Some(sheet.crossing.paths.len() - 1);
@@ -4094,31 +4053,32 @@ Main
         assert_eq!(path_ways(7), (true, false));
     }
 
-    /// A new path laid outward from a join is driven the way the path it joins is driven: into
-    /// the new one when the other's traffic arrives there, against it when the other's leaves.
+    /// A new path laid outward from a join is driven the way the lane it joins is driven, and
+    /// its `direction` is set from its own geometry against that travel - so it points the way
+    /// the lane does rather than backwards.
     #[test]
     fn a_new_path_follows_the_way_of_the_one_it_joins() {
         use crate::crossing_edit::Joint;
-        // (another path ending here, its traffic running along it into the join)
+        // (the old flow table is kept for the file's own sake)
         assert_eq!(outward_flow(0, true), 0, "traffic arrives: the new path is driven along it");
-        // (its traffic running against it, so it leaves from this end)
-        assert_eq!(outward_flow(1, true), 1, "traffic leaves: the new path is driven towards the join");
-        // (at the other path's start it is the other way round)
-        assert_eq!(outward_flow(0, false), 1);
-        assert_eq!(outward_flow(1, false), 0);
-        // (both ways stays both ways)
-        assert_eq!(outward_flow(2, true), 2);
+        assert_eq!(outward_flow(1, true), 1);
         assert_eq!(outward_flow(2, false), 2);
 
         let mut w = opened(Tab::Paths);
         w.set_from_nearby(true);
-        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 1 };
+        // (a lane whose traffic runs north, and whose end is here: the new path leaves that end
+        // outward, north, so its geometry runs with the traffic)
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 180.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0 };
         let at = w.start_from_joint(j).expect("started");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
-        assert_eq!(p.direction(), 1, "the new path takes the join's direction");
-        // (driven against its own geometry, it reaches the joint going the way that joint's
-        // traffic goes - so its geometry leaves the joint the other way round)
-        assert!(ang_delta(p.heading(), j.outward()).abs() < 0.5, "outward from it: {}", p.heading());
+        assert!(ang_delta(p.heading(), 0.0).abs() < 0.5, "outward from it: {}", p.heading());
+        assert_eq!(p.direction(), 0, "with its own geometry, so its chevrons point the lane's way");
+        // (a lane whose traffic runs south, at its start: the new path leaves backwards, so it
+        // is driven against its own geometry)
+        assert_eq!(j.direction_for(180.0), 1, "leaf and travel are opposite");
+        // (both ways stays both ways)
+        let both = Joint { dir: 2, ..j };
+        assert_eq!(both.direction_for(180.0), 2);
     }
 
     /// A joint's `heading` is only the line its other path runs along: the way traffic goes
@@ -4128,10 +4088,10 @@ Main
     #[test]
     fn a_join_arrives_the_way_the_joints_traffic_goes() {
         // (this path's traffic leaves the joint, back along its body: the join arrives along it)
-        let leaves = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 1 };
+        let leaves = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 1, dir: 0, travel: 90.0 };
         assert!((leaves.through() - 90.0).abs() < 1e-9, "{}", leaves.through());
         // (its traffic arrives at the joint: the join arrives the other way round)
-        let arrives = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 0 };
+        let arrives = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 0, dir: 0, travel: 270.0 };
         assert!((arrives.through() - 270.0).abs() < 1e-9, "{}", arrives.through());
         // (a path begun at either runs outward, whichever way the traffic goes)
         assert!((leaves.outward() - 270.0).abs() < 1e-9);
@@ -4223,7 +4183,7 @@ Main
         ];
         let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
         // (path 2 runs 10 m north from the middle of the crossing, at 0)
-        move_end_on_surface(&mut crossing, 2, true, DVec2::new(0.0, 8.0), &tris);
+        move_end_on_surface(&mut crossing, 2, true, DVec2::new(0.0, 8.0), &tris, None);
         let p = &crossing.paths[2];
         assert!((p.end().z - 1.5).abs() < 1e-3, "the dragged end sits on the deck: {}", p.end().z);
         assert!((p.start().z - 0.0).abs() < 1e-3, "the other end keeps its height: {}", p.start().z);
@@ -4232,7 +4192,7 @@ Main
         // (and a dragged start: it sits on the deck, and the far end does not move)
         let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
         let end_before = crossing.paths[2].end();
-        move_end_on_surface(&mut crossing, 2, false, DVec2::new(2.0, 2.0), &tris);
+        move_end_on_surface(&mut crossing, 2, false, DVec2::new(2.0, 2.0), &tris, None);
         let p = &crossing.paths[2];
         assert!((p.start().z - 1.5).abs() < 1e-3, "the start sits on the deck: {}", p.start().z);
         assert!((p.end().truncate() - end_before.truncate()).length() < 0.05, "the far end stays: {:?} vs {end_before:?}", p.end());
@@ -4279,19 +4239,19 @@ Main
         let mut w = opened(Tab::Paths);
         w.set_from_nearby(true);
         let before = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let far = Joint { pos: DVec3::new(-11_748_849.0, -23_623_152.5, 66.8), heading: 90.0, slope: 0.05, flow: 0 };
+        let far = Joint { pos: DVec3::new(-11_748_849.0, -23_623_152.5, 66.8), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0 };
         assert!(w.start_from_joint(far).is_none(), "a joint ten million metres out is not a join");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before, "nothing was added");
         assert!(w.wants_nearby(), "and the mode stays on, ready for a real one");
 
         // (a nearby end in the object's frame is still taken)
-        let near = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0 };
+        let near = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0 };
         assert!(w.start_from_joint(near).is_some());
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1);
         // (and a join across the map is refused too, rather than making a path of millions)
         w.set_complete_to(true);
         let p = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let out = Joint { pos: p + DVec3::new(-2_000_000.0, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0 };
+        let out = Joint { pos: p + DVec3::new(-2_000_000.0, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0 };
         let n = w.sheet.as_ref().unwrap().crossing.paths.len();
         assert!(w.complete_to_joint(out).is_none());
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n, "nothing was added");
@@ -4323,7 +4283,7 @@ Main
         w.selected = Some(2);
         w.set_complete_to(true);
         let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 1 };
+        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 1, dir: 0, travel: 0.0 };
         let at = w.complete_to_joint(j).expect("joined");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert!(p.radius() > 0.0, "the join turns the way it was told: radius {}", p.radius());
@@ -4421,7 +4381,7 @@ Main
     fn a_path_is_started_from_a_nearby_end() {
         let mut w = opened(Tab::Paths);
         let before = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0 };
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0 };
         // (not while the mode is off)
         assert!(!w.wants_nearby());
         assert!(w.start_from_joint(j).is_none(), "nothing is done while the mode is off");
@@ -4457,7 +4417,7 @@ Main
         let way = c.heading_at(c.length.max(0.0));
         let rise = p.slope_end();
         // (off to the side, in another way: a corner, so two pieces)
-        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 1 };
+        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 1, dir: 0, travel: 0.0 };
         w.set_complete_to(true);
         assert!(w.completing());
         let last = w.complete_to_joint(j).expect("joined");
@@ -4496,7 +4456,7 @@ Main
         let d = crate::roads::dir(way);
         let target = a + DVec3::new(d.x, d.y, 0.0) * 8.0;
         w.set_complete_to(true);
-        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 1 }).expect("joined");
+        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 1, dir: 0, travel: 0.0 }).expect("joined");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1, "one straight piece");
         assert_eq!(last, before);
     }
@@ -4578,19 +4538,19 @@ Main
         assert!(w.take_map_end(Some((1, true))), "the green phase's path is taken");
         assert_eq!(w.map_dragging(), Some((1, true)));
         // (the map puts the cursor at a point of the object's own frame; None: no snapping)
-        assert!(w.drag_map_end(DVec3::new(4.0, 6.0, 0.0), None));
+        assert!(w.drag_map_end(DVec3::new(4.0, 6.0, 0.0), None, None));
         let sheet = w.sheet.as_ref().unwrap();
         let i = w.selected.unwrap();
         let p = &sheet.crossing.paths[i];
         assert!((p.end().x - 4.0).abs() < 0.05, "the end moved: {:?}", p.end());
         w.let_go();
         assert_eq!(w.map_dragging(), None);
-        assert!(!w.drag_map_end(DVec3::new(1.0, 1.0, 0.0), None), "nothing is dragged once let go");
+        assert!(!w.drag_map_end(DVec3::new(1.0, 1.0, 0.0), None, None), "nothing is dragged once let go");
     }
 
-    /// An end dragged near another path's end is taken onto it, and takes that path's way and
-    /// rise as well - so two pieces meet in more than the point. When one arc cannot do both,
-    /// the join is several pieces and the way the path leaves is left as it was.
+    /// An end dragged onto another path's end is taken onto its point and rise, and the way the
+    /// path leaves its own start is left as it was: a drag moves an end, and never splits a path
+    /// into pieces or turns the other end round.
     #[test]
     fn a_dragged_end_joins_the_way_of_the_other() {
         let mut w = opened(Tab::Paths);
@@ -4598,31 +4558,21 @@ Main
         // (the path from the middle of the crossing, carried onto the eastbound path's end)
         let start = w.sheet.as_ref().unwrap().crossing.paths[2].start();
         let leave = w.sheet.as_ref().unwrap().crossing.paths[2].heading();
+        let count = w.sheet.as_ref().unwrap().crossing.paths.len();
         assert!(w.take_map_end(Some((2, true))));
         let target = w.sheet.as_ref().unwrap().crossing.paths[0].end();
         let joint = w.joint_at(0, true).expect("the other end is a joint");
         // (near it, not on it: what the mouse gives a few pixels away)
         let near = target + DVec3::new(0.12, -0.08, 0.0);
-        assert!(w.drag_map_end(near, Some(joint)));
+        assert!(w.drag_map_end(near, Some(joint), None));
         let i = w.selected.unwrap();
         let paths = &w.sheet.as_ref().unwrap().crossing.paths;
-        assert!(i > 2, "the join is split into pieces, the last of them at {i}");
-        // (the way the path left its start is not turned to make the join fit)
-        let first = &paths[2];
-        assert!((first.start() - start).length() < 1e-3, "the start stays: {:?} vs {:?}", first.start(), start);
-        assert!(ang_delta(first.heading(), leave).abs() < 0.5, "and its way out: {} vs {leave}", first.heading());
-        // (each piece begins where the one before it ended)
-        for k in 3..=i {
-            let (prev, now) = (&paths[k - 1], &paths[k]);
-            assert!((now.start().truncate() - prev.end().truncate()).length() < 0.05, "piece {k} is not joined to the one before");
-        }
-        let p = &paths[i];
-        assert!((p.end().truncate() - target.truncate()).length() < 1e-3, "the end landed on it: {:?} vs {:?}", p.end(), target);
-        // (and it arrives in the other path's way: the tangents meet, no kink)
-        let c = p.curve();
-        let their = crate::roads::norm_deg(joint.through());
-        let mine = crate::roads::norm_deg(c.heading_at(c.length.max(0.0)));
-        assert!(((mine - their).rem_euclid(360.0)).min((their - mine).rem_euclid(360.0)) < 0.5, "the ways meet: {mine} vs {their}");
+        assert_eq!(paths.len(), count, "a drag adds no path: {} vs {count}", paths.len());
+        assert_eq!(i, 2, "the path dragged is the one picked");
+        let p = &paths[2];
+        assert!((p.start() - start).length() < 1e-3, "the start stays: {:?} vs {:?}", p.start(), start);
+        assert!(ang_delta(p.heading(), leave).abs() < 0.5, "and its way out: {} vs {leave}", p.heading());
+        assert!((p.end().truncate() - joint.pos.truncate()).length() < 1e-3, "the end landed on the joint: {:?} vs {:?}", p.end(), joint.pos);
         assert!((p.end().z - joint.pos.z).abs() < 0.02, "at its height: {}", p.end().z);
         assert!((p.slope_end() - joint.slope).abs() < 1e-4, "and at its rise: {}", p.slope_end());
 
@@ -4631,7 +4581,7 @@ Main
         w.view_3d = true;
         assert!(w.take_map_end(Some((2, true))));
         let far = DVec3::new(12.0, 4.0, 0.0);
-        assert!(w.drag_map_end(far, None));
+        assert!(w.drag_map_end(far, None, None));
         let i = w.selected.unwrap();
         let p = &w.sheet.as_ref().unwrap().crossing.paths[i];
         assert!((p.end().truncate() - far.truncate()).length() < 0.2, "free drag: {:?}", p.end());

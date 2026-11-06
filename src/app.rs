@@ -180,7 +180,14 @@ fn object_yaw(m: &glam::Mat4) -> f64 {
 /// it makes a join out there (a radius of millions, a length past the file's limit).
 fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4) -> crate::crossing_edit::Joint {
     let local = m.inverse().transform_point3((j.pos - world).as_vec3()).as_dvec3();
-    crate::crossing_edit::Joint { pos: local, heading: crate::roads::norm_deg(j.heading - object_yaw(m)), slope: j.slope, flow: j.flow }
+    crate::crossing_edit::Joint {
+        pos: local,
+        heading: crate::roads::norm_deg(j.heading - object_yaw(m)),
+        slope: j.slope,
+        flow: j.flow,
+        dir: j.dir,
+        travel: crate::roads::norm_deg(j.travel - object_yaw(m)),
+    }
 }
 
 /// The joints as the map draws them: each one's point in the world, and the joint itself left
@@ -2440,7 +2447,10 @@ impl App {
         // (the snap gives the joint already in the object's frame: the paths are written there)
         let joint = self.crossing_snap_end(at, world, m);
         let local = m.inverse().transform_point3((at - world).as_vec3()).as_dvec3();
-        self.crossing.drag_map_end(local, joint);
+        // (what is under the point: the object's own mesh, else the road or the ground. The
+        // crossing window knows the object; the map knows the rest)
+        let hint = self.crossing.deck_at(&mut self.ed, self.assets.as_mut(), local.truncate());
+        self.crossing.drag_map_end(local, joint, hint);
     }
 
     /// The point a dragged end is taken to: the nearest end of the crossing's own paths or of
@@ -2500,14 +2510,18 @@ impl App {
             if n < 2 {
                 continue;
             }
-            // (both ends, and at each the way runs *away* from the joint along the lane: at the
-            // start that is against the lane's own travel, at the end it is with it)
-            for (pos, (a, b), at_end) in [(l.pts[0], (l.pts[1], l.pts[0]), false), (l.pts[n - 1], (l.pts[n - 2], l.pts[n - 1]), true)] {
-                let d = b - a;
+            // (both ends. `heading` is the way the lane runs *into* its own body from there, as
+            // the crossing's own ends have it; `travel` is the way its traffic actually moves,
+            // the other way round when the lane is driven against its geometry)
+            for (pos, geom, d, at_end) in [
+                (l.pts[0], crate::roads::heading_of((l.pts[1] - l.pts[0]).truncate()), l.pts[1] - l.pts[0], false),
+                (l.pts[n - 1], crate::roads::heading_of((l.pts[n - 1] - l.pts[n - 2]).truncate()), l.pts[n - 1] - l.pts[n - 2], true),
+            ] {
                 let len = d.truncate().length().max(1e-6);
-                let heading = crate::roads::heading_of(d.truncate());
+                let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
+                let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let slope = d.z / len;
-                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end) });
+                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel });
             }
         }
         out
@@ -4185,7 +4199,7 @@ mod tests {
         // (an end 10 m ahead of the object, running along its own way)
         let local = DVec3::new(0.0, 10.0, 1.5);
         let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
-        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1 };
+        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0 };
         let j = joint_in_object(map_joint, world, &m);
         assert!((j.pos.truncate() - local.truncate()).length() < 1e-3, "it is written where the path has it: {:?} vs {local:?}", j.pos);
         assert!(j.heading.abs() < 0.05 || (j.heading - 360.0).abs() < 0.05, "and the way it runs is the object's: {}", j.heading);
@@ -4203,7 +4217,7 @@ mod tests {
         let yaw = 37.0f64;
         let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
         let local = DVec3::new(2.0, 9.0, 1.5);
-        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1 };
+        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0 };
         let drawn = nearby_on_map(&[j], world, &m);
         assert_eq!(drawn.len(), 1);
         let (at, back) = drawn[0];

@@ -277,7 +277,10 @@ fn a_way_that_would_take_a_circle_is_a_straight_to_the_end() {
     let end = p.end();
     p.fit_start_tangent(180.0);
     assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
-    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed");
+    // (the way the path leaves is the one thing a turn must not change: the arc keeps it, and
+    // the end stops where that arc reaches rather than the path being turned round)
+    assert!((p.heading() - 180.0).abs() < 1e-6, "it still leaves in 180: {}", p.heading());
+    assert!(p.length() <= 40.0 * 8.0, "no loop: {} m", p.length());
     assert!(p.slope_start().is_finite() && p.slope_end().is_finite());
 
     // and a path whose length is already broken is only sampled so far
