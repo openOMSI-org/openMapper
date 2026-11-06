@@ -5218,6 +5218,55 @@ impl Editor {
                     for s in pts.windows(2) {
                         line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
                     }
+                    // (the way it goes: chevrons all along it, as the map's own lanes have,
+                    // so every path of the crossing shows a direction)
+                    {
+                        let (along, against) = crate::ui_crossing::path_ways(p.direction());
+                        let step = (cam.distance * 0.06).clamp(6.0, 40.0);
+                        let sz = ((lw as f64) * 6.0).clamp(0.35, 3.5);
+                        let mut shown = 0;
+                        let chevrons = |mid: DVec3, d: DVec3, out: &mut Vec<OverlayPoint>| -> usize {
+                            let mut n = 0;
+                            for back in [false, true] {
+                                let on = if back { against } else { along };
+                                if !on {
+                                    continue;
+                                }
+                                let f = if back { -d } else { d };
+                                let tip = mid + f * sz;
+                                let side = DVec3::new(f.y, -f.x, 0.0) * sz * 0.6;
+                                line(out, cam, tip, mid - side, lw * 1.2, color);
+                                line(out, cam, tip, mid + side, lw * 1.2, color);
+                                n += 1;
+                            }
+                            n
+                        };
+                        let mut acc = step * 0.5;
+                        for s in pts.windows(2) {
+                            let seg = (s[1] - s[0]).length();
+                            if seg < 1e-6 {
+                                continue;
+                            }
+                            acc += seg;
+                            if acc < step {
+                                continue;
+                            }
+                            acc = 0.0;
+                            let mid = (s[0] + s[1]) * 0.5 + lift;
+                            let d = (s[1] - s[0]) / seg;
+                            shown += chevrons(mid, d, &mut x.overlay);
+                        }
+                        // (a path shorter than the step still shows which way it goes)
+                        if shown == 0 {
+                            if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
+                                let seg = (*b - *a).length();
+                                if seg > 1e-6 {
+                                    let mid = (*a + *b) * 0.5 + lift;
+                                    chevrons(mid, (*b - *a) / seg, &mut x.overlay);
+                                }
+                            }
+                        }
+                    }
                     // the ends, where they are dragged in the window
                     let a = if picked == Some(i) { lw * 2.6 } else { lw * 1.8 };
                     for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {

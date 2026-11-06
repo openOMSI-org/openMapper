@@ -849,6 +849,16 @@ fn kind_color(kind: i32) -> Color32 {
     }
 }
 
+/// Which ways traffic may go on a path: along it (start to end) and/or against it. 0 is along,
+/// 1 against, 2 both ways.
+pub(crate) fn path_ways(direction: i32) -> (bool, bool) {
+    match direction {
+        1 => (false, true),
+        2 => (true, true),
+        _ => (true, false),
+    }
+}
+
 fn kind_name(kind: i32) -> &'static str {
     match kind {
         1 => tr("Footway", "Тротуар"),
@@ -2939,15 +2949,46 @@ impl CrossingPaths {
                 let tip = at + d * (10.0 / scale as f64);
                 painter.add(egui::Shape::convex_polygon(vec![to_screen(tip), to_screen(at + n * (4.0 / scale as f64)), to_screen(at - n * (4.0 / scale as f64))], color, Stroke::NONE));
             };
-            if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
-                let mid = (a.truncate() + b.truncate()) / 2.0;
-                match p.direction() {
-                    1 => dir_arrow(mid, a.truncate() - b.truncate(), base),
-                    2 => {
-                        dir_arrow(mid, b.truncate() - a.truncate(), base);
-                        dir_arrow(mid, a.truncate() - b.truncate(), base);
+            // (the way it goes, all along the path: one arrow at the middle is lost on a
+            // long path, and a path of a few metres would show none at all)
+            {
+                let spacing = (46.0 / scale as f64).clamp(1.2, 25.0);
+                let (along, against) = path_ways(p.direction());
+                let mut acc = spacing * 0.5;
+                let mut shown = 0;
+                for w in pts.windows(2) {
+                    let seg = (w[1] - w[0]).truncate().length();
+                    if seg < 1e-9 {
+                        continue;
                     }
-                    _ => dir_arrow(mid, b.truncate() - a.truncate(), base),
+                    acc += seg;
+                    if acc < spacing {
+                        continue;
+                    }
+                    acc = 0.0;
+                    let mid = (w[0].truncate() + w[1].truncate()) * 0.5;
+                    let d = (w[1] - w[0]).truncate() / seg;
+                    if along {
+                        dir_arrow(mid, d, base);
+                        shown += 1;
+                    }
+                    if against {
+                        dir_arrow(mid, -d, base);
+                        shown += 1;
+                    }
+                }
+                if shown == 0 {
+                    // (a path shorter than the spacing still says which way it goes)
+                    if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
+                        let mid = (a.truncate() + b.truncate()) * 0.5;
+                        let d = b.truncate() - a.truncate();
+                        if along {
+                            dir_arrow(mid, d, base);
+                        }
+                        if against {
+                            dir_arrow(mid, -d, base);
+                        }
+                    }
                 }
             }
             // its ends
@@ -3640,6 +3681,15 @@ Main
             assert!(step.length() < 40.0, "a piece is a long loop: {}", step.length());
             assert!(crate::roads::dir(s.heading).dot(step) > 0.0, "a piece went backwards: {step:?}");
         }
+    }
+
+    #[test]
+    fn a_path_says_which_ways_it_goes() {
+        assert_eq!(path_ways(0), (true, false), "along it");
+        assert_eq!(path_ways(1), (false, true), "against it");
+        assert_eq!(path_ways(2), (true, true), "both ways");
+        // (what the file's unknown numbers are taken as: the way a new path runs)
+        assert_eq!(path_ways(7), (true, false));
     }
 
     /// The deck's height is the top of the mesh at that point.
