@@ -260,6 +260,34 @@ fn dragging_the_end_turns_and_stretches_a_straight_path() {
 }
 
 #[test]
+fn a_way_that_would_take_a_circle_is_a_straight_to_the_end() {
+    // a path running north; asked to arrive running south, the arc that does it is nearly a
+    // whole circle: its length grows without bound, and the path used to end up millions of
+    // metres long (and every piece laid after it, at a height far from the map)
+    let mut p = Path::default();
+    p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+    let end = p.end();
+    p.fit_end_tangent(180.0);
+    assert!(p.length().is_finite(), "a length: {}", p.length());
+    assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
+    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed: {:?} vs {end:?}", p.end());
+    // the same from the start:
+    let mut p = Path::default();
+    p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+    let end = p.end();
+    p.fit_start_tangent(180.0);
+    assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
+    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed");
+    assert!(p.slope_start().is_finite() && p.slope_end().is_finite());
+
+    // and a path whose length is already broken is only sampled so far
+    // (a path of sixteen million metres used to ask for thirty-two million points)
+    let mut p = Path::default();
+    p.v[5] = 16_340_103.0;
+    assert!(p.points(0.5).len() <= 4001, "{} points", p.points(0.5).len());
+}
+
+#[test]
 fn a_path_takes_the_way_and_rise_of_the_one_it_joins() {
     // a straight piece running east
     let mut p = Path::default();

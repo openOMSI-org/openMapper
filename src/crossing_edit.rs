@@ -205,7 +205,10 @@ impl Path {
         if !(c.length > 1e-6) {
             return vec![self.start()];
         }
-        let n = (c.length / step.max(0.2)).ceil().max(1.0) as usize;
+        // (a broken length - a path of millions of metres - would ask for millions of points,
+        // and the drawing would stop answering: the count is capped)
+        const MOST: usize = 4000;
+        let n = ((c.length / step.max(0.2)).ceil().max(1.0) as usize).min(MOST);
         (0..=n).map(|i| c.point_at(c.length * i as f64 / n as f64)).collect()
     }
 
@@ -274,11 +277,21 @@ impl Path {
             self.v[5] = c as f32;
             return;
         }
+        // (nearly opposite the chord, the arc that meets it is most of a circle: its radius
+        // and length grow without bound - a path of millions of metres. A straight to the
+        // same end is kept instead.)
         let half = d.abs().to_radians();
         let r = c / (2.0 * half.sin());
+        let length = 2.0 * half * r;
+        if !length.is_finite() || !r.is_finite() || length > c * 4.0 {
+            self.v[3] = norm_deg(phi) as f32;
+            self.v[4] = 0.0;
+            self.v[5] = c as f32;
+            return;
+        }
         self.v[3] = norm_deg(2.0 * phi - end_deg) as f32;
         self.v[4] = (r * d.signum()) as f32;
-        self.v[5] = (2.0 * half * r) as f32;
+        self.v[5] = length as f32;
     }
 
     /// Turn the path so that it leaves its start in `start_deg`, its end staying where it is.
@@ -298,9 +311,17 @@ impl Path {
         }
         let half = d.abs().to_radians();
         let r = c / (2.0 * half.sin());
+        let length = 2.0 * half * r;
+        if !length.is_finite() || !r.is_finite() || length > c * 4.0 {
+            // (as above: no finite arc keeps this way, so a straight to the same end)
+            self.v[3] = norm_deg(phi) as f32;
+            self.v[4] = 0.0;
+            self.v[5] = c as f32;
+            return;
+        }
         self.v[3] = norm_deg(start_deg) as f32;
         self.v[4] = (r * d.signum()) as f32;
-        self.v[5] = (2.0 * half * r) as f32;
+        self.v[5] = length as f32;
     }
 
     /// Put the end's height at `z` and the rise there at `slope`, the start's height staying

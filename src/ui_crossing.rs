@@ -673,9 +673,16 @@ fn lay_seg(template: &Path, s: &crate::roads::Seg, z0: f64) -> Path {
     q.v[3] = s.heading as f32;
     q.v[4] = s.radius as f32;
     q.v[5] = s.length as f32;
+    let edges = (s.end() - s.start).length();
+    // (a piece never becomes a loop: if what came out is far longer than the gap it spans,
+    // a straight to the same point is written instead)
+    if !q.length().is_finite() || q.length() > edges * 4.0 + 8.0 {
+        q.v[3] = s.heading as f32;
+        q.v[4] = 0.0;
+        q.v[5] = edges.max(0.05) as f32;
+    }
     q
 }
-
 /// What the last piece of a join ends at.
 enum PieceEnd {
     /// A free end: seated on the object's surface where the mesh has one.
@@ -2359,8 +2366,9 @@ impl CrossingPaths {
             ui.separator();
             let show_3d = self.view_3d;
             if ui.selectable_label(show_3d, tr("3D", "3D")).on_hover_text(tr("Show the path on the map itself: the crossing object in 3D, with its paths", "Показать пути на самой карте: объект перекрёстка в 3D со своими путями")).clicked() {
+                // (the map is looked at as it is: pressing 3D only changes where the paths are
+                // drawn, it does not take the view somewhere else. `Show on the map` frames it.)
                 self.view_3d = true;
-                self.frame_on_map = true;
                 self.draw = false;
             }
             if ui.selectable_label(!show_3d, tr("2D", "2D")).on_hover_text(tr("Draw the crossing from above, in the window", "Рисовать перекрёсток сверху, в окне")).clicked() {
