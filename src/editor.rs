@@ -339,6 +339,10 @@ pub struct Editor {
     pub crossing_draft: Option<(TileKey, i64, Vec<crate::crossing_edit::Path>)>,
     /// Which of the crossing's paths the window has picked, so the map draws it picked too.
     pub crossing_selected: Option<usize>,
+    /// How far each of the crossing's paths sits above the object's surface (negative: under
+    /// it), a path at a time - the window works it out, the map draws a path under the deck in
+    /// another colour so it is seen and not guessed at.
+    pub crossing_sink: Vec<f32>,
     /// The crossing editor is open: the map is held, so nothing of it is picked or hovered
     /// (an object, a spline, and not the crossing's own object either).
     pub crossing_hold: bool,
@@ -676,6 +680,7 @@ impl Default for Editor {
             clip: None,
             crossing_draft: None,
             crossing_selected: None,
+            crossing_sink: Vec::new(),
             crossing_hold: false,
             crossing_nearby: Vec::new(),
             crossing_world: None,
@@ -5202,21 +5207,27 @@ impl Editor {
                 let lift = DVec3::Z * 0.25;
                 // (thin: the paths of a junction are many, and a wide line hides the road
                 // under it)
-                let lw = (cam.distance * 0.0011).clamp(0.03, 0.9) as f32;
+                let lw = (cam.distance * 0.0008).clamp(0.022, 0.6) as f32;
                 let picked = self.crossing_selected;
                 for (i, p) in paths.iter().enumerate() {
-                    let color = match p.kind() {
-                        1 => [0.42, 0.74, 0.92, 0.95],
-                        2 => [0.78, 0.58, 0.84, 0.95],
-                        _ => [0.98, 0.72, 0.22, 0.95],
+                    // (a path under the deck is not the same as one on it: red, so it is seen
+                    // without opening its numbers)
+                    let sink = self.crossing_sink.get(i).copied().unwrap_or(0.0) as f64;
+                    let under = sink < -0.02;
+                    let color = if under {
+                        [0.95, 0.32, 0.42, 0.95]
+                    } else {
+                        match p.kind() {
+                            1 => [0.42, 0.74, 0.92, 0.95],
+                            2 => [0.78, 0.58, 0.84, 0.95],
+                            _ => [0.98, 0.72, 0.22, 0.95],
+                        }
                     };
                     let pts: Vec<DVec3> = p.points(0.5).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
-                    // (the picked path shows through a wider, paler line under its own)
+                    // (the picked path shows its own width as a grey band lying on the deck,
+                    // under its line: what a vehicle would take, not just where it runs)
                     if picked == Some(i) {
-                        let halo = [1.0, 0.58, 0.16, 0.42];
-                        for s in pts.windows(2) {
-                            line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw * 2.6, halo);
-                        }
+                        band(&mut x.overlay, &pts.iter().map(|q| *q + lift).collect::<Vec<_>>(), p.width() as f64, [0.72, 0.72, 0.75, 0.30]);
                     }
                     for s in pts.windows(2) {
                         line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
@@ -5226,10 +5237,16 @@ impl Editor {
                     {
                         let (along, against) = crate::ui_crossing::path_ways(p.direction());
                         let lifted: Vec<DVec3> = pts.iter().map(|q| *q + lift).collect();
-                        chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 5.0).clamp(0.3, 2.6), (cam.distance * 0.06).clamp(6.0, 40.0), along, against, color);
+                        chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 4.0).clamp(0.22, 1.6), (cam.distance * 0.07).clamp(7.0, 45.0), along, against, color);
+                    }
+                    // (how far off the deck it is: a stem from the middle of the path down (or
+                    // up) to the surface, so a path floating over it or sunk into it is seen)
+                    if sink.abs() > 0.05 && let Some(mid) = pts.get(pts.len() / 2) {
+                        let foot = *mid + lift - DVec3::Z * sink;
+                        line(&mut x.overlay, cam, *mid + lift, foot, lw, [0.95, 0.32, 0.42, 0.8]);
                     }
                     // the ends, where they are dragged in the window
-                    let a = if picked == Some(i) { lw * 1.9 } else { lw * 1.3 };
+                    let a = if picked == Some(i) { lw * 1.6 } else { lw * 1.15 };
                     for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
                         disc(&mut x.overlay, cam, at + lift, a, color);
                     }
@@ -5244,7 +5261,7 @@ impl Editor {
                     let centre = doc.object_world(k, o, abs).truncate();
                     let radius = crate::lanes::neighbour_reach(cam.distance);
                     // (thin and pale: they are the crossing's surroundings, not what is edited)
-                    let lw = (cam.distance * 0.0010).clamp(0.025, 0.8) as f32;
+                    let lw = (cam.distance * 0.0007).clamp(0.02, 0.5) as f32;
                     let lift = DVec3::Z * 0.1;
                     let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
                     // (nearest first: a long spline used to fill the buffer before the roads
@@ -5295,7 +5312,7 @@ impl Editor {
                         // to the crossing has to be driven the right way round)
                         if !visible.is_empty() && drawn < NEIGHBOUR_POINTS {
                             let (along, against) = crate::ui_crossing::path_ways(l.direction);
-                            let n = chevrons(&mut x.overlay, cam, &visible, lw, (lw as f64 * 5.0).clamp(0.28, 2.4), (cam.distance * 0.06).clamp(6.0, 40.0), along, against, color);
+                            let n = chevrons(&mut x.overlay, cam, &visible, lw, (lw as f64 * 4.0).clamp(0.2, 1.4), (cam.distance * 0.07).clamp(7.0, 45.0), along, against, color);
                             drawn += n * 12;
                         }
                         // (their real ends, when the end itself is in reach: a clip of the
@@ -5305,7 +5322,7 @@ impl Editor {
                                 continue;
                             }
                             drawn += 60;
-                            disc(&mut x.overlay, cam, at + lift, lw * 1.1, color);
+                            disc(&mut x.overlay, cam, at + lift, lw * 1.0, color);
                         }
                     }
                     log::trace!("crossing neighbours: {shown} of {} paths within {radius} m", ranked.len());
@@ -9904,6 +9921,27 @@ fn put_object_3d(doc: &mut Document, hist: &mut History, id: i64, p: DVec3, rot:
         t.touch_content();
     }
     Some(placed)
+}
+
+/// A flat band on the ground along `pts`, `width` metres across and filled in `color`: the
+/// picked path's own width, seen lying on the deck.
+pub fn band(out: &mut Vec<OverlayPoint>, pts: &[DVec3], width: f64, color: [f32; 4]) {
+    let h = width * 0.5;
+    if h <= 0.0 {
+        return;
+    }
+    let v = |p: DVec3| OverlayPoint { pos: p, color };
+    for w in pts.windows(2) {
+        let d = (w[1] - w[0]).truncate();
+        let l = d.length();
+        if l < 1e-6 {
+            continue;
+        }
+        let n = DVec3::new(-d.y, d.x, 0.0) / l * h;
+        let (a0, a1) = (w[0] - n, w[0] + n);
+        let (b0, b1) = (w[1] - n, w[1] + n);
+        out.extend([v(a0), v(b0), v(b1), v(a0), v(b1), v(a1)]);
+    }
 }
 
 /// A line drawn as a flat ribbon facing the camera.

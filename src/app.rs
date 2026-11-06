@@ -2049,6 +2049,15 @@ impl App {
         {
             return;
         }
+        // (the crossing editor: Delete takes the picked path out, as the list's bin does)
+        if self.crossing.open
+            && code == Some(KeyCode::Delete)
+            && !self.keys.ctrl
+            && !self.keys.alt
+            && self.crossing.delete_picked()
+        {
+            return;
+        }
         let ctrl = self.keys.ctrl;
         let shift = self.keys.shift;
         let mut actions = Vec::new();

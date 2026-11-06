@@ -106,6 +106,11 @@ pub struct CrossingPaths {
     /// [`CrossingPaths::footprint`], which is thinned.
     surface: std::sync::Arc<Vec<f32>>,
     surface_for: String,
+    /// How far each path sits above the surface (negative: under it), a path at a time, and
+    /// when it was last worked out: the mesh is sampled at each path's middle, so this is done
+    /// a few times a second at most, never every frame.
+    sink: Vec<f32>,
+    sink_at: f64,
     /// A path was picked on the map: the list is scrolled to it where it is out of sight.
     reveal: bool,
     /// Where the end being dragged has snapped to, in the object's frame, so the drawing can
@@ -197,6 +202,8 @@ impl Default for CrossingPaths {
             side: Side::Auto,
             surface: std::sync::Arc::new(Vec::new()),
             surface_for: String::new(),
+            sink: Vec::new(),
+            sink_at: 0.0,
             reveal: false,
             snap_mark: None,
             view_3d: false,
@@ -352,6 +359,21 @@ fn join_start(crossing: &mut Crossing, i: usize, j: Joint) {
     p.set_start(DVec3::new(j.pos.x, j.pos.y, j.pos.z));
     p.fit_start_tangent(j.outward());
     p.set_start_height_and_slope(j.pos.z, j.slope);
+}
+
+/// The steepest rise a join's piece may take (m per metre). A piece of a few centimetres cannot
+/// climb a kerb at any percentage at all: it climbs as fast as this allows and its end height is
+/// a little out, which is nothing at that length. Without the limit a 0.7 m stub joining a path
+/// 0.26 m higher asked for 68%.
+const MAX_RISE: f64 = 0.5;
+
+/// Set a piece's slopes so its end is at height `z`, with an even grade and no rise steeper
+/// than [`MAX_RISE`].
+fn climb_to(q: &mut Path, z: f64) {
+    let l = q.length().max(0.05);
+    let rise = ((z - q.start().z) / l).clamp(-MAX_RISE, MAX_RISE);
+    q.v[6] = rise as f32;
+    q.v[7] = rise as f32;
 }
 
 /// Put a path's end at height `z` by the rise its slopes carry: the `.sco` has no end height
@@ -534,37 +556,9 @@ fn insert_after(paths: &mut Vec<Path>, index: usize, mut extra: Vec<Path>) {
 /// than built, since a join made from it is a path of millions of metres.
 const FAR_JOIN: f64 = 10_000.0;
 
-/// Which way a join is to turn. The automatic choice takes the widest arcs it can find, which
-/// can run the long way round a junction (a 170° hook of a few metres is a real thing it makes);
-/// left or right says which way round to go instead.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Side {
-    #[default]
-    Auto,
-    Left,
-    Right,
-}
-
-impl Side {
-    /// Whether a piece turning `turn` degrees (positive right, as the file has it) is the way
-    /// this side asks for.
-    fn allows(self, turn: f64) -> bool {
-        match self {
-            Side::Auto => true,
-            Side::Right => turn >= -1e-6,
-            Side::Left => turn <= 1e-6,
-        }
-    }
-
-    /// +1 right, -1 left, 0 no preference: what a piece turns when the side decides it.
-    fn sign(self) -> f64 {
-        match self {
-            Side::Left => -1.0,
-            Side::Right => 1.0,
-            Side::Auto => 0.0,
-        }
-    }
-}
+/// Which way a join is to turn, shared with the planner ([`crate::join`]): the automatic choice
+/// takes the widest arcs it can find; left or right says which way round to go instead.
+pub use crate::join::Side;
 
 /// Past this deflection of the chord (degrees), one arc to the point turns back on itself
 /// (`length / chord = θ / sin θ`) and the way is split into pieces instead.
@@ -589,6 +583,20 @@ fn arc_piece(start: DVec2, heading: f64, turn: f64, chord: f64) -> crate::roads:
 /// several when one arc would loop back.
 fn forward_segs(start: DVec2, heading: f64, end: DVec2, side: Side) -> Vec<crate::roads::Seg> {
     use crate::roads;
+    let chord = (end - start).length();
+    // (the planned way into the point: a turn, a straight, a turn, all on one radius and spread
+    // over the whole distance. Stepping a piece at a time piles the turn into the last few
+    // centimetres, which reads as a hook. Only when that way is much longer than the distance
+    // itself - a point behind the path, where no radius can do anything else - is the stepping
+    // below used instead)
+    if (0.5..=2000.0).contains(&chord)
+        && let Some(segs) = crate::join::plan_to_point(start, heading, end, side, MIN_PIECE_RADIUS)
+    {
+        let length: f64 = segs.iter().map(|s: &roads::Seg| s.length).sum();
+        if !segs.is_empty() && length <= chord * 2.2 + 5.0 {
+            return segs;
+        }
+    }
     let mut segs = Vec::new();
     let mut pos = start;
     let mut h = roads::norm_deg(heading);
@@ -755,6 +763,21 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Ve
 /// comes out when the short way was meant.
 fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec<crate::roads::Seg> {
     use crate::roads;
+    let chord = (end - start).length();
+    if chord < 1e-3 {
+        return Vec::new();
+    }
+    // (the planned join: at most three pieces, all on one radius, leaving in `h_a` and arriving
+    // in `h_b`. This is what keeps the turn spread over the whole gap; the fallback below only
+    // runs when the gap is too short for the arcs the planner insists on, or when the way round
+    // it wants is a loop much longer than the gap itself)
+    let floor = if chord < SHORT_JOIN { CLOSE_RADIUS } else { MIN_PIECE_RADIUS };
+    if let Some(planned) = crate::join::plan(start, h_a, end, h_b, side, floor) {
+        let length: f64 = planned.iter().map(|s| s.length).sum();
+        if length <= chord * 2.0 + 2.0 {
+            return planned;
+        }
+    }
     let mut segs = Vec::new();
     let mut pos = start;
     let mut h = roads::norm_deg(h_a);
@@ -913,22 +936,12 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
         let want = surface_z(tris, seg.end());
         if k + 1 == n {
             match end {
-                // (a stub of a metre cannot climb to another path's height without an absurd
-                // rise - 68% at the start of a 0.7 m piece. It keeps the rise the join leaves
-                // at; the height is off by centimetres, which is nothing at that length.)
+                // (the end is where the other path's is, at its rise: a footway joined to the
+                // next footway takes its height, even when the piece is short)
                 PieceEnd::At { z, slope } if q.length() >= SHORT_JOIN => q.set_end_height_and_slope(z, slope),
-                PieceEnd::At { .. } => {
-                    q.v[6] = s_a as f32;
-                    q.v[7] = s_a as f32;
-                }
+                PieceEnd::At { z, .. } => climb_to(&mut q, z),
                 PieceEnd::Surface => match want {
-                    Some(z) if q.length() >= SHORT_JOIN || (z - start_z).abs() < 0.5 => set_end_height(&mut q, z),
-                    Some(z) => {
-                        // (short: the rise is what it can be, not what the deck asks for)
-                        let l = q.length().max(0.05);
-                        q.v[6] = ((z - start_z) / l) as f32;
-                        q.v[7] = q.v[6];
-                    }
+                    Some(z) => climb_to(&mut q, z),
                     None => {
                         q.v[6] = s_a as f32;
                         q.v[7] = s_a as f32;
@@ -938,22 +951,13 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
         } else if k == 0 {
             // (the first piece leaves at the rise the path had, and still lands on the deck)
             let l = q.length();
+            let z1 = want.unwrap_or(a.z + s_a * l);
             q.v[6] = s_a as f32;
-            if l >= SHORT_JOIN {
-                let z1 = want.unwrap_or(a.z + s_a * l);
-                q.v[7] = (2.0 * (z1 - a.z) / l - s_a) as f32;
-            } else {
-                // (too short to bend the rise: it climbs at the one it came with)
-                q.v[7] = s_a as f32;
-            }
+            let mut end_rise = if l >= SHORT_JOIN { 2.0 * (z1 - a.z) / l - s_a } else { s_a };
+            end_rise = end_rise.clamp(-MAX_RISE, MAX_RISE);
+            q.v[7] = end_rise as f32;
         } else if let Some(z1) = want {
-            if q.length() >= SHORT_JOIN || (z1 - start_z).abs() < 0.5 {
-                set_end_height(&mut q, z1);
-            } else {
-                let l = q.length().max(0.05);
-                q.v[6] = ((z1 - start_z) / l) as f32;
-                q.v[7] = q.v[6];
-            }
+            climb_to(&mut q, z1);
         }
         z = q.end().z;
         out.push(q);
@@ -1030,6 +1034,33 @@ fn continue_path(crossing: &mut Crossing, i: Option<usize>) -> Option<usize> {
     };
     crossing.paths.push(q);
     Some(crossing.paths.len() - 1)
+}
+
+/// Move one end to `q` and put it on the object's surface: the end sits where the deck is, and
+/// the rise between the two ends is what the path climbs at. A drag that only kept the height
+/// the end already had left a path floating over the deck or sunk into it.
+fn move_end_on_surface(crossing: &mut Crossing, i: usize, at_end: bool, q: DVec2, tris: &[f32]) {
+    if at_end {
+        move_end(crossing, i, at_end, q);
+        let Some(p) = crossing.paths.get_mut(i) else { return };
+        // (the dragged end takes the deck's height, at one grade)
+        if let Some(z) = surface_z(tris, p.end().truncate()) {
+            set_end_height(p, z);
+        }
+    } else {
+        // (the far end stays where it is, at its own height: the start is put on the deck and
+        // the rise is set so the end does not move)
+        move_end(crossing, i, at_end, q);
+        let Some(p) = crossing.paths.get_mut(i) else { return };
+        let (end_z, end_rise) = (p.end().z, p.slope_end() as f64);
+        let Some(z) = surface_z(tris, p.start().truncate()) else { return };
+        p.v[2] = z as f32;
+        let l = p.length();
+        if l > 1e-3 {
+            let rise = (2.0 * (end_z - z) / l - end_rise).clamp(-MAX_RISE, MAX_RISE);
+            p.v[6] = rise as f32;
+        }
+    }
 }
 
 /// Move one end to `q`, keeping the way the path runs at the other end and the rise it
@@ -1444,6 +1475,24 @@ impl CrossingPaths {
         self.side
     }
 
+    /// Delete the picked path, as the list's bin does. True when one was taken out (one step
+    /// back for Ctrl+Z, the pick moved to the path that took its place).
+    pub fn delete_picked(&mut self) -> bool {
+        let Some(i) = self.selected else { return false };
+        let Some(sheet) = self.sheet.as_ref() else { return false };
+        if i >= sheet.crossing.paths.len() {
+            return false;
+        }
+        self.push_undo();
+        let Some(sheet) = self.sheet.as_mut() else { return false };
+        sheet.crossing.remove_path(i);
+        self.selected = if sheet.crossing.paths.is_empty() { None } else { Some(i.min(sheet.crossing.paths.len() - 1)) };
+        self.drag = None;
+        self.drag_anchor = None;
+        self.rot_drag = None;
+        true
+    }
+
     /// Turn `Complete to a nearby path` on and off.
     pub fn set_complete_to(&mut self, on: bool) {
         self.complete_to = on;
@@ -1675,7 +1724,7 @@ impl CrossingPaths {
         let Some(sheet) = self.sheet.as_mut() else { return false };
         match joint {
             Some(j) => join_start(&mut sheet.crossing, i, j),
-            None => move_end(&mut sheet.crossing, i, at_end, at.truncate()),
+            None => move_end_on_surface(&mut sheet.crossing, i, at_end, at.truncate(), &std::sync::Arc::clone(&self.surface)),
         }
         true
     }
@@ -1830,6 +1879,7 @@ impl CrossingPaths {
             if ed.crossing_selected.is_some() {
                 ed.crossing_selected = None;
             }
+            ed.crossing_sink.clear();
             return;
         }
         // (a change to the crossing is a step of its own undo: taken here, before the window
@@ -1840,8 +1890,24 @@ impl CrossingPaths {
             // the map shows the paths as they are here, not as the file still has them
             if let (Some(Sel::Object(k, id)), Some(sheet)) = (self.target, self.sheet.as_ref()) {
                 ed.crossing_draft = Some((k, id, sheet.crossing.paths.clone()));
+                // (how far each path sits off the deck, so the map can colour a path that is
+                // under it. The mesh is sampled at each path's middle: a few times a second,
+                // never every frame)
+                let now = ctx.input(|i| i.time);
+                if now >= self.sink_at && !self.surface.is_empty() {
+                    self.sink_at = now + 0.25;
+                    self.sink = sheet.crossing.paths.iter().map(|p| {
+                        let c = p.curve();
+                        let mid = c.point_at(c.length.max(0.0) * 0.5);
+                        match surface_z(&self.surface, mid.truncate()) {
+                            Some(z) => (mid.z - z) as f32,
+                            None => 0.0,
+                        }
+                    }).collect();
+                }
             }
             ed.crossing_selected = self.picked();
+            ed.crossing_sink.clone_from(&self.sink);
         } else {
             ed.crossing_draft = None;
             ed.crossing_selected = None;
@@ -2420,152 +2486,167 @@ impl CrossingPaths {
         {
             self.last_numbers_y = Some(ui.cursor().top());
         }
-        let crossing = &mut sheet.crossing;
-        let p = &mut crossing.paths[i];
-        egui::Grid::new("crossing numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
-            ui.label(RichText::new(tr("Start point", "Начало")).small().color(DIM));
-            ui.horizontal(|ui| {
-                changed |= ui.add(egui::DragValue::new(&mut p.v[0]).speed(0.05).prefix("x ")).changed();
-                changed |= ui.add(egui::DragValue::new(&mut p.v[1]).speed(0.05).prefix("y ")).changed();
-                changed |= ui.add(egui::DragValue::new(&mut p.v[2]).speed(0.05).prefix("z ")).changed();
-            });
-            ui.end_row();
-            // (the end, as the file gives it: x and y move the end itself, z is the slopes'
-            // doing - typing one sets both slopes to the rise it asks for)
-            ui.label(RichText::new(tr("End point", "Конец")).small().color(DIM));
-            let mut end = p.end();
-            let (mut ex, mut ey, mut ez) = (end.x, end.y, end.z);
-            ui.horizontal(|ui| {
-                let cx = ui.add(egui::DragValue::new(&mut ex).speed(0.05).prefix("x ")).changed();
-                let cy = ui.add(egui::DragValue::new(&mut ey).speed(0.05).prefix("y ")).changed();
-                let cz = ui.add(egui::DragValue::new(&mut ez).speed(0.05).prefix("z ")).changed();
-                if cx || cy {
-                    end.x = ex;
-                    end.y = ey;
-                    p.set_end(end);
-                    changed = true;
-                }
-                if cz {
-                    set_end_height(p, ez);
-                    changed = true;
-                }
-            });
-            ui.end_row();
-            ui.label(RichText::new(tr("Radius", "Радиус")).small().color(DIM));
-            let mut r = p.radius();
-            if ui.add(egui::DragValue::new(&mut r).speed(0.1).suffix(" m")).on_hover_text(tr("0 is a straight line, above 0 turns right, below 0 left", "0 — прямая, больше 0 — направо, меньше 0 — налево")).changed() {
-                p.v[4] = r as f32;
-                changed = true;
-            }
-            ui.end_row();
-            ui.label(RichText::new(tr("Length", "Длина")).small().color(DIM));
-            let mut l = p.length();
-            if ui.add(egui::DragValue::new(&mut l).speed(0.1).range(0.0..=2000.0).suffix(" m")).changed() {
-                p.v[5] = l as f32;
-                changed = true;
-            }
-            ui.end_row();
-            ui.label(RichText::new(tr("Slope", "Уклон")).small().color(DIM));
-            ui.horizontal(|ui| {
-                let mut a = p.slope_start() * 100.0;
-                let mut b = p.slope_end() * 100.0;
-                if ui.add(egui::DragValue::new(&mut a).speed(0.05).suffix(" %")).changed() {
-                    p.v[6] = (a / 100.0) as f32;
-                    changed = true;
-                }
-                if ui.add(egui::DragValue::new(&mut b).speed(0.05).suffix(" %")).changed() {
-                    p.v[7] = (b / 100.0) as f32;
-                    changed = true;
-                }
-                if ui.button(tr("Even grade", "Одинаковый уклон")).on_hover_text(tr("Both ends take the one rise between their heights", "Оба конца с одним уклоном между их высотами")).clicked() {
-                    let z = p.end().z;
-                    set_end_height(p, z);
-                    changed = true;
-                }
-            });
-            ui.end_row();
-            ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
-            let mut k = p.v[8] as i32;
-            let before = k;
-            egui::ComboBox::from_id_salt("crossing kind").selected_text(kind_name(k)).width(150.0).show_ui(ui, |ui| {
-                for n in [0, 1, 2] {
-                    ui.selectable_value(&mut k, n, kind_name(n));
-                }
-            });
-            p.v[8] = k as f32;
-            changed |= k != before;
-            ui.end_row();
-            ui.label(RichText::new(tr("Width", "Ширина")).small().color(DIM));
-            changed |= ui.add(egui::DragValue::new(&mut p.v[9]).speed(0.05).range(0.0..=30.0).suffix(" m")).changed();
-            ui.end_row();
-            ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(DIM));
-            let mut d = p.v[10] as i32;
-            let before = d;
-            egui::ComboBox::from_id_salt("crossing direction").selected_text(direction_name(d)).width(150.0).show_ui(ui, |ui| {
-                for n in [0, 1, 2] {
-                    ui.selectable_value(&mut d, n, direction_name(n));
-                }
-            });
-            p.v[10] = d as f32;
-            changed |= d != before;
-            ui.end_row();
-            ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(DIM));
-            let mut t = p.v[11] as i32;
-            let before = t;
-            egui::ComboBox::from_id_salt("crossing turn").selected_text(turn_name(t)).width(150.0).show_ui(ui, |ui| {
-                for n in [TURN_NONE, TURN_LEFT, TURN_RIGHT] {
-                    ui.selectable_value(&mut t, n, turn_name(n));
-                }
-            });
-            p.v[11] = t as f32;
-            changed |= t != before;
-            ui.end_row();
-            ui.label(RichText::new(tr("Light", "Светофор")).small().color(DIM));
-            let names: Vec<(i32, String)> = std::iter::once((-1, tr("None", "Нет").to_string())).chain(crossing.lights.iter().enumerate().map(|(n, l)| (n as i32, format!("#{n} {}", if l.name.trim().is_empty() { "-" } else { l.name.trim() })))).collect();
-            let mut cur = p.light.unwrap_or(-1);
-            let before = cur;
-            egui::ComboBox::from_id_salt("crossing light").selected_text(names.iter().find(|(n, _)| *n == cur).map(|(_, s)| s.clone()).unwrap_or_else(|| tr("None", "Нет").into())).width(150.0).show_ui(ui, |ui| {
-                for (n, s) in &names {
-                    ui.selectable_value(&mut cur, *n, s);
-                }
-            });
-            if cur != before {
-                p.light = (cur >= 0).then_some(cur);
-                changed = true;
-            }
-            ui.end_row();
-        });
-        // (start and end rotation, as a road's two ends have: each turns on its own, and the
-        // point stays. Read after the grid so a number edited above is already on the path)
+        // (each end's own way out and way in: `Rotate` beside its point, since it is part of
+        // where and how that point is. The drag is applied after the grid - a number edited
+        // above is then already on the path - and a turn one arc cannot make is split into
+        // pieces)
+        let spawned = self.rot_drag.as_ref().filter(|g| g.index == i).map(|g| g.spawned).unwrap_or(0);
+        let last = (i + spawned).min(sheet.crossing.paths.len() - 1);
+        let mut h0 = crate::roads::norm_deg(sheet.crossing.paths[i].heading());
+        let end_c = sheet.crossing.paths[last].curve();
+        let mut h1 = crate::roads::norm_deg(end_c.heading_at(end_c.length.max(0.0)));
+        let leave = tr("How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces", "Как путь уходит, градусы. Точка остаётся; поворот, который одной дуге не сделать, делится на части");
+        let arrive = tr("How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces", "Как путь приходит, градусы. Точка остаётся; поворот, который одной дуге не сделать, делится на части");
+        let mut rot_req: Option<(bool, f64)> = None;
+        let mut rot_stopped = false;
+        let sink = self.sink.get(i).copied().unwrap_or(0.0);
         {
-            let spawned = self.rot_drag.as_ref().filter(|g| g.index == i).map(|g| g.spawned).unwrap_or(0);
-            let last = (i + spawned).min(sheet.crossing.paths.len() - 1);
-            let mut h0 = crate::roads::norm_deg(sheet.crossing.paths[i].heading());
-            let end_c = sheet.crossing.paths[last].curve();
-            let mut h1 = crate::roads::norm_deg(end_c.heading_at(end_c.length.max(0.0)));
-            let leave = tr("How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces", "Как путь уходит, градусы. Точка остаётся; поворот, который одной дуге не сделать, делится на части");
-            let arrive = tr("How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces", "Как путь приходит, градусы. Точка остаётся; поворот, который одной дуге не сделать, делится на части");
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(DIM));
-                let r0 = ui.add(egui::DragValue::new(&mut h0).speed(0.4).max_decimals(1).suffix("°").prefix(format!("{} ", tr("Start", "Начало")))).on_hover_text(leave);
-                let r1 = ui.add(egui::DragValue::new(&mut h1).speed(0.4).max_decimals(1).suffix("°").prefix(format!("{} ", tr("End", "Конец")))).on_hover_text(arrive);
-                if r0.changed() {
-                    self.apply_rotation(&mut sheet.crossing, i, false, h0);
-                    changed = true;
-                    rot_edit = true;
-                } else if r1.changed() {
-                    self.apply_rotation(&mut sheet.crossing, i, true, h1);
-                    changed = true;
-                    rot_edit = true;
-                }
-                if r0.drag_stopped() || r1.drag_stopped() {
-                    if let Some(g) = self.rot_drag.take() {
-                        if g.at_end {
-                            self.selected = Some((g.index + g.spawned).min(sheet.crossing.paths.len().saturating_sub(1)));
-                        }
+            let crossing = &mut sheet.crossing;
+            let p = &mut crossing.paths[i];
+            egui::Grid::new("crossing numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
+                ui.label(RichText::new(tr("Start point", "Начало")).small().color(DIM));
+                ui.horizontal(|ui| {
+                    changed |= ui.add(egui::DragValue::new(&mut p.v[0]).speed(0.05).prefix("x ")).changed();
+                    changed |= ui.add(egui::DragValue::new(&mut p.v[1]).speed(0.05).prefix("y ")).changed();
+                    changed |= ui.add(egui::DragValue::new(&mut p.v[2]).speed(0.05).prefix("z ")).changed();
+                    let r0 = ui.add(egui::DragValue::new(&mut h0).speed(0.4).max_decimals(1).suffix("°").prefix("r ")).on_hover_text(leave);
+                    if r0.changed() {
+                        rot_req = Some((false, h0));
                     }
+                    rot_stopped |= r0.drag_stopped();
+                });
+                ui.end_row();
+                // (the end, as the file gives it: x and y move the end itself, z is the slopes'
+                // doing - typing one sets both slopes to the rise it asks for)
+                ui.label(RichText::new(tr("End point", "Конец")).small().color(DIM));
+                let mut end = p.end();
+                let (mut ex, mut ey, mut ez) = (end.x, end.y, end.z);
+                ui.horizontal(|ui| {
+                    let cx = ui.add(egui::DragValue::new(&mut ex).speed(0.05).prefix("x ")).changed();
+                    let cy = ui.add(egui::DragValue::new(&mut ey).speed(0.05).prefix("y ")).changed();
+                    let cz = ui.add(egui::DragValue::new(&mut ez).speed(0.05).prefix("z ")).changed();
+                    let r1 = ui.add(egui::DragValue::new(&mut h1).speed(0.4).max_decimals(1).suffix("°").prefix("r ")).on_hover_text(arrive);
+                    if r1.changed() {
+                        rot_req = Some((true, h1));
+                    }
+                    rot_stopped |= r1.drag_stopped();
+                    if cx || cy {
+                        end.x = ex;
+                        end.y = ey;
+                        p.set_end(end);
+                        changed = true;
+                    }
+                    if cz {
+                        set_end_height(p, ez);
+                        changed = true;
+                    }
+                });
+                ui.end_row();
+                ui.label(RichText::new(tr("Radius", "Радиус")).small().color(DIM));
+                let mut r = p.radius();
+                if ui.add(egui::DragValue::new(&mut r).speed(0.1).suffix(" m")).on_hover_text(tr("0 is a straight line, above 0 turns right, below 0 left", "0 — прямая, больше 0 — направо, меньше 0 — налево")).changed() {
+                    p.v[4] = r as f32;
+                    changed = true;
                 }
+                ui.end_row();
+                ui.label(RichText::new(tr("Length", "Длина")).small().color(DIM));
+                let mut l = p.length();
+                if ui.add(egui::DragValue::new(&mut l).speed(0.1).range(0.0..=2000.0).suffix(" m")).changed() {
+                    p.v[5] = l as f32;
+                    changed = true;
+                }
+                ui.end_row();
+                ui.label(RichText::new(tr("Slope", "Уклон")).small().color(DIM));
+                ui.horizontal(|ui| {
+                    let mut a = p.slope_start() * 100.0;
+                    let mut b = p.slope_end() * 100.0;
+                    if ui.add(egui::DragValue::new(&mut a).speed(0.05).suffix(" %")).changed() {
+                        p.v[6] = (a / 100.0) as f32;
+                        changed = true;
+                    }
+                    if ui.add(egui::DragValue::new(&mut b).speed(0.05).suffix(" %")).changed() {
+                        p.v[7] = (b / 100.0) as f32;
+                        changed = true;
+                    }
+                    if ui.button(tr("Even grade", "Одинаковый уклон")).on_hover_text(tr("Both ends take the one rise between their heights", "Оба конца с одним уклоном между их высотами")).clicked() {
+                        let z = p.end().z;
+                        set_end_height(p, z);
+                        changed = true;
+                    }
+                });
+                ui.end_row();
+                // (whether this path lies on the deck, over it or under it - a path sunk into
+                // the mesh is drawn red on the map, and this is by how much)
+                ui.label(RichText::new(tr("Surface", "Поверхность")).small().color(DIM));
+                ui.label(RichText::new(format!("{sink:+.2} m")).small().color(if sink < -0.02 {
+                    Color32::from_rgb(230, 90, 110)
+                } else if sink > 0.05 {
+                    Color32::from_rgb(206, 190, 120)
+                } else {
+                    DIM
+                }));
+                ui.end_row();
+                ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
+                let mut k = p.v[8] as i32;
+                let before = k;
+                egui::ComboBox::from_id_salt("crossing kind").selected_text(kind_name(k)).width(150.0).show_ui(ui, |ui| {
+                    for n in [0, 1, 2] {
+                        ui.selectable_value(&mut k, n, kind_name(n));
+                    }
+                });
+                p.v[8] = k as f32;
+                changed |= k != before;
+                ui.end_row();
+                ui.label(RichText::new(tr("Width", "Ширина")).small().color(DIM));
+                changed |= ui.add(egui::DragValue::new(&mut p.v[9]).speed(0.05).range(0.0..=30.0).suffix(" m")).changed();
+                ui.end_row();
+                ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(DIM));
+                let mut d = p.v[10] as i32;
+                let before = d;
+                egui::ComboBox::from_id_salt("crossing direction").selected_text(direction_name(d)).width(150.0).show_ui(ui, |ui| {
+                    for n in [0, 1, 2] {
+                        ui.selectable_value(&mut d, n, direction_name(n));
+                    }
+                });
+                p.v[10] = d as f32;
+                changed |= d != before;
+                ui.end_row();
+                ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(DIM));
+                let mut t = p.v[11] as i32;
+                let before = t;
+                egui::ComboBox::from_id_salt("crossing turn").selected_text(turn_name(t)).width(150.0).show_ui(ui, |ui| {
+                    for n in [TURN_NONE, TURN_LEFT, TURN_RIGHT] {
+                        ui.selectable_value(&mut t, n, turn_name(n));
+                    }
+                });
+                p.v[11] = t as f32;
+                changed |= t != before;
+                ui.end_row();
+                ui.label(RichText::new(tr("Light", "Светофор")).small().color(DIM));
+                let names: Vec<(i32, String)> = std::iter::once((-1, tr("None", "Нет").to_string())).chain(crossing.lights.iter().enumerate().map(|(n, l)| (n as i32, format!("#{n} {}", if l.name.trim().is_empty() { "-" } else { l.name.trim() })))).collect();
+                let mut cur = p.light.unwrap_or(-1);
+                let before = cur;
+                egui::ComboBox::from_id_salt("crossing light").selected_text(names.iter().find(|(n, _)| *n == cur).map(|(_, s)| s.clone()).unwrap_or_else(|| tr("None", "Нет").into())).width(150.0).show_ui(ui, |ui| {
+                    for (n, s) in &names {
+                        ui.selectable_value(&mut cur, *n, s);
+                    }
+                });
+                if cur != before {
+                    p.light = (cur >= 0).then_some(cur);
+                    changed = true;
+                }
+                ui.end_row();
             });
+        }
+        if let Some((at_end, h)) = rot_req {
+            self.apply_rotation(&mut sheet.crossing, i, at_end, h);
+            changed = true;
+            rot_edit = true;
+        }
+        if rot_stopped && let Some(g) = self.rot_drag.take()
+            && g.at_end
+        {
+            self.selected = Some((g.index + g.spawned).min(sheet.crossing.paths.len().saturating_sub(1)));
         }
         let blocked = ui.checkbox(&mut sheet.crossing.paths[i].crossing_problem, tr("Keeps the junction clear", "Держит перекрёсток свободным")).on_hover_text(tr("A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)", "Машина на этом пути держит перекрёсток свободным для других (`[crossingproblem]`)")).changed();
         changed |= blocked;
@@ -3194,6 +3275,14 @@ impl CrossingPaths {
                 right.push(q.truncate() - normal * half);
             }
             let edge = Stroke::new(0.8, base.gamma_multiply(0.5));
+            // (the picked path's own width, as a grey band lying on the deck: what a vehicle
+            // would take, not just where it runs)
+            if on {
+                for n in 0..pts.len().saturating_sub(1) {
+                    let quad = vec![to_screen(left[n]), to_screen(right[n]), to_screen(right[n + 1]), to_screen(left[n + 1])];
+                    painter.add(egui::Shape::convex_polygon(quad, Color32::from_rgba_unmultiplied(180, 180, 190, 60), Stroke::NONE));
+                }
+            }
             for w in left.windows(2) {
                 painter.line_segment([to_screen(w[0]), to_screen(w[1])], edge);
             }
@@ -3211,8 +3300,8 @@ impl CrossingPaths {
                 }
                 let d = along / len;
                 let n = DVec2::new(-d.y, d.x);
-                let tip = at + d * (7.0 / scale as f64);
-                painter.add(egui::Shape::convex_polygon(vec![to_screen(tip), to_screen(at + n * (2.8 / scale as f64)), to_screen(at - n * (2.8 / scale as f64))], color, Stroke::NONE));
+                let tip = at + d * (5.5 / scale as f64);
+                painter.add(egui::Shape::convex_polygon(vec![to_screen(tip), to_screen(at + n * (2.0 / scale as f64)), to_screen(at - n * (2.0 / scale as f64))], color, Stroke::NONE));
             };
             // (the way it goes, all along the path: one arrow at the middle is lost on a
             // long path, and a path of a few metres would show none at all)
@@ -3259,8 +3348,8 @@ impl CrossingPaths {
             // its ends
             for at in [p.start().truncate(), p.end().truncate()] {
                 let s = to_screen(at);
-                painter.circle_filled(s, if on { 3.2 } else { 2.4 }, if on { HANDLE } else { base });
-                painter.circle_stroke(s, 4.8, Stroke::new(0.8, Color32::from_white_alpha(if on { 110 } else { 34 })));
+                painter.circle_filled(s, if on { 2.8 } else { 2.0 }, if on { HANDLE } else { base });
+                painter.circle_stroke(s, 4.0, Stroke::new(0.8, Color32::from_white_alpha(if on { 110 } else { 34 })));
             }
         }
         // the spline helpers: where roads snap on
@@ -3407,7 +3496,13 @@ impl CrossingPaths {
                                 }
                             }
                         }
-                        None => move_end(&mut sheet.crossing, i, at_end, q),
+                        None => {
+                            // (a free end: it follows the object's surface, so its height - and
+                            // the rise between the two ends - is the deck's, not whatever the
+                            // path had before it was dragged)
+                            let tris = std::sync::Arc::clone(&self.surface);
+                            move_end_on_surface(&mut sheet.crossing, i, at_end, q, &tris);
+                        }
                     }
                 }
             }
@@ -4077,20 +4172,22 @@ Main
         assert!(ang_delta(got, j.through()).abs() < 0.5, "arriving the way its traffic goes: {got} vs {}", j.through());
     }
 
-    /// A join of half a metre is one straight piece: no bend of a usable radius fits, and a
-    /// bend squeezed in is a knot that reads as the wrong way.
+    /// A join of half a metre is no knot: every bend it has is a real radius, and it ends on the
+    /// point. It used to be a bend of 166 degrees in 0.46 m - a radius of 0.23 m, which reads as
+    /// the wrong way.
     #[test]
-    fn a_tiny_join_is_one_straight_piece_not_a_knot() {
+    fn a_tiny_join_is_no_knot() {
         let a = DVec2::new(-48.0346, 19.2132);
         let b = DVec2::new(-47.6323, 18.9858);
         assert!((b - a).length() < 0.5);
         let segs = connect_segs(a, 143.5, b, 337.6, Side::Auto);
-        assert_eq!(segs.len(), 1, "one piece: {}", segs.len());
-        let s = &segs[0];
-        assert_eq!(s.radius, 0.0, "not a knot: radius {}", s.radius);
-        assert!((s.end() - b).length() < 1e-6, "it ends on the point: {:?}", s.end());
-        // (what the tiny knot used to be: a bend of 166 degrees in 0.46 m, radius 0.23 m)
-        assert!(s.length < 1.0, "{} m", s.length);
+        assert!(!segs.is_empty(), "a join was made");
+        at_each_join(&segs, a, b);
+        for s in &segs {
+            assert!(s.radius == 0.0 || s.radius.abs() >= CLOSE_RADIUS, "a real radius: {}", s.radius);
+        }
+        let total: f64 = segs.iter().map(|s| s.length).sum();
+        assert!(total < 2.0, "{total} m for a half-metre gap");
 
         // (a join of about a metre whose next piece is not on the gap's own angle: it arrives
         // on that angle, rather than a straight that leaves the two different)
@@ -4112,6 +4209,66 @@ Main
         for s in &wide {
             assert!(s.radius == 0.0 || s.radius.abs() >= MIN_PIECE_RADIUS, "a real bend: radius {}", s.radius);
         }
+    }
+
+    /// An end dragged with the mouse follows the object's surface: its height is the deck's, and
+    /// the rise between the two ends is what the path climbs at - a drag that kept the height
+    /// left the path floating over the deck or sunk into it.
+    #[test]
+    fn a_dragged_end_sits_on_the_deck() {
+        // (a deck at 1.5 m over a 20 m square)
+        let tris = [
+            0.0, 0.0, 1.5, 20.0, 0.0, 1.5, 0.0, 20.0, 1.5, //
+            0.0, 20.0, 1.5, 20.0, 0.0, 1.5, 20.0, 20.0, 1.5,
+        ];
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        // (path 2 runs 10 m north from the middle of the crossing, at 0)
+        move_end_on_surface(&mut crossing, 2, true, DVec2::new(0.0, 8.0), &tris);
+        let p = &crossing.paths[2];
+        assert!((p.end().z - 1.5).abs() < 1e-3, "the dragged end sits on the deck: {}", p.end().z);
+        assert!((p.start().z - 0.0).abs() < 1e-3, "the other end keeps its height: {}", p.start().z);
+        assert!((p.slope_start() - p.slope_end()).abs() < 1e-4, "one grade: {} / {}", p.slope_start(), p.slope_end());
+
+        // (and a dragged start: it sits on the deck, and the far end does not move)
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        let end_before = crossing.paths[2].end();
+        move_end_on_surface(&mut crossing, 2, false, DVec2::new(2.0, 2.0), &tris);
+        let p = &crossing.paths[2];
+        assert!((p.start().z - 1.5).abs() < 1e-3, "the start sits on the deck: {}", p.start().z);
+        assert!((p.end().truncate() - end_before.truncate()).length() < 0.05, "the far end stays: {:?} vs {end_before:?}", p.end());
+    }
+
+    /// A piece too short to climb to another path's height at any grade climbs as fast as it may
+    /// and no more: 68% over 0.7 m was the number this keeps out.
+    #[test]
+    fn a_short_piece_climbs_no_steeper_than_it_may() {
+        let mut p = Path::default();
+        p.v[2] = 0.0;
+        p.v[5] = 0.5;
+        // (a kerb of 20 cm over half a metre is a real grade)
+        climb_to(&mut p, 0.2);
+        assert!((p.end().z - 0.2).abs() < 1e-3, "it reaches the kerb: {}", p.end().z);
+        assert!((p.slope_start() - 0.4).abs() < 1e-4, "at 40%: {}", p.slope_start());
+        // (a metre and a half of climb is not a path of half a metre: it takes as much as it may)
+        climb_to(&mut p, 2.0);
+        assert!((p.slope_start() - MAX_RISE).abs() < 1e-6, "no steeper than {}: {}", MAX_RISE, p.slope_start());
+        assert!((p.slope_end() - MAX_RISE).abs() < 1e-6, "one grade");
+    }
+
+    /// Delete takes the picked path out, as the list's bin does, in one step back.
+    #[test]
+    fn the_delete_key_takes_the_picked_path_out() {
+        let mut w = opened(Tab::Paths);
+        w.selected = Some(1);
+        let n = w.sheet.as_ref().unwrap().crossing.paths.len();
+        assert!(w.delete_picked());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n - 1);
+        assert_eq!(w.picked(), Some(1), "the path that took its place is picked");
+        assert!(w.undo(), "one step back");
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n);
+        // (nothing picked: nothing deleted)
+        w.selected = None;
+        assert!(!w.delete_picked());
     }
 
     /// A nearby end, in the object's own frame, is refused when it is not in that frame at all:
@@ -4152,11 +4309,12 @@ Main
             assert!(!segs.is_empty(), "a join was made");
             at_each_join(segs, a, b);
         }
-        // (each starts by turning its own way - the radius's sign is the file's own: + right)
-        assert!(left[0].radius < 0.0, "left turns left: radius {}", left[0].radius);
-        assert!(right[0].radius > 0.0, "right turns right: radius {}", right[0].radius);
+        // (every bend it has turns its own way - the radius's sign is the file's own: + right -
+        // and a straight is no bend)
+        assert!(left.iter().filter(|s| s.radius != 0.0).all(|s| s.radius < 0.0), "left turns left: {left:?}");
+        assert!(right.iter().filter(|s| s.radius != 0.0).all(|s| s.radius > 0.0), "right turns right: {right:?}");
         // (and they are not the same run)
-        assert!((left[0].end_heading() - right[0].end_heading()).abs() > 5.0, "{} vs {}", left[0].end_heading(), right[0].end_heading());
+        assert!((left[0].end_heading() - right[0].end_heading()).abs() > 5.0 || (left.len() != right.len()), "{left:?} vs {right:?}");
         // (the choice reaches the crossing's joins)
         let mut w = opened(Tab::Paths);
         assert_eq!(w.side(), Side::Auto);
