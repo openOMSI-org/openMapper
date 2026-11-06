@@ -565,25 +565,47 @@ fn forward_segs(start: DVec2, heading: f64, end: DVec2) -> Vec<crate::roads::Seg
             return segs;
         }
         // A piece of the way round: part of the turn, so the way comes round a bit and the
-        // point is nearer each time.
+        // point is nearer each time. Kept wide enough to be a bend (see `most_turn`).
+        let chord = (dist * 0.6).clamp(1.0, 30.0);
         let turn = (2.0 * deflect.clamp(-35.0, 35.0)).clamp(-80.0, 80.0);
-        let s = arc_piece(pos, h, turn, (dist * 0.6).clamp(1.0, 30.0));
+        let turn = turn.clamp(-most_turn(chord), most_turn(chord));
+        let s = arc_piece(pos, h, turn, chord);
         h = s.end_heading();
         pos = s.end();
         segs.push(s);
     }
     if (end - pos).length() >= 0.4 {
-        let deflect = ang_delta(h, roads::heading_of(end - pos));
-        segs.push(arc_piece(pos, h, 2.0 * deflect.clamp(-MAX_DEFLECT, MAX_DEFLECT), (end - pos).length()));
+        let dist = (end - pos).length();
+        let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
+        let turn = (2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
+        segs.push(arc_piece(pos, h, turn, dist));
     }
     segs
+}
+
+/// A join shorter than this is closed with one straight piece: over a few centimetres there is
+/// no room for a bend, and what a bend gives there is a knot.
+const SHORT_JOIN: f64 = 2.0;
+
+/// The tightest radius a join's piece may have (m). Below it the piece is not a bend but a
+/// knot: a path of a few centimetres curled round on itself, which reads as the wrong way.
+/// A tight junction turn is a metre or two; a centimetre is not a path at all.
+const MIN_PIECE_RADIUS: f64 = 1.5;
+
+/// The most a piece may turn and still be a bend of at least `MIN_PIECE_RADIUS` across `chord`.
+fn most_turn(chord: f64) -> f64 {
+    (2.0 * (chord / (2.0 * MIN_PIECE_RADIUS)).clamp(-1.0, 1.0).asin().to_degrees()).abs()
 }
 
 /// Two arcs that leave `start` on `h_a`, meet tangentially at a point in between, and arrive
 /// at `end` on `h_b` - each arriving exactly in the way the next leaves, so the join has no
 /// kink and both ways are kept. The meeting point is found by its own heading, taken in small
 /// steps: a heading that puts the point in front of both ends is the one used, preferring the
-/// widest radii (a tight pair of arcs is what a junction's corner often is).
+/// widest radii.
+///
+/// A pair is only used when both of its arcs are real bends (`MIN_PIECE_RADIUS` at least) and
+/// both are at least a metre long: a pair of centimetre knots closes the join in geometry but
+/// is not a path anyone can drive.
 fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Option<Vec<crate::roads::Seg>> {
     use crate::roads::{self, Seg};
     let (h_a, h_b) = (roads::norm_deg(h_a), roads::norm_deg(h_b));
@@ -603,12 +625,16 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Option<Vec<crate::roa
         }
         let a = (v.x * u2.y - v.y * u2.x) / det;
         let b = (u1.x * v.y - u1.y * v.x) / det;
-        if !(a > 0.3 && b > 0.3) {
+        if !(a > 1.0 && b > 1.0) {
             continue;
         }
         let r1 = if t1.abs() < 1e-4 { f64::MAX } else { a / (2.0 * (t1.to_radians() * 0.5).abs().sin()) };
         let r2 = if t2.abs() < 1e-4 { f64::MAX } else { b / (2.0 * (t2.to_radians() * 0.5).abs().sin()) };
         let narrow = r1.min(r2);
+        // (a pair this tight is a knot, not a bend)
+        if narrow < MIN_PIECE_RADIUS {
+            continue;
+        }
         let mid = start + u1 * a;
         let segs = vec![arc_piece(start, h_a, t1, a), arc_piece(mid, hm, t2, b)];
         if best.as_ref().is_none_or(|(r, _)| narrow > *r) {
@@ -626,6 +652,9 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Option<Vec<crate::roa
 /// so meeting `h_b` is a coincidence of the geometry). Otherwise two arcs that meet tangentially
 /// ([`s_join`]), and when the point is too far round for that, forward pieces that bring the way
 /// round. The way the join leaves is never turned to make a single piece fit.
+///
+/// A join of a couple of metres or less is one straight piece: no bend of a usable radius fits
+/// in it, and a bend squeezed in would be a knot of centimetres that reads as the wrong way.
 fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Vec<crate::roads::Seg> {
     use crate::roads;
     let mut segs = Vec::new();
@@ -637,10 +666,18 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Vec<crate::road
         if dist < 0.4 {
             return segs;
         }
+        if dist < SHORT_JOIN {
+            // (a straight to the point: `roads::straight` will not make one under half a
+            // metre, and half a metre is exactly what a join this short is)
+            if dist >= 0.05 {
+                segs.push(crate::roads::Seg { start: pos, heading: roads::heading_of(end - pos), length: dist, radius: 0.0 });
+            }
+            return segs;
+        }
         let phi = roads::heading_of(end - pos);
         // (one arc: its chord must lie at half its turn, and it must turn into `h_b`)
         let turn = ang_delta(h, h_b);
-        if turn.abs() <= 140.0 && ang_delta(roads::norm_deg(h + turn * 0.5), phi).abs() <= 3.0 {
+        if turn.abs() <= 140.0 && ang_delta(roads::norm_deg(h + turn * 0.5), phi).abs() <= 3.0 && (turn.abs() < 1e-4 || dist / (2.0 * (turn.to_radians() * 0.5).abs().sin()) >= MIN_PIECE_RADIUS) {
             segs.push(arc_piece(pos, h, turn, dist));
             return segs;
         }
@@ -649,15 +686,19 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Vec<crate::road
             return segs;
         }
         // (too far round for either: go on forward, the way coming round as it goes)
+        let chord = (dist * 0.6).clamp(1.0, 30.0);
         let turn = (2.0 * ang_delta(h, phi).clamp(-35.0, 35.0)).clamp(-80.0, 80.0);
-        let s = arc_piece(pos, h, turn, (dist * 0.6).clamp(1.0, 30.0));
+        let turn = turn.clamp(-most_turn(chord), most_turn(chord));
+        let s = arc_piece(pos, h, turn, chord);
         h = s.end_heading();
         pos = s.end();
         segs.push(s);
     }
     if (end - pos).length() >= 0.4 {
-        let deflect = ang_delta(h, roads::heading_of(end - pos));
-        segs.push(arc_piece(pos, h, 2.0 * deflect.clamp(-MAX_DEFLECT, MAX_DEFLECT), (end - pos).length()));
+        let dist = (end - pos).length();
+        let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
+        let turn = (2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
+        segs.push(arc_piece(pos, h, turn, dist));
     }
     segs
 }
@@ -713,9 +754,22 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
         let want = surface_z(tris, seg.end());
         if k + 1 == n {
             match end {
-                PieceEnd::At { z, slope } => q.set_end_height_and_slope(z, slope),
+                // (a stub of a metre cannot climb to another path's height without an absurd
+                // rise - 68% at the start of a 0.7 m piece. It keeps the rise the join leaves
+                // at; the height is off by centimetres, which is nothing at that length.)
+                PieceEnd::At { z, slope } if q.length() >= SHORT_JOIN => q.set_end_height_and_slope(z, slope),
+                PieceEnd::At { .. } => {
+                    q.v[6] = s_a as f32;
+                    q.v[7] = s_a as f32;
+                }
                 PieceEnd::Surface => match want {
-                    Some(z) => set_end_height(&mut q, z),
+                    Some(z) if q.length() >= SHORT_JOIN || (z - start_z).abs() < 0.5 => set_end_height(&mut q, z),
+                    Some(z) => {
+                        // (short: the rise is what it can be, not what the deck asks for)
+                        let l = q.length().max(0.05);
+                        q.v[6] = ((z - start_z) / l) as f32;
+                        q.v[7] = q.v[6];
+                    }
                     None => {
                         q.v[6] = s_a as f32;
                         q.v[7] = s_a as f32;
@@ -726,12 +780,21 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
             // (the first piece leaves at the rise the path had, and still lands on the deck)
             let l = q.length();
             q.v[6] = s_a as f32;
-            if l > 1e-3 {
+            if l >= SHORT_JOIN {
                 let z1 = want.unwrap_or(a.z + s_a * l);
                 q.v[7] = (2.0 * (z1 - a.z) / l - s_a) as f32;
+            } else {
+                // (too short to bend the rise: it climbs at the one it came with)
+                q.v[7] = s_a as f32;
             }
         } else if let Some(z1) = want {
-            set_end_height(&mut q, z1);
+            if q.length() >= SHORT_JOIN || (z1 - start_z).abs() < 0.5 {
+                set_end_height(&mut q, z1);
+            } else {
+                let l = q.length().max(0.05);
+                q.v[6] = ((z1 - start_z) / l) as f32;
+                q.v[7] = q.v[6];
+            }
         }
         z = q.end().z;
         out.push(q);
@@ -3730,6 +3793,29 @@ Main
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert_eq!(p.direction(), 1, "the new path takes the join's direction");
         assert!(ang_delta(p.heading(), 90.0).abs() < 0.5, "and its way out: {}", p.heading());
+    }
+
+    /// A join of half a metre is one straight piece: no bend of a usable radius fits, and a
+    /// bend squeezed in is a knot that reads as the wrong way.
+    #[test]
+    fn a_tiny_join_is_one_straight_piece_not_a_knot() {
+        let a = DVec2::new(-48.0346, 19.2132);
+        let b = DVec2::new(-47.6323, 18.9858);
+        assert!((b - a).length() < 0.5);
+        let segs = connect_segs(a, 143.5, b, 337.6);
+        assert_eq!(segs.len(), 1, "one piece: {}", segs.len());
+        let s = &segs[0];
+        assert_eq!(s.radius, 0.0, "not a knot: radius {}", s.radius);
+        assert!((s.end() - b).length() < 1e-6, "it ends on the point: {:?}", s.end());
+        // (what the tiny knot used to be: a bend of 166 degrees in 0.46 m, radius 0.23 m)
+        assert!(s.length < 1.0, "{} m", s.length);
+
+        // and a join wide enough for a real bend is still two arcs that meet tangentially
+        let wide = connect_segs(DVec2::new(0.0, 10.0), 0.0, DVec2::new(6.0, 16.0), 180.0);
+        at_each_join(&wide, DVec2::new(0.0, 10.0), DVec2::new(6.0, 16.0));
+        for s in &wide {
+            assert!(s.radius == 0.0 || s.radius.abs() >= MIN_PIECE_RADIUS, "a real bend: radius {}", s.radius);
+        }
     }
 
     /// The deck's height is the top of the mesh at that point.
