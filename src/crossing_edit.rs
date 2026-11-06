@@ -382,9 +382,12 @@ pub struct Joint {
     /// one is, not turned round by the geometry of the joint.
     pub dir: i32,
     /// The heading traffic actually moves in at the joint, along the other path: `heading` is
-    /// only the line the path lies on, and a path may be driven either way along it. A new path
-    /// is given a `direction` that puts its traffic the same way round as this.
+    /// only the way into the body, and a path may be driven either way along it.
     pub travel: f64,
+    /// The other path's own geometric tangent there, *along* it - which is exactly the rotate
+    /// its end shows in the panel. A join arrives on this, so its last piece lines up with the
+    /// next segment; `heading` is the other way round at a path's end.
+    pub geom: f64,
 }
 
 impl Joint {
@@ -594,7 +597,8 @@ impl Crossing {
         } else {
             (norm_deg(c.heading_at(0.0)), q.slope_start())
         };
-        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end) })
+        let geom = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom })
     }
 
     /// The text of the blocks this editor owns, in the order it writes them.

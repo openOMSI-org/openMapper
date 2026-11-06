@@ -187,6 +187,7 @@ fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4)
         flow: j.flow,
         dir: j.dir,
         travel: crate::roads::norm_deg(j.travel - object_yaw(m)),
+        geom: crate::roads::norm_deg(j.geom - object_yaw(m)),
     }
 }
 
@@ -2539,7 +2540,7 @@ impl App {
                 let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let slope = d.z / len;
-                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel });
+                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom });
             }
         }
         out
@@ -4217,7 +4218,7 @@ mod tests {
         // (an end 10 m ahead of the object, running along its own way)
         let local = DVec3::new(0.0, 10.0, 1.5);
         let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
-        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0 };
+        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
         let j = joint_in_object(map_joint, world, &m);
         assert!((j.pos.truncate() - local.truncate()).length() < 1e-3, "it is written where the path has it: {:?} vs {local:?}", j.pos);
         assert!(j.heading.abs() < 0.05 || (j.heading - 360.0).abs() < 0.05, "and the way it runs is the object's: {}", j.heading);
@@ -4235,7 +4236,7 @@ mod tests {
         let yaw = 37.0f64;
         let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
         let local = DVec3::new(2.0, 9.0, 1.5);
-        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0 };
+        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
         let drawn = nearby_on_map(&[j], world, &m);
         assert_eq!(drawn.len(), 1);
         let (at, back) = drawn[0];
