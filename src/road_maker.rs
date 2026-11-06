@@ -267,6 +267,11 @@ impl RoadSpec {
         self.roadway_width() + self.pocket + self.footway_left() + self.footway_right()
     }
 
+    /// Position of the line between the opposite lanes.
+    pub fn centerline(&self) -> f32 {
+        (self.lanes_back as f32 - self.lanes_fwd as f32) * self.lane_width / 2.0
+    }
+
     /// Where a place across the roadway (m from its middle) lies in the roadway texture (0..1).
     pub fn roadway_u(&self, x: f32) -> f32 {
         let rw = self.roadway_width();
@@ -328,21 +333,22 @@ impl RoadSpec {
         let line = |x: f32, style: MarkStyle, color: [u8; 3]| Marking { x, style, color, ..Default::default() };
         let mut v = Vec::new();
         let edge = if self.pocket > 0.0 { MarkStyle::Dashed } else { MarkStyle::Solid };
+        let offset = self.centerline();
         v.push(line(-rw / 2.0 + 0.2, MarkStyle::Solid, WHITE));
         v.push(line(rw / 2.0 - 0.2, edge, WHITE));
         if two_way {
             let gap = mid / 2.0;
             if mid <= 0.0 {
-                v.push(line(0.0, MarkStyle::Double, YELLOW));
+                v.push(line(offset, MarkStyle::Double, YELLOW));
             } else {
-                v.push(line(-gap - 0.2, MarkStyle::Solid, WHITE));
-                v.push(line(gap + 0.2, MarkStyle::Solid, WHITE));
+                v.push(line(offset - gap - 0.2, MarkStyle::Solid, WHITE));
+                v.push(line(offset + gap + 0.2, MarkStyle::Solid, WHITE));
             }
             for i in 1..self.lanes_back {
-                v.push(line(-gap - i as f32 * lw, MarkStyle::Dashed, WHITE));
+                v.push(line(offset - gap - i as f32 * lw, MarkStyle::Dashed, WHITE));
             }
             for i in 1..self.lanes_fwd {
-                v.push(line(gap + i as f32 * lw, MarkStyle::Dashed, WHITE));
+                v.push(line(offset + gap + i as f32 * lw, MarkStyle::Dashed, WHITE));
             }
         } else {
             for i in 1..(self.lanes_fwd + self.lanes_back) {
@@ -497,16 +503,17 @@ impl RoadSpec {
         // lanes: against the road's way left of its middle, with it right of it (as OMSI 2's
         // roads are laid out where traffic keeps right; a left-hand map mirrors the spline)
         let mid_gap = mid / 2.0;
+        let offset = self.centerline();
         let one_way = self.lanes_back == 0 || self.lanes_fwd == 0;
         if fl > 0.0 {
             let _ = write!(s, "[path]\n1\n{}\n{}\n{}\n2\n\n", num(xl - fl / 2.0), num(side_h), num(fl * 0.4));
         }
         for i in 0..self.lanes_back {
-            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { -mid_gap - (self.lanes_back - i) as f32 * self.lane_width + self.lane_width / 2.0 };
+            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { offset - mid_gap - (self.lanes_back - i) as f32 * self.lane_width + self.lane_width / 2.0 };
             let _ = write!(s, "[path]\n0\n{}\n{}\n{}\n1\n\n", num(x), num(road_h), num(self.lane_width * 0.9));
         }
         for i in 0..self.lanes_fwd {
-            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { mid_gap + (i as f32 + 0.5) * self.lane_width };
+            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { offset + mid_gap + (i as f32 + 0.5) * self.lane_width };
             let _ = write!(s, "[path]\n0\n{}\n{}\n{}\n0\n\n", num(x), num(road_h), num(self.lane_width * 0.9));
         }
         if pw > 0.0 {
