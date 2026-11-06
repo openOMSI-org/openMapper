@@ -642,7 +642,10 @@ pub fn as_sel(doc: &Document, k: TileKey, id: i64) -> Sel {
     if doc.attachment(k, id).is_some() { Sel::Attached(k, id) } else { Sel::Object(k, id) }
 }
 
-/// The objects that take their state from object `id` (`[varparent]`).
+/// The objects that take their state from object `id` (`[varparent]`). The drawing of the link
+/// lines uses [`crate::editor`]'s `record_links`, which covers a record laid along a road as
+/// well; this stays as the plain-object answer the checks compare against.
+#[allow(dead_code)]
 pub fn var_children(doc: &Document, id: i64) -> Vec<(TileKey, &omsi_map::MapObject)> {
     doc.tiles.iter().flat_map(|(k, t)| t.tile.objects.iter().chain(&t.tile.attach_objects).filter(|o| o.var_parent == Some(id)).map(move |o| (*k, o))).collect()
 }

@@ -96,6 +96,12 @@ pub enum Action {
     ComplexJunctions,
     /// The crossing path editor window on the picked object (or a crossing picked there).
     CrossingPaths,
+    /// Put the crossing being edited in the middle of the map's view, close enough that its
+    /// paths fill it.
+    CrossingFrame,
+    /// The crossing editor saved an object: its rel path is now what the map names. Only that
+    /// object's model is read again - the catalogue and the other models stay as they are.
+    CrossingSaved(String),
     /// A complex junction drawing put on the map as splines, turned by so many degrees.
     PlaceComplex(Box<crate::cjunction::Layout>, f64),
     /// A drawing written as a custom junction (an object, and a layout for automatic junctions).
@@ -1129,7 +1135,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 if menu_item(ui, Some(Icon::Junction), tr("Complex junction editor…", "Редактор сложных перекрёстков…"), "", true) {
                     actions.push(Action::ComplexJunctions);
                 }
-                if menu_item(ui, Some(Icon::Route), tr("Crossing paths of the picked object…", "Пути выбранного перекрёстка…"), "", true) {
+                if menu_item(ui, Some(Icon::Route), tr("Crossing editor…", "Редактор перекрёстков…"), "", true) {
                     actions.push(Action::CrossingPaths);
                 }
                 if menu_item(ui, Some(Icon::Layers), tr("PBR maps for a picture…", "PBR-карты для картинки…"), "", true) {
@@ -2294,8 +2300,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 }
                 // its paths, if it is a crossing: edited in a copy of the object
                 if matches!(sel, Sel::Object(..)) {
-                    let r = ui.button(icons::labelled(Icon::Route, tr("Crossing paths", "Пути перекрёстка")));
-                    help(st, &r, tr("The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is", "Пути перекрёстка или перекрёстка-объекта, их блокировки и программу светофора правят в копии объекта, исходный остаётся как был"));
+                    let r = ui.button(icons::labelled(Icon::Route, tr("Crossing editor", "Редактор перекрёстка")));
+                    help(st, &r, tr("The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak", "Пути перекрёстка или перекрёстка-объекта, их блокировки и программу светофора правят, как в редакторе перекрёстков OMSI 2: в собственном файле объекта, прежний остаётся как .bak"));
                     if r.clicked() {
                         actions.push(Action::CrossingPaths);
                     }

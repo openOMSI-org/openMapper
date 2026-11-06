@@ -40,6 +40,7 @@ mod import;
 mod import_image;
 mod install;
 mod junction;
+mod join;
 mod lanes;
 mod lanes_edit;
 mod makers;

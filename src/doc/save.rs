@@ -415,6 +415,32 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
     s
 }
 
+/// How far every spline lies from the start of the chain its `prev` links make, inside the
+/// tile: the same sum Omsi.exe keeps in a `[spline]` record's last number and openOMSI works
+/// out again (`omsi-world`'s `tile_chain_offset`), a chain being cut where the spline before
+/// it is not in this tile.
+fn chain_offsets(live: &[&MapSpline]) -> Vec<f64> {
+    live.iter()
+        .enumerate()
+        .map(|(i, s)| {
+            let mut total = 0.0;
+            let mut cur = i;
+            let mut seen = vec![s.id];
+            loop {
+                let prev = live[cur].prev_id;
+                if prev == 0 || seen.contains(&prev) || seen.len() > 500 {
+                    break;
+                }
+                let Some(pi) = live.iter().position(|q| q.id == prev) else { break };
+                seen.push(prev);
+                total += live[pi].length.max(0.0);
+                cur = pi;
+            }
+            total
+        })
+        .collect()
+}
+
 pub(crate) fn tile_text(t: &Tile) -> String {
     let mut s = header();
     // ([terrain] and [water] carry a line of their own, empty, then the blank line that
@@ -429,8 +455,12 @@ pub(crate) fn tile_text(t: &Tile) -> String {
     if t.variable_terrain {
         s.push_str("[variable_terrain]\n\n");
     }
-    for sp in t.splines.iter().filter(|s| !s.deleted) {
-        spline(&mut s, sp);
+    // (the splines the file will hold, and how far each lies from the start of its chain: what
+    // Omsi.exe and openOMSI count a row's distance from)
+    let live: Vec<&MapSpline> = t.splines.iter().filter(|s| !s.deleted).collect();
+    let chain = chain_offsets(&live);
+    for (i, sp) in live.iter().enumerate() {
+        spline_at(&mut s, sp, chain[i]);
     }
     // (every object of the tile is numbered by its place, as OMSI's editor numbers them)
     let mut n = 0;
@@ -443,8 +473,14 @@ pub(crate) fn tile_text(t: &Tile) -> String {
         object(&mut s, o, false);
     }
     for a in &t.spline_attachments {
+        // (a row whose spline is not written cannot be drawn at all; one whose first object
+        // would lie before its own spline is refused by Omsi.exe and openOMSI both, so it is
+        // written from that spline's start)
+        let Some(own) = t.splines.get(a.spline_index.max(0) as usize) else { continue };
+        let Some(w) = live.iter().position(|q| q.id == own.id) else { continue };
+        let u = a.offset[2] - own.map_chain_offset.unwrap_or(0.0);
         numbered(&mut s);
-        attachment(&mut s, a);
+        attachment_at(&mut s, a, w as i32, chain[w] + u.max(0.0));
     }
     for o in &t.attach_objects {
         numbered(&mut s);
@@ -495,6 +531,14 @@ pub(crate) fn object(s: &mut String, o: &MapObject, attach: bool) {
 }
 
 pub(crate) fn spline(s: &mut String, sp: &MapSpline) {
+    spline_at(s, sp, sp.tex_offset);
+}
+
+/// The spline record with its last number written as `chain`: the distance from the start of
+/// the chain its `prev` links make, which is what that number means to Omsi.exe and to
+/// openOMSI (`omsi-map`'s `map_chain_offset`, read from it) and what the rows on it are
+/// measured from.
+pub(crate) fn spline_at(s: &mut String, sp: &MapSpline, chain: f64) {
     let _ = write!(
         s,
         "[{}]\n0\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
@@ -515,7 +559,7 @@ pub(crate) fn spline(s: &mut String, sp: &MapSpline) {
     if sp.is_h {
         let _ = writeln!(s, "{}", num(sp.delta_h.unwrap_or(0.0)));
     }
-    let _ = write!(s, "{}\n{}\n{}\n{}\n{}\n", num(sp.cant_start), num(sp.cant_end), num(sp.skew_start), num(sp.skew_end), num(sp.tex_offset));
+    let _ = write!(s, "{}\n{}\n{}\n{}\n{}\n", num(sp.cant_start), num(sp.cant_end), num(sp.skew_start), num(sp.skew_end), num(chain));
     // (a line for the mirror flag, empty when there is none, then the section's blank line)
     s.push_str(if sp.mirror { "mirror\n\n" } else { "\n\n" });
     if sp.terrain_align_flag {
@@ -528,6 +572,15 @@ pub(crate) fn spline(s: &mut String, sp: &MapSpline) {
 }
 
 pub(crate) fn attachment(s: &mut String, a: &SplineAttachment) {
+    attachment_at(s, a, a.spline_index, a.offset[2]);
+}
+
+/// The attachment record with its spline given by the place of the spline among those the file
+/// holds, and its distance as the file means it: from the start of the chain, not from the
+/// start of its own spline. Both are what Omsi.exe and openOMSI work by (a record whose first
+/// object lies before its own spline is drawn by neither), while the editor keeps the index
+/// into its own list and the distance it measured along the spline.
+pub(crate) fn attachment_at(s: &mut String, a: &SplineAttachment, spline_index: i32, along: f64) {
     match a.repeater {
         Some((tile, first)) => {
             let _ = write!(s, "[splineAttachement_repeater]\n0\n{tile}\n{first}\n");
@@ -539,10 +592,10 @@ pub(crate) fn attachment(s: &mut String, a: &SplineAttachment) {
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
         a.file,
         a.id,
-        a.spline_index,
+        spline_index,
         num(a.offset[0]),
         num(a.offset[1]),
-        num(a.offset[2]),
+        num(along),
         num(a.rot[0]),
         num(a.rot[1]),
         num(a.rot[2]),
@@ -602,6 +655,123 @@ mod tests {
         let o = &back.objects[0];
         assert_eq!((o.id, o.pos, o.rot[0]), (9, [100.0, 150.5, 0.0], 90.0));
         assert_eq!(o.extra, vec!["Hauptstr.".to_string()]);
+    }
+
+    /// How far a spline of the written file lies from the start of its chain, as Omsi.exe and
+    /// openOMSI work it out again from the `prev` links (`omsi-world`'s `tile_chain_offset`).
+    fn written_chain(splines: &[MapSpline], si: usize) -> f64 {
+        let mut total = 0.0;
+        let mut cur = si;
+        let mut seen = vec![splines[si].id];
+        loop {
+            let prev = splines[cur].prev_id;
+            if prev == 0 || seen.contains(&prev) || seen.len() > 500 {
+                break;
+            }
+            let Some(pi) = splines.iter().position(|s| s.id == prev) else { break };
+            seen.push(prev);
+            total += splines[pi].length.max(0.0);
+            cur = pi;
+        }
+        total
+    }
+
+    /// Whether Omsi.exe - and openOMSI with it - refuses to draw a row record (`row_starts_
+    /// before_its_spline`): its first object would lie before the record's own spline.
+    fn refused(splines: &[MapSpline], a: &SplineAttachment) -> bool {
+        let si = a.spline_index.max(0) as usize;
+        si < splines.len() && a.offset[2] - written_chain(splines, si) < -1e-6
+    }
+
+    /// A row on the second spline of a chain is written where Omsi.exe and openOMSI put it: its
+    /// distance counts from the start of the chain, not from its own spline. Written from its
+    /// own spline alone (as an editor that keeps the distance it measured does), the record read
+    /// as starting before its spline and neither of them drew it.
+    #[test]
+    fn a_row_on_a_chain_is_written_where_the_game_puts_it() {
+        let mut t = Tile { version: 14, has_terrain: true, ..Default::default() };
+        // (two splines end to end: 30 m and 40 m)
+        t.splines.push(MapSpline {
+            file: "Splines\\road.sli".into(),
+            id: 7,
+            prev_id: 0,
+            next_id: 8,
+            length: 30.0,
+            map_chain_offset: Some(0.0),
+            ..Default::default()
+        });
+        t.splines.push(MapSpline {
+            file: "Splines\\road.sli".into(),
+            id: 8,
+            prev_id: 7,
+            next_id: 0,
+            length: 40.0,
+            // (the number the editor has for it: 30 m into the chain)
+            map_chain_offset: Some(30.0),
+            ..Default::default()
+        });
+        // (a stop sign 12 m along the second spline)
+        t.spline_attachments.push(SplineAttachment {
+            file: "Sceneryobjects\\stop.sco".into(),
+            id: 9,
+            spline_index: 1,
+            offset: [0.0, 0.0, 30.0 + 12.0],
+            rot: [0.0, 0.0, 0.0],
+            interval: 0.0,
+            range: 0.0,
+            ..Default::default()
+        });
+        let text = tile_text(&t);
+        assert!(text.contains("[splineAttachement]"), "the row is written:\n{text}");
+        let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
+        assert_eq!(back.spline_attachments.len(), 1);
+        let a = &back.spline_attachments[0];
+        // (its own spline is the second one, 30 m into the chain)
+        assert_eq!(a.spline_index, 1, "its spline, by the place it is written at");
+        assert_eq!(back.splines[1].map_chain_offset, Some(30.0), "the chain distance is in the spline's own number");
+        assert!(!refused(&back.splines, a), "drawn, not refused: {} - {}", a.offset[2], written_chain(&back.splines, 1));
+        assert!((a.offset[2] - back.splines[1].map_chain_offset.unwrap() - 12.0).abs() < 1e-6, "12 m along its spline: {}", a.offset[2]);
+
+        // (the editor's copy of that chain distance having gone stale - as a split or a merge
+        // leaves it - does not move the row: it is written from the chain as the file has it)
+        let mut t2 = t.clone();
+        t2.splines[1].map_chain_offset = Some(0.0);
+        let text = tile_text(&t2);
+        let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
+        let a = &back.spline_attachments[0];
+        assert!(!refused(&back.splines, a), "still drawn: {}", a.offset[2]);
+        assert_eq!(back.splines[1].map_chain_offset, Some(30.0), "the chain is written as the file has it");
+    }
+
+    /// The row's spline is named by its place among the splines the file holds, so a spline
+    /// taken away in the editor does not leave the row pointing at its neighbour - or past the
+    /// end of the list, where neither Omsi.exe nor openOMSI finds it at all.
+    #[test]
+    fn a_row_names_its_spline_by_the_place_it_is_written_at() {
+        let mut t = Tile { version: 14, ..Default::default() };
+        for (id, prev, next) in [(5, 0, 0), (6, 0, 0), (7, 0, 0)] {
+            t.splines.push(MapSpline { file: "Splines\\road.sli".into(), id, prev_id: prev, next_id: next, length: 20.0, map_chain_offset: Some(0.0), ..Default::default() });
+        }
+        // (the first spline taken away, but still in the editor's list: the row on the third
+        // one is at index 2 there)
+        t.splines[0].deleted = true;
+        t.spline_attachments.push(SplineAttachment {
+            file: "Sceneryobjects\\lamp.sco".into(),
+            id: 11,
+            spline_index: 2,
+            offset: [0.0, 0.0, 5.0],
+            interval: 0.0,
+            range: 0.0,
+            ..Default::default()
+        });
+        let text = tile_text(&t);
+        let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
+        assert_eq!(back.splines.len(), 2, "the taken-away one is not written");
+        assert_eq!(back.splines[1].id, 7);
+        let a = &back.spline_attachments[0];
+        assert_eq!(a.spline_index, 1, "the place of spline 7 in the file");
+        assert_eq!(back.splines[a.spline_index as usize].id, 7, "and it is the same spline");
+        assert!(!refused(&back.splines, a));
     }
 
     /// `OMSI_ROUNDTRIP_IN=<folder of .map files> OMSI_ROUNDTRIP_OUT=<folder>`: every tile of the

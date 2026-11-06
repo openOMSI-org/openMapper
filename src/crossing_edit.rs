@@ -205,7 +205,10 @@ impl Path {
         if !(c.length > 1e-6) {
             return vec![self.start()];
         }
-        let n = (c.length / step.max(0.2)).ceil().max(1.0) as usize;
+        // (a broken length - a path of millions of metres - would ask for millions of points,
+        // and the drawing would stop answering: the count is capped)
+        const MOST: usize = 4000;
+        let n = ((c.length / step.max(0.2)).ceil().max(1.0) as usize).min(MOST);
         (0..=n).map(|i| c.point_at(c.length * i as f64 / n as f64)).collect()
     }
 
@@ -252,6 +255,201 @@ impl Path {
         let mut p = self.clone();
         p.v[0] += dx as f32;
         p
+    }
+
+    /// Turn the path so that it arrives at its end in `end_deg`, its start staying where it
+    /// is: the arc that does that (a straight one when the way already is the chord's).
+    ///
+    /// A chord's way is the mean of the tangents at its two ends, so an arc that ends in
+    /// `end_deg` has turned by twice the angle between the chord and it.
+    pub fn fit_end_tangent(&mut self, end_deg: f64) {
+        let chord = self.end().truncate() - self.start().truncate();
+        let c = chord.length();
+        if c < 1e-6 {
+            return;
+        }
+        let phi = heading_deg(chord);
+        // (the heading 0 is north here: `dir` and `heading_of` are the pair that agrees)
+        let d = norm_deg(end_deg - phi + 180.0) - 180.0;
+        if d.abs() < 1e-3 {
+            self.v[3] = norm_deg(phi) as f32;
+            self.v[4] = 0.0;
+            self.v[5] = c as f32;
+            return;
+        }
+        // (nearly opposite the chord, the arc that meets it is most of a circle: its radius
+        // and length grow without bound - a path of millions of metres. A straight to the
+        // same end is kept instead.)
+        let half = d.abs().to_radians();
+        let r = c / (2.0 * half.sin());
+        let length = 2.0 * half * r;
+        if !length.is_finite() || !r.is_finite() || length > c * 4.0 {
+            self.v[3] = norm_deg(phi) as f32;
+            self.v[4] = 0.0;
+            self.v[5] = c as f32;
+            return;
+        }
+        self.v[3] = norm_deg(2.0 * phi - end_deg) as f32;
+        self.v[4] = (r * d.signum()) as f32;
+        self.v[5] = length as f32;
+    }
+
+    /// Turn the path so that it leaves its start in `start_deg`, its end staying where it is.
+    pub fn fit_start_tangent(&mut self, start_deg: f64) {
+        let chord = self.end().truncate() - self.start().truncate();
+        let c = chord.length();
+        if c < 1e-6 {
+            return;
+        }
+        let phi = heading_deg(chord);
+        let d = norm_deg(phi - start_deg + 180.0) - 180.0;
+        if d.abs() < 1e-3 {
+            self.v[3] = norm_deg(start_deg) as f32;
+            self.v[4] = 0.0;
+            self.v[5] = c as f32;
+            return;
+        }
+        let half = d.abs().to_radians();
+        let r = c / (2.0 * half.sin());
+        let length = 2.0 * half * r;
+        if !length.is_finite() || !r.is_finite() || length > c * 8.0 {
+            // (a point almost directly behind cannot be reached without a loop: the widest turn
+            // that still leaves in `start_deg` is taken, and the end stops where that arc
+            // reaches. Turning the path round to face the point would silently change the
+            // rotate the user set)
+            let half = 75f64.to_radians();
+            let r = c / (2.0 * half.sin());
+            self.v[3] = norm_deg(start_deg) as f32;
+            self.v[4] = (r * d.signum()) as f32;
+            self.v[5] = (2.0 * half * r) as f32;
+            return;
+        }
+        self.v[3] = norm_deg(start_deg) as f32;
+        self.v[4] = (r * d.signum()) as f32;
+        self.v[5] = length as f32;
+    }
+
+    /// Put the end's height at `z` and the rise there at `slope`, the start's height staying
+    /// as it is: the rise is taken as linear, so the start's slope follows from the two.
+    pub fn set_end_height_and_slope(&mut self, z: f64, slope: f64) {
+        let l = self.length();
+        if !(l > 1e-3) {
+            return;
+        }
+        let s0 = 2.0 * (z - self.start().z) / l - slope;
+        self.v[6] = s0 as f32;
+        self.v[7] = slope as f32;
+    }
+
+    /// Put the start's height at `z` and the rise there at `slope`, the end's height staying
+    /// as it is.
+    pub fn set_start_height_and_slope(&mut self, z: f64, slope: f64) {
+        let end_z = self.end().z;
+        let l = self.length();
+        self.v[2] = z as f32;
+        self.v[6] = slope as f32;
+        if l > 1e-3 {
+            self.v[7] = (2.0 * (end_z - z) / l - slope) as f32;
+        }
+    }
+
+    /// The heading traffic moves in at one of the path's ends: the way the geometry runs there,
+    /// or the other way when the path is driven against it (both ways: along it).
+    pub fn travel_at(&self, at_end: bool) -> f64 {
+        let c = self.curve();
+        let h = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
+        if self.direction() == 1 { norm_deg(h + 180.0) } else { h }
+    }
+}
+
+/// An end of another path a drag has snapped onto, with the way that path runs away from it
+/// and the rise it has there: what the dragged path matches, so two pieces meet not only at
+/// the point but in their way and their height.
+#[derive(Clone, Copy, Debug)]
+pub struct Joint {
+    pub pos: DVec3,
+    /// The heading the other path leaves the joint in: away from the joint along it, whichever
+    /// end of it this is.
+    pub heading: f64,
+    /// Rise per metre along the other path at the joint.
+    pub slope: f64,
+    /// The direction a new path laid outward from this joint should have: 0 when the other
+    /// path's traffic arrives at the joint and drives on into the new one, 1 when it leaves the
+    /// joint (so the new path is driven towards the joint), 2 when both.
+    pub flow: i32,
+    /// The other path's own `direction` (0 along, 1 against, 2 both). A new path laid out of
+    /// this joint takes it as it stands: a path carried on from another is driven the way that
+    /// one is, not turned round by the geometry of the joint.
+    pub dir: i32,
+    /// The heading traffic actually moves in at the joint, along the other path: `heading` is
+    /// only the way into the body, and a path may be driven either way along it.
+    pub travel: f64,
+    /// The other path's own geometric tangent there, *along* it - which is exactly the rotate
+    /// its end shows in the panel. A join arrives on this, so its last piece lines up with the
+    /// next segment; `heading` is the other way round at a path's end.
+    pub geom: f64,
+}
+
+impl Joint {
+    /// The way traffic crosses this joint - the other path's own travel there.
+    pub fn through(self) -> f64 {
+        self.travel
+    }
+
+    /// The way a path *begun* at this joint runs: back along the other path's body, so it
+    /// leaves the joint outward rather than along the path it is put on.
+    pub fn outward(self) -> f64 {
+        norm_deg(self.heading + 180.0)
+    }
+
+    /// The `direction` for a path whose geometry leaves the joint in `heading`: 0 when that runs
+    /// with the traffic here, 1 when it runs against it, 2 when the other path is both ways.
+    /// This is what keeps a path drawn out of a lane pointing the same way the lane does instead
+    /// of backwards.
+    pub fn direction_for(self, heading: f64) -> i32 {
+        if self.dir == 2 {
+            return 2;
+        }
+        let d = norm_deg(heading - self.travel + 180.0) - 180.0;
+        if d.abs() <= 90.0 { 0 } else { 1 }
+    }
+}
+
+/// The `direction` a path whose geometry leaves a joint in `heading` should have, given the
+/// heading traffic moves in there (`travel`) and whether the other path is both ways.
+pub fn direction_towards(heading: f64, travel: f64, both: bool) -> i32 {
+    if both {
+        return 2;
+    }
+    let d = norm_deg(heading - travel + 180.0) - 180.0;
+    if d.abs() <= 90.0 { 0 } else { 1 }
+}
+
+/// The `direction` (0 along, 1 against, 2 both) a new path laid outward from a joint of another
+/// path should have. `at_end`: the joint is at that path's end rather than its start.
+///
+/// Traffic that arrives at the joint drives on into the new path, along its geometry; traffic
+/// that leaves the joint drives into the new path from its far end, against its geometry.
+pub fn outward_flow(dir: i32, at_end: bool) -> i32 {
+    match dir {
+        2 => 2,
+        // (at the end: 0 along that path arrives here, 1 against leaves from the end;
+        // at the start it is the other way round)
+        0 => {
+            if at_end {
+                0
+            } else {
+                1
+            }
+        }
+        1 => {
+            if at_end {
+                1
+            } else {
+                0
+            }
+        }
+        _ => 0,
     }
 }
 
@@ -387,6 +585,22 @@ impl Crossing {
         best.map(|b| (b.1, b.2, b.3))
     }
 
+    /// The nearest end of another path, with the way that path runs away from it and the rise
+    /// it has there: a path putting its own end on it can meet it in more than the point.
+    pub fn nearest_joint(&self, p: DVec3, reach: f64, skip: usize) -> Option<Joint> {
+        let (i, at_end, pos) = self.nearest_end(p, reach, skip)?;
+        let q = &self.paths[i];
+        let c = q.curve();
+        // (a path whose own end is here runs *into* the joint: away from it is the other way)
+        let (heading, slope) = if at_end {
+            (norm_deg(c.heading_at(c.length.max(0.0)) + 180.0), q.slope_end())
+        } else {
+            (norm_deg(c.heading_at(0.0)), q.slope_start())
+        };
+        let geom = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom })
+    }
+
     /// The text of the blocks this editor owns, in the order it writes them.
     pub fn section(&self) -> String {
         let mut out = String::new();
@@ -485,6 +699,111 @@ impl Crossing {
             _ => self.phases_sum().max(1.0),
         }
     }
+
+    /// Whether the file states the cycle itself (`[traffic_lights_group]`), rather than
+    /// leaving it to the longest light's phases.
+    pub fn has_cycle(&self) -> bool {
+        matches!(self.cycle, Some(c) if c > 0.0)
+    }
+
+    /// Where phase `phase` of light `light` starts: the phases before it laid end to end.
+    pub fn phase_start(&self, light: usize, phase: usize) -> f32 {
+        self.lights.get(light).map(|l| l.phases.iter().take(phase).map(|p| p.duration.max(0.0)).sum()).unwrap_or(0.0)
+    }
+
+    /// The phases of light `light` as they run over the cycle - what a timeline draws. A phase
+    /// of no length takes no room; the last one holds to the cycle's end when the phases are
+    /// shorter than it; what runs past the cycle is cut off.
+    pub fn segments(&self, light: usize) -> Vec<Segment> {
+        let len = self.cycle_len();
+        let Some(l) = self.lights.get(light) else { return Vec::new() };
+        let mut out = Vec::new();
+        let mut t = 0.0f32;
+        for (i, ph) in l.phases.iter().enumerate() {
+            if t >= len {
+                break;
+            }
+            let last = i + 1 == l.phases.len();
+            let own = t + ph.duration.max(0.0);
+            let end = if last { own.max(len) } else { own }.min(len);
+            if end > t {
+                out.push(Segment { light, phase: i, start: t, own_end: own.min(end), end, state: ph.state });
+            }
+            t = end;
+        }
+        out
+    }
+
+    /// Every light's phases, one light's after another.
+    pub fn timeline(&self) -> Vec<Segment> {
+        (0..self.lights.len()).flat_map(|l| self.segments(l)).collect()
+    }
+
+    /// The phase of light `light` showing at `t` seconds into the cycle.
+    pub fn phase_at(&self, light: usize, t: f32) -> Option<usize> {
+        self.segments(light).into_iter().find(|s| t >= s.start && t < s.end).map(|s| s.phase)
+    }
+
+    /// Make phase `phase` of light `light` end at `end` seconds into the cycle, the way its
+    /// block is dragged in a timeline. Rounded to whole seconds, never before its own start
+    /// and - when the file states the cycle - never past the cycle's end.
+    pub fn resize_phase(&mut self, light: usize, phase: usize, end: f32) -> bool {
+        let stated = self.has_cycle();
+        let cycle = self.cycle_len();
+        let start = self.phase_start(light, phase);
+        let Some(l) = self.lights.get_mut(light) else { return false };
+        if phase >= l.phases.len() {
+            return false;
+        }
+        let want = (end - start).round().max(0.0);
+        let want = if stated { want.min((cycle - start).max(0.0).round()) } else { want };
+        if (l.phases[phase].duration - want).abs() < 1e-6 {
+            return false;
+        }
+        l.phases[phase].duration = want;
+        true
+    }
+
+    /// A new light: red for half its run, green for the other half. Its index.
+    pub fn add_light(&mut self) -> usize {
+        self.lights.push(TrafficLight {
+            name: format!("Light {}", self.lights.len() + 1),
+            phases: vec![TrafficLightPhase { state: 0, duration: 20.0 }, TrafficLightPhase { state: 6, duration: 20.0 }],
+            approach_dist: None,
+        });
+        self.lights.len() - 1
+    }
+
+    /// A new red phase in light `light`, before phase `at` (at its end when `at` is past it).
+    pub fn insert_phase(&mut self, light: usize, at: usize) -> Option<usize> {
+        let l = self.lights.get_mut(light)?;
+        let at = at.min(l.phases.len());
+        l.phases.insert(at, TrafficLightPhase { state: 0, duration: 10.0 });
+        Some(at)
+    }
+
+    /// Remove phase `phase` of light `light`.
+    pub fn remove_phase(&mut self, light: usize, phase: usize) -> bool {
+        let Some(l) = self.lights.get_mut(light) else { return false };
+        if phase >= l.phases.len() {
+            return false;
+        }
+        l.phases.remove(phase);
+        true
+    }
+}
+
+/// One run of a light's program on a timeline: phase `phase` of light `light`, from `start`
+/// to `end` seconds into the cycle.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Segment {
+    pub light: usize,
+    pub phase: usize,
+    pub start: f32,
+    /// Where the phase's own duration ends (the last one may hold past it).
+    pub own_end: f32,
+    pub end: f32,
+    pub state: i32,
 }
 
 /// An object's `.sco` opened for editing: the parts this editor owns, and the rest of the
@@ -811,6 +1130,102 @@ pub fn write_checked(abs: &FsPath, text: &str, original: &[u8], crossing: &Cross
         let _ = std::fs::remove_file(&trial);
     }
     done
+}
+
+/// The backup of `abs` taken before it is written over: the file's own name with `.bak` after
+/// it, in its own folder (`Kreuzung.sco.bak`).
+pub fn bak_path(abs: &FsPath) -> std::path::PathBuf {
+    let mut s = abs.as_os_str().to_os_string();
+    s.push(".bak");
+    std::path::PathBuf::from(s)
+}
+
+/// Write the text into `abs` itself, the file as it stands kept as `abs.bak`: the crossing
+/// editor's ordinary save. False when the text is the file's own already (nothing is written,
+/// and the backup is left as it was).
+pub fn write_in_place(abs: &FsPath, text: &str, original: &[u8], crossing: &Crossing) -> anyhow::Result<bool> {
+    let encoded = encode_like(text, original);
+    if encoded == original {
+        return Ok(false);
+    }
+    // (checked beside the file first: a save that fails never touches what is there)
+    let trial = abs.with_extension("crossing-check.sco");
+    let checked = write(&trial, text, original).and_then(|_| verify(&trial, crossing));
+    if let Err(e) = checked {
+        let _ = std::fs::remove_file(&trial);
+        return Err(e);
+    }
+    // (the file as it stands becomes the backup, then the checked one takes its place)
+    let bak = bak_path(abs);
+    let kept = std::fs::copy(abs, &bak).map_err(|e| anyhow::anyhow!("{}: {e}", bak.display()));
+    if let Err(e) = kept {
+        let _ = std::fs::remove_file(&trial);
+        return Err(e);
+    }
+    if let Err(e) = std::fs::rename(&trial, abs) {
+        let _ = std::fs::remove_file(&trial);
+        return Err(e.into());
+    }
+    Ok(true)
+}
+
+/// Take a file's `.bak` away: true when there was one.
+pub fn remove_bak(abs: &FsPath) -> bool {
+    std::fs::remove_file(bak_path(abs)).is_ok()
+}
+
+/// The backup the editor made of a file, if it is one it noted (so clearing never takes a
+/// `.bak` somebody else made).
+pub fn bak_of(abs: &FsPath) -> Option<std::path::PathBuf> {
+    let b = bak_path(abs);
+    b.is_file().then_some(b)
+}
+
+/// The list of `.bak`s this editor itself made, kept beside its content so clearing them can
+/// be offered without scanning a whole installation.
+pub mod baks {
+    use std::path::{Path, PathBuf};
+
+    fn list_file(roots: &crate::install::Roots) -> PathBuf {
+        omsi_cfg::resolve_path(&roots.content, "openMapper").join("crossing-baks.txt")
+    }
+
+    /// Note a backup as the editor's own.
+    pub fn note(roots: &crate::install::Roots, bak: &Path) {
+        let f = list_file(roots);
+        if let Some(dir) = f.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let mut lines = std::fs::read_to_string(&f).unwrap_or_default();
+        let entry = bak.to_string_lossy().to_string();
+        if lines.lines().any(|l| l == entry) {
+            return;
+        }
+        if !lines.is_empty() && !lines.ends_with('\n') {
+            lines.push('\n');
+        }
+        lines.push_str(&entry);
+        lines.push('\n');
+        let _ = std::fs::write(&f, lines);
+    }
+
+    /// The backups the editor made that are still there.
+    pub fn list(roots: &crate::install::Roots) -> Vec<PathBuf> {
+        let text = std::fs::read_to_string(list_file(roots)).unwrap_or_default();
+        text.lines().map(str::trim).filter(|l| !l.is_empty()).map(PathBuf::from).filter(|p| p.is_file()).collect()
+    }
+
+    /// Take them away: how many went.
+    pub fn clear(roots: &crate::install::Roots) -> usize {
+        let mut gone = 0;
+        for p in list(roots) {
+            if std::fs::remove_file(&p).is_ok() {
+                gone += 1;
+            }
+        }
+        let _ = std::fs::remove_file(list_file(roots));
+        gone
+    }
 }
 
 /// Read a written `.sco` back and check that the game would still find everything: the paths
