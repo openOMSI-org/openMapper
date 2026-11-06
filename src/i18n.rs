@@ -298,6 +298,39 @@ mod tests {
         }
     }
 
+    /// The Hong Kong table speaks of the roads as Hong Kong does: traffic lights are
+    /// red-green lights, a phase is a change of lights, a lane is a traffic line, and a
+    /// spline is a spline. A crossing's blocking is a give-way or mutual-exclusion rule, a
+    /// save overwrites the file, and things are picked with 選取, never with 挑. (The words
+    /// these replace are listed: a translation that brings one back is caught here.)
+    #[test]
+    fn the_hong_kong_table_uses_hong_kong_road_words() {
+        let t = table(Lang::ZhTw);
+        assert!(t.len() > 2000, "{} texts", t.len());
+        let taiwan = ["車道", "拖曳", "相位", "時相", "樣條", "號誌燈", "公車", "既有", "封鎖", "挑", "人行道", "方向燈", "坡度", "寬度", "轉燈階段", "保持路口淨空"];
+        for (en, tr) in t.iter() {
+            for w in taiwan {
+                // (行車道 is the roadway as a whole - a carriageway - and Hong Kong's own word;
+                // 車道 alone, a lane, is not)
+                let hay = tr.replace("行車道", "");
+                assert!(!hay.contains(w), "{en:?} says {tr:?}: {w} is not Hong Kong's word");
+            }
+        }
+        assert_eq!(t.get("Fit").copied(), Some("置中縮放"));
+        assert_eq!(t.get("Traffic light").copied(), Some("紅綠燈"));
+        assert_eq!(t.get("Phase").copied(), Some("燈號階段"));
+        assert_eq!(t.get("Lanes").copied(), Some("行車線"));
+        assert_eq!(t.get("Blocks").copied(), Some("路徑互斥"));
+        assert_eq!(t.get("Turn signal").copied(), Some("指揮燈"));
+        assert_eq!(t.get("Width").copied(), Some("闊度"));
+        assert_eq!(t.get("Slope").copied(), Some("斜度"));
+        assert_eq!(t.get("Footway").copied(), Some("行人路"));
+        assert_eq!(t.get("Request loops").copied(), Some("車輛感應線圈"));
+        assert!(t.get("Pick a crossing object of the map").is_some_and(|s| s.contains("選取")), "{:?}", t.get("Pick a crossing object of the map"));
+        // (the railway's signals keep their own word: they are not traffic lights)
+        assert!(t.get("Signal routes").is_some_and(|s| s.contains("號誌")), "{:?}", t.get("Signal routes"));
+    }
+
     #[test]
     fn a_text_without_a_translation_is_shown_in_english() {
         set(Lang::De);
