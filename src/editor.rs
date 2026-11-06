@@ -343,8 +343,9 @@ pub struct Editor {
     /// (an object, a spline, and not the crossing's own object either).
     pub crossing_hold: bool,
     /// The ends of the paths near the crossing being edited, where they were drawn, and the
-    /// joint a click on that dot takes. The joint is kept with the dot so a click hits the
-    /// circle that was seen, not a later list that loading a model has reordered.
+    /// joint a click on that dot takes. The first is the map's point, so the dot is drawn and
+    /// picked exactly where it is seen; the joint is kept in the object's own frame, the one
+    /// the crossing's paths are written in, and is taken as it stands.
     pub crossing_nearby: Vec<(DVec3, crate::crossing_edit::Joint)>,
     /// Where the crossing stood and how it was turned when the last frame was drawn: the same
     /// place the click is judged by, so a green circle is exactly where it was seen.

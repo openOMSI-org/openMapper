@@ -183,6 +183,14 @@ fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4)
     crate::crossing_edit::Joint { pos: local, heading: crate::roads::norm_deg(j.heading - object_yaw(m)), slope: j.slope, flow: j.flow }
 }
 
+/// The joints as the map draws them: each one's point in the world, and the joint itself left
+/// as it is. That split is the whole point - the dot is the map's, the joint is the object's
+/// (the frame the crossing's paths are written in), and a joint converted a second time lands
+/// millions of metres away and answers no click at all.
+fn nearby_on_map(joints: &[crate::crossing_edit::Joint], world: DVec3, m: &glam::Mat4) -> Vec<(DVec3, crate::crossing_edit::Joint)> {
+    joints.iter().map(|j| (world + m.transform_point3(j.pos.as_vec3()).as_dvec3(), *j)).collect()
+}
+
 impl App {
     pub fn new(open: Option<PathBuf>) -> App {
         let prefs = Prefs::load();
@@ -2299,12 +2307,10 @@ impl App {
             return;
         }
         let Some((world, m)) = place else { return };
-        self.ed.crossing_nearby = self
-            .crossing
-            .neighbours()
-            .iter()
-            .map(|j| (world + m.transform_point3(j.pos.as_vec3()).as_dvec3(), *j))
-            .collect();
+        // (the point is the map's, so it can be drawn and clicked where it is; the joint itself
+        // stays in the object's frame, the frame the crossing's paths are written in - nothing
+        // else is to convert it)
+        self.ed.crossing_nearby = nearby_on_map(self.crossing.neighbours(), world, &m);
     }
 
     /// How wide a green circle is on the screen, in pixels, with room for its tick and for
@@ -2360,11 +2366,11 @@ impl App {
                 }
             }
             if let Some((_, j)) = pick {
-                // (the green circles are gathered in the map's frame, the paths are written in
-                // the object's: a joint taken as it stands is millions of metres from the
-                // path, and the join made from it went there - a radius of millions and a
-                // length far past the file's limit)
-                self.crossing.take_nearby(joint_in_object(j, world, &m));
+                // (the joint itself is already in the object's frame - `sync_crossing_nearby`
+                // only turns its *point* into the map's for drawing and picking. Converting it
+                // again puts it millions of metres out, which `FAR_JOIN` then refuses, and the
+                // circle would answer no click at all.)
+                self.crossing.take_nearby(j);
                 return true;
             }
         }
@@ -4177,6 +4183,29 @@ mod tests {
         assert_eq!((j.slope, j.flow), (0.02, 1), "the rise and the traffic direction come through");
         // (what a joint left in the map's frame would be: a join of millions of metres)
         assert!(map_joint.pos.truncate().length() > 1000.0);
+    }
+
+    /// A green circle is drawn at the map's point but hands over the joint in the object's
+    /// frame, unconverted: converting it twice puts it millions of metres out (and `FAR_JOIN`
+    /// then refuses the click, so the circle answers nothing at all).
+    #[test]
+    fn a_green_circle_keeps_its_joint_in_the_objects_frame() {
+        let world = DVec3::new(1200.0, -3400.0, 5.0);
+        let yaw = 37.0f64;
+        let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
+        let local = DVec3::new(2.0, 9.0, 1.5);
+        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1 };
+        let drawn = nearby_on_map(&[j], world, &m);
+        assert_eq!(drawn.len(), 1);
+        let (at, back) = drawn[0];
+        // (the dot is where the object has the end, in the world)
+        let want = world + m.transform_point3(local.as_vec3()).as_dvec3();
+        assert!((at - want).length() < 1e-6, "the dot is on the map: {at:?} vs {want:?}");
+        // (the joint comes through as it went in - nothing converted it)
+        assert_eq!(back.pos, local, "the joint stays in the object's frame");
+        assert_eq!((back.heading, back.slope, back.flow), (12.0, 0.02, 1));
+        // (and it is near its own path, so `FAR_JOIN` has nothing to refuse)
+        assert!(back.pos.truncate().length() < 10_000.0);
     }
 
     #[test]
