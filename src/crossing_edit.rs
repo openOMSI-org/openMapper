@@ -334,10 +334,43 @@ impl Path {
 #[derive(Clone, Copy, Debug)]
 pub struct Joint {
     pub pos: DVec3,
-    /// The heading the other path leaves the joint in.
+    /// The heading the other path leaves the joint in: away from the joint along it, whichever
+    /// end of it this is.
     pub heading: f64,
     /// Rise per metre along the other path at the joint.
     pub slope: f64,
+    /// The direction a new path laid outward from this joint should have: 0 when the other
+    /// path's traffic arrives at the joint and drives on into the new one, 1 when it leaves the
+    /// joint (so the new path is driven towards the joint), 2 when both.
+    pub flow: i32,
+}
+
+/// The `direction` (0 along, 1 against, 2 both) a new path laid outward from a joint of another
+/// path should have. `at_end`: the joint is at that path's end rather than its start.
+///
+/// Traffic that arrives at the joint drives on into the new path, along its geometry; traffic
+/// that leaves the joint drives into the new path from its far end, against its geometry.
+pub fn outward_flow(dir: i32, at_end: bool) -> i32 {
+    match dir {
+        2 => 2,
+        // (at the end: 0 along that path arrives here, 1 against leaves from the end;
+        // at the start it is the other way round)
+        0 => {
+            if at_end {
+                0
+            } else {
+                1
+            }
+        }
+        1 => {
+            if at_end {
+                1
+            } else {
+                0
+            }
+        }
+        _ => 0,
+    }
 }
 
 /// A `[splinehelper]`: a place where a spline of the map snaps onto this object. OMSI writes
@@ -484,7 +517,7 @@ impl Crossing {
         } else {
             (norm_deg(c.heading_at(0.0)), q.slope_start())
         };
-        Some(Joint { pos, heading, slope })
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end) })
     }
 
     /// The text of the blocks this editor owns, in the order it writes them.

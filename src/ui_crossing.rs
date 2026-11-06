@@ -10,7 +10,7 @@ use egui::{Color32, Pos2, RichText, Sense, Stroke, Vec2};
 use glam::{DVec2, DVec3};
 
 use crate::assets::Assets;
-use crate::crossing_edit::{self, Crossing, Helper, Joint, Path, Sheet, TURN_LEFT, TURN_NONE, TURN_RIGHT};
+use crate::crossing_edit::{self, outward_flow, Crossing, Helper, Joint, Path, Sheet, TURN_LEFT, TURN_NONE, TURN_RIGHT};
 use crate::doc::Sel;
 use crate::editor::Editor;
 use crate::i18n::tr;
@@ -1001,7 +1001,7 @@ impl CrossingPaths {
         } else {
             (p.start(), crate::roads::norm_deg(c.heading_at(0.0)), p.slope_start())
         };
-        Some(Joint { pos, heading, slope })
+        Some(Joint { pos, heading, slope, flow: outward_flow(p.direction(), at_end) })
     }
 
     // ---------------------------------------------------------------- undo
@@ -1251,7 +1251,9 @@ impl CrossingPaths {
             if n < 2 {
                 continue;
             }
-            for (pos, (a, b)) in [(l.pts[0], (l.pts[0], l.pts[1])), (l.pts[n - 1], (l.pts[n - 2], l.pts[n - 1]))] {
+            // (both ends, and at each the way is *away* from the joint along the lane: at the
+            // start that is against the lane's own travel, at the end it is with it)
+            for (pos, (a, b), at_end) in [(l.pts[0], (l.pts[1], l.pts[0]), false), (l.pts[n - 1], (l.pts[n - 2], l.pts[n - 1]), true)] {
                 // (an end a kilometre down a long spline is not a circle on this crossing)
                 if (pos.truncate() - world.truncate()).length() > reach {
                     continue;
@@ -1262,7 +1264,7 @@ impl CrossingPaths {
                 // (the object's turn is taken out of the lane's heading, the path being
                 // written in the object's frame)
                 let heading = crate::roads::norm_deg(crate::roads::heading_of(d.truncate()) - rot[0]);
-                out.push(Joint { pos: local, heading, slope: d.z / len });
+                out.push(Joint { pos: local, heading, slope: d.z / len, flow: crate::crossing_edit::outward_flow(l.direction, at_end) });
             }
         }
         log::debug!("crossing nearby: {} ends within {reach} m", out.len());
@@ -1270,7 +1272,9 @@ impl CrossingPaths {
     }
 
     /// Start a new path from a nearby path's end: it leaves in that path's way, at its rise,
-    /// ten metres long (its numbers are there to be changed after).
+    /// ten metres long (its numbers are there to be changed after). Its traffic direction is
+    /// the join's (`Joint::flow`), so it follows the way the other path is driven rather than
+    /// always being one way.
     pub fn start_from_joint(&mut self, j: Joint) -> Option<usize> {
         if !self.wants_nearby() {
             return None;
@@ -1285,6 +1289,7 @@ impl CrossingPaths {
         p.v[5] = 10.0;
         p.v[6] = j.slope as f32;
         p.v[7] = j.slope as f32;
+        p.v[10] = j.flow as f32;
         let at = {
             let Some(sheet) = self.sheet.as_mut() else { return None };
             sheet.crossing.paths.push(p);
@@ -3180,7 +3185,9 @@ impl CrossingPaths {
                                 None => PieceEnd::Surface,
                             };
                             let a = DVec3::new(from.x, from.y, j.pos.z);
-                            for piece in lay_join(&p, a, j.slope, &legs, end, false, &self.surface) {
+                            // (driven the way the path it was laid out of is driven)
+                            for mut piece in lay_join(&p, a, j.slope, &legs, end, false, &self.surface) {
+                                piece.v[10] = j.flow as f32;
                                 sheet.crossing.paths.push(piece);
                             }
                             self.selected = Some(sheet.crossing.paths.len() - 1);
@@ -3692,6 +3699,31 @@ Main
         assert_eq!(path_ways(7), (true, false));
     }
 
+    /// A new path laid outward from a join is driven the way the path it joins is driven: into
+    /// the new one when the other's traffic arrives there, against it when the other's leaves.
+    #[test]
+    fn a_new_path_follows_the_way_of_the_one_it_joins() {
+        use crate::crossing_edit::Joint;
+        // (another path ending here, its traffic running along it into the join)
+        assert_eq!(outward_flow(0, true), 0, "traffic arrives: the new path is driven along it");
+        // (its traffic running against it, so it leaves from this end)
+        assert_eq!(outward_flow(1, true), 1, "traffic leaves: the new path is driven towards the join");
+        // (at the other path's start it is the other way round)
+        assert_eq!(outward_flow(0, false), 1);
+        assert_eq!(outward_flow(1, false), 0);
+        // (both ways stays both ways)
+        assert_eq!(outward_flow(2, true), 2);
+        assert_eq!(outward_flow(2, false), 2);
+
+        let mut w = opened(Tab::Paths);
+        w.set_from_nearby(true);
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 1 };
+        let at = w.start_from_joint(j).expect("started");
+        let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
+        assert_eq!(p.direction(), 1, "the new path takes the join's direction");
+        assert!(ang_delta(p.heading(), 90.0).abs() < 0.5, "and its way out: {}", p.heading());
+    }
+
     /// The deck's height is the top of the mesh at that point.
     #[test]
     fn a_path_takes_the_top_of_the_object() {
@@ -3784,7 +3816,7 @@ Main
     fn a_path_is_started_from_a_nearby_end() {
         let mut w = opened(Tab::Paths);
         let before = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05 };
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0 };
         // (not while the mode is off)
         assert!(!w.wants_nearby());
         assert!(w.start_from_joint(j).is_none(), "nothing is done while the mode is off");
@@ -3818,7 +3850,7 @@ Main
         let way = c.heading_at(c.length.max(0.0));
         let rise = p.slope_end();
         // (off to the side, in another way: a corner, so two pieces)
-        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03 };
+        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 0 };
         w.set_complete_to(true);
         assert!(w.completing());
         let last = w.complete_to_joint(j).expect("joined");
@@ -3857,7 +3889,7 @@ Main
         let d = crate::roads::dir(way);
         let target = a + DVec3::new(d.x, d.y, 0.0) * 8.0;
         w.set_complete_to(true);
-        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0 }).expect("joined");
+        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 0 }).expect("joined");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1, "one straight piece");
         assert_eq!(last, before);
     }

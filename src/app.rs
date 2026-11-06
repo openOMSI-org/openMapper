@@ -2404,7 +2404,7 @@ impl App {
         // (put onto another end: the local frame is what the path is written in)
         let joint = joint.map(|j| {
             let local = m.inverse().transform_point3((j.pos - world).as_vec3()).as_dvec3();
-            crate::crossing_edit::Joint { pos: local, heading: j.heading, slope: j.slope }
+            crate::crossing_edit::Joint { pos: local, heading: j.heading, slope: j.slope, flow: j.flow }
         });
         self.crossing.drag_map_end(local, joint);
     }
@@ -2460,15 +2460,18 @@ impl App {
         // more than the point)
         let mut out = Vec::new();
         for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
-            for (at, away) in [(l.pts.first().copied(), 1usize), (l.pts.last().copied(), 0usize)] {
-                let Some(pos) = at else { continue };
-                let n = l.pts.len();
-                let (a, b) = if away == 1 { (l.pts[0], l.pts[n.min(2) - 1]) } else { (l.pts[n.saturating_sub(2)], l.pts[n - 1]) };
+            let n = l.pts.len();
+            if n < 2 {
+                continue;
+            }
+            // (both ends, and at each the way runs *away* from the joint along the lane: at the
+            // start that is against the lane's own travel, at the end it is with it)
+            for (pos, (a, b), at_end) in [(l.pts[0], (l.pts[1], l.pts[0]), false), (l.pts[n - 1], (l.pts[n - 2], l.pts[n - 1]), true)] {
                 let d = b - a;
                 let len = d.truncate().length().max(1e-6);
                 let heading = crate::roads::heading_of(d.truncate());
                 let slope = d.z / len;
-                out.push(crate::crossing_edit::Joint { pos, heading, slope });
+                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end) });
             }
         }
         out
