@@ -31,6 +31,36 @@ const GOOD: Color32 = Color32::from_rgb(120, 200, 130);
 /// How near a click must be to an end to take it (pixels).
 const GRAB: f32 = 9.0;
 
+/// The end a click at `pos` takes: the nearest within [`GRAB`] pixels of it. The picked path's
+/// own ends win over the rest - the end of one piece and the start of the next are one point at
+/// every join, so nearest-first took the neighbour's disc and dragged the wrong path.
+fn end_at(sheet: &Sheet, picked: Option<usize>, pos: Pos2, to_screen: &dyn Fn(DVec2) -> Pos2) -> Option<(usize, bool)> {
+    let mut best: Option<(f32, usize, bool)> = None;
+    let mut consider = |i: usize, at_end: bool, q: DVec3, best: &mut Option<(f32, usize, bool)>| {
+        let d = to_screen(q.truncate()).distance(pos);
+        if d <= GRAB && best.map(|b| d < b.0).unwrap_or(true) {
+            *best = Some((d, i, at_end));
+        }
+    };
+    if let Some(i) = picked
+        && let Some(p) = sheet.crossing.paths.get(i)
+    {
+        consider(i, true, p.end(), &mut best);
+        consider(i, false, p.start(), &mut best);
+        if let Some(b) = best {
+            return Some((b.1, b.2));
+        }
+    }
+    for (i, p) in sheet.crossing.paths.iter().enumerate() {
+        if Some(i) == picked {
+            continue;
+        }
+        consider(i, true, p.end(), &mut best);
+        consider(i, false, p.start(), &mut best);
+    }
+    best.map(|b| (b.1, b.2))
+}
+
 /// The crossing path editor's window and its state.
 pub struct CrossingPaths {
     pub open: bool,
@@ -3373,18 +3403,11 @@ impl CrossingPaths {
         // ---- the mouse
         let ctrl = ui.input(|i| i.modifiers.command || i.modifiers.ctrl);
         let at = |pos: Pos2| -> DVec2 { from_screen(pos) };
-        let handle = |sheet: &Sheet, pos: Pos2| -> Option<(usize, bool)> {
-            let mut best: Option<(f32, usize, bool)> = None;
-            for (i, p) in sheet.crossing.paths.iter().enumerate() {
-                for (at_end, q) in [(true, p.end()), (false, p.start())] {
-                    let d = to_screen(q.truncate()).distance(pos);
-                    if d <= GRAB && best.map(|b| d < b.0).unwrap_or(true) {
-                        best = Some((d, i, at_end));
-                    }
-                }
-            }
-            best.map(|b| (b.1, b.2))
-        };
+        // (the picked path's own ends win: a path's end and the next path's start are often the
+        // same point - the pieces of a join meet there - so nearest-first picked the neighbour's
+        // disc and dragged the wrong path)
+        let picked = self.selected;
+        let handle = |sheet: &Sheet, pos: Pos2| -> Option<(usize, bool)> { end_at(sheet, picked, pos, &to_screen) };
         let path_at = |sheet: &Sheet, pos: Pos2| -> Option<usize> {
             let mut best: Option<(f32, usize)> = None;
             for (i, p) in sheet.crossing.paths.iter().enumerate() {
@@ -3394,6 +3417,15 @@ impl CrossingPaths {
                         best = Some((d, i));
                     }
                 }
+            }
+            // (a click on the line already picked keeps it: the paths of a junction run over
+            // one another, and picking the one under the pointer would lose the one being
+            // worked on)
+            if let Some(i) = picked
+                && best.is_some_and(|b| b.1 != i)
+                && sheet.crossing.paths.get(i).is_some_and(|p| p.points(0.5).iter().any(|q| to_screen(q.truncate()).distance(pos) <= GRAB))
+            {
+                return Some(i);
             }
             best.map(|b| b.1)
         };
@@ -4241,6 +4273,26 @@ Main
         climb_to(&mut p, 2.0);
         assert!((p.slope_start() - MAX_RISE).abs() < 1e-6, "no steeper than {}: {}", MAX_RISE, p.slope_start());
         assert!((p.slope_end() - MAX_RISE).abs() < 1e-6, "one grade");
+    }
+
+    /// A path's end and the next path's start are one point at every join. Clicking it with the
+    /// first path picked must take that path's own end, not the neighbour's disc there.
+    #[test]
+    fn a_click_on_a_shared_end_takes_the_picked_paths_own() {
+        let mut sheet = crate::crossing_edit::Sheet::parse(SCO);
+        // (path 1's start put on path 0's end: what a join between two pieces looks like)
+        let shared = sheet.crossing.paths[0].end().truncate();
+        let z = sheet.crossing.paths[1].start().z;
+        sheet.crossing.paths[1].set_start(DVec3::new(shared.x, shared.y, z));
+        assert!((sheet.crossing.paths[1].start().truncate() - shared).length() < 1e-3, "they meet");
+        let sheet = &sheet;
+        let screen = |q: DVec2| Pos2::new((q.x - shared.x) as f32, (q.y - shared.y) as f32);
+        // (at the shared point, 1:1 pixels to metres)
+        assert_eq!(end_at(sheet, Some(0), Pos2::ZERO, &screen), Some((0, true)), "with path 0 picked");
+        assert_eq!(end_at(sheet, Some(1), Pos2::ZERO, &screen), Some((1, false)), "with path 1 picked");
+        // (nothing picked: the nearest still answers, and a click far from any end takes none)
+        assert!(end_at(sheet, None, Pos2::ZERO, &screen).is_some());
+        assert_eq!(end_at(sheet, Some(0), Pos2::new(300.0, 300.0), &screen), None);
     }
 
     /// Delete takes the picked path out, as the list's bin does, in one step back.

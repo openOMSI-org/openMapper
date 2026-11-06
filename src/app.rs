@@ -2390,13 +2390,31 @@ impl App {
                 return true;
             }
         }
-        // (an end: nearer than a path's line, since it is what is dragged)
+        // (an end: nearer than a path's line, since it is what is dragged. The picked path's
+        // own ends win - the end of one piece and the start of the next are the same point, so
+        // nearest-first dragged the neighbour instead of the path being worked on)
+        let picked = self.crossing.picked();
         let mut best: Option<(f32, (usize, bool))> = None;
         for (i, at_end, q) in self.crossing.map_ends() {
+            if Some(i) != picked {
+                continue;
+            }
             let Some(s) = screen_of(q, world, m) else { continue };
             let d = dist(s);
             if d <= 14.0 && best.map(|b| d < b.0).unwrap_or(true) {
                 best = Some((d, (i, at_end)));
+            }
+        }
+        if best.is_none() {
+            for (i, at_end, q) in self.crossing.map_ends() {
+                if Some(i) == picked {
+                    continue;
+                }
+                let Some(s) = screen_of(q, world, m) else { continue };
+                let d = dist(s);
+                if d <= 14.0 && best.map(|b| d < b.0).unwrap_or(true) {
+                    best = Some((d, (i, at_end)));
+                }
             }
         }
         if let Some((_, hit)) = best {
