@@ -2703,3 +2703,68 @@ what was written does not read back the same	สิ่งที่เขีย�
 its paths are in a file of their own (`[paths]`), which this editor does not read	เส้นทางของมันอยู่ในไฟล์แยก (`[paths]`) ซึ่งตัวแก้ไขนี้ไม่อ่าน
 it has no path	ไม่มีเส้นทาง
 jump	ข้าม
+Phase	เฟส
+Traffic light phase	เฟสไฟจราจร
+Duration	ระยะเวลา
+Timeline	ไทม์ไลน์
+Click a block to edit that phase; drag its right edge to change how long it lasts	คลิกบล็อกเพื่อแก้ไขเฟสนั้น ลากขอบขวาเพื่อเปลี่ยนระยะเวลา
+Traffic light	ไฟจราจร
+The whole cycle across the width (as the traffic light window has it)	ทั้งรอบตามความกว้าง (เหมือนในหน้าต่างไฟจราจร)
+Back to 2D	Back to 2D
+Draw the crossing from above, in the window, and lay paths there	Draw the crossing from above, in the window, and lay paths there
+Frame	Frame
+Put the crossing in the middle of the map's view	Put the crossing in the middle of the map's view
+The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely	The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely
+Write the paths into the object's own file; the file as it stood is kept as a .bak beside it	Write the paths into the object's own file; the file as it stood is kept as a .bak beside it
+In the object's own file (a .bak keeps the old one)	In the object's own file (a .bak keeps the old one)
+The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak	The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak
+As a new file	As a new file
+The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy	The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy
+Remove this file's .bak	Remove this file's .bak
+Its .bak is gone	Its .bak is gone
+Remove the .bak files this editor made	Remove the .bak files this editor made
+in its own file (a .bak keeps the old one)	in its own file (a .bak keeps the old one)
+as a new file (a copy is made on saving)	as a new file (a copy is made on saving)
+Draw path	Draw path
+Drag from a path's start to its end to add one, as a road is drawn	Drag from a path's start to its end to add one, as a road is drawn
+3D	3D
+Show the path on the map itself: the crossing object in 3D, with its paths	Show the path on the map itself: the crossing object in 3D, with its paths
+2D	2D
+Draw the crossing from above, in the window	Draw the crossing from above, in the window
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans	Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans
+Save the crossing as a new file instead	Save the crossing as a new file instead
+The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.	The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free
+Crossing editor	Crossing editor
+Crossing editor…	Crossing editor…
+Pick the object	Pick the object
+Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines	Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free
+Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here	Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here
+The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak	The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak
+Close the crossing editor	Close the crossing editor
+There are changes here that are not saved yet. Save them before closing?	There are changes here that are not saved yet. Save them before closing?
+Save and close	Save and close
+Close without saving	Close without saving
+End point	End point
+Add a path carried on from the picked one (N)	Add a path carried on from the picked one (N)
+Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here	Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans	Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly
+From nearby	From nearby
+Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles	Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles
+Click a green circle: a new path starts at that nearby path's end, in its way	Click a green circle: a new path starts at that nearby path's end, in its way
+Start from a nearby path	Start from a nearby path
+Start a new path at the end of a path nearby. Click one of the green circles	Start a new path at the end of a path nearby. Click one of the green circles
+Complete to a nearby path	Complete to a nearby path
+Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles
+Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is
+Even grade	ความลาดเท่ากัน
+Both ends take the one rise between their heights	ปลายทั้งสองใช้ทางขึ้นเดียวกันระหว่างความสูงของมัน
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	ทิศที่เส้นทางนี้ออกไป หน่วยองศา จุดยังอยู่ที่เดิม ส่วนโค้งที่ส่วนโค้งเดียวทำไม่ได้จะถูกแบ่งเป็นหลายท่อน
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	ทิศที่เส้นทางนี้มาถึง หน่วยองศา จุดยังอยู่ที่เดิม ส่วนโค้งที่ส่วนโค้งเดียวทำไม่ได้จะถูกแบ่งเป็นหลายท่อน
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	เส้นทางนั้นวิ่งสวนทางที่ปลายนั้น การต่อเข้าจะกลายเป็นการกลับรถ เลือกปลายอีกด้านของเส้นทางนั้น หรือหมุนปลายนี้ด้านล่าง
+The way a join turns	ทิศที่จุดเชื่อมเลี้ยว
+Paths picked	เส้นทางที่เลือก
+Set what they share. A path's own numbers are edited one at a time	ตั้งค่าสิ่งที่ใช้ร่วมกัน ตัวเลขของเส้นทางแต่ละเส้นแก้ทีละเส้น
+Several	หลายรายการ
