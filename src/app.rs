@@ -1921,6 +1921,16 @@ impl App {
                     self.cam.distance = (span * 1.15).clamp(14.0, 220.0);
                 }
             }
+            Action::CrossingSaved(rel) => {
+                // (only this object's files were written: read its model again, but not the
+                // catalogue, the other models or the whole map)
+                if let Some(roots) = &self.roots {
+                    let (dir, _) = crate::editable::folder_of(roots, &rel);
+                    if let Some(g) = &mut self.gfx {
+                        g.renderer.forget_model(&rel, &dir);
+                    }
+                }
+            }
             Action::Timetable => self.tt.open = !self.tt.open,
             Action::Traffic => self.traffic.open = !self.traffic.open,
             Action::Geo => self.geo.open = !self.geo.open,
@@ -2064,6 +2074,19 @@ impl App {
             && !self.keys.alt
             && self.crossing.delete_picked()
         {
+            return;
+        }
+        // (the crossing editor: K cuts the picked path in two, the same key as the map's knife,
+        // which is what cuts a spline. The map is held while the editor is open, so the knife
+        // itself has nothing to cut here)
+        if self.crossing.open
+            && code == Some(KeyCode::KeyK)
+            && !self.keys.ctrl
+            && !self.keys.alt
+            && !self.keys.shift
+            && self.crossing.split_picked()
+        {
+            self.ed.toast(tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"));
             return;
         }
         let ctrl = self.keys.ctrl;
@@ -2391,13 +2414,13 @@ impl App {
                 return true;
             }
         }
-        // (an end: nearer than a path's line, since it is what is dragged. The picked path's
+        // (an end: nearer than a path's line, since it is what is dragged. The picked paths'
         // own ends win - the end of one piece and the start of the next are the same point, so
         // nearest-first dragged the neighbour instead of the path being worked on)
-        let picked = self.crossing.picked();
+        let picked = self.crossing.selection();
         let mut best: Option<(f32, (usize, bool))> = None;
         for (i, at_end, q) in self.crossing.map_ends() {
-            if Some(i) != picked {
+            if !picked.contains(&i) {
                 continue;
             }
             let Some(s) = screen_of(q, world, m) else { continue };
@@ -2408,7 +2431,7 @@ impl App {
         }
         if best.is_none() {
             for (i, at_end, q) in self.crossing.map_ends() {
-                if Some(i) == picked {
+                if picked.contains(&i) {
                     continue;
                 }
                 let Some(s) = screen_of(q, world, m) else { continue };
@@ -2434,7 +2457,9 @@ impl App {
                 }
             }
         }
-        best.is_some_and(|(_, i)| self.crossing.select_on_map(Some(i)))
+        // (Ctrl adds the path to the pick rather than replacing it, as it does in the list)
+        let add = self.keys.ctrl;
+        best.is_some_and(|(_, i)| self.crossing.select_on_map(Some(i), add))
     }
 
     /// The end the map took, moved to where the cursor is: on the crossing's own level, so a
@@ -2475,7 +2500,9 @@ impl App {
     /// The point a dragged end is taken to: the nearest end of the crossing's own paths or of
     /// a nearby object's, when one is within a few pixels of the cursor - with the way that
     /// path runs away from it, and its rise, so the two pieces meet smoothly. Ctrl keeps the
-    /// end where the mouse is.
+    /// end where the mouse is. The judgement is made where the circles are drawn - 0.40 m
+    /// above its own ends and 0.55 m above a lane's - not at the bare point, since at a low
+    /// camera angle the two are tens of pixels apart and the circle under the cursor misses.
     fn crossing_snap_end(&mut self, at: DVec3, world: DVec3, m: glam::Mat4) -> Option<crate::crossing_edit::Joint> {
         if self.keys.ctrl {
             return None;
@@ -2486,7 +2513,7 @@ impl App {
         let mut consider = |s: Option<(f32, f32)>, j: crate::crossing_edit::Joint, best: &mut Option<(f32, crate::crossing_edit::Joint)>| {
             let Some(s) = s else { return };
             let d = ((s.0 - mouse.0).powi(2) + (s.1 - mouse.1).powi(2)).sqrt();
-            if d <= 12.0 && best.map(|b| d < b.0).unwrap_or(true) {
+            if d <= 16.0 && best.map(|b| d < b.0).unwrap_or(true) {
                 *best = Some((d, j));
             }
         };
@@ -2497,12 +2524,16 @@ impl App {
             }
             let w = world + m.transform_point3(q.as_vec3()).as_dvec3();
             let Some(j) = self.crossing.joint_at(i, at_end) else { continue };
-            consider(self.view_point(w), j, &mut best);
+            // (its circle is drawn 0.40 m up - a lift of 0.25 plus the 0.15 `disc()` adds - so
+            // that is where the cursor has to be for the end to answer)
+            consider(self.view_point(w + DVec3::Z * 0.40), j, &mut best);
         }
         for j in self.crossing_neighbour_joints() {
             // (gathered in the map's frame, so it is judged on the map and handed on in the
             // object's - one frame for every joint `best` holds)
-            consider(self.view_point(j.pos), joint_in_object(j, world, &m), &mut best);
+            // (a lane's circle sits 0.55 m up - a lift of 0.4 plus the 0.15 - and judging the
+            // bare joint left the green circle under the cursor with nothing to snap to)
+            consider(self.view_point(j.pos + DVec3::Z * 0.55), joint_in_object(j, world, &m), &mut best);
         }
         best.map(|b| b.1)
     }
@@ -2519,7 +2550,7 @@ impl App {
         let centre = doc.object_world(k, o, abs).truncate();
         let radius = (self.cam.distance * 2.0).clamp(80.0, 260.0);
         let Some(assets) = self.assets.as_mut() else { return Vec::new() };
-        let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
+        let (lanes, _) = crate::lanes::near_skipping(doc, assets, centre, radius, Some((k, id)));
         // (roads' lanes as well as other objects': a crossing's end is put onto either. Their
         // way and rise come from the lane's own points, so a path put onto one meets it in
         // more than the point)
@@ -4248,6 +4279,38 @@ mod tests {
         assert_eq!((back.heading, back.slope, back.flow), (12.0, 0.02, 1));
         // (and it is near its own path, so `FAR_JOIN` has nothing to refuse)
         assert!(back.pos.truncate().length() < 10_000.0);
+    }
+
+    /// The 3D snap is judged where the circles are drawn, not at the bare points: a path's own
+    /// end is drawn 0.40 m above it and a lane's joint 0.55 m above it, which at a low camera is
+    /// more than the 16 px reach - so a cursor sitting on a circle found nothing when the snap
+    /// was judged on the bare point. (`crossing_snap_end` needs the whole running app - camera,
+    /// loaded map and assets - so this checks the projection it compares against, with a camera
+    /// of its own: the lift is exactly what the fix changed and the reach is a plain comparison.)
+    #[test]
+    fn a_snap_is_judged_where_its_circle_is_drawn() {
+        let world = DVec3::new(1200.0, -3400.0, 5.0);
+        let yaw = 37.0f64;
+        let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
+        let local = DVec3::new(2.0, 9.0, 1.5);
+        let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
+        // (a low camera: the angle the fix is for)
+        let mut cam = Camera::default();
+        cam.target = at;
+        cam.yaw = 40.0;
+        cam.pitch = 8.0;
+        cam.distance = 12.0;
+        cam.snap();
+        let (w, h) = (1200.0f32, 800.0f32);
+        let p = |q: DVec3| cam.project(q, w, h).expect("the crossing is in front of the eye");
+        let apart = |a: (f32, f32), b: (f32, f32)| ((a.0 - b.0).powi(2) + (a.1 - b.1).powi(2)).sqrt();
+        // (the bare end is further from its own circle than the reach the snap works at)
+        let own = apart(p(at), p(at + DVec3::Z * 0.40));
+        assert!(own > 16.0, "the drawn circle is {own} px above the bare point: judging the bare point misses it");
+        // (a lane's circle, 0.55 m up, is further still: that is the green one that never
+        // answered)
+        let lane = apart(p(at), p(at + DVec3::Z * 0.55));
+        assert!(lane > own && lane > 16.0, "the lane's circle is {lane} px above its joint");
     }
 
     #[test]

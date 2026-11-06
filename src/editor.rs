@@ -337,8 +337,9 @@ pub struct Editor {
     /// them, so the map shows the change before it is saved (and the object's own lanes are
     /// not drawn a second time under them).
     pub crossing_draft: Option<(TileKey, i64, Vec<crate::crossing_edit::Path>)>,
-    /// Which of the crossing's paths the window has picked, so the map draws it picked too.
-    pub crossing_selected: Option<usize>,
+    /// Which of the crossing's paths the window has picked (the first is the one its numbers
+    /// are shown for), so the map draws them all picked.
+    pub crossing_selected: Vec<usize>,
     /// How far each of the crossing's paths sits above the object's surface (negative: under
     /// it), a path at a time - the window works it out, the map draws a path under the deck in
     /// another colour so it is seen and not guessed at.
@@ -679,7 +680,7 @@ impl Default for Editor {
             select_box: None,
             clip: None,
             crossing_draft: None,
-            crossing_selected: None,
+            crossing_selected: Vec::new(),
             crossing_sink: Vec::new(),
             crossing_hold: false,
             crossing_nearby: Vec::new(),
@@ -5208,8 +5209,41 @@ impl Editor {
                 // (thin: the paths of a junction are many, and a wide line hides the road
                 // under it)
                 let lw = (cam.distance * 0.0008).clamp(0.022, 0.6) as f32;
-                let picked = self.crossing_selected;
-                for (i, p) in paths.iter().enumerate() {
+                let picked = self.crossing_selected.clone();
+                let is_picked_idx = |i: usize| picked.contains(&i);
+                // (a junction of hundreds of paths: draw them coarser, leave out the ones that
+                // cannot be on screen, and stop at a budget instead of building a quarter of
+                // a million overlay points every frame for a 787-path object)
+                const OWN_POINTS: usize = 120_000;
+                let count = paths.len();
+                let step = if count <= 120 {
+                    0.5
+                } else if count <= 400 {
+                    1.5
+                } else {
+                    3.0
+                };
+                let reach = (cam.distance * 3.0).clamp(80.0, 500.0);
+                let disc_reach = cam.distance * 1.5;
+                let mut drawn = 0usize;
+                let mut shown = 0usize;
+                // (the picked path is drawn last, so it is always there even when the budget
+                // has already been spent)
+                let order = (0..count).filter(|&i| !is_picked_idx(i)).chain(picked.iter().copied().filter(|&i| i < count));
+                for i in order {
+                    let p = &paths[i];
+                    let is_picked = is_picked_idx(i);
+                    if drawn >= OWN_POINTS && !is_picked {
+                        break;
+                    }
+                    // (a path whose middle is far outside the view is not worth any points)
+                    let c = p.curve();
+                    let mid = c.point_at(c.length.max(0.0) * 0.5);
+                    let mid_world = world + m.transform_point3(mid.as_vec3()).as_dvec3();
+                    let far = (mid_world.truncate() - cam.target.truncate()).length();
+                    if far > reach && !is_picked {
+                        continue;
+                    }
                     // (a path under the deck is not the same as one on it: red, so it is seen
                     // without opening its numbers)
                     let sink = self.crossing_sink.get(i).copied().unwrap_or(0.0) as f64;
@@ -5223,33 +5257,51 @@ impl Editor {
                             _ => [0.98, 0.72, 0.22, 0.95],
                         }
                     };
-                    let pts: Vec<DVec3> = p.points(0.5).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    let pts: Vec<DVec3> = p.points(step).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    if !is_picked && drawn + pts.len().saturating_sub(1) * 6 > OWN_POINTS {
+                        break;
+                    }
                     // (the picked path shows its own width as a grey band lying on the deck,
                     // under its line: what a vehicle would take, not just where it runs)
-                    if picked == Some(i) {
+                    if is_picked {
                         band(&mut x.overlay, &pts.iter().map(|q| *q + lift).collect::<Vec<_>>(), p.width() as f64, [0.72, 0.72, 0.75, 0.30]);
+                        drawn += pts.len().saturating_sub(1) * 6;
                     }
                     for s in pts.windows(2) {
                         line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
+                        drawn += 6;
                     }
                     // (the way it goes: chevrons all along it, as the map's own lanes have,
-                    // so every path of the crossing shows a direction)
-                    {
+                    // so every path of the crossing shows a direction. A piece shorter than a
+                    // metre says nothing, and is left out)
+                    if p.length() >= 1.0 {
                         let (along, against) = crate::ui_crossing::path_ways(p.direction());
                         let lifted: Vec<DVec3> = pts.iter().map(|q| *q + lift).collect();
-                        chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 4.0).clamp(0.22, 1.6), (cam.distance * 0.07).clamp(7.0, 45.0), along, against, color);
+                        let n = chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 4.0).clamp(0.22, 1.6), (cam.distance * 0.07).clamp(7.0, 45.0), along, against, color);
+                        drawn += n * 12;
                     }
                     // (how far off the deck it is: a stem from the middle of the path down (or
                     // up) to the surface, so a path floating over it or sunk into it is seen)
                     if sink.abs() > 0.05 && let Some(mid) = pts.get(pts.len() / 2) {
                         let foot = *mid + lift - DVec3::Z * sink;
                         line(&mut x.overlay, cam, *mid + lift, foot, lw, [0.95, 0.32, 0.42, 0.8]);
+                        drawn += 6;
                     }
-                    // the ends, where they are dragged in the window
-                    let a = if picked == Some(i) { lw * 1.6 } else { lw * 1.15 };
-                    for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
-                        disc(&mut x.overlay, cam, at + lift, a, color);
+                    // (the ends, where they are dragged in the window: only near, or the
+                    // picked path's own)
+                    if is_picked || far <= disc_reach {
+                        let a = if is_picked { lw * 1.6 } else { lw * 1.15 };
+                        for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
+                            disc(&mut x.overlay, cam, at + lift, a, color);
+                            drawn += 60;
+                        }
                     }
+                    shown += 1;
+                }
+                // (once in a while, so what the budget saved can be measured)
+                static OVERLAY_LOG: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+                if OVERLAY_LOG.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 120 == 0 {
+                    log::trace!("crossing path overlay: {shown} of {count} paths, {drawn} points, step {step} m, reach {reach:.0} m");
                 }
             }
             // (the paths of everything around it - other objects' and the roads' own lanes -

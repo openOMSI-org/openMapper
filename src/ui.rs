@@ -99,6 +99,9 @@ pub enum Action {
     /// Put the crossing being edited in the middle of the map's view, close enough that its
     /// paths fill it.
     CrossingFrame,
+    /// The crossing editor saved an object: its rel path is now what the map names. Only that
+    /// object's model is read again - the catalogue and the other models stay as they are.
+    CrossingSaved(String),
     /// A complex junction drawing put on the map as splines, turned by so many degrees.
     PlaceComplex(Box<crate::cjunction::Layout>, f64),
     /// A drawing written as a custom junction (an object, and a layout for automatic junctions).

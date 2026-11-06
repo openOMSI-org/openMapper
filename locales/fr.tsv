@@ -2763,3 +2763,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Comment cette voie arrive, en degrés. Le point reste ; un virage qu'un seul arc ne peut pas faire est coupé en morceaux
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Ce chemin va en sens inverse à cette extrémité : le joindre serait un demi-tour. Prenez l'autre extrémité de ce chemin ou tournez cette extrémité ci-dessous
 The way a join turns	De quel côté tourne le raccordement
+Paths picked	Chemins choisis
+Set what they share. A path's own numbers are edited one at a time	Réglez ce qu'ils partagent. Les chiffres propres à un chemin se modifient un par un
+Several	Plusieurs

@@ -60,32 +60,170 @@ fn mod_tau(a: f64) -> f64 {
     a.rem_euclid(std::f64::consts::TAU)
 }
 
-/// One planned join: its pieces, the radius it turns on, and how long it is all told.
-struct Planned {
-    radius: f64,
-    length: f64,
-    segs: Vec<Seg>,
+/// The shortest a piece of a chosen join may be (m). A piece shorter than this spends its turn
+/// in too little distance to read as part of the curve: it is the stub that makes a join of two
+/// long pieces and two near-zero centimetres, and the "it still jerks at the end" a driver sees.
+pub const MIN_PIECE_LEN: f64 = 1.0;
+
+/// The tightest radius a join's piece may have without being a knot (m). The same number as the
+/// crossing editor's floor; it is defined here so the scoring and that floor cannot drift apart.
+pub const MIN_PIECE_RADIUS: f64 = 1.5;
+
+/// A piece shorter than this (m) is counted against a candidate even when it is not a full stub:
+/// a join of a handful of short pieces changes its mind too often to be one curve.
+const SHORT_PIECE: f64 = 2.0;
+
+/// Whether every piece of `segs` is long enough to be driven rather than a stub.
+pub fn is_even(segs: &[Seg]) -> bool {
+    !segs.is_empty() && segs.iter().all(|s| s.length >= MIN_PIECE_LEN)
+}
+
+/// How much a candidate join costs; lower is better. Within the tier [`best`] has already
+/// chosen (no stub, no loop, spread), the terms are:
+///
+/// - `length / chord` - how far round the junction the join goes, in gap lengths, so a join that
+///   loops the crossing loses to one that crosses it;
+/// - one count for each piece under [`SHORT_PIECE`] - each is a place where the path changes its
+///   mind, even when it is not quite a stub;
+/// - how far the tightest radius falls below [`MIN_PIECE_RADIUS`], as a fraction of it - a tight
+///   radius is legitimate on a real junction, but a needlessly tighter one is not;
+/// - how much of the whole turn one piece does beyond half of it, when two or more pieces turn:
+///   the point of a planned join is that the turn is spread, not saved up for one end;
+/// - a large count for each piece that turns more than half a circle: that is a loop round the
+///   junction, not a join;
+/// - a large count for each piece under [`MIN_PIECE_LEN`], so that when no stub-free candidate
+///   exists at all, the one with the fewest shortest stubs still wins over a long loop of them.
+pub fn cost(segs: &[Seg], chord: f64) -> f64 {
+    if segs.is_empty() {
+        return f64::INFINITY;
+    }
+    let length: f64 = segs.iter().map(|s| s.length).sum();
+    let short = segs.iter().filter(|s| s.length < SHORT_PIECE).count() as f64;
+    let stubs = segs.iter().filter(|s| s.length < MIN_PIECE_LEN).count() as f64;
+    let tightest = segs.iter().filter(|s| s.radius != 0.0).map(|s| s.radius.abs()).fold(f64::INFINITY, f64::min);
+    let tight = if tightest.is_finite() {
+        ((MIN_PIECE_RADIUS - tightest) / MIN_PIECE_RADIUS).clamp(0.0, 10.0)
+    } else {
+        0.0
+    };
+    // (a straight has no turn: only the pieces that actually bend take part)
+    let turns: Vec<f64> = segs
+        .iter()
+        .filter(|s| s.radius != 0.0)
+        .map(|s| (s.length / s.radius.abs()).to_degrees())
+        .collect();
+    let total_turn: f64 = turns.iter().sum();
+    let concentrated = if turns.len() >= 2 && total_turn > 1e-9 {
+        (turns.iter().copied().fold(0.0, f64::max) / total_turn - 0.5).max(0.0)
+    } else {
+        0.0
+    };
+    // (a piece that turns more than half a circle is a loop driven round the junction, not part
+    // of a join: even a "clean" pair of nine-metre arcs doing 358 degrees is worse than a short
+    // pair that actually crosses the gap)
+    let loops = turns.iter().filter(|t| **t > 170.0).count() as f64;
+    length / chord.max(0.5) + 2.0 * short + 2.0 * tight + 2.0 * concentrated + 25.0 * loops + 100.0 * stubs
+}
+
+/// Whether a candidate turns a piece more than half a circle: a loop round the junction rather
+/// than part of a join.
+pub fn has_loop(segs: &[Seg]) -> bool {
+    segs.iter().any(|s| s.radius != 0.0 && (s.length / s.radius.abs()).to_degrees() > 170.0)
+}
+
+/// Whether the turn is spread over the join: when two or more pieces turn, no one of them does
+/// more than 70% of the whole turn. A straight piece does not count (there is no turn to share).
+fn spread(segs: &[Seg]) -> bool {
+    let turns: Vec<f64> = segs
+        .iter()
+        .filter(|s| s.radius != 0.0)
+        .map(|s| (s.length / s.radius.abs()).to_degrees())
+        .collect();
+    let total: f64 = turns.iter().sum();
+    turns.len() < 2 || total <= 1e-9 || turns.iter().copied().fold(0.0, f64::max) <= total * 0.7
+}
+
+/// Whether every bend of `segs` is at least [`MIN_PIECE_RADIUS`] across. A tighter radius is a
+/// legitimate answer on a real junction, but a join that can be made at the floor or wider
+/// should not be curled tighter for nothing.
+fn roomy(segs: &[Seg]) -> bool {
+    segs.iter().all(|s| s.radius == 0.0 || s.radius.abs() >= MIN_PIECE_RADIUS)
+}
+
+/// The best of `candidates`, all of which already leave and arrive as asked.
+///
+/// The candidates are taken in tiers, so that the things that read as a fault are excluded
+/// before the gentle preferences decide:
+///
+/// 1. no stub (every piece at least [`MIN_PIECE_LEN`]), no loop, a real radius throughout
+///    ([`roomy`]), and the turn spread between its pieces ([`spread`]);
+/// 2. no stub, no loop, and a real radius throughout;
+/// 3. no stub, no loop, and the turn spread;
+/// 4. no stub and no loop;
+/// 5. no stub, even if the only way is round the junction;
+/// 6. whatever is left, when even that has a stub.
+///
+/// Within the first tier that has a candidate, the lowest [`cost`] wins. Only when every
+/// candidate has such a piece is a stub taken, so a join with no even answer is still the
+/// shortest and least stubby one rather than an arbitrary pick.
+pub fn best(candidates: Vec<Vec<Seg>>, chord: f64) -> Option<Vec<Seg>> {
+    let mut best: [Option<(f64, Vec<Seg>)>; 6] = [None, None, None, None, None, None];
+    for segs in candidates {
+        if segs.is_empty() {
+            continue;
+        }
+        let c = cost(&segs, chord);
+        let even = is_even(&segs);
+        let plain = even && !has_loop(&segs);
+        let tier = if plain && roomy(&segs) && spread(&segs) {
+            0
+        } else if plain && roomy(&segs) {
+            1
+        } else if plain && spread(&segs) {
+            2
+        } else if plain {
+            3
+        } else if even {
+            4
+        } else {
+            5
+        };
+        if best[tier].as_ref().is_none_or(|(was, _)| c < *was) {
+            best[tier] = Some((c, segs));
+        }
+    }
+    best.into_iter().flatten().next().map(|(_, segs)| segs)
 }
 
 /// A join from `start` leaving in `h_a` to `end` arriving in `h_b`, turning on arcs no tighter
 /// than `min_radius`, and only the way `side` allows. None when no radius that fits the gap can
 /// do it.
 ///
-/// The widest radius that does not much lengthen the join is used: a car turns on the largest
-/// radius it can, not the smallest.
+/// Every radius from `min_radius` up to a generous fraction of the gap is tried, and the best
+/// one is chosen by the same rule as [`connect_segs`](crate::ui_crossing)'s other candidates
+/// ([`best`]): a join whose pieces are all long enough to be driven wins, then the one whose
+/// turn is spread over the gap at the widest radii. Sweeping far enough is what lets a nearly
+/// straight join - a couple of degrees over ten metres - come out as two long arcs and a
+/// straight instead of a ten-metre straight between two centimetre stubs.
 pub fn plan(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_radius: f64) -> Option<Vec<Seg>> {
     let chord = (end - start).length();
     if chord < 1e-3 {
         return None;
     }
-    let widest = (chord * 1.5 + 4.0).clamp(min_radius, 40.0);
+    // (wide enough that a one- or two-degree turn has metres to spend: a radius of 20 over a
+    // ten-metre gap turns a degree in 35 cm, which is the stub this exists to avoid. The cap
+    // keeps the arithmetic sane for a gap of a kilometre)
+    let widest = (chord * 12.0 + 20.0).clamp(min_radius, 800.0);
     let mut radii = vec![min_radius];
-    for r in [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0, 16.0, 20.0] {
+    for r in [
+        1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0, 16.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 80.0, 100.0,
+        120.0, 160.0, 200.0, 240.0, 320.0, 400.0, 480.0, 640.0, 800.0,
+    ] {
         if r > min_radius + 1e-9 && r <= widest {
             radii.push(r);
         }
     }
-    let mut made: Vec<Planned> = Vec::new();
+    let mut made: Vec<Vec<Seg>> = Vec::new();
     for r in radii {
         for (s0, s1) in [(1.0, 1.0), (-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0)] {
             if let Some(p) = build(start, h_a, end, h_b, r, s0, s1, side) {
@@ -93,14 +231,7 @@ pub fn plan(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_radius
             }
         }
     }
-    let shortest = made.iter().map(|p| p.length).fold(f64::INFINITY, f64::min);
-    if !shortest.is_finite() {
-        return None;
-    }
-    // (the widest that is not much longer than the shortest: a gentler curve, if it costs
-    // nothing)
-    let ceiling = shortest * 1.35 + 1.0;
-    made.into_iter().filter(|p| p.length <= ceiling).max_by(|a, b| a.radius.total_cmp(&b.radius)).map(|p| p.segs)
+    best(made, chord)
 }
 
 /// A join whose arrival way is free: the shortest of the ways into the point, tried every few
@@ -123,7 +254,7 @@ pub fn plan_to_point(start: DVec2, h_a: f64, end: DVec2, side: Side, min_radius:
 /// The pieces of one radius `r` turning `s0` at the start and `s1` at the end (`+1` turns left
 /// as the maths has it, `-1` right): the start's circle and the end's joined by their common
 /// tangent - a straight along that tangent, and an arc on each circle.
-fn build(start: DVec2, h_a: f64, end: DVec2, h_b: f64, r: f64, s0: f64, s1: f64, side: Side) -> Option<Planned> {
+fn build(start: DVec2, h_a: f64, end: DVec2, h_b: f64, r: f64, s0: f64, s1: f64, side: Side) -> Option<Vec<Seg>> {
     let a0 = math_angle(h_a);
     let a1 = math_angle(h_b);
     // (the centre of a circle turned on the left is on the left of the way: `p + s r n`)
@@ -148,7 +279,7 @@ fn build(start: DVec2, h_a: f64, end: DVec2, h_b: f64, r: f64, s0: f64, s1: f64,
             if off.min(360.0 - off) > 0.5 {
                 return None;
             }
-            return Some(Planned { radius: r, length: seg.length, segs: vec![seg] });
+            return Some(vec![seg]);
         }
         (w / d, d)
     } else {
@@ -213,8 +344,7 @@ fn build(start: DVec2, h_a: f64, end: DVec2, h_b: f64, r: f64, s0: f64, s1: f64,
     if off.min(360.0 - off) > 0.5 {
         return None;
     }
-    let length: f64 = segs.iter().map(|s| s.length).sum();
-    Some(Planned { radius: r, length, segs })
+    Some(segs)
 }
 
 #[cfg(test)]
@@ -255,6 +385,21 @@ mod tests {
         for s in &segs {
             assert!(s.length >= gap * 0.1, "a stub of {} m in a {} m join", s.length, gap);
         }
+    }
+
+    #[test]
+    fn a_nearly_straight_join_is_not_a_straight_between_stubs() {
+        // (the reported case: leave on 296.7, arrive on 298.6 over 10.7 m. The old "widest
+        // within 1.35x of the shortest" answer was a long straight between a 0.6 m arc at
+        // radius 20 and a stub of a few centimetres)
+        let start = DVec2::ZERO;
+        let end = start + roads::dir(299.0) * 10.7;
+        let segs = plan(start, 296.7, end, 298.6, Side::Auto, MIN_PIECE_RADIUS).expect("a join");
+        at_each_join(&segs, start, end);
+        for s in &segs {
+            assert!(s.length >= MIN_PIECE_LEN, "a stub of {} m: {segs:?}", s.length);
+        }
+        assert!(!has_loop(&segs), "a loop round the junction: {segs:?}");
     }
 
     #[test]

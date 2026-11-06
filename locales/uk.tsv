@@ -2763,3 +2763,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Як цей шлях приходить, у градусах. Точка лишається; поворот, який одна дуга не зробить, ділиться на частини
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Той шлях на цьому кінці йде у зворотний бік: з'єднання було б розворотом. Візьміть інший кінець того шляху або поверніть цей кінець нижче
 The way a join turns	Куди повертає з’єднання
+Paths picked	Вибрано шляхів
+Set what they share. A path's own numbers are edited one at a time	Задайте спільне. Власні числа шляху правляться по одному
+Several	Кілька

@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Cómo llega este carril, en grados. El punto se queda; un giro que un solo arco no puede hacer se divide en tramos
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Ese camino va en sentido contrario en ese extremo: unirlo sería un cambio de sentido. Elige el otro extremo de ese camino o gira este extremo abajo
 The way a join turns	Hacia dónde gira la unión
+Paths picked	Caminos elegidos
+Set what they share. A path's own numbers are edited one at a time	Define lo que comparten. Las cifras propias de cada camino se tocan de una en una
+Several	Varios

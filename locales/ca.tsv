@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Com arriba aquest carril, en graus. El punt es queda; un gir que un sol arc no pot fer es divideix en trossos
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Aquest camí va en sentit contrari en aquest extrem: unir-lo seria un canvi de sentit. Trieu l'altre extrem d'aquest camí o gireu aquest extrem a sota
 The way a join turns	Cap a on gira la unió
+Paths picked	Camins triats
+Set what they share. A path's own numbers are edited one at a time	Defineix el que comparteixen. Les xifres pròpies de cada camí es toquen d'un en un
+Several	Diversos

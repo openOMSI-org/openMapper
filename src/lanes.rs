@@ -8,7 +8,7 @@ use glam::{DVec2, DVec3, Vec3};
 use omsi_geometry::SplineCurve;
 
 use crate::assets::Assets;
-use crate::doc::{tile_origin, Document, Sel};
+use crate::doc::{tile_origin, Document, Sel, TileKey};
 use crate::place::Pose;
 use crate::roads;
 
@@ -184,6 +184,14 @@ pub fn of_one(doc: &Document, assets: &mut Assets, sel: Sel) -> Vec<Lane> {
 }
 
 pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> (Vec<Lane>, Vec<LaneEnd>) {
+    near_skipping(doc, assets, centre, radius, None)
+}
+
+/// The lanes within `radius` of `centre`, and their ends (linked ones marked), leaving out
+/// one object: the crossing editor knows its own object already and used to sample all 787
+/// of its paths only to throw them away afterwards. That object is skipped before anything
+/// of it is read.
+pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64, skip: Option<(TileKey, i64)>) -> (Vec<Lane>, Vec<LaneEnd>) {
     let mut lanes = Vec::new();
     for (k, t) in &doc.tiles {
         let org = tile_origin(*k);
@@ -220,6 +228,9 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
             }
         }
         for o in &t.tile.objects {
+            if skip == Some((*k, o.id)) {
+                continue;
+            }
             let Some(model) = assets.object(&o.file) else { continue };
             if model.paths.is_empty() {
                 continue;
@@ -236,12 +247,15 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
                 continue;
             }
             let pose = Pose::of_object(world, o.rot);
+            // (an object of hundreds of paths is sampled coarsely: only its ends matter for
+            // snapping, and 787 paths at 2 m would be most of the frame's work)
+            let step = if model.paths.len() > 600 { 8.0 } else { 2.0 };
             for (index, p) in model.paths.iter().enumerate() {
                 let c = object_path_curve(p);
                 if !(c.length > 0.05) {
                     continue;
                 }
-                let n = ((c.length / 2.0).ceil().max(1.0) as usize).min(400);
+                let n = ((c.length / step).ceil().max(1.0) as usize).min(400);
                 let pts = (0..=n)
                     .map(|i| {
                         let q = c.point_at(c.length * i as f64 / n as f64);

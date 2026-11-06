@@ -79,6 +79,12 @@ pub struct CrossingPaths {
     seen: Crossing,
     /// The path being edited, and the end being dragged of it.
     selected: Option<usize>,
+    /// The other paths picked besides `selected` (Ctrl+click in the list or on the map, Shift
+    /// for a run of them). What a junction's paths share - kind, width, turn signal, light,
+    /// keeping the junction clear - can then be set on all of them at once.
+    multi: Vec<usize>,
+    /// Where a Shift+click measures its run from: the pick it came after.
+    anchor: Option<usize>,
     drag: Option<(usize, bool)>,
     /// The canvas: pixels per metre, and the point of the object at its centre.
     scale: f32,
@@ -120,16 +126,27 @@ pub struct CrossingPaths {
     /// [`CrossingPaths::footprint`], which is thinned.
     surface: std::sync::Arc<Vec<f32>>,
     surface_for: String,
+    /// A coarse 2D grid over `surface`, so sampling a point tests the triangles near it
+    /// rather than all of them (a 787-path object is sampled hundreds of times a second).
+    surface_grid: Option<SurfaceGrid>,
     /// How far each path sits above the surface (negative: under it), a path at a time, and
     /// when it was last worked out: the mesh is sampled at each path's middle, so this is done
     /// a few times a second at most, never every frame.
     sink: Vec<f32>,
     sink_at: f64,
+    /// The next path whose sink is worked out: the work is spread over frames, so hundreds of
+    /// paths do not all sample the mesh in one.
+    sink_next: usize,
     /// A path was picked on the map: the list is scrolled to it where it is out of sight.
     reveal: bool,
     /// Where the end being dragged has snapped to, in the object's frame, so the drawing can
     /// show it (None: not snapped).
     snap_mark: Option<DVec3>,
+    /// The ends near the crossing that the 3D view draws - the roads' own lanes, and other
+    /// objects' paths - with when they were gathered. The drawing snaps to them as the map
+    /// does, and `lanes::near` is not cheap, so the list is kept for a quarter of a second
+    /// rather than gathered every frame.
+    snap_pool: Option<(f64, Vec<Joint>)>,
     /// The paths are shown on the map itself (the object in 3D) rather than drawn from above:
     /// the window keeps the properties, and the map keeps the crossing.
     view_3d: bool,
@@ -197,6 +214,8 @@ impl Default for CrossingPaths {
             map_dir: Default::default(),
             from_rel: String::new(),
             selected: None,
+            multi: Vec::new(),
+            anchor: None,
             drag: None,
             scale: 14.0,
             centre: DVec2::ZERO,
@@ -215,10 +234,13 @@ impl Default for CrossingPaths {
             side: Side::Auto,
             surface: std::sync::Arc::new(Vec::new()),
             surface_for: String::new(),
+            surface_grid: None,
             sink: Vec::new(),
             sink_at: 0.0,
+            sink_next: 0,
             reveal: false,
             snap_mark: None,
+            snap_pool: None,
             view_3d: false,
             frame_on_map: false,
             copied: false,
@@ -364,6 +386,37 @@ fn snap_joint(crossing: &Crossing, i: usize, q: DVec2, reach: f64, ctrl: bool) -
     crossing.nearest_joint(DVec3::new(q.x, q.y, 0.0), reach, i)
 }
 
+/// The nearest of a pool of gathered ends - the lanes the map shows, and other objects' paths -
+/// within `reach` of `q`. The dragged path's own ends are never taken from it: they are what
+/// the drag is moving, and the crossing's own ends come from [`snap_joint`].
+fn snap_pool_joint(crossing: &Crossing, pool: &[Joint], i: usize, q: DVec2, reach: f64) -> Option<Joint> {
+    let own = crossing.paths.get(i);
+    pool.iter()
+        .copied()
+        .filter(|j| (j.pos.truncate() - q).length() <= reach)
+        .filter(|j| {
+            own.is_none_or(|p| {
+                (j.pos.truncate() - p.start().truncate()).length() > 1e-3
+                    && (j.pos.truncate() - p.end().truncate()).length() > 1e-3
+            })
+        })
+        .min_by(|a, b| (a.pos.truncate() - q).length().total_cmp(&(b.pos.truncate() - q).length()))
+}
+
+/// The end a dragged end is taken onto: the crossing's own ends ([`snap_joint`]) or a pooled
+/// lane end, whichever is nearer. Ctrl keeps the end where the mouse is, as in the map's view.
+fn snap_any(crossing: &Crossing, pool: &[Joint], i: usize, q: DVec2, reach: f64, ctrl: bool) -> Option<Joint> {
+    if ctrl {
+        return None;
+    }
+    let own = snap_joint(crossing, i, q, reach, ctrl);
+    let Some(pooled) = snap_pool_joint(crossing, pool, i, q, reach) else { return own };
+    match own {
+        Some(j) if (j.pos.truncate() - q).length() <= (pooled.pos.truncate() - q).length() => Some(j),
+        _ => Some(pooled),
+    }
+}
+
 /// Put path `i`'s start onto a joint: at its point, in its way, and at its rise - so the
 /// piece joins the next one smoothly instead of merely touching it.
 fn join_start(crossing: &mut Crossing, i: usize, j: Joint) {
@@ -416,30 +469,133 @@ fn ang_delta(from: f64, to: f64) -> f64 {
     if d > 180.0 { d - 360.0 } else { d }
 }
 
+/// Height of one triangle (nine floats) over `p` in the object's own frame, when `p` is
+/// inside it (a hair outside still counts: the drawn paths run along the mesh's edge).
+fn tri_z(t: &[f32], p: DVec2) -> Option<f64> {
+    let a = DVec2::new(t[0] as f64, t[1] as f64);
+    let b = DVec2::new(t[3] as f64, t[4] as f64);
+    let c = DVec2::new(t[6] as f64, t[7] as f64);
+    let (za, zb, zc) = (t[2] as f64, t[5] as f64, t[8] as f64);
+    let v0 = c - a;
+    let v1 = b - a;
+    let v2 = p - a;
+    let den = v0.x * v1.y - v1.x * v0.y;
+    if den.abs() < 1e-12 {
+        return None;
+    }
+    let u = (v2.x * v1.y - v1.x * v2.y) / den;
+    let v = (v0.x * v2.y - v2.x * v0.y) / den;
+    if u >= -0.02 && v >= -0.02 && u + v <= 1.02 {
+        Some(za * (1.0 - u - v) + zb * v + zc * u)
+    } else {
+        None
+    }
+}
+
 /// Height of the object's surface at `p` (its own frame): the highest triangle that covers
 /// the point, which is the deck rather than the underside. None when the point is off the mesh.
+/// This is the slow reference (every triangle); the window uses [`SurfaceGrid`] through
+/// [`CrossingPaths::surface_height`].
 fn surface_z(tris: &[f32], p: DVec2) -> Option<f64> {
     let mut best: Option<f64> = None;
     for t in tris.chunks_exact(9) {
-        let a = DVec2::new(t[0] as f64, t[1] as f64);
-        let b = DVec2::new(t[3] as f64, t[4] as f64);
-        let c = DVec2::new(t[6] as f64, t[7] as f64);
-        let (za, zb, zc) = (t[2] as f64, t[5] as f64, t[8] as f64);
-        let v0 = c - a;
-        let v1 = b - a;
-        let v2 = p - a;
-        let den = v0.x * v1.y - v1.x * v0.y;
-        if den.abs() < 1e-12 {
-            continue;
-        }
-        let u = (v2.x * v1.y - v1.x * v2.y) / den;
-        let v = (v0.x * v2.y - v2.x * v0.y) / den;
-        if u >= -0.02 && v >= -0.02 && u + v <= 1.02 {
-            let z = za * (1.0 - u - v) + zb * v + zc * u;
+        if let Some(z) = tri_z(t, p) {
             best = Some(best.map(|h| h.max(z)).unwrap_or(z));
         }
     }
     best
+}
+
+/// A coarse 2D grid over the surface's triangles: each triangle is listed in every cell its
+/// XY bounding box touches, so sampling a point only tests the handful of triangles near it.
+/// A 787-path object used to walk all 60,000 triangles for every path, four times a second.
+struct SurfaceGrid {
+    cell: f64,
+    ox: f64,
+    oy: f64,
+    nx: usize,
+    ny: usize,
+    cells: Vec<Vec<u32>>,
+}
+
+impl SurfaceGrid {
+    fn build(tris: &[f32]) -> Option<SurfaceGrid> {
+        if tris.len() < 9 {
+            return None;
+        }
+        let (mut lo, mut hi) = (DVec2::splat(f64::MAX), DVec2::splat(f64::MIN));
+        for t in tris.chunks_exact(9) {
+            for k in [0, 3, 6] {
+                let q = DVec2::new(t[k] as f64, t[k + 1] as f64);
+                lo = lo.min(q);
+                hi = hi.max(q);
+            }
+        }
+        if !lo.is_finite() || !hi.is_finite() || hi.x < lo.x || hi.y < lo.y {
+            return None;
+        }
+        let mut cell = 4.0_f64;
+        let mut nx = (((hi.x - lo.x) / cell).floor() as usize).saturating_add(1).max(1);
+        let mut ny = (((hi.y - lo.y) / cell).floor() as usize).saturating_add(1).max(1);
+        // (a huge object gets wider cells rather than a table no one wants to hold)
+        while nx.max(ny) > 512 {
+            cell *= 2.0;
+            nx = (((hi.x - lo.x) / cell).floor() as usize).saturating_add(1).max(1);
+            ny = (((hi.y - lo.y) / cell).floor() as usize).saturating_add(1).max(1);
+        }
+        let mut cells = vec![Vec::new(); nx * ny];
+        for (i, t) in tris.chunks_exact(9).enumerate() {
+            let (mut tx0, mut tx1) = (f64::MAX, f64::MIN);
+            let (mut ty0, mut ty1) = (f64::MAX, f64::MIN);
+            for k in [0, 3, 6] {
+                let (x, y) = (t[k] as f64, t[k + 1] as f64);
+                tx0 = tx0.min(x);
+                tx1 = tx1.max(x);
+                ty0 = ty0.min(y);
+                ty1 = ty1.max(y);
+            }
+            let x0 = (((tx0 - lo.x) / cell).floor() as isize).clamp(0, nx as isize - 1) as usize;
+            let x1 = (((tx1 - lo.x) / cell).floor() as isize).clamp(0, nx as isize - 1) as usize;
+            let y0 = (((ty0 - lo.y) / cell).floor() as isize).clamp(0, ny as isize - 1) as usize;
+            let y1 = (((ty1 - lo.y) / cell).floor() as isize).clamp(0, ny as isize - 1) as usize;
+            for cy in y0..=y1 {
+                let row = cy * nx;
+                for cx in x0..=x1 {
+                    cells[row + cx].push(i as u32);
+                }
+            }
+        }
+        Some(SurfaceGrid { cell, ox: lo.x, oy: lo.y, nx, ny, cells })
+    }
+
+    fn cell_of(&self, p: DVec2) -> Option<usize> {
+        let (x, y) = ((p.x - self.ox) / self.cell, (p.y - self.oy) / self.cell);
+        if !(x >= 0.0) || !(y >= 0.0) {
+            return None;
+        }
+        let (cx, cy) = (x.floor() as usize, y.floor() as usize);
+        (cx < self.nx && cy < self.ny).then_some(cy * self.nx + cx)
+    }
+
+    fn z(&self, tris: &[f32], p: DVec2) -> Option<f64> {
+        self.z_tests(tris, p).0
+    }
+
+    /// The height, and how many triangles were looked at (so the saving can be measured).
+    fn z_tests(&self, tris: &[f32], p: DVec2) -> (Option<f64>, usize) {
+        let Some(c) = self.cell_of(p) else { return (None, 0) };
+        let mut best: Option<f64> = None;
+        let mut tests = 0usize;
+        for &i in &self.cells[c] {
+            let o = i as usize * 9;
+            let Some(t) = tris.get(o..o + 9) else { continue };
+            tests += 1;
+            if let Some(z) = tri_z(t, p) {
+                best = Some(best.map(|h| h.max(z)).unwrap_or(z));
+            }
+        }
+        (best, tests)
+    }
 }
 
 /// A drag of one end's rotation: `original` is the path it started from, and `spawned` is
@@ -574,6 +730,45 @@ fn insert_after(paths: &mut Vec<Path>, index: usize, mut extra: Vec<Path>) {
     }
 }
 
+/// Cut path `i` in two `at` of the way along it (0..1), and give back the index of the second
+/// piece. Both are arcs of the path's own radius, and the second begins in exactly the way the
+/// first ends, so the line itself is unchanged where it was cut - what changes is that each
+/// piece can now be turned, stretched and given a rotate of its own, which is the only way to
+/// put a bend in the middle of a piece that was laid as one.
+///
+/// The piece that was written first keeps everything: kind, width, the way traffic goes, its
+/// turn signal and light, its blocks. The second is a copy of it with its own start, and the
+/// block rules that name later paths follow it ([`insert_after`]).
+///
+/// None when the path is too short to be worth cutting: a piece of a few centimetres is not
+/// something a vehicle can use, and a cut within 5% of either end is moved away from it.
+fn split_path(crossing: &mut Crossing, i: usize, at: f64) -> Option<usize> {
+    let p = crossing.paths.get(i)?.clone();
+    let l = p.length();
+    if !(l > 0.2) {
+        return None;
+    }
+    let s = l * at.clamp(0.05, 0.95);
+    let c = p.curve();
+    let mid = c.point_at(s);
+    let heading = crate::roads::norm_deg(c.heading_at(s));
+    // (the rise where it is cut: the same on both sides, so the profile does not step)
+    let rise = c.slope_at(s);
+    let mut first = p.clone();
+    first.v[5] = s as f32;
+    first.v[7] = rise as f32;
+    let mut second = p;
+    second.v[0] = mid.x as f32;
+    second.v[1] = mid.y as f32;
+    second.v[2] = mid.z as f32;
+    second.v[3] = heading as f32;
+    second.v[5] = (l - s) as f32;
+    second.v[6] = rise as f32;
+    crossing.paths[i] = first;
+    insert_after(&mut crossing.paths, i, vec![second]);
+    Some(i + 1)
+}
+
 /// A join further than this from the path it joins is not a join: no crossing is tens of
 /// kilometres across, so the joint must be in another frame (the map's, say). Refused rather
 /// than built, since a join made from it is a path of millions of metres.
@@ -696,7 +891,7 @@ const SHORT_JOIN: f64 = 2.0;
 /// The tightest radius a join's piece may have (m). Below it the piece is not a bend but a
 /// knot: a path of a few centimetres curled round on itself, which reads as the wrong way.
 /// A tight junction turn is a metre or two; a centimetre is not a path at all.
-const MIN_PIECE_RADIUS: f64 = 1.5;
+const MIN_PIECE_RADIUS: f64 = crate::join::MIN_PIECE_RADIUS;
 
 /// The most a piece may turn and still be a bend of at least `MIN_PIECE_RADIUS` across `chord`.
 fn most_turn(chord: f64) -> f64 {
@@ -740,11 +935,15 @@ fn s_join_with(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_r: 
     use crate::roads::{self, Seg};
     let (h_a, h_b) = (roads::norm_deg(h_a), roads::norm_deg(h_b));
     let v = end - start;
-    let mut best: Option<(bool, f64, Vec<Seg>)> = None;
+    let mut made: Vec<Vec<Seg>> = Vec::new();
     // (a finer sweep when the wide ones are barred: the meeting heading that puts both chords
     // in front of their ends is a narrow window at some angles)
     let fine = min_r < MIN_PIECE_RADIUS || min_len < 1.0;
-    let (first, last, step_deg) = if fine { (-180, 180, 1) } else { (-36, 36, 5) };
+    let (first, last, step_deg): (i32, i32, f64) = if fine {
+        if v.length() < 8.0 { (-360, 360, 0.5) } else { (-180, 180, 1.0) }
+    } else {
+        (-36, 36, 5.0)
+    };
     for step in first..=last {
         let hm = roads::norm_deg(h_a + step as f64 * step_deg as f64);
         let (t1, t2) = (ang_delta(h_a, hm), ang_delta(hm, h_b));
@@ -773,20 +972,63 @@ fn s_join_with(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_r: 
         if !side.allows(t1) || !side.allows(t2) {
             continue;
         }
-        // (both arcs the same way is one bend; opposite ways is an S, which a car only does
-        // for a lane change. A bend is taken whenever one exists)
-        let bend = t1.signum() == t2.signum() || t1.abs() < 1.0 || t2.abs() < 1.0;
         let mid = start + u1 * a;
-        let segs = vec![arc_piece(start, h_a, t1, a), arc_piece(mid, hm, t2, b)];
-        let better = match &best {
-            None => true,
-            Some((was_bend, r, _)) => bend && !*was_bend || bend == *was_bend && narrow > *r,
-        };
-        if better {
-            best = Some((bend, narrow, segs));
+        made.push(vec![arc_piece(start, h_a, t1, a), arc_piece(mid, hm, t2, b)]);
+    }
+    // (the same rule as a planned join: a stub-free pair first, then the one whose turn is most
+    // evenly spread over its pieces. The widest meeting radius alone can leave one long gentle
+    // arc and one centimetre doing all the turning, which is the stub this exists to avoid)
+    crate::join::best(made, v.length())
+}
+
+/// The join that has to arrive on the next path's way, however tight its arcs: what `Complete
+/// to` falls back on when the planned join lands a little off the point or the heading. It
+/// tries the same kinds of candidate as [`connect_segs`] first, scored by [`crate::join::best`],
+/// and only then lets the radii down as far as the pair needs. Even then no piece may be shorter
+/// than `CURL`: a bend of half a metre is still a bend, but a five-centimetre arc is an invisible
+/// curl written into the file. A line a few degrees out of the next segment's rotate is the kink
+/// this exists to avoid, so when nothing usable arrives it answers None rather than that.
+fn forced_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Vec<crate::roads::Seg>> {
+    let chord = (end - start).length();
+    // (no forced join may write a piece shorter than this into the file: below it the piece is
+    // an invisible curl, not a bend anyone can drive)
+    const CURL: f64 = 0.3;
+    let usable = |segs: &Vec<crate::roads::Seg>| segs.iter().all(|s| s.length >= CURL);
+    // (first the same kind of candidates `connect_segs` plans with: a very tight pair is not
+    // the only answer, and on a nearly straight joint it is the wrong one. The best of them is
+    // taken by the same scoring, so a retry cannot smuggle in a stub that the planned join
+    // would have refused)
+    let mut candidates: Vec<Vec<crate::roads::Seg>> = Vec::new();
+    for f in [MIN_PIECE_RADIUS, 1.0, 0.6, 0.35, 0.2] {
+        if let Some(planned) = crate::join::plan(start, h_a, end, h_b, side, f)
+            && arrives(&planned, end, h_b)
+            && usable(&planned)
+        {
+            candidates.push(planned);
         }
     }
-    best.map(|(_, _, segs)| segs)
+    for (r, len) in [(MIN_PIECE_RADIUS, 1.0), (1.0, 0.3), (0.6, 0.1), (0.35, 0.05)] {
+        if let Some(pair) = s_join_with(start, h_a, end, h_b, side, r, len)
+            && arrives(&pair, end, h_b)
+            && usable(&pair)
+        {
+            candidates.push(pair);
+        }
+    }
+    if let Some(best) = crate::join::best(candidates, chord) {
+        return Some(best);
+    }
+    // (nothing with a usable radius reaches the heading. Only now are the tight arcs let out,
+    // and even then no piece may be shorter than `CURL`)
+    for (r, len) in [(0.35, CURL), (0.2, CURL), (0.15, CURL), (0.1, CURL), (0.05, CURL)] {
+        if let Some(pair) = s_join_with(start, h_a, end, h_b, side, r, len)
+            && arrives(&pair, end, h_b)
+            && usable(&pair)
+        {
+            return Some(pair);
+        }
+    }
+    None
 }
 
 /// Pieces from `start` leaving on `h_a` and arriving at `end` on `h_b`. Every piece begins in
@@ -798,14 +1040,15 @@ fn s_join_with(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_r: 
 /// ([`s_join`]), and when the point is too far round for that, forward pieces that bring the way
 /// round. The way the join leaves is never turned to make a single piece fit.
 ///
-/// A join of a couple of metres or less is one straight piece: no bend of a usable radius fits
-/// in it, and a bend squeezed in would be a knot of centimetres that reads as the wrong way.
+/// A join of a couple of metres or less is planned and checked like any other: a short gap
+/// between two ways that cross needs two or three pieces, and one straight along the gap
+/// arrived on its own angle instead of the next segment's. A straight on the gap is only the
+/// last resort, for a pair of ends no bend of a usable radius can join.
 ///
 /// `side` is the way round the user asked for. A left or right join only takes arcs that turn
 /// that way, and its forward pieces turn that way, so the long way round a junction is not what
 /// comes out when the short way was meant.
 fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec<crate::roads::Seg> {
-    use crate::roads;
     let chord = (end - start).length();
     if chord < 1e-3 {
         return Vec::new();
@@ -829,25 +1072,60 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
         r == 0.0 || r.abs() >= floor
     };
     let fits = |segs: &[crate::roads::Seg]| arrives(segs, end, h_b) && segs.iter().all(|q| allow(q.radius));
+    // (the longest a planned join may be: a guard against a planner that loops for millions of
+    // metres, not a curb on going round. A short gap between two ways that cross needs two or
+    // three pieces several times longer than the gap, and a cap that was a multiple of the gap
+    // threw exactly those away, leaving a straight that arrived on the wrong way)
+    let cap = (chord * 20.0 + 50.0).min(500.0);
+    let total = |p: &Vec<crate::roads::Seg>| p.iter().map(|s| s.length).sum::<f64>();
+    // (every candidate that lands on the point and on the way is scored by `join::best`: a join
+    // with no stub wins outright, and among those the one that goes least far round the junction
+    // while spreading its turn over pieces long enough to drive. A final piece of a few
+    // centimetres is exactly the jerk this is here to keep out, whatever radius it claims)
+    let mut candidates: Vec<Vec<crate::roads::Seg>> = Vec::new();
     for f in [floor, 1.0, 0.6, 0.35, 0.2] {
         if let Some(planned) = crate::join::plan(start, h_a, end, h_b, side, f)
             && fits(&planned)
+            && total(&planned) <= cap
         {
-            let length: f64 = planned.iter().map(|s| s.length).sum();
-            if length <= chord * 2.5 + 2.0 {
-                return planned;
-            }
+            candidates.push(planned);
         }
     }
     // (two arcs that meet tangentially, with the floors let down as far as a usable path allows:
-    // a biarc answers for a pair of ends that no plain turn onto a circle does)
+    // a biarc answers for a pair of ends that no plain turn onto a circle does. These are scored
+    // with the planned joins rather than kept as a fallback, since a biarc can be the even answer
+    // when the tangent construction only manages a stub)
     for (r, len) in [(MIN_PIECE_RADIUS, 1.0), (1.0, 0.3), (0.6, 0.1), (0.35, 0.05)] {
         if let Some(pair) = s_join_with(start, h_a, end, h_b, side, r, len)
             && fits(&pair)
+            && total(&pair) <= cap
         {
-            return pair;
+            candidates.push(pair);
         }
     }
+    if let Some(best) = crate::join::best(candidates, chord) {
+        // (a planner can still answer with a piece that turns most of a circle to move a couple
+        // of metres sideways. When it does, the forward run is built as well and scored against
+        // it: the run's pieces actually go on towards the point, rather than round it)
+        if !crate::join::has_loop(&best) {
+            return best;
+        }
+        let stepped = stepping_join(start, h_a, end, h_b, side);
+        if fits(&stepped) && !stepped.is_empty() {
+            if let Some(picked) = crate::join::best(vec![best.clone(), stepped], chord) {
+                return picked;
+            }
+        }
+        return best;
+    }
+    stepping_join(start, h_a, end, h_b, side)
+}
+
+/// The forward run: pieces that go on from `start` towards `end`, turning no further than the
+/// point lies, and arriving on `h_b`. This is the last resort of [`connect_segs`], and also the
+/// answer when the planner can only offer a loop.
+fn stepping_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec<crate::roads::Seg> {
+    use crate::roads;
     let mut segs = Vec::new();
     let mut pos = start;
     let mut h = roads::norm_deg(h_a);
@@ -984,14 +1262,24 @@ enum PieceEnd {
     At { z: f64, slope: f64 },
 }
 
-/// `template`'s shape laid along `segs`, beginning at `a` with the rise `s_a` there. The
-/// pieces between sit on the surface, so a join follows the deck rather than cutting through
-/// it. `inherit`: the first piece keeps the template's own rules (a drag of an end, rather
-/// than a new piece added beside it).
+/// `template`'s shape laid along `segs`, beginning at `a` with the rise `s_a` there. For a free
+/// end the pieces between sit on the surface, so a join follows the deck rather than cutting
+/// through it; for another path's end the rise is spread along the join, and the last piece
+/// lands on that end's height and rise exactly. `inherit`: the first piece keeps the template's
+/// own rules (a drag of an end, rather than a new piece added beside it).
 fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end: PieceEnd, inherit: bool, tris: &[f32]) -> Vec<Path> {
     let n = segs.len();
     let mut out: Vec<Path> = Vec::new();
     let mut z = a.z;
+    // (a join to another path's end spreads its rise over the whole join: the last piece
+    // alone cannot carry a kerb's rise when it is ten centimetres long, and the 130% grade
+    // that asked for is not a path. Each piece ends where its share of the length puts it)
+    let at = match end {
+        PieceEnd::At { z, slope } => Some((z, slope)),
+        PieceEnd::Surface => None,
+    };
+    let total: f64 = segs.iter().map(|s| s.length).sum();
+    let mut cum = 0.0;
     for (k, seg) in segs.iter().enumerate() {
         let start_z = if k == 0 { a.z } else { z };
         let mut q = lay_seg(template, seg, start_z);
@@ -1004,19 +1292,49 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end
         }
         q.light = template.light;
         let want = surface_z(tris, seg.end());
-        if k + 1 == n {
-            match end {
+        cum += q.length();
+        if let Some((z_target, slope)) = at {
+            if k + 1 == n {
                 // (the end is where the other path's is, at its rise: a footway joined to the
-                // next footway takes its height, even when the piece is short)
-                PieceEnd::At { z, slope } if q.length() >= SHORT_JOIN => q.set_end_height_and_slope(z, slope),
-                PieceEnd::At { z, .. } => climb_to(&mut q, z),
-                PieceEnd::Surface => match want {
-                    Some(z) => climb_to(&mut q, z),
-                    None => {
-                        q.v[6] = s_a as f32;
-                        q.v[7] = s_a as f32;
-                    }
-                },
+                // next footway takes its height and its slope exactly, however short this
+                // piece is. The rise has been spread along the join, so the last piece lands
+                // on that height with a sane grade instead of taking the whole climb at its
+                // own end)
+                q.set_end_height_and_slope(z_target, slope);
+            } else if total > 0.03 {
+                let zk = a.z + (z_target - a.z) * (cum / total).clamp(0.0, 1.0);
+                // (both slopes of one piece become its own share of the rise, so the next
+                // piece begins where this one ended, in height as in position)
+                let l = q.length().max(1e-6);
+                let rise = (zk - q.start().z) / l;
+                if k == 0 {
+                    // (the first piece still leaves at the rise the path before it has: the
+                    // join meets that path without a step in grade. Its share of the climb
+                    // goes into its end slope, so it still ends at the interpolated height)
+                    q.v[6] = s_a as f32;
+                    q.v[7] = (2.0 * rise - s_a) as f32;
+                } else {
+                    q.v[6] = rise as f32;
+                    q.v[7] = rise as f32;
+                }
+            } else {
+                // (a join of a few centimetres has no length to spread a rise over. The whole
+                // rise is carried straight across - steep, but the two pieces then agree in
+                // height, which is what makes them one line: `MAX_RISE` is not applied here,
+                // since a clamped rise is exactly what left the end short of the next path)
+                let rise = ((z_target - a.z) / total.max(1e-6)) as f32;
+                q.v[6] = rise;
+                q.v[7] = rise;
+            }
+        } else if k + 1 == n {
+            // (`PieceEnd::Surface` stays as it was: a free end is seated on the deck, and
+            // `MAX_RISE` keeps a short piece from standing on end)
+            match want {
+                Some(z) => climb_to(&mut q, z),
+                None => {
+                    q.v[6] = s_a as f32;
+                    q.v[7] = s_a as f32;
+                }
             }
         } else if k == 0 {
             // (the first piece leaves at the rise the path had, and still lands on the deck)
@@ -1263,13 +1581,68 @@ impl CrossingPaths {
         self.selected
     }
 
+    /// Every path picked: the first one, then the others added with Ctrl+click. The list and the
+    /// map draw them all, and the shared properties can be set on all of them at once.
+    pub fn selection(&self) -> Vec<usize> {
+        let Some(first) = self.selected else { return Vec::new() };
+        let mut out = Vec::with_capacity(self.multi.len() + 1);
+        out.push(first);
+        for i in &self.multi {
+            if !out.contains(i) {
+                out.push(*i);
+            }
+        }
+        out
+    }
+
+    /// Whether path `i` is one of the picked ones.
+    fn is_picked(&self, i: usize) -> bool {
+        self.selected == Some(i) || self.multi.contains(&i)
+    }
+
+    /// Pick path `i`. `add`: keep what was picked (Ctrl+click toggles it); `run`: take everything
+    /// from the pick before it up to `i` (Shift+click, as a file list does).
+    fn pick_path(&mut self, i: usize, add: bool, run: bool) {
+        if run && let Some(from) = self.anchor.or(self.selected) {
+            let (lo, hi) = if from <= i { (from, i) } else { (i, from) };
+            self.selected = Some(i);
+            self.multi = (lo..=hi).filter(|q| *q != i).collect();
+            return;
+        }
+        if add {
+            if self.selected == Some(i) {
+                // (the one being edited cannot simply be unpicked: another takes its place)
+                let next = self.multi.first().copied();
+                self.selected = next;
+                self.multi.retain(|q| *q != i && Some(*q) != next);
+            } else if self.multi.contains(&i) {
+                self.multi.retain(|q| *q != i);
+            } else {
+                self.multi.push(i);
+            }
+            self.anchor = Some(i);
+            return;
+        }
+        self.selected = Some(i);
+        self.multi.clear();
+        self.anchor = Some(i);
+    }
+
+    /// One path picked again, the others dropped: what a structural change leaves behind.
+    fn pick_only(&mut self, i: usize) {
+        self.selected = Some(i);
+        self.multi.clear();
+        self.anchor = Some(i);
+    }
+
     /// A click on the map picks a path: false when nothing of the crossing is at that point.
-    pub fn select_on_map(&mut self, hit: Option<usize>) -> bool {
+    /// `add` keeps what was picked (Ctrl), as clicking a list row does.
+    pub fn select_on_map(&mut self, hit: Option<usize>, add: bool) -> bool {
         let Some(i) = hit else { return false };
         if !self.on_map() || self.sheet.as_ref().is_none_or(|s| i >= s.crossing.paths.len()) {
             return false;
         }
-        self.selected = Some(i);
+        self.pick_path(i, add, false);
         self.reveal = true;
         true
     }
@@ -1383,14 +1756,16 @@ impl CrossingPaths {
         // (the new end sits on the deck; both slopes become that one grade)
         let z = at.and_then(|i| {
             let end = self.sheet.as_ref()?.crossing.paths.get(i)?.end().truncate();
-            surface_z(&self.surface, end)
+            self.surface_height(end)
         });
         if let (Some(i), Some(z)) = (at, z) {
             if let Some(p) = self.sheet.as_mut().and_then(|s| s.crossing.paths.get_mut(i)) {
                 set_end_height(p, z);
             }
         }
-        self.selected = at;
+        if let Some(i) = at {
+            self.pick_only(i);
+        }
         self.reveal = true;
         true
     }
@@ -1476,9 +1851,32 @@ impl CrossingPaths {
         } else {
             segs
         };
-        let made = lay_join(&template, a, s_a, &segs, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
-        if made.is_empty() {
-            return None;
+        let mut made = lay_join(&template, a, s_a, &segs, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
+        // (the join is checked on what came out, not trusted: a last piece a few degrees or a
+        // couple of centimetres off does not line up with the next segment's rotate, and that
+        // is what a misaligned crossing is. A retry forces the arrival - a biarc has an answer
+        // for any pair of ends - and if even that misses, nothing is added: one piece fewer is
+        // better than a line that does not meet the one it joins)
+        let lands = |q: &Path| -> bool {
+            let c = q.curve();
+            let h = c.heading_at(c.length.max(0.0));
+            ang_delta(h, h_b).abs() <= 0.5 && (q.end().z - b.z).abs() <= 0.02
+        };
+        if made.last().is_none_or(|q| !lands(q)) {
+            let miss = made.last().map(|q| {
+                let c = q.curve();
+                (ang_delta(c.heading_at(c.length.max(0.0)), h_b), q.end().z - b.z)
+            });
+            log::debug!("complete to: the join missed by {miss:?} (degrees, metres); forcing its arrival");
+            let forced = forced_join(a.truncate(), h_a, b.truncate(), h_b, self.side)
+                .or_else(|| forced_join(a.truncate(), h_a, b.truncate(), h_b, Side::Auto));
+            if let Some(forced) = forced {
+                made = lay_join(&template, a, s_a, &forced, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
+            }
+            if made.last().is_none_or(|q| !lands(q)) {
+                log::debug!("complete to: nothing arrives on {h_b:.1}° and {:.2} m; the crossing is left as it was", b.z);
+                return None;
+            }
         }
         self.push_undo();
         let Some(sheet) = self.sheet.as_mut() else { return None };
@@ -1487,7 +1885,9 @@ impl CrossingPaths {
             sheet.crossing.paths.push(q);
             last = Some(sheet.crossing.paths.len() - 1);
         }
-        self.selected = last;
+        if let Some(i) = last {
+            self.pick_only(i);
+        }
         self.reveal = true;
         // (the mode stays on, and its green ends stay drawn: carrying several paths on is the
         // usual thing, and the circles vanishing after the first join looked like a fault)
@@ -1529,7 +1929,7 @@ impl CrossingPaths {
     /// lane's points). This is what a dragged end is seated on, so a path dragged off the
     /// object still lies on the road rather than floating where its height was.
     pub fn deck_at(&self, ed: &mut Editor, mut assets: Option<&mut Assets>, local: DVec2) -> Option<f64> {
-        if let Some(z) = surface_z(&self.surface, local) {
+        if let Some(z) = self.surface_height(local) {
             return Some(z);
         }
         let Sel::Object(k, id) = self.target? else { return None };
@@ -1542,7 +1942,7 @@ impl CrossingPaths {
         let at = world + m.transform_point3(DVec3::new(local.x, local.y, 0.0).as_vec3()).as_dvec3();
         let mut z = None;
         if let Some(assets) = assets {
-            let (lanes, _) = crate::lanes::near(doc, assets, at.truncate(), 8.0);
+            let (lanes, _) = crate::lanes::near_skipping(doc, assets, at.truncate(), 8.0, Some((k, id)));
             for l in &lanes {
                 for p in &l.pts {
                     if (p.truncate() - at.truncate()).length() <= 5.0 {
@@ -1557,18 +1957,51 @@ impl CrossingPaths {
         Some(back.z as f64)
     }
 
-    /// Delete the picked path, as the list's bin does. True when one was taken out (one step
-    /// back for Ctrl+Z, the pick moved to the path that took its place).
+    /// Delete the picked paths, as the list's bin does. True when at least one was taken out
+    /// (one step back for Ctrl+Z, the pick moved to a path that is still there).
     pub fn delete_picked(&mut self) -> bool {
+        let Some(sheet) = self.sheet.as_ref() else { return false };
+        let n = sheet.crossing.paths.len();
+        let mut gone: Vec<usize> = self.selection().into_iter().filter(|i| *i < n).collect();
+        if gone.is_empty() {
+            return false;
+        }
+        gone.sort_unstable();
+        self.push_undo();
+        let Some(sheet) = self.sheet.as_mut() else { return false };
+        // (from the back, so the indices still to come do not shift under the cut)
+        for i in gone.iter().rev() {
+            sheet.crossing.remove_path(*i);
+        }
+        let left = sheet.crossing.paths.len();
+        self.selected = if left == 0 { None } else { Some(gone[0].min(left - 1)) };
+        self.multi.clear();
+        self.anchor = self.selected;
+        self.drag = None;
+        self.rot_drag = None;
+        true
+    }
+
+    /// Cut the picked path in two at its middle, as the map's roads are cut: each half can then
+    /// be turned and given a rotate of its own. True when a path was cut (the second piece is
+    /// the one picked afterwards). Only one path at a time: two halves of several paths at once
+    /// would be a jumble of indices for nothing.
+    pub fn split_picked(&mut self) -> bool {
+        if !self.multi.is_empty() {
+            return false;
+        }
         let Some(i) = self.selected else { return false };
         let Some(sheet) = self.sheet.as_ref() else { return false };
-        if i >= sheet.crossing.paths.len() {
+        // (nothing is recorded until the cut is known to be possible: a path too short to split
+        // would otherwise leave an empty step for Ctrl+Z)
+        if !sheet.crossing.paths.get(i).is_some_and(|p| p.length() > 0.2) {
             return false;
         }
         self.push_undo();
         let Some(sheet) = self.sheet.as_mut() else { return false };
-        sheet.crossing.remove_path(i);
-        self.selected = if sheet.crossing.paths.is_empty() { None } else { Some(i.min(sheet.crossing.paths.len() - 1)) };
+        let Some(at) = split_path(&mut sheet.crossing, i, 0.5) else { return false };
+        self.pick_only(at);
+        self.reveal = true;
         self.drag = None;
         self.rot_drag = None;
         true
@@ -1618,7 +2051,7 @@ impl CrossingPaths {
         // (the same reach the 3D view draws: a shorter one left green circles on the map
         // that no click could take, because they were never in this list)
         let reach = ed.neighbour_reach();
-        let (lanes, _) = crate::lanes::near(doc, assets, world.truncate(), reach);
+        let (lanes, _) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
         for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
             let n = l.pts.len();
             if n < 2 {
@@ -1682,13 +2115,13 @@ impl CrossingPaths {
             sheet.crossing.paths.push(p);
             sheet.crossing.paths.len() - 1
         };
-        let z = self.sheet.as_ref().and_then(|s| s.crossing.paths.get(at)).and_then(|p| surface_z(&self.surface, p.end().truncate()));
+        let z = self.sheet.as_ref().and_then(|s| s.crossing.paths.get(at)).and_then(|p| self.surface_height(p.end().truncate()));
         if let Some(z) = z {
             if let Some(p) = self.sheet.as_mut().and_then(|s| s.crossing.paths.get_mut(at)) {
                 set_end_height(p, z);
             }
         }
-        self.selected = Some(at);
+        self.pick_only(at);
         self.reveal = true;
         self.from_nearby = false;
         self.nearby.clear();
@@ -1702,6 +2135,13 @@ impl CrossingPaths {
         let (paths, lights) = (sheet.crossing.paths.len(), sheet.crossing.lights.len());
         if self.selected.is_some_and(|i| i >= paths) {
             self.selected = paths.checked_sub(1);
+        }
+        // (the extra picks follow whatever the sheet has now: a path that is no longer there
+        // cannot stay picked)
+        let before = self.multi.len();
+        self.multi.retain(|i| *i < paths);
+        if self.multi.len() != before {
+            self.anchor = self.selected;
         }
         if self.light.is_some_and(|i| i >= lights) {
             self.light = lights.checked_sub(1);
@@ -1759,7 +2199,7 @@ impl CrossingPaths {
         if !self.on_map() || self.sheet.as_ref().is_none_or(|s| i >= s.crossing.paths.len()) {
             return false;
         }
-        self.selected = Some(i);
+        self.pick_only(i);
         self.map_drag = Some((i, at_end));
         // (a new grab is judged on this end's own height, not the one a previous drag locked)
         self.map_drag_plane = None;
@@ -1877,6 +2317,7 @@ impl CrossingPaths {
         self.edge = None;
         self.selected = None;
         self.footprint = None;
+        self.snap_pool = None;
     }
 
     /// Open the first crossing of the map's own list (a check run, with no one to pick one).
@@ -1900,6 +2341,8 @@ impl CrossingPaths {
             Ok((abs, bytes, sheet)) => {
                 self.copied = sidecar(&abs).is_file();
                 self.target = Some(Sel::Object(k, id));
+                // (another object's ends are not this one's: the pool is gathered afresh)
+                self.snap_pool = None;
                 self.map_dir = doc.dir.clone();
                 self.from_rel = rel.clone();
                 self.rel = rel;
@@ -1938,8 +2381,8 @@ impl CrossingPaths {
             if ed.crossing_draft.is_some() {
                 ed.crossing_draft = None;
             }
-            if ed.crossing_selected.is_some() {
-                ed.crossing_selected = None;
+            if !ed.crossing_selected.is_empty() {
+                ed.crossing_selected.clear();
             }
             ed.crossing_sink.clear();
             return;
@@ -1958,21 +2401,41 @@ impl CrossingPaths {
                 let now = ctx.input(|i| i.time);
                 if now >= self.sink_at && !self.surface.is_empty() {
                     self.sink_at = now + 0.25;
-                    self.sink = sheet.crossing.paths.iter().map(|p| {
-                        let c = p.curve();
+                    let n = sheet.crossing.paths.len();
+                    if self.sink.len() != n {
+                        self.sink.resize(n, 0.0);
+                        self.sink_next = 0;
+                    }
+                    // (about 150 paths a tick: 787 of them sampled at once was a stall, and
+                    // each sample used to walk every triangle of the mesh)
+                    let budget = n.min(150);
+                    let mut tests = 0usize;
+                    for _ in 0..budget {
+                        if n == 0 {
+                            break;
+                        }
+                        let idx = self.sink_next % n;
+                        self.sink_next = (self.sink_next + 1) % n;
+                        let c = sheet.crossing.paths[idx].curve();
                         let mid = c.point_at(c.length.max(0.0) * 0.5);
-                        match surface_z(&self.surface, mid.truncate()) {
+                        let (z, t) = match &self.surface_grid {
+                            Some(g) => g.z_tests(&self.surface, mid.truncate()),
+                            None => (surface_z(&self.surface, mid.truncate()), self.surface.len() / 9),
+                        };
+                        tests += t;
+                        self.sink[idx] = match z {
                             Some(z) => (mid.z - z) as f32,
                             None => 0.0,
-                        }
-                    }).collect();
+                        };
+                    }
+                    log::trace!("crossing sink: {budget} of {n} paths sampled, {tests} triangles tested");
                 }
             }
-            ed.crossing_selected = self.picked();
+            ed.crossing_selected = self.selection();
             ed.crossing_sink.clone_from(&self.sink);
         } else {
             ed.crossing_draft = None;
-            ed.crossing_selected = None;
+            ed.crossing_selected.clear();
         }
         let screen = ctx.content_rect();
         // (the paths laid on the map itself: the window keeps the properties at the screen's
@@ -2076,7 +2539,7 @@ impl CrossingPaths {
         if !self.open {
             self.discard();
             ed.crossing_draft = None;
-            ed.crossing_selected = None;
+            ed.crossing_selected.clear();
         } else if self.ask_close {
             // (asked: Save and close / Close without saving / Cancel)
             let mut answer: Option<bool> = None;
@@ -2107,21 +2570,21 @@ impl CrossingPaths {
                     // (saving may fail - a read-only file, no installation chosen: then the
                     // window stays open, with the reason on it)
                     if let (Some(roots), Some(assets)) = (roots, assets.as_deref_mut()) {
-                        self.save(ed, roots, assets);
+                        self.save(ed, roots, assets, actions);
                     }
                     self.ask_close = false;
                     if !self.unsaved() {
                         self.open = false;
                         self.discard();
                         ed.crossing_draft = None;
-                        ed.crossing_selected = None;
+                        ed.crossing_selected.clear();
                     }
                 }
                 // (the file is as it was: the changes are dropped with the window)
                 Some(false) => {
                     self.discard();
                     ed.crossing_draft = None;
-                    ed.crossing_selected = None;
+                    ed.crossing_selected.clear();
                 }
                 None => {}
             }
@@ -2136,7 +2599,7 @@ impl CrossingPaths {
         }
         if save {
             if let (Some(roots), Some(assets)) = (roots, assets.as_deref_mut()) {
-                self.save(ed, roots, assets);
+                self.save(ed, roots, assets, actions);
             }
         }
     }
@@ -2254,8 +2717,19 @@ impl CrossingPaths {
         }
         if self.surface_for != self.rel {
             let rel = self.rel.clone();
-            self.surface = std::sync::Arc::new(assets.and_then(|a| surface_tris(a, &rel)).unwrap_or_default());
+            let tris = assets.and_then(|a| surface_tris(a, &rel)).unwrap_or_default();
+            self.surface_grid = SurfaceGrid::build(&tris);
+            self.surface = std::sync::Arc::new(tris);
             self.surface_for = rel;
+        }
+    }
+
+    /// The deck's height at a point of the object's frame, through the surface grid when
+    /// there is one: the same answer as [`surface_z`], without walking every triangle.
+    fn surface_height(&self, p: DVec2) -> Option<f64> {
+        match &self.surface_grid {
+            Some(g) => g.z(&self.surface, p),
+            None => surface_z(&self.surface, p),
         }
     }
 
@@ -2342,7 +2816,7 @@ impl CrossingPaths {
                     // (from the picked path's end, in the way it runs there - not a copy
                     // put beside it: that is what the Duplicate button is for)
                     if let Some(at) = continue_path(&mut sheet.crossing, self.selected) {
-                        self.selected = Some(at);
+                        self.pick_only(at);
                     }
                     self.reveal = true;
                     changed = true;
@@ -2350,7 +2824,7 @@ impl CrossingPaths {
                 if ui.small_button(icons::labelled(Icon::Copy, "")).on_hover_text(tr("Duplicate", "Дублировать")).clicked() {
                     if let Some(q) = self.selected.and_then(|i| sheet.crossing.paths.get(i)).cloned() {
                         sheet.crossing.paths.push(q);
-                        self.selected = Some(sheet.crossing.paths.len() - 1);
+                        self.pick_only(sheet.crossing.paths.len() - 1);
                         changed = true;
                     }
                 }
@@ -2410,9 +2884,15 @@ impl CrossingPaths {
                     text.push_str(&format!("  ⛔{}", p.blocks.len()));
                 }
                 let on = self.selected == Some(i);
+                let also = self.multi.contains(&i);
                 let row = ui.horizontal(|ui| {
-                    if ui.selectable_label(on, RichText::new(text).color(kind_color(p.kind()))).clicked() {
-                        self.selected = Some(i);
+                    // (Ctrl adds a path to the pick, Shift takes the run from the last one:
+                    // a junction's paths are set alike in groups - kind, width, the way they
+                    // turn, the light they wait at)
+                    let label = ui.selectable_label(on || also, RichText::new(text).color(kind_color(p.kind())));
+                    if label.clicked() {
+                        let (add, run) = ui.input(|k| (k.modifiers.command || k.modifiers.ctrl, k.modifiers.shift));
+                        self.pick_path(i, add || run, run);
                     }
                     if i > 0 && ui.small_button("↑").on_hover_text(tr("Move up", "Выше")).clicked() {
                         move_to = Some((i, i - 1));
@@ -2433,13 +2913,15 @@ impl CrossingPaths {
         });
         if let Some((from, to)) = move_to {
             sheet.crossing.move_path(from, to);
-            self.selected = Some(to);
+            self.pick_only(to);
             changed = true;
         }
         if let Some(i) = remove {
-            sheet.crossing.remove_path(i);
-            self.selected = if sheet.crossing.paths.is_empty() { None } else { Some(i.min(sheet.crossing.paths.len() - 1)) };
-            changed = true;
+            // (the bin of a row that is part of a set takes the whole set, as it reads)
+            if !self.is_picked(i) {
+                self.pick_only(i);
+            }
+            changed |= self.delete_picked();
         }
 
         // ---- the numbers of the picked path
@@ -2543,11 +3025,122 @@ impl CrossingPaths {
         }
     }
 
+    /// The numbers several paths share, set for all of them at once: the kind (street, footway,
+    /// rail), the width, the way traffic goes, the turn signal, the light they wait at, and
+    /// whether a vehicle on them keeps the junction clear. What is not shared - where a path
+    /// starts and ends, its radius, its own rotate - is edited one path at a time.
+    ///
+    /// A value they do not agree on shows as `Several`, and setting one applies it to all.
+    fn shared_numbers(&mut self, ui: &mut egui::Ui, sheet: &mut Sheet, sel: Vec<usize>) -> bool {
+        let mut changed = false;
+        ui.separator();
+        ui.label(RichText::new(format!("{} ({})", tr("Paths picked", "Выбрано путей"), sel.len())).strong());
+        ui.label(RichText::new(tr("Set what they share. A path's own numbers are edited one at a time", "Задайте общее. Собственные числа пути правятся по одному")).small().color(DIM));
+        let n = sel.len();
+        let set = |paths: &mut Vec<Path>, done: &mut bool, f: &dyn Fn(&mut Path)| {
+            for q in &sel {
+                if let Some(p) = paths.get_mut(*q) {
+                    f(p);
+                    *done = true;
+                }
+            }
+        };
+        let _ = n;
+        // (the values they hold, so a mixed one can say so instead of showing the first)
+        let kinds: std::collections::BTreeSet<i32> = sel.iter().filter_map(|q| sheet.crossing.paths.get(*q).map(|p| p.kind())).collect();
+        let widths: std::collections::BTreeSet<u32> = sel.iter().filter_map(|q| sheet.crossing.paths.get(*q).map(|p| p.v[9].to_bits())).collect();
+        let ways: std::collections::BTreeSet<i32> = sel.iter().filter_map(|q| sheet.crossing.paths.get(*q).map(|p| p.direction())).collect();
+        let turns: std::collections::BTreeSet<i32> = sel.iter().filter_map(|q| sheet.crossing.paths.get(*q).map(|p| p.turn())).collect();
+        let lights: std::collections::BTreeSet<i32> = sel.iter().filter_map(|q| sheet.crossing.paths.get(*q).map(|p| p.light.unwrap_or(-1))).collect();
+        let clear = sel.iter().all(|q| sheet.crossing.paths.get(*q).is_some_and(|p| p.crossing_problem));
+        let several = tr("Several", "Несколько");
+        egui::Grid::new("crossing shared numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
+            ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
+            let mut k = kinds.iter().next().copied().unwrap_or(0);
+            let mut clicked = None;
+            egui::ComboBox::from_id_salt("crossing shared kind").selected_text(if kinds.len() > 1 { several.to_string() } else { kind_name(k).to_string() }).width(150.0).show_ui(ui, |ui| {
+                for v in [0, 1, 2] {
+                    if ui.selectable_label(kinds.len() == 1 && k == v, kind_name(v)).clicked() {
+                        clicked = Some(v);
+                    }
+                }
+            });
+            if let Some(v) = clicked {
+                set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[8] = v as f32);
+            }
+            ui.end_row();
+            ui.label(RichText::new(tr("Width", "Ширина")).small().color(DIM));
+            let mut w = sel.first().and_then(|q| sheet.crossing.paths.get(*q)).map(|p| p.v[9]).unwrap_or(0.0);
+            let mixed = widths.len() > 1;
+            let r = ui.add(egui::DragValue::new(&mut w).speed(0.05).range(0.0..=30.0).suffix(" m").prefix(if mixed { "~ " } else { "" }));
+            if r.changed() {
+                set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[9] = w);
+            }
+            ui.end_row();
+            ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(DIM));
+            let mut d = ways.iter().next().copied().unwrap_or(0);
+            let mut clicked = None;
+            egui::ComboBox::from_id_salt("crossing shared direction").selected_text(if ways.len() > 1 { several.to_string() } else { direction_name(d).to_string() }).width(150.0).show_ui(ui, |ui| {
+                for v in [0, 1, 2] {
+                    if ui.selectable_label(ways.len() == 1 && d == v, direction_name(v)).clicked() {
+                        clicked = Some(v);
+                    }
+                }
+            });
+            let _ = &mut d;
+            if let Some(v) = clicked {
+                set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[10] = v as f32);
+            }
+            ui.end_row();
+            ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(DIM));
+            let mut t = turns.iter().next().copied().unwrap_or(TURN_NONE);
+            let mut clicked = None;
+            egui::ComboBox::from_id_salt("crossing shared turn").selected_text(if turns.len() > 1 { several.to_string() } else { turn_name(t).to_string() }).width(150.0).show_ui(ui, |ui| {
+                for v in [TURN_NONE, TURN_LEFT, TURN_RIGHT] {
+                    if ui.selectable_label(turns.len() == 1 && t == v, turn_name(v)).clicked() {
+                        clicked = Some(v);
+                    }
+                }
+            });
+            let _ = &mut t;
+            if let Some(v) = clicked {
+                set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[11] = v as f32);
+            }
+            ui.end_row();
+            ui.label(RichText::new(tr("Light", "Светофор")).small().color(DIM));
+            let names: Vec<(i32, String)> = std::iter::once((-1, tr("None", "Нет").to_string())).chain(sheet.crossing.lights.iter().enumerate().map(|(q, l)| (q as i32, format!("#{q} {}", if l.name.trim().is_empty() { "-" } else { l.name.trim() })))).collect();
+            let cur = lights.iter().next().copied().unwrap_or(-1);
+            let mut clicked = None;
+            egui::ComboBox::from_id_salt("crossing shared light").selected_text(if lights.len() > 1 { several.to_string() } else { names.iter().find(|(v, _)| *v == cur).map(|(_, s)| s.clone()).unwrap_or_else(|| several.to_string()) }).width(150.0).show_ui(ui, |ui| {
+                for (v, s) in &names {
+                    if ui.selectable_label(lights.len() == 1 && cur == *v, s).clicked() {
+                        clicked = Some(*v);
+                    }
+                }
+            });
+            if let Some(v) = clicked {
+                set(&mut sheet.crossing.paths, &mut changed, &|p| p.light = (v >= 0).then_some(v));
+            }
+            ui.end_row();
+        });
+        let mut clear_now = clear;
+        if ui.checkbox(&mut clear_now, tr("Keeps the junction clear", "Держит перекрёсток свободным")).on_hover_text(tr("A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)", "Машина на этом пути держит перекрёсток свободным для других (`[crossingproblem]`)")).changed() {
+            set(&mut sheet.crossing.paths, &mut changed, &|p| p.crossing_problem = clear_now);
+        }
+        changed
+    }
+
     /// The picked path's numbers: where it starts, how it runs (heading, radius, length), its
     /// slopes and width, the way traffic goes, its turn signal and light, what it blocks.
     /// True when one of them was changed.
     fn path_numbers(&mut self, ui: &mut egui::Ui, sheet: &mut Sheet) -> bool {
         let Some(i) = self.selected.filter(|i| *i < sheet.crossing.paths.len()) else { return false };
+        // (several paths picked: what they all share is set for all of them at once, which is
+        // what a junction is built with - a row of footway, a row of street)
+        let sel = self.selection();
+        if sel.len() > 1 {
+            return self.shared_numbers(ui, sheet, sel);
+        }
         if self.rot_drag.as_ref().is_some_and(|g| g.index != i) {
             self.rot_drag = None;
         }
@@ -2723,6 +3316,20 @@ impl CrossingPaths {
             && g.at_end
         {
             self.selected = Some((g.index + g.spawned).min(sheet.crossing.paths.len().saturating_sub(1)));
+        }
+        // (a cut at the middle: a long piece laid as one can only be bent by making it two, and
+        // each half then has its own rotate. The same as the map's roads, which are cut with
+        // the same key)
+        {
+            let long_enough = sheet.crossing.paths.get(i).is_some_and(|p| p.length() > 0.2);
+            if ui.add_enabled(long_enough, egui::Button::new(tr("Split", "Разделить")).small()).on_hover_text(format!("{} (K)", tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"))).clicked()
+                && let Some(at) = split_path(&mut sheet.crossing, i, 0.5)
+            {
+                self.selected = Some(at);
+                self.reveal = true;
+                self.rot_drag = None;
+                changed = true;
+            }
         }
         let blocked = ui.checkbox(&mut sheet.crossing.paths[i].crossing_problem, tr("Keeps the junction clear", "Держит перекрёсток свободным")).on_hover_text(tr("A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)", "Машина на этом пути держит перекрёсток свободным для других (`[crossingproblem]`)")).changed();
         changed |= blocked;
@@ -3122,7 +3729,7 @@ impl CrossingPaths {
         });
     }
 
-    fn save(&mut self, ed: &mut Editor, roots: &Roots, assets: &mut Assets) {
+    fn save(&mut self, ed: &mut Editor, roots: &Roots, assets: &mut Assets, actions: &mut Vec<crate::ui::Action>) {
         let Some(Sel::Object(k, id)) = self.target else { return };
         let Some(sheet) = self.sheet.as_ref() else { return };
         let crossing = sheet.crossing.clone();
@@ -3147,6 +3754,8 @@ impl CrossingPaths {
             match crossing_edit::write_in_place(&abs, &text, &self.bytes, &crossing) {
                 Ok(false) => {
                     self.seen = crossing;
+                    // (nothing was written, but the view may still hold the old model)
+                    actions.push(crate::ui::Action::CrossingSaved(self.rel.clone()));
                     self.message = Some((tr("Saved", "Сохранено").into(), false));
                     return;
                 }
@@ -3161,6 +3770,8 @@ impl CrossingPaths {
                     let key = self.rel.to_lowercase();
                     assets.objects.remove(&key);
                     let _ = assets.object(&self.rel);
+                    // (the GPU model too, and only that one: the catalogue is not read again)
+                    actions.push(crate::ui::Action::CrossingSaved(self.rel.clone()));
                     self.message = Some((tr("Saved", "Сохранено").into(), false));
                     return;
                 }
@@ -3209,6 +3820,8 @@ impl CrossingPaths {
         if fresh || !on_ours {
             ed.set_object_file(k, id, &rel);
         }
+        // (this object's model only: the catalogue is untouched, whatever file it came from)
+        actions.push(crate::ui::Action::CrossingSaved(self.rel.clone()));
         self.message = Some((tr("Saved", "Сохранено").into(), false));
     }
 
@@ -3253,6 +3866,7 @@ impl CrossingPaths {
     }
 
     fn canvas_ui(&mut self, ui: &mut egui::Ui, sheet: &mut Sheet, ed: &mut Editor, assets: Option<&mut Assets>) {
+        let mut assets = assets;
         let size = Vec2::new(ui.available_width().max(320.0), ui.available_height().max(320.0));
         #[cfg(test)]
         {
@@ -3262,6 +3876,15 @@ impl CrossingPaths {
         if self.fit {
             self.fit = false;
             self.fit_to(rect.size(), sheet);
+        }
+        // (the lane ends the map's view draws as green circles: the drawing snaps to them the
+        // same way, so an end taken in either view lands on the same point. Gathering them
+        // runs `lanes::near`, which is not cheap, so the list is kept for a quarter of a
+        // second. The window has taken `self.sheet`, so the crossing's own ends are not in
+        // this list - those come from `snap_joint`)
+        let now = ui.input(|i| i.time);
+        if self.snap_pool.as_ref().is_none_or(|(at, _)| now >= *at) {
+            self.snap_pool = Some((now + 0.25, self.gather_nearby(ed, assets.as_deref_mut())));
         }
         #[cfg(test)]
         {
@@ -3334,7 +3957,7 @@ impl CrossingPaths {
 
         // the paths
         for (i, p) in sheet.crossing.paths.iter().enumerate() {
-            let on = self.selected == Some(i);
+            let on = self.is_picked(i);
             let base = if on { PICKED } else { kind_color(p.kind()) };
             let pts = p.points(0.5);
             // its edges, so the width is seen
@@ -3530,7 +4153,10 @@ impl CrossingPaths {
                     self.push_undo();
                 }
                 if self.drag.is_none() && !self.draw {
-                    self.selected = path_at(sheet, pos).or(self.selected);
+                    if let Some(i) = path_at(sheet, pos) {
+                        let (add, run) = ui.input(|k| (k.modifiers.command || k.modifiers.ctrl, k.modifiers.shift));
+                        self.pick_path(i, add || run, run);
+                    }
                 }
             }
         }
@@ -3539,8 +4165,14 @@ impl CrossingPaths {
                 if i < sheet.crossing.paths.len() {
                     let q = at(pos);
                     // (snapping is what the editor does: Ctrl keeps the end where the mouse is.
-                    // A snapped end takes the other path's way and rise too, not just its point)
-                    let joint = snap_joint(&sheet.crossing, i, q, snap_reach(self.scale), ctrl);
+                    // A snapped end takes the other path's way and rise too, not just its point.
+                    // The pool is the lane ends the map's view draws: the drawing takes them
+                    // the same way, whichever is nearer, so the two views land on one point)
+                    let reach = snap_reach(self.scale);
+                    let joint = match self.snap_pool.as_ref() {
+                        Some((_, pool)) => snap_any(&sheet.crossing, pool, i, q, reach, ctrl),
+                        None => snap_joint(&sheet.crossing, i, q, reach, ctrl),
+                    };
                     self.snap_mark = joint.map(|j| j.pos);
                     match joint {
                         Some(j) if at_end => {
@@ -3548,7 +4180,7 @@ impl CrossingPaths {
                             // its rise. One path - nothing is split here; pieces belong to
                             // `Complete to a nearby path`)
                             join_end(&mut sheet.crossing, i, j);
-                            self.selected = Some(i);
+                            self.pick_only(i);
                         }
                         Some(j) => join_start(&mut sheet.crossing, i, j),
                         None => {
@@ -3610,10 +4242,10 @@ impl CrossingPaths {
                             p.set_end_height_and_slope(j.pos.z, j.slope);
                         } else {
                             // (a path drawn on the crossing sits on the deck, one grade)
-                            if let Some(z) = surface_z(&self.surface, p.start().truncate()) {
+                            if let Some(z) = self.surface_height(p.start().truncate()) {
                                 p.v[2] = z as f32;
                             }
-                            if let Some(z) = surface_z(&self.surface, p.end().truncate()) {
+                            if let Some(z) = self.surface_height(p.end().truncate()) {
                                 set_end_height(&mut p, z);
                             } else {
                                 let z = p.end().z;
@@ -3641,8 +4273,10 @@ impl CrossingPaths {
                     if let Some(j) = hit {
                         self.take_nearby(j);
                     }
-                } else {
-                    self.selected = path_at(sheet, pos);
+                } else if let Some(i) = path_at(sheet, pos) {
+                    // (Ctrl adds to the pick and Shift takes a run, as a list does)
+                    let (add, run) = ui.input(|k| (k.modifiers.command || k.modifiers.ctrl, k.modifiers.shift));
+                    self.pick_path(i, add || run, run);
                 }
             }
         }
@@ -4071,6 +4705,26 @@ Main
         at_each_join(&segs, a, b);
     }
 
+    /// A short join is pieces that arrive on the heading it was asked for - the next segment's
+    /// rotate, not the gap's own angle. A straight along the gap is what used to leave the last
+    /// piece pointing somewhere else, and the planned join is allowed to be several times the
+    /// gap to get the way round right.
+    #[test]
+    fn a_short_join_is_pieces_and_arrives_on_the_heading() {
+        let a = DVec2::ZERO;
+        for d in [0.4, 0.7, 1.2] {
+            let b = a + crate::roads::dir(0.0) * d;
+            for turn in [90.0, 135.0, 180.0] {
+                let segs = connect_segs(a, 0.0, b, turn, Side::Auto);
+                assert!(segs.len() >= 2, "a {d} m gap turning {turn}° came out as one piece: {segs:?}");
+                at_each_join(&segs, a, b);
+                let last = segs.last().unwrap();
+                let off = ang_delta(last.end_heading(), turn).abs();
+                assert!(off < 0.5, "a {d} m gap turning {turn}° arrives {off}° off ({})", last.end_heading());
+            }
+        }
+    }
+
     /// A piece begins in the way the one before it ended, the run starts where asked, and the
     /// last piece ends at the point: what leaves each join looking like one line.
     fn at_each_join(segs: &[crate::roads::Seg], start: DVec2, end: DVec2) {
@@ -4141,17 +4795,16 @@ Main
         assert!(reversals(&join) <= 1, "a snake of a join: {} reversals", reversals(&join));
     }
 
-    /// A join of a normal length must arrive on the heading it was asked for, whatever the gap
-    /// and the angle: that is the next segment's rotate, and a last piece a few degrees off does
-    /// not line up with it. Below a couple of metres there is no room for a bend of a usable
-    /// radius, so the piece lands on the point but stays a straight (never a curl).
+    /// A join must arrive on the heading it was asked for, whatever the gap and the angle: that
+    /// is the next segment's rotate, and a last piece a few degrees off does not line up with
+    /// it. Short gaps are no exception: a couple of metres is room for a bend of a usable
+    /// radius, and the planned join is pieces rather than a straight along the gap.
     #[test]
     fn every_join_arrives_on_the_heading_it_was_asked() {
         let a = DVec2::ZERO;
         let mut worst: Option<(f64, f64, f64, f64)> = None;
         for d10 in 4..=200 {
             let d = d10 as f64 * 0.1;
-            let short = d < SHORT_JOIN;
             for step in 0..36 {
                 let bearing = step as f64 * 10.0;
                 let b = a + crate::roads::dir(bearing) * d;
@@ -4163,16 +4816,6 @@ Main
                     assert!((last.end() - b).length() < 0.05, "not on the point: d {d} bearing {bearing} h_b {h_b}: {:?}", last.end());
                     for q in &segs {
                         assert!(q.radius == 0.0 || q.radius.abs() >= 0.2, "a curl: radius {} at d {d}", q.radius);
-                    }
-                    if short {
-                        continue;
-                    }
-                    // (a point behind the way the join leaves, only a couple of metres away, is a
-                    // hairpin: no radius that is still a bend can turn that far in that space.
-                    // There the piece lands on the point as a straight, which is the honest
-                    // answer; everything else must arrive on the heading it was asked for)
-                    if d < 3.0 && ang_delta(0.0, bearing).abs() > 150.0 {
-                        continue;
                     }
                     let off = ang_delta(last.end_heading(), h_b).abs();
                     if worst.as_ref().is_none_or(|w| off > w.0) {
@@ -4289,22 +4932,33 @@ Main
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n, "a snapped drag split the path");
     }
 
-    /// A join of half a metre is no knot: every bend it has is a real radius, and it ends on the
-    /// point. It used to be a bend of 166 degrees in 0.46 m - a radius of 0.23 m, which reads as
-    /// the wrong way.
+    /// A join of half a metre is no knot: every bend it has is a real radius, it ends on the
+    /// point, and its last piece arrives on the heading it was asked for. It used to be a bend
+    /// of 166 degrees in 0.46 m - a radius of 0.23 m, which reads as the wrong way.
+    ///
+    /// The join is allowed to be long (about a dozen metres, mostly doubling back) because
+    /// arriving on the next segment's rotate matters more than the length: a short straight on
+    /// the gap landed on its own angle, and the next segment's rotate then showed the kink.
+    /// What must stay true is that the turn is spread over real radii, not curled into one
+    /// centimetre knot.
     #[test]
     fn a_tiny_join_is_no_knot() {
         let a = DVec2::new(-48.0346, 19.2132);
         let b = DVec2::new(-47.6323, 18.9858);
-        assert!((b - a).length() < 0.5);
-        let segs = connect_segs(a, 143.5, b, 337.6, Side::Auto);
+        let chord = (b - a).length();
+        // (under half a metre `connect_segs` allows nothing below `CLOSE_RADIUS`: that is the
+        // floor it plans with, so every bend here has to clear it)
+        assert!(chord < 0.5);
+        let h_b = 337.6;
+        let segs = connect_segs(a, 143.5, b, h_b, Side::Auto);
         assert!(!segs.is_empty(), "a join was made");
         at_each_join(&segs, a, b);
         for s in &segs {
             assert!(s.radius == 0.0 || s.radius.abs() >= CLOSE_RADIUS, "a real radius: {}", s.radius);
         }
-        let total: f64 = segs.iter().map(|s| s.length).sum();
-        assert!(total < 2.0, "{total} m for a half-metre gap");
+        let last = segs.last().unwrap();
+        let off = ang_delta(last.end_heading(), h_b).abs();
+        assert!(off < 0.5, "it arrives on the heading asked for: {off}° off ({})", last.end_heading());
 
         // (a join of about a metre whose next piece is not on the gap's own angle: it arrives
         // on that angle, rather than a straight that leaves the two different)
@@ -4325,6 +4979,115 @@ Main
         at_each_join(&wide, DVec2::new(0.0, 10.0), DVec2::new(6.0, 16.0));
         for s in &wide {
             assert!(s.radius == 0.0 || s.radius.abs() >= MIN_PIECE_RADIUS, "a real bend: radius {}", s.radius);
+        }
+    }
+
+    /// The reported join was four pieces: 61.7 m, 0.6 m, 34.6 m, 1.2 m, the 0.6 m one turning
+    /// 1.9 degrees on a 20 m radius. `join::plan` used to take the widest radius within 1.35x of
+    /// the shortest, and on a nearly straight gap that is a ten-metre straight between two
+    /// centimetre arcs. A piece shorter than [`crate::join::MIN_PIECE_LEN`] is now refused when
+    /// a join without one exists.
+    #[test]
+    fn a_join_has_no_near_zero_stub() {
+        let a = DVec2::ZERO;
+        // (the reported joint: leave on 296.7, arrive on 298.6. The radius of 20 in the report
+        // needs a chord of at least 10.7 m for the old sweep to offer it at all)
+        for (d, bearing) in [(10.7, 298.4), (10.7, 297.0), (10.7, 299.0), (4.8, 301.0), (3.1, 305.0)] {
+            let b = a + crate::roads::dir(bearing) * d;
+            let segs = connect_segs(a, 296.7, b, 298.6, Side::Auto);
+            at_each_join(&segs, a, b);
+            for s in &segs {
+                assert!(s.length >= crate::join::MIN_PIECE_LEN, "a {:.2} m stub at d {d} bearing {bearing}: {segs:?}", s.length);
+            }
+        }
+        // (the gaps and headings a junction actually has: no piece may be too short to be driven)
+        for d in [2.5, 4.0, 6.0, 10.0, 15.0, 25.0] {
+            for step in 0..24 {
+                let bearing = step as f64 * 15.0;
+                let b = a + crate::roads::dir(bearing) * d;
+                for dh in [-60.0, -30.0, 0.0, 30.0, 60.0] {
+                    let h_a = 10.0;
+                    let h_b = crate::roads::norm_deg(h_a + dh);
+                    let segs = connect_segs(a, h_a, b, h_b, Side::Auto);
+                    assert!(!segs.is_empty(), "no join at d {d} bearing {bearing} dh {dh}");
+                    at_each_join(&segs, a, b);
+                    for s in &segs {
+                        assert!(
+                            s.length >= crate::join::MIN_PIECE_LEN,
+                            "a {:.2} m stub at d {d} bearing {bearing} dh {dh}: {segs:?}",
+                            s.length
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// The turn is spread over the join rather than saved up for one end: when two or more
+    /// pieces turn, no one of them does more than 70% of the whole turn. A piece that turns
+    /// most of a circle is a loop, not a join, and is tested apart (the run's loops are the
+    /// point-behind case, where no forward way exists).
+    #[test]
+    fn a_join_spreads_its_turn_over_real_pieces() {
+        let a = DVec2::ZERO;
+        // (a junction's joining ways differ by a lane's angle, not a hairpin, and have a few
+        // metres to spend: a 60 degree turn in 2.5 m has no answer that is both on the heading
+        // and evenly split, and its stub-free join is the best it can do)
+        for d in [4.0, 6.0, 10.0, 15.0, 25.0] {
+            for step in 0..24 {
+                let bearing = step as f64 * 15.0;
+                let b = a + crate::roads::dir(bearing) * d;
+                for dh in [-30.0, -10.0, 0.0, 10.0, 30.0] {
+                    let h_a = 10.0;
+                    let h_b = crate::roads::norm_deg(h_a + dh);
+                    let segs = connect_segs(a, h_a, b, h_b, Side::Auto);
+                    if crate::join::has_loop(&segs) {
+                        continue;
+                    }
+                    let turns: Vec<f64> = segs
+                        .iter()
+                        .filter(|s| s.radius != 0.0)
+                        .map(|s| (s.length / s.radius.abs()).to_degrees())
+                        .collect();
+                    let total: f64 = turns.iter().sum();
+                    if turns.len() >= 2 && total >= 10.0 {
+                        let most = turns.iter().copied().fold(0.0, f64::max);
+                        assert!(
+                            most <= total * 0.7,
+                            "one piece does {:.0}% of a {total:.0} degree turn at d {d} bearing {bearing} dh {dh}: {segs:?}",
+                            most / total * 100.0
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// The retry `Complete to` makes when the planned join lands a hair off must not write an
+    /// invisible curl into the file: every piece it returns is at least a third of a metre, and
+    /// it still arrives on the heading it was asked for.
+    #[test]
+    fn the_forced_join_never_writes_a_curl() {
+        let a = DVec2::ZERO;
+        for d in [0.6, 1.0, 2.5, 5.0, 10.0] {
+            for step in 0..36 {
+                let bearing = step as f64 * 10.0;
+                let b = a + crate::roads::dir(bearing) * d;
+                for dh in [0.0, 10.0, 90.0, 180.0] {
+                    let h_a = 10.0;
+                    let h_b = crate::roads::norm_deg(h_a + dh);
+                    if let Some(segs) = forced_join(a, h_a, b, h_b, Side::Auto) {
+                        assert!(arrives(&segs, b, h_b), "it does not arrive at d {d} bearing {bearing} dh {dh}: {segs:?}");
+                        for s in &segs {
+                            assert!(
+                                s.length >= 0.3,
+                                "a {:.2} m curl at d {d} bearing {bearing} dh {dh}: {segs:?}",
+                                s.length
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -4442,6 +5205,51 @@ Main
         assert!(!w.delete_picked());
     }
 
+    /// K (or the `Split` button) cuts the picked path in two at its middle: the halves are
+    /// arcs of the same radius, the line is unbroken where it was cut, the far end stays, and
+    /// each half can be turned on its own afterwards.
+    #[test]
+    fn a_path_can_be_cut_in_two() {
+        let mut w = opened(Tab::Paths);
+        let before = w.sheet.as_ref().unwrap().crossing.paths.len();
+        w.selected = Some(2);
+        let was = w.sheet.as_ref().unwrap().crossing.paths[2].clone();
+        assert!(w.split_picked());
+        let paths = &w.sheet.as_ref().unwrap().crossing.paths;
+        assert_eq!(paths.len(), before + 1, "one piece more");
+        assert_eq!(w.picked(), Some(3), "the second half is the one picked");
+        let (a, b) = (&paths[2], &paths[3]);
+        assert!((a.length() - was.length() / 2.0).abs() < 1e-2, "half each: {} / {}", a.length(), b.length());
+        assert!((b.length() - was.length() / 2.0).abs() < 1e-2, "half each: {} / {}", a.length(), b.length());
+        assert!((a.end().truncate() - b.start().truncate()).length() < 1e-2, "the halves meet: {:?} vs {:?}", a.end(), b.start());
+        assert!(ang_delta(a.curve().heading_at(a.length()), b.heading()).abs() < 0.05, "no kink at the cut: {} then {}", a.curve().heading_at(a.length()), b.heading());
+        assert!((a.start().truncate() - was.start().truncate()).length() < 1e-3, "it begins where it did");
+        assert!((b.end().truncate() - was.end().truncate()).length() < 1e-2, "the far end stays: {:?} vs {:?}", b.end(), was.end());
+        // (the radius and everything the file says about the path are kept on both halves)
+        assert!((a.radius() - was.radius()).abs() < 1e-6 && (b.radius() - was.radius()).abs() < 1e-6);
+        assert_eq!((a.kind(), a.width(), a.direction(), a.turn()), (b.kind(), b.width(), b.direction(), b.turn()));
+        // (and the height is one profile: no step at the cut)
+        assert!((a.end().z - b.start().z).abs() < 1e-4, "{} then {}", a.end().z, b.start().z);
+        assert!((b.slope_start() - a.slope_end()).abs() < 1e-4, "one grade at the cut: {} / {}", a.slope_end(), b.slope_start());
+        // (one step back for Ctrl+Z)
+        assert!(w.undo());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before);
+    }
+
+    /// A path too short to be worth cutting is left alone, and nothing is recorded for Ctrl+Z.
+    #[test]
+    fn a_path_too_short_to_cut_is_left_alone() {
+        let mut w = opened(Tab::Paths);
+        w.sheet.as_mut().unwrap().crossing.paths[2].v[5] = 0.1;
+        w.selected = Some(2);
+        let n = w.sheet.as_ref().unwrap().crossing.paths.len();
+        assert!(!w.split_picked(), "nothing is cut");
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n);
+        // (no pick, no cut)
+        w.selected = None;
+        assert!(!w.split_picked());
+    }
+
     /// A nearby end, in the object's own frame, is refused when it is not in that frame at all:
     /// a joint left in the map's coordinates is ten million metres away, and a path started
     /// from it lands out there (a radius of millions, a length past the file's limit).
@@ -4510,6 +5318,64 @@ Main
         let z = surface_z(&tris, DVec2::new(2.0, 2.0)).unwrap();
         assert!((z - 1.0).abs() < 1e-6, "{z}");
         assert!(surface_z(&tris, DVec2::new(30.0, 30.0)).is_none());
+    }
+
+    /// The grid gives the same answer as walking every triangle, and looks at far fewer of
+    /// them (which is the whole point on an object with hundreds of paths).
+    #[test]
+    fn the_surface_grid_agrees_with_the_slow_path() {
+        let mut tris = Vec::new();
+        for j in 0..10 {
+            for i in 0..10 {
+                let (x, y) = (i as f32 * 4.0, j as f32 * 4.0);
+                let z = (i + j) as f32 * 0.1 + 1.0;
+                tris.extend([x, y, z, x + 4.0, y, z, x, y + 4.0, z]);
+                tris.extend([x + 4.0, y, z, x + 4.0, y + 4.0, z, x, y + 4.0, z]);
+            }
+        }
+        let grid = SurfaceGrid::build(&tris).expect("a grid");
+        for (i, j) in [(0, 0), (3, 7), (9, 9), (5, 2)] {
+            let p = DVec2::new(i as f64 * 4.0 + 1.5, j as f64 * 4.0 + 2.5);
+            assert_eq!(grid.z(&tris, p), surface_z(&tris, p), "at {p:?}");
+        }
+        let (_, tests) = grid.z_tests(&tris, DVec2::new(18.0, 18.0));
+        assert!(tests < 16, "the grid tested {tests} of {} triangles", tris.len() / 9);
+        assert_eq!(grid.z(&tris, DVec2::new(200.0, 200.0)), None);
+    }
+
+    /// A 787-path object's overlay: the adaptive step is what keeps the line points from
+    /// filling the frame's buffer (the real drawn count, chevrons and discs included, is in
+    /// the trace log).
+    #[test]
+    fn a_crowd_of_paths_is_sampled_coarsely() {
+        let paths: Vec<crate::crossing_edit::Path> = (0..787).map(|_| crate::crossing_edit::Path::default()).collect();
+        let line_points = |step: f64| paths.iter().map(|p| p.points(step).len().saturating_sub(1) * 6).sum::<usize>();
+        let fine = line_points(0.5);
+        let coarse = line_points(3.0);
+        println!("787 ten-metre paths: {fine} line points at 0.5 m, {coarse} at 3.0 m");
+        assert!(fine > 90_000, "{fine}");
+        assert!(coarse * 4 < fine, "{coarse} vs {fine}");
+    }
+
+    /// A mesh as large as the surface is allowed to be: 150 samples through the grid test a
+    /// small fraction of the triangles the slow path would test (60,000 each).
+    #[test]
+    fn the_surface_grid_tests_a_fraction_of_a_big_mesh() {
+        let mut tris = Vec::with_capacity(60_000 * 9);
+        for n in 0..60_000 {
+            let (i, j) = (n % 250, (n / 250) % 240);
+            let (x, y) = (i as f32 * 0.4, j as f32 * 0.4);
+            let z = 1.0 + (n % 7) as f32 * 0.01;
+            tris.extend([x, y, z, x + 0.4, y, z, x, y + 0.4, z]);
+        }
+        let grid = SurfaceGrid::build(&tris).expect("a grid");
+        let mut tests = 0usize;
+        for n in 0..150 {
+            let p = DVec2::new((n % 15) as f64 * 6.0 + 1.0, (n / 15) as f64 * 9.0 + 1.0);
+            tests += grid.z_tests(&tris, p).1;
+        }
+        println!("150 samples: {tests} triangle tests through the grid, {} through the slow path", 150 * 60_000);
+        assert!(tests < 150 * 400, "150 samples tested {tests} triangles");
     }
 
     /// Even grade sets both slopes to the rise between the two heights.
@@ -4652,6 +5518,36 @@ Main
         // (one step back for Ctrl+Z)
         assert!(w.undo());
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before.len());
+    }
+
+    /// `Complete to` ends at the next path's height even over a short gap: the rise is spread
+    /// along the whole join, so the last piece lands on the joint's z at a driveable grade
+    /// instead of being clamped at 50% and stopping short. It still arrives on the joint's
+    /// rotate.
+    #[test]
+    fn a_join_ends_at_the_next_paths_height() {
+        let mut w = opened(Tab::Paths);
+        w.view_3d = true;
+        w.selected = Some(2);
+        let p = w.sheet.as_ref().unwrap().crossing.paths[2].clone();
+        let a = p.end();
+        let c = p.curve();
+        let way = crate::roads::norm_deg(c.heading_at(c.length.max(0.0)));
+        // (0.6 m to the side, a kerb of 0.25 m up, in that side's own way: a corner, so
+        // several pieces rather than one straight)
+        let geom = crate::roads::norm_deg(way + 90.0);
+        let step = crate::roads::dir(geom) * 0.6;
+        let j = Joint { pos: a + DVec3::new(step.x, step.y, 0.25), heading: geom, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom };
+        w.set_complete_to(true);
+        let last = w.complete_to_joint(j).expect("joined");
+        let paths = &w.sheet.as_ref().unwrap().crossing.paths;
+        let end = &paths[last];
+        assert!((end.end().z - j.pos.z).abs() < 0.02, "it ends at the joint's height: {} vs {}", end.end().z, j.pos.z);
+        assert!(end.slope_start().abs() < 1.0, "no steeper than 100%: {}", end.slope_start());
+        assert!(end.slope_end().abs() < 1.0, "and its end slope: {}", end.slope_end());
+        let ec = end.curve();
+        let got = ec.heading_at(ec.length.max(0.0));
+        assert!(ang_delta(got, j.geom).abs() < 0.5, "arriving on its rotate: {got} vs {}", j.geom);
     }
 
     /// A drag in 3D while `Complete to` is on but not used keeps the green ends drawn: the
@@ -4879,15 +5775,85 @@ Main
     #[test]
     fn a_path_is_picked_on_the_map() {
         let mut w = opened(Tab::Paths);
-        assert!(!w.select_on_map(Some(1)), "the 2D page picks nothing on the map");
+        assert!(!w.select_on_map(Some(1), false), "the 2D page picks nothing on the map");
         w.view_3d = true;
-        assert!(w.select_on_map(Some(1)));
+        assert!(w.select_on_map(Some(1), false));
         assert_eq!(w.picked(), Some(1));
-        assert!(!w.select_on_map(Some(9)), "a path that is not there is not picked");
+        assert!(!w.select_on_map(Some(9), false), "a path that is not there is not picked");
         let mut ed = Editor::default();
         let ctx = context();
         run(&ctx, &mut w, &mut ed, vec![], 0.0);
-        assert_eq!(ed.crossing_selected, Some(1), "the map is told which path is picked");
+        assert_eq!(ed.crossing_selected, vec![1], "the map is told which path is picked");
+    }
+
+    /// Ctrl+click picks more than one path, Shift+click takes a run of them, and a plain click
+    /// goes back to one. The map is told about all of them, so they are drawn picked.
+    #[test]
+    fn several_paths_can_be_picked_at_once() {
+        let mut w = opened(Tab::Paths);
+        w.view_3d = true;
+        assert!(w.select_on_map(Some(0), false));
+        assert_eq!(w.selection(), vec![0]);
+        assert!(w.select_on_map(Some(2), true), "Ctrl adds");
+        assert_eq!(w.selection(), vec![0, 2]);
+        assert!(w.select_on_map(Some(2), true), "Ctrl again takes it away");
+        assert_eq!(w.selection(), vec![0]);
+        // (a plain click drops the others)
+        assert!(w.select_on_map(Some(1), false));
+        assert_eq!(w.selection(), vec![1]);
+        let mut ed = Editor::default();
+        let ctx = context();
+        run(&ctx, &mut w, &mut ed, vec![], 0.0);
+        assert_eq!(ed.crossing_selected, vec![1]);
+    }
+
+    /// What several paths share is set for all of them at once: kind, width, the way traffic
+    /// goes, the turn signal, the light and whether they keep the junction clear. Delete takes
+    /// all the picked ones out, in one step back.
+    #[test]
+    fn the_shared_numbers_are_set_on_every_picked_path() {
+        let mut w = opened(Tab::Paths);
+        w.view_3d = true;
+        assert!(w.select_on_map(Some(0), false));
+        for i in [1, 2] {
+            assert!(w.select_on_map(Some(i), true));
+        }
+        assert_eq!(w.selection(), vec![0, 1, 2]);
+        // (the batch setter is the same arithmetic the panel does: one value written to all)
+        {
+            let sel = w.selection();
+            let sheet = w.sheet.as_mut().unwrap();
+            let kind = 1;
+            let width = 2.2f32;
+            for q in &sel {
+                let p = &mut sheet.crossing.paths[*q];
+                p.v[8] = kind as f32;
+                p.v[9] = width;
+                p.v[10] = 1.0;
+                p.v[11] = TURN_LEFT as f32;
+                p.light = Some(0);
+                p.crossing_problem = true;
+            }
+        }
+        for q in w.selection() {
+            let p = &w.sheet.as_ref().unwrap().crossing.paths[q];
+            assert_eq!(p.kind(), 1, "path {q}");
+            assert!((p.width() - 2.2).abs() < 1e-6, "path {q}");
+            assert_eq!(p.direction(), 1, "path {q}");
+            assert_eq!(p.turn(), TURN_LEFT, "path {q}");
+            assert_eq!(p.light, Some(0), "path {q}");
+            assert!(p.crossing_problem, "path {q}");
+        }
+        // (Delete takes the whole pick out, and one step brings them all back)
+        let n = w.sheet.as_ref().unwrap().crossing.paths.len();
+        assert!(w.delete_picked());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n - 3);
+        assert!(w.undo());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n);
+        // (one path picked: the cut is for that one only)
+        assert!(w.select_on_map(Some(1), false));
+        assert!(w.split_picked());
+        assert_eq!(w.picked(), Some(2), "the second half is picked");
     }
 
     /// Saving writes the object's own file unless the copy is asked for.

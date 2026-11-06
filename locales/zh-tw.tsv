@@ -2761,3 +2761,6 @@ Complete to a nearby path	連接至附近路徑
 Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	將所選路徑延接至附近路徑的端點：所選路徑的端點、方向及斜度保持不變，以一或兩段連接。點選綠色圓圈即可
 Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	點選綠色圓圈：會從所選路徑端點向該點新增一或兩段，所選路徑保持不變
 The way a join turns	連接的轉向
+Paths picked	已選的路徑
+Set what they share. A path's own numbers are edited one at a time	設定它們共用的值；每條路徑自己的數值要逐條修改
+Several	多項

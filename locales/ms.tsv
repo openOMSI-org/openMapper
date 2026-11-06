@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Arah laluan ini tiba, dalam darjah. Titiknya kekal; selekoh yang tidak dapat dibuat dengan satu lengkok dibahagi kepada beberapa bahagian
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Laluan itu menuju arah bertentangan di hujung itu: menyambungnya akan menjadi pusingan U. Pilih hujung lain laluan itu, atau putar hujung ini di bawah
 The way a join turns	Arah selekoh sambungan
+Paths picked	Laluan dipilih
+Set what they share. A path's own numbers are edited one at a time	Tetapkan yang dikongsi. Nombor laluan itu sendiri diubah satu demi satu
+Several	Beberapa

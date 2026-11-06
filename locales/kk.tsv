@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Бұл жолдың келу бағыты, градуспен. Нүкте орнында қалады; бір доға жасай алмайтын бұрылыс бөліктерге бөлінеді
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Бұл жол осы шетінде қарсы бағытта жүреді: қосу бұрылыс болар еді. Сол жолдың екінші шетін таңдаңыз немесе осы шетті төменде бұрыңыз
 The way a join turns	Қосылым қай жаққа бұрылады
+Paths picked	Таңдалған жолдар
+Set what they share. A path's own numbers are edited one at a time	Ортақ мәнді орнатыңыз. Жолдың өз сандары бір-бірлеп өңделеді
+Several	Бірнеше

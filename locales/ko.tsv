@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	이 경로가 들어오는 방향(도). 점은 그대로 있고, 한 호로 만들 수 없는 굽이는 여러 조각으로 나뉩니다
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	그 경로는 그 끝에서 반대 방향으로 갑니다. 이으면 유턴이 됩니다. 그 경로의 다른 끝을 고르거나 아래에서 이 끝을 돌리세요
 The way a join turns	연결이 꺾이는 방향
+Paths picked	선택한 경로
+Set what they share. A path's own numbers are edited one at a time	공통 값을 설정하세요. 경로 자체의 숫자는 하나씩 편집합니다
+Several	여러 개

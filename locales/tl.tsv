@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Paano dumarating ang landas na ito, sa digri. Nananatili ang punto; ang liko na hindi kayang gawin ng isang arko ay hinahati sa mga piraso
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Ang landas na iyon ay papunta sa kabilang direksyon sa dulong iyon: ang pagkabit dito ay magiging U-turn. Piliin ang kabilang dulo ng landas na iyon, o iikot ang dulong ito sa ibaba
 The way a join turns	Kung saan lumiko ang dugtong
+Paths picked	Mga path na pinili
+Set what they share. A path's own numbers are edited one at a time	Itakda ang pinagsasaluhan. Ang sariling numero ng isang path ay iniisa-isa
+Several	Marami

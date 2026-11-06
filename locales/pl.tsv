@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Jak ta ścieżka dochodzi, w stopniach. Punkt zostaje; zakręt, którego jeden łuk nie zrobi, dzieli się na kawałki
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Ta ścieżka na tym końcu biegnie w przeciwną stronę: połączenie byłoby zawracaniem. Wybierz drugi koniec tej ścieżki albo obróć ten koniec poniżej
 The way a join turns	W którą stronę skręca połączenie
+Paths picked	Wybrane ścieżki
+Set what they share. A path's own numbers are edited one at a time	Ustaw to, co wspólne. Własne liczby ścieżki zmienia się po jednej
+Several	Kilka

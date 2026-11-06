@@ -2765,3 +2765,6 @@ How this path leaves, degrees. The point stays; a turn one arc cannot make is sp
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Hoe dit pad aankomt, in graden. Het punt blijft; een bocht die één boog niet kan maken wordt in stukken verdeeld
 That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Dat pad loopt bij dat uiteinde de andere kant op: aansluiten zou een U-bocht zijn. Kies het andere uiteinde van dat pad, of draai dit uiteinde hieronder
 The way a join turns	Waarheen de aansluiting buigt
+Paths picked	Gekozen paden
+Set what they share. A path's own numbers are edited one at a time	Stel in wat ze delen. De eigen getallen van een pad bewerk je een voor een
+Several	Meerdere
