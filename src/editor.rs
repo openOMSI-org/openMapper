@@ -851,14 +851,89 @@ impl Default for Editor {
 const ORANGE: [f32; 4] = [0.96, 0.50, 0.19, 1.0];
 const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 0.9];
 const GREEN: [f32; 4] = [0.35, 0.85, 0.45, 1.0];
-/// Links between objects (`[varparent]`).
-const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.9];
+/// Links between objects (`[varparent]`): thin and half transparent, since they say a
+/// relationship rather than draw anything.
+const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.45];
 /// The face of an object a spline's end would be laid on (surface snapping).
 const SURFACE: [f32; 4] = [0.98, 0.84, 0.25, 0.45];
 
 /// The ring on a face a road would lie on, at a quarter of its first size, and only in the roads tool.
 fn surface_ring(tool: Tool) -> Option<([f32; 4], f32, f32)> {
     (tool == Tool::Roads).then_some((SURFACE, 0.625, 0.3))
+}
+
+/// Where a record of the map stands, for the lines drawn between linked ones: an object, one
+/// hanging on another (at its parent's attachment point), or one laid along a road (at its first
+/// copy, since a row can place many). None when it is not on the map, or hangs on another - that
+/// one is drawn where its parent puts it, and a line to its own bare place would be wrong.
+fn record_point(doc: &Document, sel: Sel) -> Option<DVec3> {
+    match sel {
+        Sel::Object(k, id) => {
+            let o = doc.object(k, id)?;
+            if o.parent_id.is_some() {
+                return None;
+            }
+            Some(doc.object_world(k, o, false) + DVec3::Z * 0.5)
+        }
+        Sel::Attached(k, id) => crate::selection::attachment_first(doc, k, id).map(|ro| ro.pose.pos + DVec3::Z * 0.5),
+        Sel::Spline(..) => None,
+    }
+}
+
+/// A record of the map by its IDCode, whichever of the three kinds it is.
+fn record_by_id(doc: &Document, id: i64) -> Option<Sel> {
+    for (k, t) in &doc.tiles {
+        if t.tile.objects.iter().chain(&t.tile.attach_objects).any(|o| o.id == id) {
+            return Some(Sel::Object(*k, id));
+        }
+        if t.tile.spline_attachments.iter().any(|a| a.id == id) {
+            return Some(Sel::Attached(*k, id));
+        }
+    }
+    None
+}
+
+/// What a record takes its state from (`[varparent]`) and what takes it from this one, with
+/// `true` for the one it takes from. Any of the three kinds can be either end: a signal head on
+/// a pole laid along a road takes its light from that row.
+fn record_links(doc: &Document, sel: Sel) -> Vec<(Sel, bool)> {
+    let me = match sel {
+        Sel::Object(k, id) | Sel::Attached(k, id) => crate::selection::state_holder(doc, k, id),
+        Sel::Spline(..) => None,
+    };
+    let Some((_, parent, _)) = me else { return Vec::new() };
+    let id = match sel {
+        Sel::Object(_, i) | Sel::Attached(_, i) => i,
+        Sel::Spline(..) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    if let Some(p) = parent.and_then(|p| record_by_id(doc, p)) {
+        out.push((p, true));
+    }
+    // (`[varparent]` of a record laid along a road is its row's, not one of the objects')
+    for (k, t) in &doc.tiles {
+        for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
+            if o.var_parent == Some(id) {
+                out.push((Sel::Object(*k, o.id), false));
+            }
+        }
+        for a in &t.tile.spline_attachments {
+            if a.var_parent == Some(id) {
+                out.push((Sel::Attached(*k, a.id), false));
+            }
+        }
+    }
+    out
+}
+
+/// How big a dot marks a linked record: as big as the record is, not as wide as the view.
+fn record_radius(doc: &Document, assets: &mut Assets, sel: Sel) -> f64 {
+    let file = match sel {
+        Sel::Object(k, id) => doc.object(k, id).map(|o| o.file.clone()),
+        Sel::Attached(k, id) => doc.attachment(k, id).map(|a| a.file.clone()),
+        Sel::Spline(..) => None,
+    };
+    file.and_then(|f| assets.object(&f)).map(|m| m.radius() as f64 * 0.2).unwrap_or(0.5)
 }
 /// How far beside a road's own edge the cursor still takes hold of it (m): where a kerb, a
 /// pavement or another line is laid along the road.
@@ -9103,19 +9178,21 @@ impl Editor {
         }).fold(0.0, f64::max) };
         self.gizmo_cap.set(if sels.len() == 1 { size.max(2.0) } else { f64::INFINITY });
         // (what is selected glows in the scene itself: no outline or ball is drawn over it)
-        // what one object takes its state from (cyan) and what takes it from it
-        if let (Some(Sel::Object(k, id)), 1) = (self.selected, sels.len()) {
-            let at = |k: TileKey, o: &MapObject| (o.parent_id.is_none()).then(|| doc.object_world(k, o, false) + DVec3::Z * 0.5);
-            if let Some(me) = doc.object(k, id).and_then(|o| at(k, o)) {
-                let parent = doc.object(k, id).and_then(|o| o.var_parent).and_then(|p| selection::object_by_id(doc, p));
-                let others = parent.into_iter().map(|p| (p, true)).chain(selection::var_children(doc, id).into_iter().map(|c| (c, false)));
-                for ((pk, o), up) in others {
-                    let Some(there) = at(pk, o) else { continue };
-                    // (thin, and a dot as big as the linked thing, not as the view is wide)
-                    let r = assets.object(&o.file).map(|m| m.radius() as f64 * 0.2).unwrap_or(0.5).clamp(0.15, 1.5) as f32;
-                    line(&mut x.overlay, cam, me, there, (w * 0.3).min(r), LINK);
-                    disc(&mut x.overlay, cam, there, r * if up { 1.4 } else { 1.0 }, LINK);
-                }
+        // what one record takes its state from (cyan) and what takes it from it. A record is any
+        // of the three the map has - an object, one hanging on another, or one laid along a
+        // road - and a link is drawn whichever of them the selected thing is and whichever the
+        // other end is: a signal head on a pole placed along a road took its light from the
+        // pole, and no line was drawn because the pole is a `[splineAttachement]`.
+        if let (Some(sel), 1) = (self.selected, sels.len())
+            && let Some(me) = record_point(doc, sel)
+        {
+            let others = record_links(doc, sel);
+            for (other, up) in others {
+                let Some(there) = record_point(doc, other) else { continue };
+                let r = record_radius(doc, assets, other).clamp(0.15, 1.5) as f32;
+                let (dash, gap) = ((w as f64 * 1.2).max(0.25), (w as f64 * 0.8).max(0.18));
+                dashed_line(&mut x.overlay, cam, me, there, 0.03, dash, gap, LINK);
+                disc(&mut x.overlay, cam, there, r * if up { 1.4 } else { 1.0 }, LINK);
             }
         }
         if self.acts_as() == Tool::Select {
@@ -10006,6 +10083,34 @@ pub fn line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, 
     out.extend([v(a - side), v(a + side), v(b + side), v(a - side), v(b + side), v(b - side)]);
 }
 
+/// A dashed line: `dash` metres of line, `gap` of nothing, `width` across. It says "a
+/// relationship, not a thing" - what one record takes its state from, where a solid bar would
+/// read as a strip of road lying there.
+pub fn dashed_line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, b: DVec3, width: f32, dash: f64, gap: f64, color: [f32; 4]) {
+    let d = b - a;
+    let len = d.length();
+    if len < 1e-6 {
+        return;
+    }
+    let dir = d / len;
+    let mut on = dash.max(1e-3);
+    let mut off = gap.max(0.0);
+    // (a link across a whole town would be thousands of dashes: a longer one serves as well)
+    const MOST: f64 = 1200.0;
+    let period = on + off;
+    if period > 1e-6 && len / period > MOST {
+        let scale = len / (MOST * period);
+        on *= scale;
+        off *= scale;
+    }
+    let mut s = 0.0;
+    while s < len {
+        let e = (s + on).min(len);
+        line(out, cam, a + dir * s, a + dir * e, width, color);
+        s += on + off;
+    }
+}
+
 /// Chevrons along a line at `pts` (world, already lifted), saying which way it goes: `along`
 /// the points' order and/or `against` it. They are `step` metres apart and `size` metres
 /// across, drawn in `color` at `width`. One is always drawn, so a line shorter than the step
@@ -10209,6 +10314,85 @@ mod tests {
         let mut out = Vec::new();
         assert_eq!(chevrons(&mut out, &cam, &short, 0.05, 0.5, 20.0, true, false, [1.0; 4]), 1);
         assert!(!out.is_empty());
+    }
+
+    /// The line between a record and what it takes its state from is dashed, thin, and cannot
+    /// turn a link across a town into a thousand ribbons.
+    #[test]
+    fn a_link_between_two_records_is_dashed() {
+        let cam = crate::camera::Camera::default();
+        let a = DVec3::ZERO;
+        let b = DVec3::new(0.0, 10.0, 0.0);
+        let mut out = Vec::new();
+        dashed_line(&mut out, &cam, a, b, 0.05, 1.0, 0.5, [1.0; 4]);
+        // (six points per ribbon, and a ten-metre line at a 1.5 m period is seven dashes)
+        let n = out.len() / 6;
+        assert_eq!(n, 7, "{n} dashes over ten metres");
+        assert_eq!(out.len() % 6, 0);
+        // (every dash starts where the one before ended plus the gap: none runs together)
+        let mut starts: Vec<f64> = out.chunks(6).map(|c| c[0].pos.y).collect();
+        starts.sort_by(f64::total_cmp);
+        for w in starts.windows(2) {
+            let step = w[1] - w[0];
+            assert!((step - 1.5).abs() < 1e-6, "dashes {step} m apart, with a 1.5 m period");
+        }
+        // (a line across thirty kilometres is still a few hundred dashes, not millions)
+        let mut far = Vec::new();
+        dashed_line(&mut far, &cam, DVec3::ZERO, DVec3::new(0.0, 30_000.0, 0.0), 0.05, 1.0, 0.5, [1.0; 4]);
+        assert!(far.len() / 6 <= 1201, "{} dashes", far.len() / 6);
+        assert!(!far.is_empty());
+        // (nothing of a line with no length)
+        let mut none = Vec::new();
+        dashed_line(&mut none, &cam, a, a, 0.05, 1.0, 0.5, [1.0; 4]);
+        assert!(none.is_empty());
+    }
+
+    /// A record laid along a road (`[splineAttachement]`) is a record like any other: a signal
+    /// head on such a pole takes its state from it, and the line between them is drawn - where
+    /// the row's first copy stands, not where a bare object would.
+    #[test]
+    fn a_link_reaches_a_record_laid_along_a_road() {
+        let mut doc = flat_map(2);
+        // (a road 30 m long: `add_spline` takes x, y, heading, length, prev, next)
+        add_spline(&mut doc, (0, 0), 1, 0.0, 0.0, 0.0, 30.0, 0, 0);
+        // (a pole laid along the road, three metres in)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.push(omsi_map::SplineAttachment {
+            file: "Sceneryobjects\\pole.sco".into(),
+            id: 40,
+            spline_index: 0,
+            offset: [0.0, 0.0, 3.0],
+            interval: 0.0,
+            range: 0.0,
+            ..Default::default()
+        });
+        // (a signal head taking its light from the pole)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(MapObject {
+            file: "Sceneryobjects\\head.sco".into(),
+            id: 41,
+            pos: [1.0, 4.0, 0.0],
+            var_parent: Some(40),
+            ..Default::default()
+        });
+        let pole = Sel::Attached((0, 0), 40);
+        let head = Sel::Object((0, 0), 41);
+        // (both ends are found, so the line has two points to join)
+        assert!(record_point(&doc, pole).is_some(), "the row's first copy stands where it is drawn");
+        assert!(record_point(&doc, head).is_some());
+        // (the head names the pole, and the pole does not, so one line each way)
+        let up = record_links(&doc, head);
+        assert_eq!(up.len(), 1);
+        assert_eq!(up[0].0, pole, "from the head to the pole");
+        assert!(up[0].1, "the pole is what the head takes from");
+        let down = record_links(&doc, pole);
+        assert_eq!(down.len(), 1);
+        assert_eq!(down[0].0, head);
+        assert!(!down[0].1, "the head is what takes from the pole");
+        // (a record id is found whichever of the three kinds it is)
+        assert_eq!(record_by_id(&doc, 40), Some(pole));
+        assert_eq!(record_by_id(&doc, 41), Some(head));
+        // (a row with no copy on the map - its road is gone - has no place, so no line)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments[0].spline_index = 9;
+        assert!(record_point(&doc, pole).is_none());
     }
 
     #[test]

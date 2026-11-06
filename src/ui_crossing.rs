@@ -782,9 +782,13 @@ fn split_path(crossing: &mut Crossing, i: usize, at: f64) -> Option<usize> {
 /// rule (`openOMSI-main/crates/omsi-sim/src/traffic/extend.rs`, `LINK_TOLERANCE`, `dh < 40`
 /// and `(s.z - e.z).abs() < 3.0`). It joins lanes by geometry and **never reads
 /// `[splinehelper]`**, so a crossing's paths have to meet the roads by these numbers before
-/// openOMSI will drive traffic from one into the other.
+/// openOMSI will drive traffic from one into the other. The link check is made against them
+/// (see the tests below, which apply the rule itself).
+#[allow(dead_code)]
 const LINK_TOLERANCE: f64 = 1.5;
+#[allow(dead_code)]
 const LINK_RISE: f64 = 3.0;
+#[allow(dead_code)]
 const LINK_ANGLE: f64 = 40.0;
 
 /// How far (m) a crossing end may be from a road end and be put onto it, and how far it may be
@@ -3401,7 +3405,7 @@ impl CrossingPaths {
         let several = tr("Several", "Несколько");
         egui::Grid::new("crossing shared numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
             ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
-            let mut k = kinds.iter().next().copied().unwrap_or(0);
+            let k = kinds.iter().next().copied().unwrap_or(0);
             let mut clicked = None;
             egui::ComboBox::from_id_salt("crossing shared kind").selected_text(if kinds.len() > 1 { several.to_string() } else { kind_name(k).to_string() }).width(150.0).show_ui(ui, |ui| {
                 for v in [0, 1, 2] {
