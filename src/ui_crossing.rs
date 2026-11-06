@@ -526,6 +526,11 @@ fn insert_after(paths: &mut Vec<Path>, index: usize, mut extra: Vec<Path>) {
     }
 }
 
+/// A join further than this from the path it joins is not a join: no crossing is tens of
+/// kilometres across, so the joint must be in another frame (the map's, say). Refused rather
+/// than built, since a join made from it is a path of millions of metres.
+const FAR_JOIN: f64 = 10_000.0;
+
 /// Past this deflection of the chord (degrees), one arc to the point turns back on itself
 /// (`length / chord = θ / sin θ`) and the way is split into pieces instead.
 const MAX_DEFLECT: f64 = 70.0;
@@ -1218,7 +1223,7 @@ impl CrossingPaths {
         let s_b = j.slope;
         let delta = b.truncate() - a.truncate();
         let chord = delta.length();
-        if chord < 0.25 {
+        if chord < 0.25 || chord > FAR_JOIN {
             return None;
         }
         let phi = crate::roads::heading_of(delta);
@@ -1347,6 +1352,12 @@ impl CrossingPaths {
     /// always being one way.
     pub fn start_from_joint(&mut self, j: Joint) -> Option<usize> {
         if !self.wants_nearby() {
+            return None;
+        }
+        // (a joint in another frame - the map's rather than the object's - is not one to start
+        // from: no crossing is ten kilometres across)
+        if !j.pos.is_finite() || j.pos.truncate().length() > FAR_JOIN {
+            log::warn!("start from a joint {:.0} m from the object: left alone", j.pos.truncate().length());
             return None;
         }
         self.push_undo();
@@ -3816,6 +3827,32 @@ Main
         for s in &wide {
             assert!(s.radius == 0.0 || s.radius.abs() >= MIN_PIECE_RADIUS, "a real bend: radius {}", s.radius);
         }
+    }
+
+    /// A nearby end, in the object's own frame, is refused when it is not in that frame at all:
+    /// a joint left in the map's coordinates is ten million metres away, and a path started
+    /// from it lands out there (a radius of millions, a length past the file's limit).
+    #[test]
+    fn a_joint_from_another_frame_is_not_taken() {
+        let mut w = opened(Tab::Paths);
+        w.set_from_nearby(true);
+        let before = w.sheet.as_ref().unwrap().crossing.paths.len();
+        let far = Joint { pos: DVec3::new(-11_748_849.0, -23_623_152.5, 66.8), heading: 90.0, slope: 0.05, flow: 0 };
+        assert!(w.start_from_joint(far).is_none(), "a joint ten million metres out is not a join");
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before, "nothing was added");
+        assert!(w.wants_nearby(), "and the mode stays on, ready for a real one");
+
+        // (a nearby end in the object's frame is still taken)
+        let near = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0 };
+        assert!(w.start_from_joint(near).is_some());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1);
+        // (and a join across the map is refused too, rather than making a path of millions)
+        w.set_complete_to(true);
+        let p = w.sheet.as_ref().unwrap().crossing.paths[2].end();
+        let out = Joint { pos: p + DVec3::new(-2_000_000.0, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0 };
+        let n = w.sheet.as_ref().unwrap().crossing.paths.len();
+        assert!(w.complete_to_joint(out).is_none());
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n, "nothing was added");
     }
 
     /// The deck's height is the top of the mesh at that point.

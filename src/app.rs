@@ -164,6 +164,25 @@ pub struct App {
     unguarded: bool,
 }
 
+/// The object's own yaw in the world (degrees), as the matrix its frame is drawn with has it.
+fn object_yaw(m: &glam::Mat4) -> f64 {
+    let f = m.transform_vector3(DVec3::Y.as_vec3()).as_dvec3().truncate();
+    if f.length() < 1e-6 {
+        0.0
+    } else {
+        crate::roads::heading_of(f)
+    }
+}
+
+/// A joint gathered in the map's frame, written in the crossing object's: where it is, and the
+/// way it runs, turned by the object's own yaw. The paths of the file are kept in the object's
+/// frame, and a joint left in the map's is ten million metres from them - taken as it stands,
+/// it makes a join out there (a radius of millions, a length past the file's limit).
+fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4) -> crate::crossing_edit::Joint {
+    let local = m.inverse().transform_point3((j.pos - world).as_vec3()).as_dvec3();
+    crate::crossing_edit::Joint { pos: local, heading: crate::roads::norm_deg(j.heading - object_yaw(m)), slope: j.slope, flow: j.flow }
+}
+
 impl App {
     pub fn new(open: Option<PathBuf>) -> App {
         let prefs = Prefs::load();
@@ -2341,7 +2360,11 @@ impl App {
                 }
             }
             if let Some((_, j)) = pick {
-                self.crossing.take_nearby(j);
+                // (the green circles are gathered in the map's frame, the paths are written in
+                // the object's: a joint taken as it stands is millions of metres from the
+                // path, and the join made from it went there - a radius of millions and a
+                // length far past the file's limit)
+                self.crossing.take_nearby(joint_in_object(j, world, &m));
                 return true;
             }
         }
@@ -2399,13 +2422,9 @@ impl App {
         if (at - o).length() > 8_000.0 {
             return;
         };
+        // (the snap gives the joint already in the object's frame: the paths are written there)
         let joint = self.crossing_snap_end(at, world, m);
         let local = m.inverse().transform_point3((at - world).as_vec3()).as_dvec3();
-        // (put onto another end: the local frame is what the path is written in)
-        let joint = joint.map(|j| {
-            let local = m.inverse().transform_point3((j.pos - world).as_vec3()).as_dvec3();
-            crate::crossing_edit::Joint { pos: local, heading: j.heading, slope: j.slope, flow: j.flow }
-        });
         self.crossing.drag_map_end(local, joint);
     }
 
@@ -2437,7 +2456,9 @@ impl App {
             consider(self.view_point(w), j, &mut best);
         }
         for j in self.crossing_neighbour_joints() {
-            consider(self.view_point(j.pos), j, &mut best);
+            // (gathered in the map's frame, so it is judged on the map and handed on in the
+            // object's - one frame for every joint `best` holds)
+            consider(self.view_point(j.pos), joint_in_object(j, world, &m), &mut best);
         }
         best.map(|b| b.1)
     }
@@ -4137,6 +4158,26 @@ fn read_frame(gpu: &Gpu, tex: &wgpu::Texture) -> anyhow::Result<image::RgbaImage
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A green end gathered on the map is handed to the paths in the object's frame: where it
+    /// is and the way it runs both turned back. Taken as it stands (the map's frame), a joint
+    /// is millions of metres from the paths, and the join made from it lands out there.
+    #[test]
+    fn a_map_joint_is_written_in_the_objects_frame() {
+        let world = DVec3::new(1200.0, -3400.0, 5.0);
+        let yaw = 37.0f64;
+        let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
+        // (an end 10 m ahead of the object, running along its own way)
+        let local = DVec3::new(0.0, 10.0, 1.5);
+        let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
+        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1 };
+        let j = joint_in_object(map_joint, world, &m);
+        assert!((j.pos.truncate() - local.truncate()).length() < 1e-3, "it is written where the path has it: {:?} vs {local:?}", j.pos);
+        assert!(j.heading.abs() < 0.05 || (j.heading - 360.0).abs() < 0.05, "and the way it runs is the object's: {}", j.heading);
+        assert_eq!((j.slope, j.flow), (0.02, 1), "the rise and the traffic direction come through");
+        // (what a joint left in the map's frame would be: a join of millions of metres)
+        assert!(map_joint.pos.truncate().length() > 1000.0);
+    }
 
     #[test]
     fn map_picture_is_omsi_sized() {
