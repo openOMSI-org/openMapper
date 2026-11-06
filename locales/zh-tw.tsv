@@ -2764,3 +2764,10 @@ The way a join turns	連接的轉向
 Paths picked	已選的路徑
 Set what they share. A path's own numbers are edited one at a time	設定它們共用的值；每條路徑自己的數值要逐條修改
 Several	多項
+no end of the crossing is near it	附近沒有這一端的路徑端點
+the gap has no way through	這段空隙接不上
+a piece added	已加一段
+the other end would have moved	另一端會被移動
+Connect the roads	連接道路
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	把路口的端點對準道路行車道本身的端點。openOMSI 是按幾何連接行車道，不是靠 spline 輔助點
+Link check	連接檢查

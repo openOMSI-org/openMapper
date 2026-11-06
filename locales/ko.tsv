@@ -2768,3 +2768,10 @@ The way a join turns	연결이 꺾이는 방향
 Paths picked	선택한 경로
 Set what they share. A path's own numbers are edited one at a time	공통 값을 설정하세요. 경로 자체의 숫자는 하나씩 편집합니다
 Several	여러 개
+no end of the crossing is near it	교차점 끝이 근처에 없습니다
+the gap has no way through	이 틈은 이어지지 않습니다
+a piece added	구간 하나를 추가했습니다
+the other end would have moved	반대쪽 끝이 움직입니다
+Connect the roads	도로 연결
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	교차점의 끝을 도로 차선 끝에 맞춥니다. openOMSI는 스플라인 보조점이 아니라 형상으로 차선을 잇습니다
+Link check	연결 확인

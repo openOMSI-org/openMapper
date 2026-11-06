@@ -2766,3 +2766,10 @@ The way a join turns	Wohin die Verbindung abbiegt
 Paths picked	Gewählte Wege
 Set what they share. A path's own numbers are edited one at a time	Das Gemeinsame einstellen. Die eigenen Zahlen eines Weges werden einzeln bearbeitet
 Several	Mehrere
+no end of the crossing is near it	kein Ende der Kreuzung ist in der Nähe
+the gap has no way through	die Lücke ist nicht zu schließen
+a piece added	ein Stück ergänzt
+the other end would have moved	das andere Ende hätte sich verschoben
+Connect the roads	Straßen verbinden
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Die Enden der Kreuzung auf die Enden der Fahrstreifen ausrichten. openOMSI verbindet Fahrstreifen über die Geometrie, nicht über die Spline-Hilfspunkte
+Link check	Verbindungsprüfung

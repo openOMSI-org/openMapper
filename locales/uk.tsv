@@ -2766,3 +2766,10 @@ The way a join turns	Куди повертає з’єднання
 Paths picked	Вибрано шляхів
 Set what they share. A path's own numbers are edited one at a time	Задайте спільне. Власні числа шляху правляться по одному
 Several	Кілька
+no end of the crossing is near it	поруч немає кінця перехрестя
+the gap has no way through	цей проміжок нема чим заповнити
+a piece added	додано відрізок
+the other end would have moved	другий кінець зсунувся б
+Connect the roads	З'єднати з дорогами
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Сумістити кінці перехрестя з кінцями смуг доріг. openOMSI з'єднує смуги за геометрією, а не за точками прив'язки
+Link check	Перевірка з'єднань

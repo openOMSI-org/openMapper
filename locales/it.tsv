@@ -2768,3 +2768,10 @@ The way a join turns	Da che parte gira il raccordo
 Paths picked	Percorsi scelti
 Set what they share. A path's own numbers are edited one at a time	Imposta ciò che hanno in comune. I numeri propri di un percorso si modificano uno alla volta
 Several	Diversi
+no end of the crossing is near it	nessuna estremità dell'incrocio è vicina
+the gap has no way through	il varco non ha passaggio
+a piece added	aggiunto un tratto
+the other end would have moved	l'altra estremità si sarebbe spostata
+Connect the roads	Collega le strade
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Allinea le estremità dell'incrocio a quelle delle corsie. openOMSI unisce le corsie per geometria, non per i punti ausiliari
+Link check	Verifica dei collegamenti

@@ -2768,3 +2768,10 @@ The way a join turns	接続が曲がる向き
 Paths picked	選択したパス
 Set what they share. A path's own numbers are edited one at a time	共通する値を設定します。パス固有の数値は 1 本ずつ編集します
 Several	複数
+no end of the crossing is near it	交差点の端が近くにない
+the gap has no way through	この隙間は通せない
+a piece added	1 区間を追加しました
+the other end would have moved	もう一方の端が動いてしまう
+Connect the roads	道路をつなぐ
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	交差点の端を道路の車線の端に合わせます。openOMSI はスプライン補助点ではなく形状で車線をつなぎます
+Link check	接続の確認

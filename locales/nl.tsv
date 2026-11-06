@@ -2768,3 +2768,10 @@ The way a join turns	Waarheen de aansluiting buigt
 Paths picked	Gekozen paden
 Set what they share. A path's own numbers are edited one at a time	Stel in wat ze delen. De eigen getallen van een pad bewerk je een voor een
 Several	Meerdere
+no end of the crossing is near it	geen uiteinde van de kruising in de buurt
+the gap has no way through	de opening heeft geen doorgang
+a piece added	een stuk toegevoegd
+the other end would have moved	het andere uiteinde zou verschuiven
+Connect the roads	Straten verbinden
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Lijn de uiteinden van de kruising uit op die van de rijstroken. openOMSI verbindt rijstroken op geometrie, niet op de hulppunten
+Link check	Verbindingscontrole

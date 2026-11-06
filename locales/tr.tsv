@@ -2768,3 +2768,10 @@ The way a join turns	Birleşimin döndüğü yön
 Paths picked	Seçilen yollar
 Set what they share. A path's own numbers are edited one at a time	Ortak olanı ayarlayın. Bir yolun kendi sayıları tek tek düzenlenir
 Several	Birkaç
+no end of the crossing is near it	kavşağın yakınında bir uç yok
+the gap has no way through	bu boşluğun geçişi yok
+a piece added	bir parça eklendi
+the other end would have moved	diğer uç kayardı
+Connect the roads	Yolları bağla
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Kavşağın uçlarını yol şeritlerinin uçlarına hizala. openOMSI şeritleri geometriye göre bağlar, spline yardımcı noktalarına göre değil
+Link check	Bağlantı denetimi

@@ -2768,3 +2768,10 @@ The way a join turns	Arah selekoh sambungan
 Paths picked	Laluan dipilih
 Set what they share. A path's own numbers are edited one at a time	Tetapkan yang dikongsi. Nombor laluan itu sendiri diubah satu demi satu
 Several	Beberapa
+no end of the crossing is near it	tiada hujung persimpangan berdekatan
+the gap has no way through	celah ini tiada laluan
+a piece added	satu bahagian ditambah
+the other end would have moved	hujung satu lagi akan bergerak
+Connect the roads	Sambung jalan
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Selaraskan hujung persimpangan dengan hujung lorong jalan. openOMSI menyambung lorong mengikut geometri, bukan titik bantu spline
+Link check	Semakan sambungan

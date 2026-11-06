@@ -2768,3 +2768,10 @@ The way a join turns	W którą stronę skręca połączenie
 Paths picked	Wybrane ścieżki
 Set what they share. A path's own numbers are edited one at a time	Ustaw to, co wspólne. Własne liczby ścieżki zmienia się po jednej
 Several	Kilka
+no end of the crossing is near it	żaden koniec skrzyżowania nie jest blisko
+the gap has no way through	tej szczeliny nie da się połączyć
+a piece added	dodano odcinek
+the other end would have moved	drugi koniec by się przesunął
+Connect the roads	Połącz drogi
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Dopasuj końce skrzyżowania do końców pasów dróg. openOMSI łączy pasy po geometrii, a nie po punktach pomocniczych
+Link check	Sprawdzenie połączeń

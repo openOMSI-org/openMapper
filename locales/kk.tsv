@@ -2768,3 +2768,10 @@ The way a join turns	Қосылым қай жаққа бұрылады
 Paths picked	Таңдалған жолдар
 Set what they share. A path's own numbers are edited one at a time	Ортақ мәнді орнатыңыз. Жолдың өз сандары бір-бірлеп өңделеді
 Several	Бірнеше
+no end of the crossing is near it	жақын жерде айналған жолдың ұшы жоқ
+the gap has no way through	бұл саңылауды жалғауға болмайды
+a piece added	бір бөлік қосылды
+the other end would have moved	екінші ұшы жылжып кетер еді
+Connect the roads	Жолдарды қосу
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Айналған жолдың ұштарын жол жолақтарының ұштарына сәйкестендіру. openOMSI жолақтарды геометрия бойынша қосады, сплайн көмекші нүктелері бойынша емес
+Link check	Қосылымды тексеру
