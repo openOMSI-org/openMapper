@@ -1444,8 +1444,18 @@ impl CrossingPaths {
         let s_b = j.slope;
         let delta = b.truncate() - a.truncate();
         let chord = delta.length();
-        if chord < 0.25 || chord > FAR_JOIN {
+        if chord > FAR_JOIN {
             return None;
+        }
+        // (the end is already at the joint - within a hand's reach: nothing to lay between them.
+        // The picked path's end is put on the joint instead of leaving the click doing nothing,
+        // which is what a dot right beside the end looked like: it did not answer at all)
+        if chord < 0.25 {
+            self.push_undo();
+            let Some(sheet) = self.sheet.as_mut() else { return None };
+            join_end(&mut sheet.crossing, i, j);
+            self.reveal = true;
+            return Some(i);
         }
         let phi = crate::roads::heading_of(delta);
         let same = |x: f64, y: f64| ((x - y).rem_euclid(360.0)).min((y - x).rem_euclid(360.0)) < 1.0;
@@ -1458,6 +1468,13 @@ impl CrossingPaths {
             vec![crate::roads::Seg { start: a.truncate(), heading: h_a, length: chord, radius: 0.0 }]
         } else {
             connect_segs(a.truncate(), h_a, b.truncate(), h_b, self.side)
+        };
+        // (a join that could not be planned at all is still closed with one straight to the
+        // point: a click that answers with nothing at all is worse than a plain piece)
+        let segs = if segs.is_empty() {
+            vec![crate::roads::Seg { start: a.truncate(), heading: phi, length: chord, radius: 0.0 }]
+        } else {
+            segs
         };
         let made = lay_join(&template, a, s_a, &segs, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
         if made.is_empty() {
@@ -4353,6 +4370,40 @@ Main
         climb_to(&mut p, 2.0);
         assert!((p.slope_start() - MAX_RISE).abs() < 1e-6, "no steeper than {}: {}", MAX_RISE, p.slope_start());
         assert!((p.slope_end() - MAX_RISE).abs() < 1e-6, "one grade");
+    }
+
+    /// A green end right beside the picked path's own end answers: the end is put on it, rather
+    /// than the click doing nothing at all (the join between them is shorter than a hand's
+    /// reach, and it used to be refused).
+    #[test]
+    fn completing_onto_a_joint_beside_the_end_still_answers() {
+        let mut w = opened(Tab::Paths);
+        w.selected = Some(2);
+        let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
+        let n = w.sheet.as_ref().unwrap().crossing.paths.len();
+        let j = Joint { pos: end + DVec3::new(0.08, 0.05, 0.0), heading: 0.0, slope: 0.02, flow: 0, dir: 0, travel: 0.0, geom: 90.0 };
+        w.set_complete_to(true);
+        let at = w.complete_to_joint(j).expect("it answers");
+        assert_eq!(at, 2, "the picked path's own end is the one put on it");
+        assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n, "no piece was added");
+        let p = &w.sheet.as_ref().unwrap().crossing.paths[2];
+        assert!((p.end().truncate() - j.pos.truncate()).length() < 0.02, "the end is on it: {:?}", p.end());
+        assert!((p.slope_end() - j.slope).abs() < 1e-4, "at its rise: {}", p.slope_end());
+    }
+
+    /// `Complete to` is not asked for while it is off, and a joint beyond a crossing's reach is
+    /// still refused - so the dot beside the end explaining itself does not open the door to
+    /// joins across the map.
+    #[test]
+    fn completing_is_only_within_the_crossing() {
+        let mut w = opened(Tab::Paths);
+        w.selected = Some(2);
+        let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
+        let j = Joint { pos: end + DVec3::new(0.08, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        assert!(w.complete_to_joint(j).is_none(), "the mode is off");
+        w.set_complete_to(true);
+        let far = Joint { pos: end + DVec3::new(2_000_000.0, 0.0, 0.0), ..j };
+        assert!(w.complete_to_joint(far).is_none(), "across the map is refused");
     }
 
     /// A path's end and the next path's start are one point at every join. Clicking it with the
