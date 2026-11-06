@@ -2763,3 +2763,5 @@ Even grade	両端同じ勾配
 Both ends take the one rise between their heights	両端はその高さの間の同じ上りを使います
 How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	この経路が出る向き（度）。点はそのまま；一つの弧でできない曲がりは分割されます
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	この経路が着く向き（度）。点はそのまま；一つの弧でできない曲がりは分割されます
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	その経路はその端で逆方向に走っています。つなぐとUターンになります。その経路のもう一方の端を選ぶか、下でこの端を回してください
+The way a join turns	接続が曲がる向き

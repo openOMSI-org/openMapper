@@ -2763,3 +2763,5 @@ Even grade	Độ dốc đều
 Both ends take the one rise between their heights	Hai đầu dùng cùng một độ lên giữa độ cao của chúng
 How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	Hướng làn này đi ra, theo độ. Điểm giữ nguyên; khúc cua mà một cung không làm được sẽ chia thành nhiều đoạn
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Hướng làn này đi vào, theo độ. Điểm giữ nguyên; khúc cua mà một cung không làm được sẽ chia thành nhiều đoạn
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Đường đó chạy ngược chiều ở đầu này: nối vào sẽ thành quay đầu xe. Chọn đầu kia của đường đó, hoặc xoay đầu này ở bên dưới
+The way a join turns	Hướng rẽ của chỗ nối

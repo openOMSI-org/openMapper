@@ -2763,3 +2763,5 @@ Even grade	양끝 같은 경사
 Both ends take the one rise between their heights	양 끝이 두 높이 사이의 같은 오르막을 씁니다
 How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	이 경로가 나가는 방향(도). 점은 그대로 있고, 한 호로 만들 수 없는 굽이는 여러 조각으로 나뉩니다
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	이 경로가 들어오는 방향(도). 점은 그대로 있고, 한 호로 만들 수 없는 굽이는 여러 조각으로 나뉩니다
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	그 경로는 그 끝에서 반대 방향으로 갑니다. 이으면 유턴이 됩니다. 그 경로의 다른 끝을 고르거나 아래에서 이 끝을 돌리세요
+The way a join turns	연결이 꺾이는 방향

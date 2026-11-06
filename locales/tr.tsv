@@ -2763,3 +2763,5 @@ Even grade	Düzgün eğim
 Both ends take the one rise between their heights	İki uç da yükseklikleri arasındaki aynı yokuşu alır
 How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	Bu yolun çıkış yönü, derece. Nokta yerinde kalır; tek yayın yapamadığı dönüş parçalara bölünür
 How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Bu yolun varış yönü, derece. Nokta yerinde kalır; tek yayın yapamadığı dönüş parçalara bölünür
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	O yol o uçta ters yöne gidiyor: bağlamak U dönüşü olur. O yolun diğer ucunu seçin ya da bu ucu aşağıdan döndürün
+The way a join turns	Birleşimin döndüğü yön
