@@ -130,11 +130,25 @@ fn build(start: DVec2, h_a: f64, end: DVec2, h_b: f64, r: f64, s0: f64, s1: f64,
     let c0 = start + DVec2::new(-a0.sin(), a0.cos()) * (s0 * r);
     let c1 = end + DVec2::new(-a1.sin(), a1.cos()) * (s1 * r);
     let (t, straight) = if (s0 - s1).abs() < 1e-9 {
-        // (the same way round: the tangent runs parallel to the line between the centres)
         let w = c1 - c0;
         let d = w.length();
         if d < 1e-6 {
-            return None;
+            // (one circle: the join is that arc alone, and both ends lie on it. The tangent
+            // construction divides by the distance between the centres, which is nothing here)
+            let delta = mod_tau(s0 * ((end - c0).y.atan2((end - c0).x) - (start - c0).y.atan2((start - c0).x)));
+            let turn = -s0 * delta.to_degrees();
+            if !side.allows(turn) || delta < 1e-6 {
+                return None;
+            }
+            let seg = Seg { start, heading: roads::norm_deg(h_a), length: r * delta, radius: turn.signum() * r };
+            if (seg.end() - end).length() > 0.02 {
+                return None;
+            }
+            let off = roads::norm_deg(seg.end_heading() - h_b);
+            if off.min(360.0 - off) > 0.5 {
+                return None;
+            }
+            return Some(Planned { radius: r, length: seg.length, segs: vec![seg] });
         }
         (w / d, d)
     } else {

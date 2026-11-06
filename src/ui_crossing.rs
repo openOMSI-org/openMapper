@@ -681,6 +681,14 @@ fn closing_piece(pos: DVec2, h: f64, end: DVec2) -> crate::roads::Seg {
     arc_piece(pos, h, 2.0 * deflect, dist)
 }
 
+/// Whether `segs` really ends on `end`, arriving on heading `h_b`. A join is checked on this
+/// rather than trusted: an arc built for the point but not the way in leaves a kink against the
+/// next segment, which is what the panel's rotate shows.
+fn arrives(segs: &[crate::roads::Seg], end: DVec2, h_b: f64) -> bool {
+    let Some(last) = segs.last() else { return false };
+    (last.end() - end).length() < 0.02 && ang_delta(last.end_heading(), h_b).abs() < 0.5
+}
+
 /// A join shorter than this is closed with one straight piece: over a few centimetres there is
 /// no room for a bend, and what a bend gives there is a knot.
 const SHORT_JOIN: f64 = 2.0;
@@ -717,16 +725,28 @@ fn steer(side: Side, way: f64, deflect: f64, chord: f64) -> f64 {
 /// steps: a heading that puts the point in front of both ends is the one used, preferring the
 /// widest radii.
 ///
-/// A pair is only used when both of its arcs are real bends (`MIN_PIECE_RADIUS` at least) and
-/// both are at least a metre long: a pair of centimetre knots closes the join in geometry but
-/// is not a path anyone can drive.
+/// A pair is only used when both of its arcs are real bends (`min_r` at least) and both are
+/// longer than `min_len`: a pair of centimetre knots closes the join in geometry but is not a
+/// path anyone can drive. The floors are lowered by [`connect_segs`] in turn, so a join that has
+/// no wide answer still arrives exactly on its heading instead of stopping a few degrees short.
 fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Vec<crate::roads::Seg>> {
+    s_join_with(start, h_a, end, h_b, side, MIN_PIECE_RADIUS, 1.0)
+}
+
+/// [`s_join`] with the radius and chord floors given. A biarc always exists for a pair of ends,
+/// so with the floors lowered far enough this is the answer that cannot fail: it arrives on the
+/// point and on `h_b` by construction.
+fn s_join_with(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side, min_r: f64, min_len: f64) -> Option<Vec<crate::roads::Seg>> {
     use crate::roads::{self, Seg};
     let (h_a, h_b) = (roads::norm_deg(h_a), roads::norm_deg(h_b));
     let v = end - start;
     let mut best: Option<(bool, f64, Vec<Seg>)> = None;
-    for step in -36..=36 {
-        let hm = roads::norm_deg(h_a + step as f64 * 5.0);
+    // (a finer sweep when the wide ones are barred: the meeting heading that puts both chords
+    // in front of their ends is a narrow window at some angles)
+    let fine = min_r < MIN_PIECE_RADIUS || min_len < 1.0;
+    let (first, last, step_deg) = if fine { (-180, 180, 1) } else { (-36, 36, 5) };
+    for step in first..=last {
+        let hm = roads::norm_deg(h_a + step as f64 * step_deg as f64);
         let (t1, t2) = (ang_delta(h_a, hm), ang_delta(hm, h_b));
         if t1.abs() > 170.0 || t2.abs() > 170.0 {
             continue;
@@ -739,14 +759,14 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Ve
         }
         let a = (v.x * u2.y - v.y * u2.x) / det;
         let b = (u1.x * v.y - u1.y * v.x) / det;
-        if !(a > 1.0 && b > 1.0) {
+        if !(a > min_len && b > min_len) {
             continue;
         }
         let r1 = if t1.abs() < 1e-4 { f64::MAX } else { a / (2.0 * (t1.to_radians() * 0.5).abs().sin()) };
         let r2 = if t2.abs() < 1e-4 { f64::MAX } else { b / (2.0 * (t2.to_radians() * 0.5).abs().sin()) };
         let narrow = r1.min(r2);
         // (a pair this tight is a knot, not a bend)
-        if narrow < MIN_PIECE_RADIUS {
+        if narrow < min_r {
             continue;
         }
         // (a side chosen is a side: this pair has to go that way round)
@@ -791,26 +811,41 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
         return Vec::new();
     }
     // (the planned join: at most three pieces, all on one radius, leaving in `h_a` and arriving
-    // in `h_b`. This is what keeps the turn spread over the whole gap; the fallback below only
-    // runs when the gap is too short for the arcs the planner insists on, or when the way round
-    // it wants is a loop much longer than the gap itself. A tighter radius and the automatic
-    // way round are tried before giving up, so a join that has to arrive on the other path's
-    // rotate is made rather than stepped out with a kink at its end)
-    let floor = if chord < SHORT_JOIN { CLOSE_RADIUS } else { MIN_PIECE_RADIUS };
-    // (a way round the user chose is kept: trying the other way would quietly turn the join
-    // the opposite way round from what was asked, so there is no fallback to automatic)
-    let sides = [side];
-    for s in sides {
-        for f in [floor, 1.0, 0.7] {
-            if f < 0.5 {
-                continue;
+    // in `h_b`. This is what keeps the turn spread over the whole gap. It is checked on the way
+    // it actually ends - on the point and on the heading - because a piece that lands a few
+    // degrees off is a kink against the next segment, which is exactly what the panel's rotate
+    // then shows. A biarc (two arcs that meet tangentially) always has an answer for a pair of
+    // ends, so it is asked with lower and lower floors until one lands properly, and the
+    // stepping loop below is the very last resort)
+    let floor = MIN_PIECE_RADIUS;
+    // (a join whose ways cross - leave north, arrive at a point beside you still north - has no
+    // answer on a wide radius at all, only on a tight one, so the floor is lowered in turn. Every
+    // candidate is checked on the way it actually ends, because a piece that lands a few degrees
+    // off is the kink the next segment's rotate then shows. A gap of a couple of metres or less
+    // may not use a radius below `CLOSE_RADIUS`: there is no room for it, and the bend it makes
+    // is the centimetre curl that reads as the wrong way)
+    let allow = |r: f64| {
+        let floor = if chord < 0.5 { CLOSE_RADIUS } else { 0.35 };
+        r == 0.0 || r.abs() >= floor
+    };
+    let fits = |segs: &[crate::roads::Seg]| arrives(segs, end, h_b) && segs.iter().all(|q| allow(q.radius));
+    for f in [floor, 1.0, 0.6, 0.35, 0.2] {
+        if let Some(planned) = crate::join::plan(start, h_a, end, h_b, side, f)
+            && fits(&planned)
+        {
+            let length: f64 = planned.iter().map(|s| s.length).sum();
+            if length <= chord * 2.5 + 2.0 {
+                return planned;
             }
-            if let Some(planned) = crate::join::plan(start, h_a, end, h_b, s, f) {
-                let length: f64 = planned.iter().map(|p| p.length).sum();
-                if length <= chord * 2.0 + 2.0 {
-                    return planned;
-                }
-            }
+        }
+    }
+    // (two arcs that meet tangentially, with the floors let down as far as a usable path allows:
+    // a biarc answers for a pair of ends that no plain turn onto a circle does)
+    for (r, len) in [(MIN_PIECE_RADIUS, 1.0), (1.0, 0.3), (0.6, 0.1), (0.35, 0.05)] {
+        if let Some(pair) = s_join_with(start, h_a, end, h_b, side, r, len)
+            && fits(&pair)
+        {
+            return pair;
         }
     }
     let mut segs = Vec::new();
@@ -823,12 +858,12 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
     let mut closest = (end - start).length();
     for _ in 0..12 {
         let dist = (end - pos).length();
-        if dist < 0.4 {
+        if dist < 0.02 {
             return segs;
         }
         if dist < 0.5 {
             // (under half a metre a bend is a knot: one straight, whatever the next piece's angle)
-            if dist >= 0.05 {
+            if dist >= 0.02 {
                 segs.push(crate::roads::Seg { start: pos, heading: roads::heading_of(end - pos), length: dist, radius: 0.0 });
             }
             return segs;
@@ -4087,6 +4122,50 @@ Main
         let join = connect_segs(DVec2::ZERO, 0.0, DVec2::new(-6.0, 4.0), 90.0, Side::Auto);
         at_each_join(&join, DVec2::ZERO, DVec2::new(-6.0, 4.0));
         assert!(reversals(&join) <= 1, "a snake of a join: {} reversals", reversals(&join));
+    }
+
+    /// A join of a normal length must arrive on the heading it was asked for, whatever the gap
+    /// and the angle: that is the next segment's rotate, and a last piece a few degrees off does
+    /// not line up with it. Below a couple of metres there is no room for a bend of a usable
+    /// radius, so the piece lands on the point but stays a straight (never a curl).
+    #[test]
+    fn every_join_arrives_on_the_heading_it_was_asked() {
+        let a = DVec2::ZERO;
+        let mut worst: Option<(f64, f64, f64, f64)> = None;
+        for d10 in 4..=200 {
+            let d = d10 as f64 * 0.1;
+            let short = d < SHORT_JOIN;
+            for step in 0..36 {
+                let bearing = step as f64 * 10.0;
+                let b = a + crate::roads::dir(bearing) * d;
+                for hb_step in 0..36 {
+                    let h_b = hb_step as f64 * 10.0;
+                    let segs = connect_segs(a, 0.0, b, h_b, Side::Auto);
+                    assert!(!segs.is_empty(), "no join at d {d} bearing {bearing} h_b {h_b}");
+                    let last = segs.last().unwrap();
+                    assert!((last.end() - b).length() < 0.05, "not on the point: d {d} bearing {bearing} h_b {h_b}: {:?}", last.end());
+                    for q in &segs {
+                        assert!(q.radius == 0.0 || q.radius.abs() >= 0.2, "a curl: radius {} at d {d}", q.radius);
+                    }
+                    if short {
+                        continue;
+                    }
+                    // (a point behind the way the join leaves, only a couple of metres away, is a
+                    // hairpin: no radius that is still a bend can turn that far in that space.
+                    // There the piece lands on the point as a straight, which is the honest
+                    // answer; everything else must arrive on the heading it was asked for)
+                    if d < 3.0 && ang_delta(0.0, bearing).abs() > 150.0 {
+                        continue;
+                    }
+                    let off = ang_delta(last.end_heading(), h_b).abs();
+                    if worst.as_ref().is_none_or(|w| off > w.0) {
+                        worst = Some((off, d, bearing, h_b));
+                    }
+                }
+            }
+        }
+        let (off, d, bearing, h_b) = worst.unwrap();
+        assert!(off < 0.5, "a join arrives {off}° off, at d {d} bearing {bearing} h_b {h_b}");
     }
 
     #[test]
