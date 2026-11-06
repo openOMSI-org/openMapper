@@ -753,21 +753,36 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
         if dist < 0.4 {
             return segs;
         }
+        if dist < 0.5 {
+            // (under half a metre a bend is a knot: one straight, whatever the next piece's angle)
+            if dist >= 0.05 {
+                segs.push(crate::roads::Seg { start: pos, heading: roads::heading_of(end - pos), length: dist, radius: 0.0 });
+            }
+            return segs;
+        }
         if dist < SHORT_JOIN {
-            let phi = roads::heading_of(end - pos);
-            let off = ang_delta(h, phi);
-            // (a straight only when it leaves the way this piece arrives: otherwise it is a
-            // kink, and an arc that keeps the arrival closes it)
-            if segs.is_empty() || off.abs() <= 8.0 {
-                if dist >= 0.05 {
-                    segs.push(crate::roads::Seg { start: pos, heading: phi, length: dist, radius: 0.0 });
+            // (short, but long enough to arrive in the next piece's way when a bend of a
+            // usable radius does it. A straight along the gap is what left this piece on
+            // its own angle instead of the next segment's)
+            if let Some(done) = arrive_on(pos, h, end, h_b, side) {
+                segs.extend(done);
+                return segs;
+            }
+            if dist >= 0.05 {
+                let phi = roads::heading_of(end - pos);
+                let agrees = ang_delta(h, phi).abs() <= 8.0 && ang_delta(h, h_b).abs() <= 8.0;
+                if segs.is_empty() {
+                    segs.push(crate::roads::Seg { start: pos, heading: if agrees { h } else { phi }, length: dist, radius: 0.0 });
+                } else if agrees {
+                    segs.push(crate::roads::Seg { start: pos, heading: h, length: dist, radius: 0.0 });
+                } else {
+                    // (keep the way the previous piece arrived: a straight on the gap's own
+                    // angle would kink against it)
+                    let off = ang_delta(h, phi).clamp(-MAX_DEFLECT, MAX_DEFLECT);
+                    segs.push(arc_piece(pos, h, 2.0 * off, dist));
                 }
-                return segs;
             }
-            if off.abs() <= MAX_DEFLECT && side.allows(2.0 * off) {
-                segs.push(arc_piece(pos, h, 2.0 * off, dist));
-                return segs;
-            }
+            return segs;
         }
         let phi = roads::heading_of(end - pos);
         let deflect = ang_delta(h, phi);
@@ -794,13 +809,41 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
         segs.push(s);
     }
     if (end - pos).length() >= 0.4 {
-        let dist = (end - pos).length();
-        let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
-        let turn = side.pick(2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
-        segs.push(arc_piece(pos, h, turn, dist));
+        if let Some(done) = arrive_on(pos, h, end, h_b, side) {
+            segs.extend(done);
+        } else {
+            let dist = (end - pos).length();
+            let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
+            let turn = side.pick(2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
+            segs.push(arc_piece(pos, h, turn, dist));
+        }
     }
     segs
 }
+
+/// Pieces that leave `pos` on `h` and arrive at `end` on `h_b`, when a bend of at least
+/// [`CLOSE_RADIUS`] can do it. None when the only way onto that heading would be a knot.
+/// One arc when the point lies on it, otherwise the two arcs of [`s_join`].
+fn arrive_on(pos: DVec2, h: f64, end: DVec2, h_b: f64, side: Side) -> Option<Vec<crate::roads::Seg>> {
+    let dist = (end - pos).length();
+    if dist < 0.5 {
+        return None;
+    }
+    let turn = ang_delta(h, h_b);
+    let radius = if turn.abs() < 1e-3 { f64::MAX } else { dist / (2.0 * (turn.to_radians() * 0.5).abs().sin()) };
+    if turn.abs() <= 140.0 && side.allows(turn) && radius >= CLOSE_RADIUS {
+        let piece = arc_piece(pos, h, turn, dist);
+        // (the arc only counts when it actually ends on the point, not merely near its direction)
+        if (piece.end() - end).length() < 0.02 {
+            return Some(vec![piece]);
+        }
+    }
+    s_join(pos, h, end, h_b, side)
+}
+
+/// The tightest radius a short join may use to arrive on the next piece's heading (m).
+/// A metre of path can turn onto the next segment; a few centimetres curled round cannot.
+const CLOSE_RADIUS: f64 = 1.0;
 
 /// `template` laid along `seg`, starting at height `z0`. The seg is an arc (or a straight) of
 /// a known way out, turn and length, so it is written as it is: no fitting, and no fallback
@@ -3974,6 +4017,20 @@ Main
         assert!((s.end() - b).length() < 1e-6, "it ends on the point: {:?}", s.end());
         // (what the tiny knot used to be: a bend of 166 degrees in 0.46 m, radius 0.23 m)
         assert!(s.length < 1.0, "{} m", s.length);
+
+        // (a join of about a metre whose next piece is not on the gap's own angle: it arrives
+        // on that angle, rather than a straight that leaves the two different)
+        let a = DVec2::new(47.76687, -17.8402);
+        let b = DVec2::new(47.6323, -18.9858);
+        let phi = crate::roads::heading_of(b - a);
+        let h_b = crate::roads::norm_deg(phi + 14.0);
+        let h_a = crate::roads::norm_deg(phi - 14.0);
+        let segs = connect_segs(a, h_a, b, h_b, Side::Auto);
+        at_each_join(&segs, a, b);
+        let last = segs.last().unwrap();
+        assert!(ang_delta(last.end_heading(), h_b).abs() < 0.5, "it arrives with the next piece: {}", last.end_heading());
+        assert!(last.radius.abs() >= CLOSE_RADIUS, "a bend, not a straight on the gap: radius {}", last.radius);
+        assert!(ang_delta(segs[0].heading, h_a).abs() < 0.5, "it leaves as the piece before it arrived: {}", segs[0].heading);
 
         // and a join wide enough for a real bend is still two arcs that meet tangentially
         let wide = connect_segs(DVec2::new(0.0, 10.0), 0.0, DVec2::new(6.0, 16.0), 180.0, Side::Auto);
