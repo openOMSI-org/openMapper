@@ -2771,3 +2771,5 @@ the other end would have moved	另一端會被移動
 Connect the roads	連接道路
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	把路口的端點對準道路行車道本身的端點。openOMSI 是按幾何連接行車道，不是靠 spline 輔助點
 Link check	連接檢查
+Shift: tenths of a degree	Shift：每 0.1 度
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	數字：輸入角度，Enter 或點擊：確定，Esc：取消

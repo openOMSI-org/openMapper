@@ -2775,3 +2775,5 @@ the other end would have moved	ปลายอีกข้างจะขยั�
 Connect the roads	เชื่อมถนน
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	จัดปลายทางแยกให้ตรงกับปลายเลนของถนน openOMSI เชื่อมเลนด้วยรูปทรง ไม่ใช่จุดช่วยของ spline
 Link check	ตรวจการเชื่อมต่อ
+Shift: tenths of a degree	Shift: ทีละ 0.1 องศา
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	ตัวเลข: หมุนเป็นองศา, Enter หรือคลิก: เสร็จ, Esc: ยกเลิก

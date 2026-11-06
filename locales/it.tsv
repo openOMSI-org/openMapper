@@ -2775,3 +2775,5 @@ the other end would have moved	l'altra estremità si sarebbe spostata
 Connect the roads	Collega le strade
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Allinea le estremità dell'incrocio a quelle delle corsie. openOMSI unisce le corsie per geometria, non per i punti ausiliari
 Link check	Verifica dei collegamenti
+Shift: tenths of a degree	Maiusc: decimi di grado
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	cifre: una rotazione in gradi, Invio o clic: fatto, Esc: annulla

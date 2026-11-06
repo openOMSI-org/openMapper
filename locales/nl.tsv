@@ -2775,3 +2775,5 @@ the other end would have moved	het andere uiteinde zou verschuiven
 Connect the roads	Straten verbinden
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Lijn de uiteinden van de kruising uit op die van de rijstroken. openOMSI verbindt rijstroken op geometrie, niet op de hulppunten
 Link check	Verbindingscontrole
+Shift: tenths of a degree	Shift: tienden van een graad
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	cijfers: een draai in graden, Enter of een klik: klaar, Esc: annuleren

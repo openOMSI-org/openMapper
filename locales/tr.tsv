@@ -2775,3 +2775,5 @@ the other end would have moved	diğer uç kayardı
 Connect the roads	Yolları bağla
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Kavşağın uçlarını yol şeritlerinin uçlarına hizala. openOMSI şeritleri geometriye göre bağlar, spline yardımcı noktalarına göre değil
 Link check	Bağlantı denetimi
+Shift: tenths of a degree	Shift: derecenin onda biri
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	sayılar: derece olarak döndür, Enter veya tıkla: tamam, Esc: iptal

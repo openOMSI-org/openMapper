@@ -2775,3 +2775,5 @@ the other end would have moved	druhý konec by se posunul
 Connect the roads	Připojit silnice
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Srovnat konce křižovatky s konci pruhů silnic. openOMSI spojuje pruhy podle geometrie, ne podle pomocných bodů
 Link check	Kontrola spojení
+Shift: tenths of a degree	Shift: desetiny stupně
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	čísla: otočení ve stupních, Enter nebo klik: hotovo, Esc: zrušit

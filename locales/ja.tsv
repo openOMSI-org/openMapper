@@ -2775,3 +2775,5 @@ the other end would have moved	もう一方の端が動いてしまう
 Connect the roads	道路をつなぐ
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	交差点の端を道路の車線の端に合わせます。openOMSI はスプライン補助点ではなく形状で車線をつなぎます
 Link check	接続の確認
+Shift: tenths of a degree	Shift: 0.1 度単位
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	数字: 度で回転、Enter またはクリックで確定、Esc で取り消し

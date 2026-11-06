@@ -2775,3 +2775,5 @@ the other end would have moved	drugi koniec by się przesunął
 Connect the roads	Połącz drogi
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Dopasuj końce skrzyżowania do końców pasów dróg. openOMSI łączy pasy po geometrii, a nie po punktach pomocniczych
 Link check	Sprawdzenie połączeń
+Shift: tenths of a degree	Shift: dziesiąte części stopnia
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	cyfry: obrót w stopniach, Enter lub kliknięcie: gotowe, Esc: anuluj
