@@ -5199,7 +5199,9 @@ impl Editor {
                 let world = doc.object_world(k, o, abs);
                 let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
                 let lift = DVec3::Z * 0.25;
-                let lw = (cam.distance * 0.0016).clamp(0.04, 1.6) as f32;
+                // (thin: the paths of a junction are many, and a wide line hides the road
+                // under it)
+                let lw = (cam.distance * 0.0011).clamp(0.03, 0.9) as f32;
                 let picked = self.crossing_selected;
                 for (i, p) in paths.iter().enumerate() {
                     let color = match p.kind() {
@@ -5212,7 +5214,7 @@ impl Editor {
                     if picked == Some(i) {
                         let halo = [1.0, 0.58, 0.16, 0.42];
                         for s in pts.windows(2) {
-                            line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw * 3.2, halo);
+                            line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw * 2.6, halo);
                         }
                     }
                     for s in pts.windows(2) {
@@ -5222,53 +5224,11 @@ impl Editor {
                     // so every path of the crossing shows a direction)
                     {
                         let (along, against) = crate::ui_crossing::path_ways(p.direction());
-                        let step = (cam.distance * 0.06).clamp(6.0, 40.0);
-                        let sz = ((lw as f64) * 6.0).clamp(0.35, 3.5);
-                        let mut shown = 0;
-                        let chevrons = |mid: DVec3, d: DVec3, out: &mut Vec<OverlayPoint>| -> usize {
-                            let mut n = 0;
-                            for back in [false, true] {
-                                let on = if back { against } else { along };
-                                if !on {
-                                    continue;
-                                }
-                                let f = if back { -d } else { d };
-                                let tip = mid + f * sz;
-                                let side = DVec3::new(f.y, -f.x, 0.0) * sz * 0.6;
-                                line(out, cam, tip, mid - side, lw * 1.2, color);
-                                line(out, cam, tip, mid + side, lw * 1.2, color);
-                                n += 1;
-                            }
-                            n
-                        };
-                        let mut acc = step * 0.5;
-                        for s in pts.windows(2) {
-                            let seg = (s[1] - s[0]).length();
-                            if seg < 1e-6 {
-                                continue;
-                            }
-                            acc += seg;
-                            if acc < step {
-                                continue;
-                            }
-                            acc = 0.0;
-                            let mid = (s[0] + s[1]) * 0.5 + lift;
-                            let d = (s[1] - s[0]) / seg;
-                            shown += chevrons(mid, d, &mut x.overlay);
-                        }
-                        // (a path shorter than the step still shows which way it goes)
-                        if shown == 0 {
-                            if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
-                                let seg = (*b - *a).length();
-                                if seg > 1e-6 {
-                                    let mid = (*a + *b) * 0.5 + lift;
-                                    chevrons(mid, (*b - *a) / seg, &mut x.overlay);
-                                }
-                            }
-                        }
+                        let lifted: Vec<DVec3> = pts.iter().map(|q| *q + lift).collect();
+                        chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 5.0).clamp(0.3, 2.6), (cam.distance * 0.06).clamp(6.0, 40.0), along, against, color);
                     }
                     // the ends, where they are dragged in the window
-                    let a = if picked == Some(i) { lw * 2.6 } else { lw * 1.8 };
+                    let a = if picked == Some(i) { lw * 1.9 } else { lw * 1.3 };
                     for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
                         disc(&mut x.overlay, cam, at + lift, a, color);
                     }
@@ -5282,7 +5242,8 @@ impl Editor {
                     let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
                     let centre = doc.object_world(k, o, abs).truncate();
                     let radius = crate::lanes::neighbour_reach(cam.distance);
-                    let lw = (cam.distance * 0.0016).clamp(0.04, 1.4) as f32;
+                    // (thin and pale: they are the crossing's surroundings, not what is edited)
+                    let lw = (cam.distance * 0.0010).clamp(0.025, 0.8) as f32;
                     let lift = DVec3::Z * 0.1;
                     let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
                     // (nearest first: a long spline used to fill the buffer before the roads
@@ -5311,6 +5272,7 @@ impl Editor {
                         };
                         // (only the part inside the reach, and not every sample: a kilometre
                         // of road sampled every 3 m used up the buffer on its own)
+                        let mut visible = Vec::new();
                         let mut i = lo;
                         while i < hi {
                             if drawn > NEIGHBOUR_POINTS {
@@ -5322,7 +5284,18 @@ impl Editor {
                             }
                             drawn += 6;
                             line(&mut x.overlay, cam, l.pts[i] + lift, l.pts[j] + lift, lw, color);
+                            if visible.is_empty() {
+                                visible.push(l.pts[i] + lift);
+                            }
+                            visible.push(l.pts[j] + lift);
                             i = j;
+                        }
+                        // (which way it goes, as the crossing's own paths do: a lane joined
+                        // to the crossing has to be driven the right way round)
+                        if !visible.is_empty() && drawn < NEIGHBOUR_POINTS {
+                            let (along, against) = crate::ui_crossing::path_ways(l.direction);
+                            let n = chevrons(&mut x.overlay, cam, &visible, lw, (lw as f64 * 5.0).clamp(0.28, 2.4), (cam.distance * 0.06).clamp(6.0, 40.0), along, against, color);
+                            drawn += n * 12;
                         }
                         // (their real ends, when the end itself is in reach: a clip of the
                         // line is not an end, and is not a green circle)
@@ -5331,7 +5304,7 @@ impl Editor {
                                 continue;
                             }
                             drawn += 60;
-                            disc(&mut x.overlay, cam, at + lift, lw * 1.5, color);
+                            disc(&mut x.overlay, cam, at + lift, lw * 1.1, color);
                         }
                     }
                     log::trace!("crossing neighbours: {shown} of {} paths within {radius} m", ranked.len());
@@ -5342,9 +5315,9 @@ impl Editor {
             for (pos, j) in &self.crossing_nearby {
                 // (the disc drawn on top of this lift is what a click is aimed at)
                 let lift = DVec3::Z * 0.4;
-                disc(&mut x.overlay, cam, *pos + lift, (cam.distance * 0.004).clamp(0.12, 3.0) as f32, [0.36, 0.95, 0.45, 1.0]);
+                disc(&mut x.overlay, cam, *pos + lift, (cam.distance * 0.0030).clamp(0.09, 2.2) as f32, [0.36, 0.95, 0.45, 1.0]);
                 let d = crate::roads::dir(j.heading) * (cam.distance * 0.02).clamp(0.6, 6.0);
-                line(&mut x.overlay, cam, *pos + lift, *pos + lift + DVec3::new(d.x, d.y, 0.0), (cam.distance * 0.0016).clamp(0.04, 1.2) as f32, [0.36, 0.95, 0.45, 1.0]);
+                line(&mut x.overlay, cam, *pos + lift, *pos + lift + DVec3::new(d.x, d.y, 0.0), (cam.distance * 0.0010).clamp(0.025, 0.7) as f32, [0.36, 0.95, 0.45, 1.0]);
             }
         }
         // an AI path has nothing to see: the picked and the hovered one drawn as lines
@@ -9942,6 +9915,61 @@ pub fn line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, 
     out.extend([v(a - side), v(a + side), v(b + side), v(a - side), v(b + side), v(b - side)]);
 }
 
+/// Chevrons along a line at `pts` (world, already lifted), saying which way it goes: `along`
+/// the points' order and/or `against` it. They are `step` metres apart and `size` metres
+/// across, drawn in `color` at `width`. One is always drawn, so a line shorter than the step
+/// still says which way it goes. How many were drawn is returned (for the caller's budget).
+#[allow(clippy::too_many_arguments)]
+pub fn chevrons(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, pts: &[DVec3], width: f32, size: f64, step: f64, along: bool, against: bool, color: [f32; 4]) -> usize {
+    if !along && !against {
+        return 0;
+    }
+    let arrow = |out: &mut Vec<OverlayPoint>, mid: DVec3, d: DVec3| -> usize {
+        let tip = mid + d * size;
+        let side = DVec3::new(d.y, -d.x, 0.0) * size * 0.6;
+        line(out, cam, tip, mid - side, width, color);
+        line(out, cam, tip, mid + side, width, color);
+        1
+    };
+    let mut shown = 0;
+    let mut acc = step * 0.5;
+    for w in pts.windows(2) {
+        let seg = (w[1] - w[0]).length();
+        if seg < 1e-6 {
+            continue;
+        }
+        acc += seg;
+        if acc < step {
+            continue;
+        }
+        acc = 0.0;
+        let mid = (w[0] + w[1]) * 0.5;
+        let d = (w[1] - w[0]) / seg;
+        if along {
+            shown += arrow(out, mid, d);
+        }
+        if against {
+            shown += arrow(out, mid, -d);
+        }
+    }
+    if shown == 0 {
+        if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
+            let seg = (*b - *a).length();
+            if seg > 1e-6 {
+                let mid = (*a + *b) * 0.5;
+                let d = (*b - *a) / seg;
+                if along {
+                    shown += arrow(out, mid, d);
+                }
+                if against {
+                    shown += arrow(out, mid, -d);
+                }
+            }
+        }
+    }
+    shown
+}
+
 /// A flat disc on the ground.
 pub fn disc(out: &mut Vec<OverlayPoint>, _cam: &crate::camera::Camera, c: DVec3, r: f32, color: [f32; 4]) {
     let n = 20;
@@ -10067,6 +10095,29 @@ mod tests {
         assert!(ray_on_ribbon(DVec3::new(0.0, 5.0, 20.0), down, a, b, 1.8, 2.1).unwrap().0 > 0.5, "the centre line misses the kerb");
         let kerb = ray_on_ribbon(DVec3::new(2.0, 5.0, 20.0), down, a, b, 1.8, 2.1).expect("on the kerb");
         assert!(kerb.0 <= 0.05, "the kerb's own surface");
+    }
+
+    /// Chevrons are drawn along a line, one for a line shorter than the step, and only the ways
+    /// asked for (a one-way lane gets one direction, a two-way one both).
+    #[test]
+    fn a_line_says_which_way_it_goes() {
+        let cam = crate::camera::Camera::default();
+        let long: Vec<DVec3> = (0..=20).map(|i| DVec3::new(0.0, i as f64 * 5.0, 0.0)).collect();
+        let mut out = Vec::new();
+        let n = chevrons(&mut out, &cam, &long, 0.05, 0.5, 20.0, true, false, [1.0, 1.0, 1.0, 1.0]);
+        assert!(n >= 4, "a hundred metres of line shows {n} chevrons");
+        assert_eq!(out.len(), n * 12, "each chevron is two ribbons of six points");
+        // (nothing for a lane that goes nowhere)
+        assert_eq!(chevrons(&mut Vec::new(), &cam, &long, 0.05, 0.5, 20.0, false, false, [1.0; 4]), 0);
+        // (both ways: two chevrons at each place)
+        let mut both = Vec::new();
+        let m = chevrons(&mut both, &cam, &long, 0.05, 0.5, 20.0, true, true, [1.0; 4]);
+        assert_eq!(m, n * 2);
+        // (a line shorter than the step still shows one)
+        let short = [DVec3::ZERO, DVec3::new(0.0, 1.0, 0.0)];
+        let mut out = Vec::new();
+        assert_eq!(chevrons(&mut out, &cam, &short, 0.05, 0.5, 20.0, true, false, [1.0; 4]), 1);
+        assert!(!out.is_empty());
     }
 
     #[test]

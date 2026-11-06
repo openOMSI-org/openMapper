@@ -2291,7 +2291,9 @@ impl App {
     /// How wide a green circle is on the screen, in pixels, with room for its tick and for
     /// a click that lands on the circle rather than on its exact centre.
     fn nearby_hit_px(&self, at: DVec3) -> f32 {
-        let r = (self.cam.distance * 0.004).clamp(0.12, 3.0);
+        // (the disc as it is drawn, which is thinner now: the pick stays generous, since a
+        // green end is a small thing to hit on a junction)
+        let r = (self.cam.distance * 0.0030).clamp(0.09, 2.2);
         let tick = (self.cam.distance * 0.02).clamp(0.6, 6.0);
         let Some(a) = self.view_point(at) else { return 40.0 };
         let Some(b) = self.view_point(at + DVec3::X * r.max(tick)) else { return 40.0 };

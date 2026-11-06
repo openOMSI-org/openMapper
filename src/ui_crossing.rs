@@ -2928,7 +2928,7 @@ impl CrossingPaths {
                 left.push(q.truncate() + normal * half);
                 right.push(q.truncate() - normal * half);
             }
-            let edge = Stroke::new(1.0, base.gamma_multiply(0.55));
+            let edge = Stroke::new(0.8, base.gamma_multiply(0.5));
             for w in left.windows(2) {
                 painter.line_segment([to_screen(w[0]), to_screen(w[1])], edge);
             }
@@ -2936,7 +2936,7 @@ impl CrossingPaths {
                 painter.line_segment([to_screen(w[0]), to_screen(w[1])], edge);
             }
             for w in pts.windows(2) {
-                painter.line_segment([to_screen(w[0].truncate()), to_screen(w[1].truncate())], Stroke::new(if on { 2.0 } else { 1.4 }, base));
+                painter.line_segment([to_screen(w[0].truncate()), to_screen(w[1].truncate())], Stroke::new(if on { 1.7 } else { 1.1 }, base));
             }
             // the way it goes
             let dir_arrow = |at: DVec2, along: DVec2, color: Color32| {
@@ -2946,8 +2946,8 @@ impl CrossingPaths {
                 }
                 let d = along / len;
                 let n = DVec2::new(-d.y, d.x);
-                let tip = at + d * (10.0 / scale as f64);
-                painter.add(egui::Shape::convex_polygon(vec![to_screen(tip), to_screen(at + n * (4.0 / scale as f64)), to_screen(at - n * (4.0 / scale as f64))], color, Stroke::NONE));
+                let tip = at + d * (7.0 / scale as f64);
+                painter.add(egui::Shape::convex_polygon(vec![to_screen(tip), to_screen(at + n * (2.8 / scale as f64)), to_screen(at - n * (2.8 / scale as f64))], color, Stroke::NONE));
             };
             // (the way it goes, all along the path: one arrow at the middle is lost on a
             // long path, and a path of a few metres would show none at all)
@@ -2994,20 +2994,20 @@ impl CrossingPaths {
             // its ends
             for at in [p.start().truncate(), p.end().truncate()] {
                 let s = to_screen(at);
-                painter.circle_filled(s, if on { 4.0 } else { 3.0 }, if on { HANDLE } else { base });
-                painter.circle_stroke(s, 6.0, Stroke::new(1.0, Color32::from_white_alpha(if on { 120 } else { 40 })));
+                painter.circle_filled(s, if on { 3.2 } else { 2.4 }, if on { HANDLE } else { base });
+                painter.circle_stroke(s, 4.8, Stroke::new(0.8, Color32::from_white_alpha(if on { 110 } else { 34 })));
             }
         }
         // the spline helpers: where roads snap on
         for h in &sheet.crossing.helpers {
             let at = to_screen(h.local().truncate());
-            painter.circle_stroke(at, 5.0, Stroke::new(1.6, SNAPPED));
+            painter.circle_stroke(at, 4.4, Stroke::new(1.3, SNAPPED));
             let d = crate::roads::dir(h.heading as f64);
-            painter.line_segment([at, to_screen(h.local().truncate() + d * 4.0)], Stroke::new(1.4, SNAPPED));
+            painter.line_segment([at, to_screen(h.local().truncate() + d * 4.0)], Stroke::new(1.2, SNAPPED));
         }
         // the end being dragged is locked onto another end: shown, so a snap is not a surprise
         if let Some(at) = self.snap_mark {
-            painter.circle_stroke(to_screen(at.truncate()), 11.0, Stroke::new(2.0, SNAPPED));
+            painter.circle_stroke(to_screen(at.truncate()), 9.0, Stroke::new(1.6, SNAPPED));
         }
         // a new path is started from one of these: the ends of the paths round the crossing,
         // each with the way it runs away from it
@@ -3017,9 +3017,9 @@ impl CrossingPaths {
                 if !rect.contains(s) {
                     continue;
                 }
-                painter.circle_stroke(s, 7.0, Stroke::new(2.0, SNAPPED));
+                painter.circle_stroke(s, 5.4, Stroke::new(1.4, SNAPPED));
                 let d = crate::roads::dir(j.heading);
-                painter.line_segment([s, to_screen(j.pos.truncate() + d * 3.0)], Stroke::new(1.6, SNAPPED));
+                painter.line_segment([s, to_screen(j.pos.truncate() + d * 3.0)], Stroke::new(1.2, SNAPPED));
             }
         }
 
