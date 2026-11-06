@@ -600,23 +600,30 @@ fn forward_segs(start: DVec2, heading: f64, end: DVec2, side: Side) -> Vec<crate
     let mut segs = Vec::new();
     let mut pos = start;
     let mut h = roads::norm_deg(heading);
+    // (the way the run turns, chosen once: a car holds one way round until it is lined up,
+    // it does not turn left, then right, then left again)
+    let mut way = side.sign();
     for _ in 0..12 {
         let dist = (end - pos).length();
         if dist < 0.4 {
             return segs;
         }
         let deflect = ang_delta(h, roads::heading_of(end - pos));
+        if way == 0.0 && deflect.abs() > 1.0 {
+            way = deflect.signum();
+        }
         if deflect.abs() <= MAX_DEFLECT && side.allows(2.0 * deflect) {
             // (an arc that leaves on `h` and passes through the point leaves its chord at
-            // half its turn: the turn is twice the deflection)
+            // half its turn: the turn is twice the deflection. Only this closing piece does
+            // that — doubling every piece swings past the point and the next one turns back,
+            // which is the snake)
             segs.push(arc_piece(pos, h, 2.0 * deflect, dist));
             return segs;
         }
-        // A piece of the way round: part of the turn, so the way comes round a bit and the
-        // point is nearer each time. Kept wide enough to be a bend (see `most_turn`).
+        // Part of the way round, and no further than the point itself lies, and the same way
+        // as the piece before. Turning twice the deflection here would pass it.
         let chord = (dist * 0.6).clamp(1.0, 30.0);
-        let turn = side.pick((2.0 * deflect.clamp(-35.0, 35.0)).clamp(-80.0, 80.0));
-        let turn = turn.clamp(-most_turn(chord), most_turn(chord));
+        let turn = steer(side, way, deflect, chord);
         let s = arc_piece(pos, h, turn, chord);
         h = s.end_heading();
         pos = s.end();
@@ -645,6 +652,22 @@ fn most_turn(chord: f64) -> f64 {
     (2.0 * (chord / (2.0 * MIN_PIECE_RADIUS)).clamp(-1.0, 1.0).asin().to_degrees()).abs()
 }
 
+/// How far an intermediate piece turns. `way` is the way the run already goes (+1 right), and
+/// the piece keeps it: it never turns back the other way, and it never turns further than the
+/// point lies, so the next piece has no reason to reverse. A side the user chose is kept even
+/// when the point lies the other way, which is the long way round.
+fn steer(side: Side, way: f64, deflect: f64, chord: f64) -> f64 {
+    // (the whole of the way the point lies, not a slice of it: a slice leaves the heading
+    // short, the chord walks past, and the next piece turns back — the snake)
+    let toward = match side {
+        Side::Auto => {
+            if way * deflect > 0.0 { way * deflect.abs() } else { 0.0 }
+        }
+        s => s.sign() * deflect.abs().min(80.0),
+    };
+    toward.clamp(-most_turn(chord), most_turn(chord))
+}
+
 /// Two arcs that leave `start` on `h_a`, meet tangentially at a point in between, and arrive
 /// at `end` on `h_b` - each arriving exactly in the way the next leaves, so the join has no
 /// kink and both ways are kept. The meeting point is found by its own heading, taken in small
@@ -658,7 +681,7 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Ve
     use crate::roads::{self, Seg};
     let (h_a, h_b) = (roads::norm_deg(h_a), roads::norm_deg(h_b));
     let v = end - start;
-    let mut best: Option<(f64, Vec<Seg>)> = None;
+    let mut best: Option<(bool, f64, Vec<Seg>)> = None;
     for step in -36..=36 {
         let hm = roads::norm_deg(h_a + step as f64 * 5.0);
         let (t1, t2) = (ang_delta(h_a, hm), ang_delta(hm, h_b));
@@ -687,13 +710,20 @@ fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Option<Ve
         if !side.allows(t1) || !side.allows(t2) {
             continue;
         }
+        // (both arcs the same way is one bend; opposite ways is an S, which a car only does
+        // for a lane change. A bend is taken whenever one exists)
+        let bend = t1.signum() == t2.signum() || t1.abs() < 1.0 || t2.abs() < 1.0;
         let mid = start + u1 * a;
         let segs = vec![arc_piece(start, h_a, t1, a), arc_piece(mid, hm, t2, b)];
-        if best.as_ref().is_none_or(|(r, _)| narrow > *r) {
-            best = Some((narrow, segs));
+        let better = match &best {
+            None => true,
+            Some((was_bend, r, _)) => bend && !*was_bend || bend == *was_bend && narrow > *r,
+        };
+        if better {
+            best = Some((bend, narrow, segs));
         }
     }
-    best.map(|(_, segs)| segs)
+    best.map(|(_, _, segs)| segs)
 }
 
 /// Pieces from `start` leaving on `h_a` and arriving at `end` on `h_b`. Every piece begins in
@@ -717,20 +747,33 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
     let mut pos = start;
     let mut h = roads::norm_deg(h_a);
     let h_b = roads::norm_deg(h_b);
+    let mut way = side.sign();
     for _ in 0..12 {
         let dist = (end - pos).length();
         if dist < 0.4 {
             return segs;
         }
         if dist < SHORT_JOIN {
-            // (a straight to the point: `roads::straight` will not make one under half a
-            // metre, and half a metre is exactly what a join this short is)
-            if dist >= 0.05 {
-                segs.push(crate::roads::Seg { start: pos, heading: roads::heading_of(end - pos), length: dist, radius: 0.0 });
+            let phi = roads::heading_of(end - pos);
+            let off = ang_delta(h, phi);
+            // (a straight only when it leaves the way this piece arrives: otherwise it is a
+            // kink, and an arc that keeps the arrival closes it)
+            if segs.is_empty() || off.abs() <= 8.0 {
+                if dist >= 0.05 {
+                    segs.push(crate::roads::Seg { start: pos, heading: phi, length: dist, radius: 0.0 });
+                }
+                return segs;
             }
-            return segs;
+            if off.abs() <= MAX_DEFLECT && side.allows(2.0 * off) {
+                segs.push(arc_piece(pos, h, 2.0 * off, dist));
+                return segs;
+            }
         }
         let phi = roads::heading_of(end - pos);
+        let deflect = ang_delta(h, phi);
+        if way == 0.0 && deflect.abs() > 1.0 {
+            way = deflect.signum();
+        }
         // (one arc: its chord must lie at half its turn, and it must turn into `h_b`)
         let turn = ang_delta(h, h_b);
         if turn.abs() <= 140.0 && side.allows(turn) && ang_delta(roads::norm_deg(h + turn * 0.5), phi).abs() <= 3.0 && (turn.abs() < 1e-4 || dist / (2.0 * (turn.to_radians() * 0.5).abs().sin()) >= MIN_PIECE_RADIUS) {
@@ -741,10 +784,10 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
             segs.extend(two);
             return segs;
         }
-        // (too far round for either: go on forward, the way coming round as it goes)
+        // (too far round for either: go on the same way, and not past where the point lies,
+        // or the next piece turns back and the run snakes)
         let chord = (dist * 0.6).clamp(1.0, 30.0);
-        let turn = side.pick((2.0 * ang_delta(h, phi).clamp(-35.0, 35.0)).clamp(-80.0, 80.0));
-        let turn = turn.clamp(-most_turn(chord), most_turn(chord));
+        let turn = steer(side, way, deflect, chord);
         let s = arc_piece(pos, h, turn, chord);
         h = s.end_heading();
         pos = s.end();
@@ -3841,6 +3884,46 @@ Main
             assert!(step.length() < 40.0, "a piece is a long loop: {}", step.length());
             assert!(crate::roads::dir(s.heading).dot(step) > 0.0, "a piece went backwards: {step:?}");
         }
+        // (the old run turned left, then right, then left: a snake. A car holds one way)
+        assert!(reversals(&segs) <= 1, "it snakes: {} reversals", reversals(&segs));
+    }
+
+    /// How many times a run changes the way it turns. Straights do not count.
+    fn reversals(segs: &[crate::roads::Seg]) -> usize {
+        let mut n = 0;
+        let mut prev = 0.0;
+        for s in segs {
+            let t = if s.radius.abs() < 1e-6 { 0.0 } else { s.radius.signum() };
+            if t != 0.0 && prev != 0.0 && (t - prev).abs() > 0.5 {
+                n += 1;
+            }
+            if t != 0.0 {
+                prev = t;
+            }
+        }
+        n
+    }
+
+    /// A point off behind the start used to come out as a zigzag, each piece turning back on
+    /// the one before it. A car turns one way until it is lined up.
+    #[test]
+    fn a_run_turns_one_way_instead_of_snaking() {
+        let cases = [
+            (DVec2::new(-8.0, -2.0), 0.0_f64),
+            (DVec2::new(3.0, -12.0), 0.0),
+            (DVec2::new(-4.0, 6.0), 0.0),
+            (DVec2::new(10.0, 2.0), 90.0),
+        ];
+        for (end, heading) in cases {
+            let segs = forward_segs(DVec2::ZERO, heading, end, Side::Auto);
+            assert!(!segs.is_empty(), "no run to {end:?}");
+            at_each_join(&segs, DVec2::ZERO, end);
+            assert!(reversals(&segs) <= 1, "a snake to {end:?}: {} reversals", reversals(&segs));
+        }
+        // (and a join that cannot be one arc does the same)
+        let join = connect_segs(DVec2::ZERO, 0.0, DVec2::new(-6.0, 4.0), 90.0, Side::Auto);
+        at_each_join(&join, DVec2::ZERO, DVec2::new(-6.0, 4.0));
+        assert!(reversals(&join) <= 1, "a snake of a join: {} reversals", reversals(&join));
     }
 
     #[test]
