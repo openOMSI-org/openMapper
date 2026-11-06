@@ -416,14 +416,14 @@ fn retarget(template: &Path, h0: f64, h1: f64) -> Vec<Path> {
     if let Some(segs) = crate::reshape::fit(crate::reshape::End { pos: a, heading: Some(h0) }, crate::reshape::End { pos: b, heading: Some(h1) }) {
         return lay_segments(template, &segs);
     }
-    let legs = connect_legs(a, h0, b, h1);
-    if legs.is_empty() {
+    let segs = connect_segs(a, h0, b, h1);
+    if segs.is_empty() {
         return Vec::new();
     }
     let mut z = template.start().z;
     let mut out = Vec::new();
-    for leg in &legs {
-        let q = lay_leg(template, leg, z);
+    for seg in &segs {
+        let q = lay_seg(template, seg, z);
         z = q.end().z;
         out.push(q);
     }
@@ -526,100 +526,153 @@ fn insert_after(paths: &mut Vec<Path>, index: usize, mut extra: Vec<Path>) {
     }
 }
 
-/// One piece of a connection, in plan: it leaves `start` on `heading` and ends at `end`.
-struct Leg {
-    start: DVec2,
-    heading: f64,
-    end: DVec2,
+/// Past this deflection of the chord (degrees), one arc to the point turns back on itself
+/// (`length / chord = θ / sin θ`) and the way is split into pieces instead.
+const MAX_DEFLECT: f64 = 70.0;
+
+/// One arc that leaves `start` on `heading`, turns `turn` degrees (its end is that much
+/// further round), and is `chord` metres across. Its chord lies at `heading + turn / 2`.
+fn arc_piece(start: DVec2, heading: f64, turn: f64, chord: f64) -> crate::roads::Seg {
+    use crate::roads::Seg;
+    let heading = crate::roads::norm_deg(heading);
+    let chord = chord.max(0.01);
+    if turn.abs() < 1e-4 {
+        return Seg { start, heading, length: chord, radius: 0.0 };
+    }
+    let half = (turn.to_radians() * 0.5).abs();
+    let r = chord / (2.0 * half.sin());
+    Seg { start, heading, length: half * 2.0 * r, radius: r * turn.signum() }
 }
 
-/// Past this, one arc from the leaving heading to the point turns back on itself
-/// (`length / chord = θ / sin θ`). A bend inside it stays one piece.
-const ONE_ARC: f64 = 100.0;
-
-/// Pieces from `start` along `heading` to `end`. One piece when the point lies ahead
-/// or off to the side. Several short forward pieces when one arc would loop back.
-fn forward_legs(start: DVec2, heading: f64, end: DVec2) -> Vec<Leg> {
-    let mut legs = Vec::new();
+/// Pieces from `start` along `heading` to `end`, each an arc that begins in exactly the way
+/// the piece before it ended. One piece when the point lies ahead or off to the side;
+/// several when one arc would loop back.
+fn forward_segs(start: DVec2, heading: f64, end: DVec2) -> Vec<crate::roads::Seg> {
+    use crate::roads;
+    let mut segs = Vec::new();
     let mut pos = start;
-    let mut h = heading;
+    let mut h = roads::norm_deg(heading);
     for _ in 0..12 {
-        let to = end - pos;
-        let dist = to.length();
+        let dist = (end - pos).length();
         if dist < 0.4 {
-            break;
+            return segs;
         }
-        let turn = ang_delta(h, crate::roads::heading_of(to));
-        if turn.abs() <= ONE_ARC {
-            legs.push(Leg { start: pos, heading: h, end });
-            return legs;
+        let deflect = ang_delta(h, roads::heading_of(end - pos));
+        if deflect.abs() <= MAX_DEFLECT {
+            // (an arc that leaves on `h` and passes through the point leaves its chord at
+            // half its turn: the turn is twice the deflection)
+            segs.push(arc_piece(pos, h, 2.0 * deflect, dist));
+            return segs;
         }
-        // Swing part of the way round and travel a fraction of the gap. The chord sits
-        // at half the turn, so the piece arrives having turned twice that.
-        let aim = turn.signum() * (turn.abs() * 0.45).clamp(40.0, 70.0);
-        let chord_h = crate::roads::norm_deg(h + aim);
-        let travel = (dist * 0.35).clamp(1.0, 20.0).min(dist * 0.6);
-        let next = pos + crate::roads::dir(chord_h) * travel;
-        legs.push(Leg { start: pos, heading: h, end: next });
-        pos = next;
-        h = crate::roads::norm_deg(h + 2.0 * aim);
+        // A piece of the way round: part of the turn, so the way comes round a bit and the
+        // point is nearer each time.
+        let turn = (2.0 * deflect.clamp(-35.0, 35.0)).clamp(-80.0, 80.0);
+        let s = arc_piece(pos, h, turn, (dist * 0.6).clamp(1.0, 30.0));
+        h = s.end_heading();
+        pos = s.end();
+        segs.push(s);
     }
     if (end - pos).length() >= 0.4 {
-        legs.push(Leg { start: pos, heading: h, end });
+        let deflect = ang_delta(h, roads::heading_of(end - pos));
+        segs.push(arc_piece(pos, h, 2.0 * deflect.clamp(-MAX_DEFLECT, MAX_DEFLECT), (end - pos).length()));
     }
-    if legs.is_empty() {
-        legs.push(Leg { start, heading, end });
-    }
-    legs
+    segs
 }
 
-/// Pieces from `start` leaving on `h_a` and arriving at `end` on `h_b`. The last piece runs
-/// straight into `end` along `h_b`, so the join is not an arc that turns back on itself.
+/// Two arcs that leave `start` on `h_a`, meet tangentially at a point in between, and arrive
+/// at `end` on `h_b` - each arriving exactly in the way the next leaves, so the join has no
+/// kink and both ways are kept. The meeting point is found by its own heading, taken in small
+/// steps: a heading that puts the point in front of both ends is the one used, preferring the
+/// widest radii (a tight pair of arcs is what a junction's corner often is).
+fn s_join(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Option<Vec<crate::roads::Seg>> {
+    use crate::roads::{self, Seg};
+    let (h_a, h_b) = (roads::norm_deg(h_a), roads::norm_deg(h_b));
+    let v = end - start;
+    let mut best: Option<(f64, Vec<Seg>)> = None;
+    for step in -36..=36 {
+        let hm = roads::norm_deg(h_a + step as f64 * 5.0);
+        let (t1, t2) = (ang_delta(h_a, hm), ang_delta(hm, h_b));
+        if t1.abs() > 170.0 || t2.abs() > 170.0 {
+            continue;
+        }
+        let u1 = roads::dir(roads::norm_deg(h_a + t1 * 0.5));
+        let u2 = roads::dir(roads::norm_deg(hm + t2 * 0.5));
+        let det = u1.x * u2.y - u1.y * u2.x;
+        if det.abs() < 1e-6 {
+            continue;
+        }
+        let a = (v.x * u2.y - v.y * u2.x) / det;
+        let b = (u1.x * v.y - u1.y * v.x) / det;
+        if !(a > 0.3 && b > 0.3) {
+            continue;
+        }
+        let r1 = if t1.abs() < 1e-4 { f64::MAX } else { a / (2.0 * (t1.to_radians() * 0.5).abs().sin()) };
+        let r2 = if t2.abs() < 1e-4 { f64::MAX } else { b / (2.0 * (t2.to_radians() * 0.5).abs().sin()) };
+        let narrow = r1.min(r2);
+        let mid = start + u1 * a;
+        let segs = vec![arc_piece(start, h_a, t1, a), arc_piece(mid, hm, t2, b)];
+        if best.as_ref().is_none_or(|(r, _)| narrow > *r) {
+            best = Some((narrow, segs));
+        }
+    }
+    best.map(|(_, segs)| segs)
+}
+
+/// Pieces from `start` leaving on `h_a` and arriving at `end` on `h_b`. Every piece begins in
+/// exactly the way the piece before it ended, so no join has a kink in it; the first leaves in
+/// `h_a` and the last arrives in `h_b`.
 ///
-/// One piece is only used when one arc can meet *both* ways: an arc that leaves on `h_a`
-/// arrives on `2 * phi - h_a`, and any other arrival would turn the join. Rather than change
-/// the way the path leaves, the join is split into forward pieces that meet each way exactly.
-fn connect_legs(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Vec<Leg> {
-    let dist = (end - start).length();
-    if dist < 0.25 {
-        return Vec::new();
+/// One arc only when one arc can do both (an arc leaving on `h_a` arrives on `2 * phi - h_a`,
+/// so meeting `h_b` is a coincidence of the geometry). Otherwise two arcs that meet tangentially
+/// ([`s_join`]), and when the point is too far round for that, forward pieces that bring the way
+/// round. The way the join leaves is never turned to make a single piece fit.
+fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64) -> Vec<crate::roads::Seg> {
+    use crate::roads;
+    let mut segs = Vec::new();
+    let mut pos = start;
+    let mut h = roads::norm_deg(h_a);
+    let h_b = roads::norm_deg(h_b);
+    for _ in 0..12 {
+        let dist = (end - pos).length();
+        if dist < 0.4 {
+            return segs;
+        }
+        let phi = roads::heading_of(end - pos);
+        // (one arc: its chord must lie at half its turn, and it must turn into `h_b`)
+        let turn = ang_delta(h, h_b);
+        if turn.abs() <= 140.0 && ang_delta(roads::norm_deg(h + turn * 0.5), phi).abs() <= 3.0 {
+            segs.push(arc_piece(pos, h, turn, dist));
+            return segs;
+        }
+        if let Some(two) = s_join(pos, h, end, h_b) {
+            segs.extend(two);
+            return segs;
+        }
+        // (too far round for either: go on forward, the way coming round as it goes)
+        let turn = (2.0 * ang_delta(h, phi).clamp(-35.0, 35.0)).clamp(-80.0, 80.0);
+        let s = arc_piece(pos, h, turn, (dist * 0.6).clamp(1.0, 30.0));
+        h = s.end_heading();
+        pos = s.end();
+        segs.push(s);
     }
-    let phi = crate::roads::heading_of(end - start);
-    let one_arc = ang_delta(2.0 * phi - h_a, h_b).abs();
-    if one_arc <= 2.0 {
-        return vec![Leg { start, heading: h_a, end }];
+    if (end - pos).length() >= 0.4 {
+        let deflect = ang_delta(h, roads::heading_of(end - pos));
+        segs.push(arc_piece(pos, h, 2.0 * deflect.clamp(-MAX_DEFLECT, MAX_DEFLECT), (end - pos).length()));
     }
-    let d = (dist * 0.35).clamp(4.0, 20.0);
-    let approach = end - crate::roads::dir(h_b) * d;
-    if (approach - start).length() < 1.5 || (approach - end).length() > dist * 0.9 {
-        // (too little room for a run-in: the pieces still go forward, the last of them
-        // turning onto the arrival's way)
-        return forward_legs(start, h_a, end);
-    }
-    let mut legs = forward_legs(start, h_a, approach);
-    legs.push(Leg { start: approach, heading: h_b, end });
-    legs
+    segs
 }
 
-/// `template` laid along `leg`, starting at height `z0`. The radius follows the leg's
-/// heading; a result that would loop is kept straight to the point instead.
-fn lay_leg(template: &Path, leg: &Leg, z0: f64) -> Path {
+/// `template` laid along `seg`, starting at height `z0`. The seg is an arc (or a straight) of
+/// a known way out, turn and length, so it is written as it is: no fitting, and no fallback
+/// that would break the way the next piece is to begin.
+fn lay_seg(template: &Path, s: &crate::roads::Seg, z0: f64) -> Path {
     let mut q = template.clone();
-    q.v[0] = leg.start.x as f32;
-    q.v[1] = leg.start.y as f32;
+    q.v[0] = s.start.x as f32;
+    q.v[1] = s.start.y as f32;
     q.v[2] = z0 as f32;
-    q.v[3] = leg.heading as f32;
-    q.v[4] = 0.0;
-    q.v[5] = 1.0;
-    q.set_end(DVec3::new(leg.end.x, leg.end.y, z0));
-    q.fit_start_tangent(leg.heading);
-    let chord = (leg.end - leg.start).length();
-    if !q.length().is_finite() || q.length() > chord * 2.8 + 8.0 {
-        q.v[3] = leg.heading as f32;
-        q.v[4] = 0.0;
-        q.v[5] = chord.max(0.5) as f32;
-        q.set_end(DVec3::new(leg.end.x, leg.end.y, z0));
-    }
+    q.v[3] = s.heading as f32;
+    q.v[4] = s.radius as f32;
+    q.v[5] = s.length as f32;
     q
 }
 
@@ -631,17 +684,17 @@ enum PieceEnd {
     At { z: f64, slope: f64 },
 }
 
-/// `template`'s shape laid along `legs`, beginning at `a` with the rise `s_a` there. The
+/// `template`'s shape laid along `segs`, beginning at `a` with the rise `s_a` there. The
 /// pieces between sit on the surface, so a join follows the deck rather than cutting through
 /// it. `inherit`: the first piece keeps the template's own rules (a drag of an end, rather
 /// than a new piece added beside it).
-fn lay_join(template: &Path, a: DVec3, s_a: f64, legs: &[Leg], end: PieceEnd, inherit: bool, tris: &[f32]) -> Vec<Path> {
-    let n = legs.len();
+fn lay_join(template: &Path, a: DVec3, s_a: f64, segs: &[crate::roads::Seg], end: PieceEnd, inherit: bool, tris: &[f32]) -> Vec<Path> {
+    let n = segs.len();
     let mut out: Vec<Path> = Vec::new();
     let mut z = a.z;
-    for (k, leg) in legs.iter().enumerate() {
+    for (k, seg) in segs.iter().enumerate() {
         let start_z = if k == 0 { a.z } else { z };
-        let mut q = lay_leg(template, leg, start_z);
+        let mut q = lay_seg(template, seg, start_z);
         if k == 0 && inherit {
             q.blocks = template.blocks.clone();
             q.crossing_problem = template.crossing_problem;
@@ -650,7 +703,7 @@ fn lay_join(template: &Path, a: DVec3, s_a: f64, legs: &[Leg], end: PieceEnd, in
             q.crossing_problem = false;
         }
         q.light = template.light;
-        let want = surface_z(tris, leg.end);
+        let want = surface_z(tris, seg.end());
         if k + 1 == n {
             match end {
                 PieceEnd::At { z, slope } => q.set_end_height_and_slope(z, slope),
@@ -692,8 +745,8 @@ fn apply_reach(crossing: &mut Crossing, anchor: &mut ReachAnchor, aim: DVec2, tr
     drop_inserted(&mut crossing.paths, anchor.root + 1, anchor.spawned);
     anchor.spawned = 0;
     let legs = match joint {
-        Some(j) => connect_legs(anchor.start, anchor.heading, aim, j.heading),
-        None => forward_legs(anchor.start, anchor.heading, aim),
+        Some(j) => connect_segs(anchor.start, anchor.heading, aim, j.heading),
+        None => forward_segs(anchor.start, anchor.heading, aim),
     };
     if legs.is_empty() {
         return None;
@@ -1095,12 +1148,12 @@ impl CrossingPaths {
         template.crossing_problem = false;
         // (several pieces as soon as one arc cannot meet both ways: the picked path's way out
         // of its end is not turned to make a single piece fit)
-        let legs = if same(h_a, phi) && same(h_a, h_b) {
-            vec![Leg { start: a.truncate(), heading: h_a, end: b.truncate() }]
+        let segs = if same(h_a, phi) && same(h_a, h_b) {
+            vec![crate::roads::Seg { start: a.truncate(), heading: h_a, length: chord, radius: 0.0 }]
         } else {
-            connect_legs(a.truncate(), h_a, b.truncate(), h_b)
+            connect_segs(a.truncate(), h_a, b.truncate(), h_b)
         };
-        let made = lay_join(&template, a, s_a, &legs, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
+        let made = lay_join(&template, a, s_a, &segs, PieceEnd::At { z: b.z, slope: s_b }, false, &surface);
         if made.is_empty() {
             return None;
         }
@@ -3078,8 +3131,8 @@ impl CrossingPaths {
                         // at its rise; laid onto one: it arrives in its way as well)
                         if let Some(j) = from_join {
                             let legs = match end_joint {
-                                Some(e) => connect_legs(from, j.heading, q, e.heading),
-                                None => forward_legs(from, j.heading, q),
+                                Some(e) => connect_segs(from, j.heading, q, e.heading),
+                                None => forward_segs(from, j.heading, q),
                             };
                             let end = match end_joint {
                                 Some(e) => PieceEnd::At { z: e.pos.z, slope: e.slope },
@@ -3538,28 +3591,38 @@ Main
     }
 
     /// A join that one arc cannot make is pieces that keep the way out and the way in: the
-    /// departure is never turned to make a single piece fit.
+    /// departure is never turned to make a single piece fit, and each piece begins in the way
+    /// the piece before it ended, so no join has a kink.
     #[test]
     fn a_join_keeps_both_ways() {
         let a = DVec2::new(0.0, 10.0);
         let b = DVec2::new(6.0, 16.0);
         // (in line with the way out and the way in: one piece)
-        let straight = connect_legs(DVec2::ZERO, 0.0, DVec2::new(0.0, 12.0), 0.0);
+        let straight = connect_segs(DVec2::ZERO, 0.0, DVec2::new(0.0, 12.0), 0.0);
         assert_eq!(straight.len(), 1);
         // (off to the side, arriving southward: pieces, the first still leaving north)
-        let legs = connect_legs(a, 0.0, b, 180.0);
-        assert!(legs.len() >= 2, "one arc cannot arrive south from a northward start: {}", legs.len());
-        assert!(ang_delta(legs[0].heading, 0.0).abs() < 0.5, "it leaves the way it did: {}", legs[0].heading);
-        assert!((legs[0].start - a).length() < 1e-9);
-        let last = legs.last().unwrap();
-        assert!((last.end - b).length() < 1e-9, "it ends at the point: {:?}", last.end);
-        assert!(ang_delta(last.heading, 180.0).abs() < 0.5, "arriving in the other's way: {}", last.heading);
-        assert!((last.end - last.start).length() > 0.0);
-        let mut at = a;
-        for leg in &legs {
-            assert!((leg.start - at).length() < 1e-6);
-            at = leg.end;
+        let segs = connect_segs(a, 0.0, b, 180.0);
+        assert!(segs.len() >= 2, "one arc cannot arrive south from a northward start: {}", segs.len());
+        assert!(ang_delta(segs[0].heading, 0.0).abs() < 0.5, "it leaves the way it did: {}", segs[0].heading);
+        assert!((segs[0].start - a).length() < 1e-9);
+        let last = segs.last().unwrap();
+        assert!((last.end() - b).length() < 1e-6, "it ends at the point: {:?}", last.end());
+        assert!(ang_delta(last.end_heading(), 180.0).abs() < 0.5, "arriving in the other's way: {}", last.end_heading());
+        assert!(last.length > 0.0);
+        at_each_join(&segs, a, b);
+    }
+
+    /// A piece begins in the way the one before it ended, the run starts where asked, and the
+    /// last piece ends at the point: what leaves each join looking like one line.
+    fn at_each_join(segs: &[crate::roads::Seg], start: DVec2, end: DVec2) {
+        assert!((segs[0].start - start).length() < 1e-6, "it does not start where asked: {:?}", segs[0].start);
+        for w in segs.windows(2) {
+            let (before, after) = (&w[0], &w[1]);
+            assert!((before.end() - after.start).length() < 1e-6, "a gap at a join: {:?} vs {:?}", before.end(), after.start);
+            let d = ang_delta(before.end_heading(), after.heading).abs();
+            assert!(d < 0.5, "a kink at a join: {} then {} ({d}°)", before.end_heading(), after.heading);
         }
+        assert!((segs.last().unwrap().end() - end).length() < 1e-6, "it does not end at the point: {:?}", segs.last().unwrap().end());
     }
 
     /// A point off to the side or behind is reached by short forward pieces, not one loop.
@@ -3567,19 +3630,15 @@ Main
     fn a_point_behind_is_several_forward_pieces() {
         let start = DVec2::new(0.0, 0.0);
         let end = DVec2::new(-8.0, -2.0);
-        let legs = forward_legs(start, 0.0, end);
-        assert!(legs.len() >= 2, "one arc would loop: {} pieces", legs.len());
-        assert!((legs.last().unwrap().end - end).length() < 1e-6);
-        assert!(legs.len() <= 4, "too many pieces: {}", legs.len());
-        let mut at = start;
-        for leg in &legs {
-            assert!((leg.start - at).length() < 1e-6);
-            let step = leg.end - leg.start;
-            let along = crate::roads::dir(leg.heading).dot(step);
-            assert!(along > 0.0, "a piece went backwards: {:?}", step);
-            let deflect = ang_delta(leg.heading, crate::roads::heading_of(step)).abs();
-            assert!(deflect <= ONE_ARC + 1.0, "a piece still loops: {deflect}");
-            at = leg.end;
+        let segs = forward_segs(start, 0.0, end);
+        assert!(segs.len() >= 2, "one arc would loop: {} pieces", segs.len());
+        assert!(segs.len() <= 6, "too many pieces: {}", segs.len());
+        at_each_join(&segs, start, end);
+        assert!(ang_delta(segs[0].heading, 0.0).abs() < 0.5, "it leaves the way it did: {}", segs[0].heading);
+        for s in &segs {
+            let step = s.end() - s.start;
+            assert!(step.length() < 40.0, "a piece is a long loop: {}", step.length());
+            assert!(crate::roads::dir(s.heading).dot(step) > 0.0, "a piece went backwards: {step:?}");
         }
     }
 
@@ -3801,11 +3860,23 @@ Main
         run(&ctx, &mut w, &mut ed, vec![egui::Event::PointerMoved(to)], 0.3);
         run(&ctx, &mut w, &mut ed, vec![press(to, false)], 0.4);
         let sheet = w.sheet.as_ref().unwrap();
-        assert_eq!(sheet.crossing.paths.len(), before + 1, "a path was added");
+        let added = &sheet.crossing.paths[before..];
+        assert!(!added.is_empty(), "a path was added");
         assert_eq!(sheet.crossing.paths[2], untouched, "the path pressed on was not dragged");
-        let p = sheet.crossing.paths.last().unwrap();
-        assert!((p.start().truncate() - end.truncate()).length() < 1e-3, "the new path starts at the end: {:?} vs {:?}", p.start(), end);
-        assert_eq!(p.start().z as f32, end.z as f32, "at the end's own height");
+        let first = &added[0];
+        assert!((first.start().truncate() - end.truncate()).length() < 1e-3, "the new path starts at the end: {:?} vs {:?}", first.start(), end);
+        assert!((first.start().z - end.z).abs() < 1e-3, "at the end's own height: {} vs {}", first.start().z, end.z);
+        // (one path or several, they run on from each other without a kink)
+        for pair in added.windows(2) {
+            let (was, now) = (&pair[0], &pair[1]);
+            assert!((was.end().truncate() - now.start().truncate()).length() < 0.05, "a gap between pieces: {:?} vs {:?}", was.end(), now.start());
+            let c = was.curve();
+            let arrive = c.heading_at(c.length.max(0.0));
+            assert!(ang_delta(arrive, now.heading()).abs() < 0.5, "a kink between pieces: {arrive} then {}", now.heading());
+        }
+        let want = end.truncate() + DVec2::new(60.0 / w.scale as f64, 0.0);
+        let last = added.last().unwrap();
+        assert!((last.end().truncate() - want).length() < 0.3, "it ends where the mouse was let go: {:?} vs {want:?}", last.end());
     }
 
     /// The paths can be worked on the map itself: an end of one is taken there and dragged,
