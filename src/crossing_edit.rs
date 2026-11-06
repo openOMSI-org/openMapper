@@ -366,6 +366,26 @@ pub struct Joint {
     pub flow: i32,
 }
 
+impl Joint {
+    /// The way traffic crosses this joint: along the other path's body when that path's traffic
+    /// leaves the joint, back along it when its traffic arrives. A path put on the joint is
+    /// tangent to that line, and `heading` alone does not say which of its two directions it is
+    /// - this does. Arriving head-on, a join can never be made without looping right round.
+    pub fn through(self) -> f64 {
+        match self.flow {
+            0 => norm_deg(self.heading + 180.0),
+            _ => norm_deg(self.heading),
+        }
+    }
+
+    /// The way a path *begun* at this joint runs: back along the other path's body, so it
+    /// leaves the joint outward rather than along the path it is put on. Whether traffic is
+    /// driven along it or against it is what `flow` says.
+    pub fn outward(self) -> f64 {
+        norm_deg(self.heading + 180.0)
+    }
+}
+
 /// The `direction` (0 along, 1 against, 2 both) a new path laid outward from a joint of another
 /// path should have. `at_end`: the joint is at that path's end rather than its start.
 ///

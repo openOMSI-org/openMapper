@@ -5317,7 +5317,7 @@ impl Editor {
                 // (the disc drawn on top of this lift is what a click is aimed at)
                 let lift = DVec3::Z * 0.4;
                 disc(&mut x.overlay, cam, *pos + lift, (cam.distance * 0.0030).clamp(0.09, 2.2) as f32, [0.36, 0.95, 0.45, 1.0]);
-                let d = crate::roads::dir(j.heading) * (cam.distance * 0.02).clamp(0.6, 6.0);
+                let d = crate::roads::dir(j.outward()) * (cam.distance * 0.02).clamp(0.6, 6.0);
                 line(&mut x.overlay, cam, *pos + lift, *pos + lift + DVec3::new(d.x, d.y, 0.0), (cam.distance * 0.0010).clamp(0.025, 0.7) as f32, [0.36, 0.95, 0.45, 1.0]);
             }
         }

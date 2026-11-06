@@ -350,7 +350,7 @@ fn snap_joint(crossing: &Crossing, i: usize, q: DVec2, reach: f64, ctrl: bool) -
 fn join_start(crossing: &mut Crossing, i: usize, j: Joint) {
     let Some(p) = crossing.paths.get_mut(i) else { return };
     p.set_start(DVec3::new(j.pos.x, j.pos.y, j.pos.z));
-    p.fit_start_tangent(j.heading);
+    p.fit_start_tangent(j.outward());
     p.set_start_height_and_slope(j.pos.z, j.slope);
 }
 
@@ -564,14 +564,6 @@ impl Side {
             Side::Auto => 0.0,
         }
     }
-
-    /// `turn`, made to go the way this side asks when it has a preference.
-    fn pick(self, turn: f64) -> f64 {
-        match self {
-            Side::Auto => turn,
-            s => s.sign() * turn.abs(),
-        }
-    }
 }
 
 /// Past this deflection of the chord (degrees), one arc to the point turns back on itself
@@ -603,6 +595,10 @@ fn forward_segs(start: DVec2, heading: f64, end: DVec2, side: Side) -> Vec<crate
     // (the way the run turns, chosen once: a car holds one way round until it is lined up,
     // it does not turn left, then right, then left again)
     let mut way = side.sign();
+    // (how near the point the run has come: a piece that does not bring it nearer is going
+    // round the point rather than to it, which winds the path into a ring. The last piece
+    // then closes it)
+    let mut closest = (end - start).length();
     for _ in 0..12 {
         let dist = (end - pos).length();
         if dist < 0.4 {
@@ -628,14 +624,30 @@ fn forward_segs(start: DVec2, heading: f64, end: DVec2, side: Side) -> Vec<crate
         h = s.end_heading();
         pos = s.end();
         segs.push(s);
+        let now = (end - pos).length();
+        if now > closest - 0.05 {
+            break;
+        }
+        closest = now;
     }
     if (end - pos).length() >= 0.4 {
-        let dist = (end - pos).length();
-        let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
-        let turn = side.pick(2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
-        segs.push(arc_piece(pos, h, turn, dist));
+        segs.push(closing_piece(pos, h, end));
     }
     segs
+}
+
+/// The last piece of a run: it lands on `end` and turns the way the point lies, whatever radius
+/// that asks for. A closing piece is not turned round the other way to suit a chosen side - that
+/// leaves the end of the join in mid-air - and a point almost exactly behind it is closed with a
+/// straight, since the arc through that one is a loop of kilometres.
+fn closing_piece(pos: DVec2, h: f64, end: DVec2) -> crate::roads::Seg {
+    let dist = (end - pos).length();
+    let phi = crate::roads::heading_of(end - pos);
+    let deflect = ang_delta(h, phi);
+    if deflect.abs() * 2.0 > 340.0 {
+        return crate::roads::Seg { start: pos, heading: phi, length: dist, radius: 0.0 };
+    }
+    arc_piece(pos, h, 2.0 * deflect, dist)
 }
 
 /// A join shorter than this is closed with one straight piece: over a few centimetres there is
@@ -748,6 +760,9 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
     let mut h = roads::norm_deg(h_a);
     let h_b = roads::norm_deg(h_b);
     let mut way = side.sign();
+    // (a piece that does not bring the point nearer is going round it, and enough of those
+    // wind the join into a ring. The last piece closes it instead)
+    let mut closest = (end - start).length();
     for _ in 0..12 {
         let dist = (end - pos).length();
         if dist < 0.4 {
@@ -807,15 +822,17 @@ fn connect_segs(start: DVec2, h_a: f64, end: DVec2, h_b: f64, side: Side) -> Vec
         h = s.end_heading();
         pos = s.end();
         segs.push(s);
+        let now = (end - pos).length();
+        if now > closest - 0.05 {
+            break;
+        }
+        closest = now;
     }
     if (end - pos).length() >= 0.4 {
         if let Some(done) = arrive_on(pos, h, end, h_b, side) {
             segs.extend(done);
         } else {
-            let dist = (end - pos).length();
-            let deflect = ang_delta(h, roads::heading_of(end - pos)).clamp(-MAX_DEFLECT, MAX_DEFLECT);
-            let turn = side.pick(2.0 * deflect).clamp(-most_turn(dist), most_turn(dist));
-            segs.push(arc_piece(pos, h, turn, dist));
+            segs.push(closing_piece(pos, h, end));
         }
     }
     segs
@@ -957,7 +974,7 @@ fn apply_reach(crossing: &mut Crossing, anchor: &mut ReachAnchor, aim: DVec2, tr
     drop_inserted(&mut crossing.paths, anchor.root + 1, anchor.spawned);
     anchor.spawned = 0;
     let segs = match joint {
-        Some(j) => connect_segs(anchor.start, anchor.heading, aim, j.heading, side),
+        Some(j) => connect_segs(anchor.start, anchor.heading, aim, j.through(), side),
         None => forward_segs(anchor.start, anchor.heading, aim, side),
     };
     if segs.is_empty() {
@@ -1356,7 +1373,11 @@ impl CrossingPaths {
         let h_a = crate::roads::norm_deg(c.heading_at(c.length.max(0.0)));
         let s_a = p.slope_end();
         let b = j.pos;
-        let h_b = j.heading;
+        // (the way traffic crosses the joint, which is the way the join has to arrive: the
+        // other path's body seen along its traffic, not always `heading` — a joint whose
+        // traffic arrives at it is joined from the other side)
+        let travel = if p.direction() == 1 { j.through() + 180.0 } else { j.through() };
+        let h_b = crate::roads::norm_deg(travel);
         let s_b = j.slope;
         let delta = b.truncate() - a.truncate();
         let chord = delta.length();
@@ -1512,7 +1533,7 @@ impl CrossingPaths {
         p.v[0] = j.pos.x as f32;
         p.v[1] = j.pos.y as f32;
         p.v[2] = j.pos.z as f32;
-        p.v[3] = j.heading as f32;
+        p.v[3] = j.outward() as f32;
         p.v[4] = 0.0;
         p.v[5] = 10.0;
         p.v[6] = j.slope as f32;
@@ -3262,7 +3283,7 @@ impl CrossingPaths {
                     continue;
                 }
                 painter.circle_stroke(s, 5.4, Stroke::new(1.4, SNAPPED));
-                let d = crate::roads::dir(j.heading);
+                let d = crate::roads::dir(j.outward());
                 painter.line_segment([s, to_screen(j.pos.truncate() + d * 3.0)], Stroke::new(1.2, SNAPPED));
             }
         }
@@ -3416,8 +3437,8 @@ impl CrossingPaths {
                         // at its rise; laid onto one: it arrives in its way as well)
                         if let Some(j) = from_join {
                             let pieces = match end_joint {
-                                Some(e) => connect_segs(from, j.heading, q, e.heading, self.side),
-                                None => forward_segs(from, j.heading, q, self.side),
+                                Some(e) => connect_segs(from, j.outward(), q, e.through(), self.side),
+                                None => forward_segs(from, j.outward(), q, self.side),
                             };
                             let end = match end_joint {
                                 Some(e) => PieceEnd::At { z: e.pos.z, slope: e.slope },
@@ -3434,7 +3455,7 @@ impl CrossingPaths {
                             return;
                         }
                         if let Some(j) = end_joint {
-                            p.fit_end_tangent(j.heading);
+                            p.fit_end_tangent(j.through());
                             p.set_end_height_and_slope(j.pos.z, j.slope);
                         } else {
                             // (a path drawn on the crossing sits on the deck, one grade)
@@ -4000,7 +4021,60 @@ Main
         let at = w.start_from_joint(j).expect("started");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert_eq!(p.direction(), 1, "the new path takes the join's direction");
-        assert!(ang_delta(p.heading(), 90.0).abs() < 0.5, "and its way out: {}", p.heading());
+        // (driven against its own geometry, it reaches the joint going the way that joint's
+        // traffic goes - so its geometry leaves the joint the other way round)
+        assert!(ang_delta(p.heading(), j.outward()).abs() < 0.5, "outward from it: {}", p.heading());
+    }
+
+    /// A joint's `heading` is only the line its other path runs along: the way traffic goes
+    /// across it can be either of that line's two directions, and a join has to arrive on that
+    /// one. Taken on the wrong one, no join can be made without turning right round - the
+    /// pieces then wind round the point in a ring.
+    #[test]
+    fn a_join_arrives_the_way_the_joints_traffic_goes() {
+        // (this path's traffic leaves the joint, back along its body: the join arrives along it)
+        let leaves = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 1 };
+        assert!((leaves.through() - 90.0).abs() < 1e-9, "{}", leaves.through());
+        // (its traffic arrives at the joint: the join arrives the other way round)
+        let arrives = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 0 };
+        assert!((arrives.through() - 270.0).abs() < 1e-9, "{}", arrives.through());
+        // (a path begun at either runs outward, whichever way the traffic goes)
+        assert!((leaves.outward() - 270.0).abs() < 1e-9);
+        assert!((arrives.outward() - 270.0).abs() < 1e-9);
+
+        // (a join onto the arriving one: a dozen pieces used to wind round the point. It hands
+        // the arrival heading to the pieces and closes on the point, not in a ring)
+        let a = DVec2::new(0.0, 10.0);
+        let b = DVec2::new(6.0, 16.0);
+        let segs = connect_segs(a, 0.0, b, arrives.through(), Side::Auto);
+        assert!(segs.len() <= 4, "not a ring: {} pieces", segs.len());
+        at_each_join(&segs, a, b);
+        assert!(reversals(&segs) <= 1, "one way round: {}", reversals(&segs));
+    }
+
+    /// Completing onto a joint whose traffic arrives (the other path's own end): the join is
+    /// taken the way that traffic goes, not the way `heading` points - taken the heading's
+    /// way it has to turn right round the point, and given enough pieces it winds into a ring.
+    #[test]
+    fn completing_onto_an_arriving_joint_takes_the_way_it_goes() {
+        let mut w = opened(Tab::Paths);
+        w.view_3d = true;
+        w.selected = Some(2);
+        let before = w.sheet.as_ref().unwrap().crossing.paths.len();
+        let j = w.joint_at(0, true).expect("path 0's end is a joint");
+        assert_eq!(j.flow, 0, "path 0's traffic runs into that end");
+        assert!(ang_delta(j.through(), j.heading).abs() > 90.0, "the way across is not its heading: {} vs {}", j.through(), j.heading);
+
+        w.set_complete_to(true);
+        let last = w.complete_to_joint(j).expect("joined");
+        let paths = &w.sheet.as_ref().unwrap().crossing.paths;
+        assert!(paths.len() - before <= 4, "a join, not a ring: {} pieces", paths.len() - before);
+        assert_eq!(last, paths.len() - 1);
+        let p = &paths[last];
+        assert!((p.end().truncate() - j.pos.truncate()).length() < 0.05, "it ends on the joint: {:?}", p.end());
+        let c = p.curve();
+        let got = c.heading_at(c.length.max(0.0));
+        assert!(ang_delta(got, j.through()).abs() < 0.5, "arriving the way its traffic goes: {got} vs {}", j.through());
     }
 
     /// A join of half a metre is one straight piece: no bend of a usable radius fits, and a
@@ -4091,7 +4165,7 @@ Main
         w.selected = Some(2);
         w.set_complete_to(true);
         let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 0 };
+        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 1 };
         let at = w.complete_to_joint(j).expect("joined");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert!(p.radius() > 0.0, "the join turns the way it was told: radius {}", p.radius());
@@ -4199,7 +4273,9 @@ Main
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1);
         assert!((p.start() - j.pos).length() < 1e-3, "it starts at the nearby end: {:?}", p.start());
-        assert!((p.heading() - j.heading).abs() < 1e-3, "in that path's way: {}", p.heading());
+        // (begun at the joint, it runs outward - back along the other path's body - whichever
+        // way its traffic goes: that is what `flow` is for)
+        assert!((p.heading() - j.outward()).abs() < 1e-3, "outward from that path: {} vs {}", p.heading(), j.outward());
         assert!((p.slope_start() - j.slope).abs() < 1e-5, "at its rise: {}", p.slope_start());
         assert!((p.slope_end() - j.slope).abs() < 1e-5, "and it keeps climbing so");
         assert_eq!(w.picked(), Some(at), "the new path is the one picked");
@@ -4223,7 +4299,7 @@ Main
         let way = c.heading_at(c.length.max(0.0));
         let rise = p.slope_end();
         // (off to the side, in another way: a corner, so two pieces)
-        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 0 };
+        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 1 };
         w.set_complete_to(true);
         assert!(w.completing());
         let last = w.complete_to_joint(j).expect("joined");
@@ -4238,7 +4314,7 @@ Main
         assert!((end.end().truncate() - j.pos.truncate()).length() < 0.05, "it ends at the other end: {:?} vs {:?}", end.end(), j.pos);
         let ec = end.curve();
         let got = ec.heading_at(ec.length.max(0.0));
-        assert!(((got - j.heading).rem_euclid(360.0)).min((j.heading - got).rem_euclid(360.0)) < 0.5, "arriving in its way: {got} vs {}", j.heading);
+        assert!(((got - j.through()).rem_euclid(360.0)).min((j.through() - got).rem_euclid(360.0)) < 0.5, "arriving the way its traffic crosses: {got} vs {}", j.through());
         assert!((end.end().z - j.pos.z).abs() < 0.02, "at its height: {}", end.end().z);
         assert!((end.slope_end() - j.slope).abs() < 1e-4, "and at its rise: {}", end.slope_end());
         assert!(!w.completing(), "the mode is done with once one is made");
@@ -4262,7 +4338,7 @@ Main
         let d = crate::roads::dir(way);
         let target = a + DVec3::new(d.x, d.y, 0.0) * 8.0;
         w.set_complete_to(true);
-        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 0 }).expect("joined");
+        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 1 }).expect("joined");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1, "one straight piece");
         assert_eq!(last, before);
     }
@@ -4386,7 +4462,7 @@ Main
         assert!((p.end().truncate() - target.truncate()).length() < 1e-3, "the end landed on it: {:?} vs {:?}", p.end(), target);
         // (and it arrives in the other path's way: the tangents meet, no kink)
         let c = p.curve();
-        let their = crate::roads::norm_deg(joint.heading);
+        let their = crate::roads::norm_deg(joint.through());
         let mine = crate::roads::norm_deg(c.heading_at(c.length.max(0.0)));
         assert!(((mine - their).rem_euclid(360.0)).min((their - mine).rem_euclid(360.0)) < 0.5, "the ways meet: {mine} vs {their}");
         assert!((p.end().z - joint.pos.z).abs() < 0.02, "at its height: {}", p.end().z);
