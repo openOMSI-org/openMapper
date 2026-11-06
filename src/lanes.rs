@@ -8,7 +8,7 @@ use glam::{DVec2, DVec3, Vec3};
 use omsi_geometry::SplineCurve;
 
 use crate::assets::Assets;
-use crate::doc::{tile_origin, Document, Sel};
+use crate::doc::{tile_origin, Document, Sel, TileKey};
 use crate::place::Pose;
 use crate::roads;
 
@@ -108,6 +108,57 @@ impl Lane {
     }
 }
 
+/// How far from a crossing the neighbouring paths are gathered and drawn.
+/// Zoomed in, still wide enough for the roads that meet a large junction; zoomed out, not
+/// the whole map (a map of lanes overflowed the graphics buffer).
+pub fn neighbour_reach(distance: f64) -> f64 {
+    (distance * 3.0).clamp(250.0, 700.0)
+}
+
+/// The samples of a lane that fall inside `radius` of `centre`, widened by one sample so the
+/// drawn line reaches the circle, and how near the lane comes. None when it misses.
+/// A segment that only cuts the circle counts too: a long spline is sampled coarsely, and
+/// both samples can sit just outside while the road itself passes through.
+pub fn visible_span(pts: &[DVec3], centre: DVec2, radius: f64) -> Option<(usize, usize, f64)> {
+    if pts.is_empty() {
+        return None;
+    }
+    let mut best = f64::MAX;
+    let mut lo: Option<usize> = None;
+    let mut hi = 0usize;
+    let mut mark = |i: usize, d: f64| {
+        if d < best {
+            best = d;
+        }
+        if d <= radius {
+            lo = Some(lo.unwrap_or(i).min(i));
+            hi = hi.max(i);
+        }
+    };
+    for (i, p) in pts.iter().enumerate() {
+        mark(i, (p.truncate() - centre).length());
+    }
+    for (i, w) in pts.windows(2).enumerate() {
+        let (a, b) = (w[0].truncate(), w[1].truncate());
+        let ab = b - a;
+        let len2 = ab.length_squared();
+        if len2 < 1e-9 {
+            continue;
+        }
+        let t = ((centre - a).dot(ab) / len2).clamp(0.0, 1.0);
+        let d = (a + ab * t - centre).length();
+        if d <= radius {
+            mark(i, d);
+            mark(i + 1, d);
+        }
+    }
+    let lo = lo?;
+    if pts.len() == 1 {
+        return Some((0, 0, best));
+    }
+    Some((lo.saturating_sub(1), (hi + 1).min(pts.len() - 1), best))
+}
+
 /// The lanes within `radius` of `centre`, and their ends (linked ones marked).
 /// The lanes of one road or object, each with its path number.
 pub fn of_one(doc: &Document, assets: &mut Assets, sel: Sel) -> Vec<Lane> {
@@ -133,6 +184,14 @@ pub fn of_one(doc: &Document, assets: &mut Assets, sel: Sel) -> Vec<Lane> {
 }
 
 pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> (Vec<Lane>, Vec<LaneEnd>) {
+    near_skipping(doc, assets, centre, radius, None)
+}
+
+/// The lanes within `radius` of `centre`, and their ends (linked ones marked), leaving out
+/// one object: the crossing editor knows its own object already and used to sample all 787
+/// of its paths only to throw them away afterwards. That object is skipped before anything
+/// of it is read.
+pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64, skip: Option<(TileKey, i64)>) -> (Vec<Lane>, Vec<LaneEnd>) {
     let mut lanes = Vec::new();
     for (k, t) in &doc.tiles {
         let org = tile_origin(*k);
@@ -141,7 +200,9 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
         }
         for s in t.tile.splines.iter().filter(|s| !s.deleted) {
             let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-            if (start - centre).length() > s.length + radius {
+            // (a lane sits a few metres off the centre line, so the line's own reach is
+            // not quite enough)
+            if (start - centre).length() > s.length + radius + 40.0 {
                 continue;
             }
             let Some(m) = assets.spline(&s.file) else { continue };
@@ -149,7 +210,9 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
                 continue;
             }
             let c = SplineCurve::from_map(s, org);
-            let n = (s.length / 3.0).ceil().max(1.0) as usize;
+            // (a step of 3 m, and a ceiling on it: a map with a broken length on a spline
+            // used to ask for millions of samples, and the lanes of it filled memory)
+            let n = ((s.length / 3.0).ceil().max(1.0) as usize).min(400);
             let mirror = if s.mirror { -1.0 } else { 1.0 };
             for (index, p) in m.def.paths.iter().enumerate() {
                 let x = p.start[0] as f64 * mirror;
@@ -165,21 +228,34 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
             }
         }
         for o in &t.tile.objects {
+            if skip == Some((*k, o.id)) {
+                continue;
+            }
             let Some(model) = assets.object(&o.file) else { continue };
             if model.paths.is_empty() {
                 continue;
             }
             let world = doc.object_world(*k, o, model.abs_height);
-            if (world.truncate() - centre).length() > radius + model.radius() as f64 {
+            // (a path runs out past the mesh: the mesh's radius alone hid junctions whose
+            // roads leave the plate)
+            let mesh = model.radius() as f64;
+            let paths = model.paths.iter().fold(0.0_f64, |m, p| {
+                let start = (p.start[0] as f64).hypot(p.start[1] as f64);
+                m.max(start + (p.end[2] as f64).abs())
+            });
+            if (world.truncate() - centre).length() > radius + mesh.max(paths) {
                 continue;
             }
             let pose = Pose::of_object(world, o.rot);
+            // (an object of hundreds of paths is sampled coarsely: only its ends matter for
+            // snapping, and 787 paths at 2 m would be most of the frame's work)
+            let step = if model.paths.len() > 600 { 8.0 } else { 2.0 };
             for (index, p) in model.paths.iter().enumerate() {
                 let c = object_path_curve(p);
                 if !(c.length > 0.05) {
                     continue;
                 }
-                let n = (c.length / 2.0).ceil().max(1.0) as usize;
+                let n = ((c.length / step).ceil().max(1.0) as usize).min(400);
                 let pts = (0..=n)
                     .map(|i| {
                         let q = c.point_at(c.length * i as f64 / n as f64);
@@ -217,7 +293,24 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
 
 #[cfg(test)]
 mod tests {
+    use glam::{DVec2, DVec3};
+
     use super::*;
+
+    /// The sample ceiling: a lane of a spline or an object never asks for more points than the
+    /// cap, so a broken length on one cannot fill memory (and the overlay buffer with it).
+    #[test]
+    fn a_lane_is_sampled_within_the_ceiling() {
+        const CAP: usize = 400;
+        // (what the two loops in `near` do: the step, and the ceiling)
+        for length in [0.0f64, 1.0, 300.0, 1200.0, 5000.0, 100_000.0] {
+            let n = ((length / 3.0).ceil().max(1.0) as usize).min(CAP);
+            assert!(n <= CAP, "{length} m asked for {n} samples");
+            assert!(n >= 1);
+        }
+        let n = ((5_000.0f64 / 2.0).ceil().max(1.0) as usize).min(CAP);
+        assert!(n <= CAP);
+    }
 
     /// A road object's path climbs with the slope written after its length (rise per metre),
     /// the same heights a spline's gradient gives, including a crest.
@@ -236,5 +329,21 @@ mod tests {
         assert!((z(0.06, -0.04, 10.0) - 5.35).abs() < 1e-6);
         assert!((z(0.06, -0.04, 20.0) - 5.2).abs() < 1e-6);
         assert!((z(0.0, 0.0, 20.0) - 5.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn neighbour_reach_stays_between_a_junction_and_the_map() {
+        assert_eq!(neighbour_reach(10.0), 250.0);
+        assert_eq!(neighbour_reach(100.0), 300.0);
+        assert_eq!(neighbour_reach(1_000.0), 700.0);
+    }
+
+    #[test]
+    fn a_lane_that_only_cuts_the_circle_is_still_shown() {
+        let pts = vec![DVec3::new(-30.0, 4.0, 0.0), DVec3::new(30.0, 4.0, 0.0)];
+        let (lo, hi, d) = visible_span(&pts, DVec2::ZERO, 10.0).unwrap();
+        assert_eq!((lo, hi), (0, 1));
+        assert!(d < 10.0);
+        assert!(visible_span(&pts, DVec2::new(0.0, 80.0), 10.0).is_none());
     }
 }

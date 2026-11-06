@@ -104,6 +104,9 @@ pub struct Asset {
     pub light_program: bool,
     /// Has `[splinehelper]` points: a junction or crossing piece that splines snap to.
     pub helpers: Vec<omsi_scenery::sco::SplineHelper>,
+    /// How many `[path]`s it has: only an object with paths can be a crossing the editor
+    /// works on, whatever else it holds (a signal head is in Junctions too, and has none).
+    pub paths: usize,
     // splines
     /// Half the width of the drawn profile (m).
     pub half_width: f32,
@@ -187,6 +190,12 @@ impl Library {
             }
         }
         changed
+    }
+
+    /// The index rebuilt after a test pushed assets straight into `assets`.
+    #[cfg(test)]
+    pub fn reindex_for_tests(&mut self) {
+        self.index = self.assets.iter().enumerate().map(|(i, a)| (a.rel.to_lowercase(), i)).collect();
     }
 
     pub fn find(&self, rel: &str) -> Option<&Asset> {
@@ -296,6 +305,7 @@ pub fn roads_for_tests(list: &[(&str, f32)]) -> Library {
             light_head: false,
             light_program: false,
             helpers: Vec::new(),
+            paths: 0,
             half_width: *half,
             lanes: (0, 0, 0),
         };
@@ -327,6 +337,7 @@ fn describe(root: &Path, path: &Path, kind: Kind, from_content: bool) -> Option<
         light_head: false,
         light_program: false,
         helpers: Vec::new(),
+        paths: 0,
         half_width: 0.0,
         lanes: (0, 0, 0),
     };
@@ -352,6 +363,7 @@ fn describe(root: &Path, path: &Path, kind: Kind, from_content: bool) -> Option<
             a.light_head = sco.is_traffic_light && sco.traffic_lights.is_empty();
             a.light_program = !sco.traffic_lights.is_empty();
             a.helpers = sco.spline_helpers.clone();
+            a.paths = sco.paths.len();
             let has_mesh = !sco.model.meshes.is_empty() || sco.model_file.is_some() || sco.tree.is_some();
             a.category = if sco.is_bus_stop || sco.is_entry_point {
                 Category::Stops

@@ -149,6 +149,15 @@ pub struct Ghost {
     pub tint: [f32; 4],
 }
 
+/// How many overlay points the paths round the crossing may take: the whole map's lanes were
+/// once drawn, and the buffer outgrew what the graphics card takes (the game stopped with a
+/// wgpu validation error).
+pub const NEIGHBOUR_POINTS: usize = 480_000;
+
+/// The most points any overlay may have (a quarter of the 256 MB buffer the smallest cards
+/// allow).
+const OVERLAY_POINTS: usize = 2_000_000;
+
 /// What a frame shows besides the map.
 #[derive(Default)]
 pub struct FrameExtras {
@@ -1880,10 +1889,20 @@ impl Renderer {
         }
 
         // overlays
+        // (whatever the frame asks for, the buffer has to fit what the graphics card takes: a
+        // runaway list used to end the program with a validation error, so it is cut here and
+        // said in the log)
+        let cap = (device.limits().max_buffer_size as usize / std::mem::size_of::<OverlayVertex>()).min(OVERLAY_POINTS);
         let upload = |list: &[OverlayPoint], label: &str| -> Option<(wgpu::Buffer, u32)> {
             if list.is_empty() {
                 return None;
             }
+            let list = if list.len() > cap {
+                log::warn!("{label}: {} points is more than the graphics card takes; drawing {cap}", list.len());
+                &list[..cap]
+            } else {
+                list
+            };
             let verts: Vec<OverlayVertex> = list.iter().map(|p| OverlayVertex { pos: (p.pos - anchor).as_vec3().to_array(), color: p.color }).collect();
             let b = device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents: bytemuck::cast_slice(&verts), usage: wgpu::BufferUsages::VERTEX });
             Some((b, list.len() as u32))
@@ -3039,6 +3058,16 @@ fn light_view(cam: &Camera, sun: Vec3, size: u32, reach: f32) -> (Mat4, f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A frame's overlay always fits a graphics card's smallest buffer (256 MB): the paths
+    /// round a crossing once filled a 12 GB one, and the game ended with a wgpu error.
+    #[test]
+    fn an_overlay_fits_the_smallest_graphics_card() {
+        let bytes = OVERLAY_POINTS * std::mem::size_of::<OverlayVertex>();
+        assert!(bytes <= 256 * 1024 * 1024, "{bytes} bytes is more than a 256 MB buffer");
+        // (and the paths round the crossing stay well inside it)
+        assert!(NEIGHBOUR_POINTS * std::mem::size_of::<OverlayVertex>() <= 16 * 1024 * 1024);
+    }
 
     fn a_material(alpha: Alpha, texture: Option<&str>) -> Material {
         Material { texture: texture.map(PathBuf::from), color: [1.0; 4], alpha, glow: None }
