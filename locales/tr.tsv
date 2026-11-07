@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Bağlantı denetimi
 Shift: tenths of a degree	Shift: derecenin onda biri
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	sayılar: derece olarak döndür, Enter veya tıkla: tamam, Esc: iptal
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Duraklarının nerede durduğundan bulunur; durakları bir yolun yanında da olan bir tramvay için siz seçin
+Roads (bus)	Yollar (otobüs)
+Tracks (tram, train)	Raylar (tramvay, tren)
+km along the tracks (blue in the view)	km, raylar boyunca (görünümde mavi)
+no track within 15 m	15 m içinde ray yok
+the tracks are not joined, or run the other way (see View > AI lanes)	raylar bağlı değil ya da ters yöne gidiyor (Görünüm > YZ şeritleri)
+no track beside	yanında ray yok:
+Drives on	Gittiği yol

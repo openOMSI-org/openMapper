@@ -126,7 +126,7 @@ pub fn add(doc: &mut Document, roots: Vec<std::path::PathBuf>, routes: &[(String
         let trip = doc.timetable.add_trip(&line, &trip_name, ids.clone());
         added.trips += 1;
         let pos: Vec<Option<DVec3>> = ids.iter().map(|id| crate::timetable::stop_world(doc, &mut files, *id)).collect();
-        let r = route::find(&net, &pos, left);
+        let r = route::find(&net, &pos, left, None);
         let mut minutes = (pts.len() as f32 * 1.5).max(5.0);
         if r.ok() {
             // (about 18 km/h with the stops)

@@ -2775,3 +2775,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Перевірка з'єднань
 Shift: tenths of a degree	Shift: десяті градуса
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	числа: поворот у градусах, Enter або клік: готово, Esc: скасувати
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Визначається за тим, біля чого стоять зупинки; задайте самі для трамвая, якщо його зупинки стоять і біля дороги
+Roads (bus)	Дорогах (автобус)
+Tracks (tram, train)	Рейках (трамвай, поїзд)
+km along the tracks (blue in the view)	км рейками (синім на карті)
+no track within 15 m	у 15 м немає рейок
+the tracks are not joined, or run the other way (see View > AI lanes)	рейки не з'єднані або йдуть в інший бік (Вигляд > Смуги ШІ)
+no track beside	немає рейок біля
+Drives on	Їздить по

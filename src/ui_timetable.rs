@@ -17,7 +17,7 @@ use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::render::FrameExtras;
 use crate::timetable::network::{Files, Network};
-use crate::timetable::route::{self, Problem, Route};
+use crate::timetable::route::{self, Problem, Route, Ways};
 use crate::timetable::{self, clock, Timetable, ALL_DAYS};
 use crate::ui::{Action, ACCENT};
 
@@ -71,6 +71,9 @@ pub struct TimetableUi {
     routed: HashMap<String, u64>,
     /// What went wrong finding a trip's route.
     problems: HashMap<String, Vec<Problem>>,
+    /// What the trips set here drive on (by lower-case name); the others drive on what their
+    /// way was found on, or what their stops stand by.
+    ways: HashMap<String, Ways>,
     /// The map the state belongs to.
     map: Option<std::path::PathBuf>,
     want_line: Option<String>,
@@ -86,6 +89,12 @@ pub struct TimetableUi {
 
 fn lower(s: &str) -> String {
     s.to_lowercase()
+}
+
+/// What trip `name` drives on: as set here, else as its saved way does (None: as its stops
+/// say).
+fn ways_for(set: &HashMap<String, Ways>, doc: &Document, net: &Network, name: &str) -> Option<Ways> {
+    set.get(&lower(name)).copied().or_else(|| route::ways_of(&doc.timetable, name, net, &doc.order))
 }
 
 /// A trip's time (minutes): its first profile's.
@@ -265,7 +274,7 @@ impl TimetableUi {
                 continue;
             }
             let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| timetable::stop_world(doc, &mut self.files, *id)).collect();
-            let r = route::find(net, &pos, doc.global.left_hand_traffic);
+            let r = route::find(net, &pos, doc.global.left_hand_traffic, ways_for(&self.ways, doc, net, &name));
             if r.ok() {
                 let track = r.track(net, &doc.order);
                 let links = r.links(net, &doc.order, &trip.stations);
@@ -447,7 +456,7 @@ impl TimetableUi {
             }
         }
         let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| self.stops.iter().find(|s| s.id == *id).map(|s| s.pos)).collect();
-        let r = if pos.len() >= 2 { route::find(net, &pos, doc.global.left_hand_traffic) } else { Route::default() };
+        let r = if pos.len() >= 2 { route::find(net, &pos, doc.global.left_hand_traffic, ways_for(&self.ways, doc, net, &trip.name)) } else { Route::default() };
         self.shown = Some((trip.name.clone(), trip.stations.clone(), self.net_key, r));
     }
 
@@ -640,6 +649,9 @@ impl TimetableUi {
                         if let Some(k) = self.routed.remove(&lower(trip)) {
                             self.routed.insert(lower(&n), k);
                         }
+                        if let Some(w) = self.ways.remove(&lower(trip)) {
+                            self.ways.insert(lower(&n), w);
+                        }
                         self.trip = Some(n);
                     }
                     None => {
@@ -668,6 +680,19 @@ impl TimetableUi {
             return;
         }
         let _ = line;
+        // what it drives on: as set here, else as its way was found
+        let found = self.shown.as_ref().filter(|x| x.0 == name).and_then(|x| x.3.ways);
+        let ways = self.ways.get(&lower(&name)).copied().or(found).unwrap_or(Ways::Road);
+        ui.horizontal(|ui| {
+            ui.label(tr("Drives on", "Ездит по")).on_hover_text(tr("Found from where its stops stand; set it for a tram whose stops stand by a road as well", "Определяется по тому, у чего стоят остановки; задайте сами для трамвая, если его остановки стоят и у дороги"));
+            for (w, label) in [(Ways::Road, tr("Roads (bus)", "Дорогам (автобус)")), (Ways::Rail, tr("Tracks (tram, train)", "Рельсам (трамвай, поезд)"))] {
+                if ui.selectable_label(ways == w, label).clicked() && ways != w {
+                    self.ways.insert(lower(&name), w);
+                    tt.touch_route(&name);
+                    self.shown = None;
+                }
+            }
+        });
 
         // the stops
         ui.add_space(4.0);
@@ -783,7 +808,8 @@ impl TimetableUi {
                 ui.label(RichText::new(tr("Finding the way…", "Ищем путь…")).color(TEXT_DIM));
             }
             Some(r) if r.ok() => {
-                ui.label(RichText::new(format!("{} {:.2} {}", tr("Route found:", "Путь найден:"), r.length() / 1000.0, tr("km along the roads (blue in the view)", "км по дорогам (синим на карте)"))).color(GOOD));
+                let along = if r.ways == Some(Ways::Rail) { tr("km along the tracks (blue in the view)", "км по рельсам (синим на карте)") } else { tr("km along the roads (blue in the view)", "км по дорогам (синим на карте)") };
+                ui.label(RichText::new(format!("{} {:.2} {}", tr("Route found:", "Путь найден:"), r.length() / 1000.0, along)).color(GOOD));
                 for &leg in &r.against {
                     let name_of = |i: usize| stations.get(i).map(|id| self.stop_name(tt, *id)).unwrap_or_default();
                     let text = format!("«{}» – «{}»: {}", name_of(leg), name_of(leg + 1), tr("the way drives a one-way lane against its direction; is a path drawn the wrong way round?", "путь идёт по односторонней полосе против её направления; может, путь нарисован не в ту сторону?"));
@@ -791,11 +817,14 @@ impl TimetableUi {
                 }
             }
             Some(r) => {
+                let rail = r.ways == Some(Ways::Rail);
                 for p in &r.problems {
                     let name_of = |i: usize| stations.get(i).map(|id| self.stop_name(tt, *id)).unwrap_or_default();
                     let text = match p {
                         Problem::NoObject(i) => format!("{} «{}» {}", tr("Stop", "Остановка"), name_of(*i), tr("is not on the map", "нет на карте")),
+                        Problem::NoRoad(i) if rail => format!("«{}»: {}", name_of(*i), tr("no track within 15 m", "в 15 м нет рельсов")),
                         Problem::NoRoad(i) => format!("«{}»: {}", name_of(*i), tr("no road with car lanes within 15 m", "в 15 м нет дороги с полосами для машин")),
+                        Problem::NoWay(i) if rail => format!("{} «{}» – «{}»: {}", tr("No way", "Нет пути"), name_of(*i), name_of(*i + 1), tr("the tracks are not joined, or run the other way (see View > AI lanes)", "рельсы не соединены или идут в другую сторону (Вид > Полосы ИИ)")),
                         Problem::NoWay(i) => format!("{} «{}» – «{}»: {}", tr("No way", "Нет пути"), name_of(*i), name_of(*i + 1), tr("the roads are not joined, or run the other way (see View > AI lanes)", "дороги не соединены или идут в другую сторону (Вид > Полосы ИИ)")),
                     };
                     ui.label(coloured(icons::labelled(Icon::Warning, &text), WARN)).on_hover_text(tr("The trip is saved, but its way is not until this is mended", "Рейс сохранится, а его путь: когда это будет исправлено"));

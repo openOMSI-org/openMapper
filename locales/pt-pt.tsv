@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Verificação de ligações
 Shift: tenths of a degree	Shift: décimos de grau
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	números: uma rotação em graus, Enter ou clique: feito, Esc: cancelar
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Deduz-se de onde estão as paragens; defina-o para um elétrico cujas paragens também estão junto a uma estrada
+Roads (bus)	Estradas (autocarro)
+Tracks (tram, train)	Carris (elétrico, comboio)
+km along the tracks (blue in the view)	km pelos carris (azul na vista)
+no track within 15 m	nenhum carril a menos de 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	os carris não estão ligados, ou vão ao contrário (veja Ver > Faixas de IA)
+no track beside	sem carril junto a
+Drives on	Circula por

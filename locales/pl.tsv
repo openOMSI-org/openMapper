@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Sprawdzenie połączeń
 Shift: tenths of a degree	Shift: dziesiąte części stopnia
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	cyfry: obrót w stopniach, Enter lub kliknięcie: gotowe, Esc: anuluj
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Wynika z tego, przy czym stoją przystanki; ustaw ręcznie dla tramwaju, którego przystanki stoją też przy drodze
+Roads (bus)	Drogach (autobus)
+Tracks (tram, train)	Torach (tramwaj, pociąg)
+km along the tracks (blue in the view)	km po torach (niebieska w widoku)
+no track within 15 m	w promieniu 15 m brak torów
+the tracks are not joined, or run the other way (see View > AI lanes)	tory nie są połączone lub biegną w drugą stronę (zobacz Widok > Pasy AI)
+no track beside	brak torów przy
+Drives on	Jeździ po

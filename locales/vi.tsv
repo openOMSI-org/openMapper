@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Kiểm tra nối
 Shift: tenths of a degree	Shift: từng 0,1 độ
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	chữ số: xoay theo độ, Enter hoặc nhấp: xong, Esc: hủy
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Xác định theo nơi các điểm dừng đứng; hãy tự chọn cho xe điện có điểm dừng cũng nằm cạnh đường
+Roads (bus)	Đường (xe buýt)
+Tracks (tram, train)	Đường ray (xe điện, tàu hỏa)
+km along the tracks (blue in the view)	km dọc đường ray (màu xanh trong khung nhìn)
+no track within 15 m	không có đường ray trong 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	các đường ray chưa nối, hoặc chạy ngược chiều (xem Xem > Làn AI)
+no track beside	không có đường ray bên cạnh
+Drives on	Chạy trên

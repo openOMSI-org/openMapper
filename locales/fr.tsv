@@ -2775,3 +2775,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Vérification des liaisons
 Shift: tenths of a degree	Maj : dixièmes de degré
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	chiffres : une rotation en degrés, Entrée ou clic : terminé, Échap : annuler
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Déduit de l'endroit où se trouvent ses arrêts ; à choisir pour un tram dont les arrêts sont aussi au bord d'une route
+Roads (bus)	Routes (bus)
+Tracks (tram, train)	Voies ferrées (tram, train)
+km along the tracks (blue in the view)	km le long des voies (en bleu dans la vue)
+no track within 15 m	aucune voie ferrée à moins de 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	les voies ne sont pas jointes, ou vont dans l'autre sens (voir Vue > Voies IA)
+no track beside	pas de voie ferrée près de
+Drives on	Circule sur

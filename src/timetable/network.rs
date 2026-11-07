@@ -1,7 +1,7 @@
-//! The roads' lanes as a timetable names them: every `[path]` of the map's splines and
-//! objects by (tile, IDCode, path index), laid out in the way traffic drives it and linked
-//! to the lanes it runs on into, as openOMSI links them (ends within 1.5 m, headings within
-//! 40°).
+//! The roads' lanes and the tracks as a timetable names them: every car and rail `[path]` of
+//! the map's splines and objects by (tile, IDCode, path index), laid out in the way traffic
+//! drives it and linked to the lanes it runs on into, as openOMSI links them (ends within
+//! 1.5 m, headings within 40°): a lane only to lanes, a track only to tracks.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -21,6 +21,10 @@ const LINK_TURN: f64 = 40.0;
 
 /// How far apart two lanes of a spline may lie for a bus to change between them (m).
 const LANE_CHANGE_WIDTH: f64 = 5.0;
+
+/// The `[path]` kinds the timetable drives on: car lanes and tracks (1 is a footway).
+const CAR: i32 = 0;
+const RAIL: i32 = 2;
 
 /// What the timetable needs of a spline or object file.
 #[derive(Debug, Default)]
@@ -100,6 +104,8 @@ pub struct Lane {
     /// A spline's path (an object's paths that start together branch off, they are no lanes
     /// side by side).
     pub spline: bool,
+    /// A track (`[path]` kind 2): trams and trains run on it, buses do not.
+    pub rail: bool,
 }
 
 impl Lane {
@@ -147,7 +153,7 @@ impl Lane {
     }
 }
 
-/// The car lanes of the map.
+/// The car lanes and the tracks of the map.
 #[derive(Default)]
 pub struct Network {
     pub lanes: Vec<Lane>,
@@ -158,7 +164,7 @@ pub struct Network {
     pub missing_files: usize,
 }
 
-fn lane_of(key: PathKey, mut pts: Vec<DVec3>, file_length: f64, internal: usize, (reversed, against): (bool, bool), spline: bool) -> Lane {
+fn lane_of(key: PathKey, mut pts: Vec<DVec3>, file_length: f64, internal: usize, (reversed, against): (bool, bool), (spline, rail): (bool, bool)) -> Lane {
     if reversed {
         pts.reverse();
     }
@@ -170,7 +176,7 @@ fn lane_of(key: PathKey, mut pts: Vec<DVec3>, file_length: f64, internal: usize,
         }
         along.push(acc);
     }
-    Lane { key, pts, along, file_length, internal, next: Vec::new(), side: Vec::new(), against, spline }
+    Lane { key, pts, along, file_length, internal, next: Vec::new(), side: Vec::new(), against, spline, rail }
 }
 
 impl Network {
@@ -189,7 +195,7 @@ impl Network {
                 let n = (s.length / 3.0).ceil().clamp(1.0, 400.0) as usize;
                 let mirror = if s.mirror { -1.0 } else { 1.0 };
                 for (pi, p) in info.paths.iter().enumerate() {
-                    if p.kind == 0 {
+                    if p.kind == CAR || p.kind == RAIL {
                         let x = p.start[0] as f64 * mirror;
                         let pts: Vec<DVec3> = (0..=n).map(|i| c.offset_point(s.length * i as f64 / n as f64, x, p.start[2] as f64)).collect();
                         // (a mirrored spline's lanes run the other way)
@@ -198,7 +204,7 @@ impl Network {
                             (1, true) => 0,
                             (d, _) => d,
                         };
-                        net.add(PathKey { tile: *k, id: s.id, path: pi }, pts, s.length, internal + pi, dir, true);
+                        net.add(PathKey { tile: *k, id: s.id, path: pi }, pts, s.length, internal + pi, dir, (true, p.kind == RAIL));
                     }
                 }
                 internal += info.paths.len();
@@ -223,7 +229,7 @@ impl Network {
                 }
                 let pose = Pose::of_object(world, o.rot);
                 for (pi, p) in info.paths.iter().enumerate() {
-                    if p.kind != 0 {
+                    if p.kind != CAR && p.kind != RAIL {
                         continue;
                     }
                     let c = crate::lanes::object_path_curve(p);
@@ -237,7 +243,7 @@ impl Network {
                             pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
                         })
                         .collect();
-                    net.add(PathKey { tile: *k, id: o.id, path: pi }, pts, c.length, internal + pi, p.direction, false);
+                    net.add(PathKey { tile: *k, id: o.id, path: pi }, pts, c.length, internal + pi, p.direction, (false, p.kind == RAIL));
                 }
                 internal += info.paths.len();
             }
@@ -246,7 +252,8 @@ impl Network {
         net
     }
 
-    fn add(&mut self, key: PathKey, pts: Vec<DVec3>, file_length: f64, internal: usize, direction: i32, spline: bool) {
+    /// `(spline, rail)`: a spline's path; a track.
+    pub(crate) fn add(&mut self, key: PathKey, pts: Vec<DVec3>, file_length: f64, internal: usize, direction: i32, kind: (bool, bool)) {
         if pts.len() < 2 {
             return;
         }
@@ -258,12 +265,13 @@ impl Network {
         };
         for &(rev, against) in ways {
             self.by_key.entry(key).or_default().push(self.lanes.len());
-            self.lanes.push(lane_of(key, pts.clone(), file_length, internal, (rev, against), spline));
+            self.lanes.push(lane_of(key, pts.clone(), file_length, internal, (rev, against), kind));
         }
     }
 
-    /// Each lane's `next`: the lanes that start where it ends, going on the same way.
-    fn link(&mut self) {
+    /// Each lane's `next`: the lanes that start where it ends, going on the same way (a
+    /// track's: the tracks).
+    pub(crate) fn link(&mut self) {
         let cell = |p: DVec3| ((p.x / LINK).floor() as i64, (p.y / LINK).floor() as i64);
         let mut starts: HashMap<(i64, i64), Vec<usize>> = HashMap::new();
         for (i, l) in self.lanes.iter().enumerate() {
@@ -279,7 +287,7 @@ impl Network {
                 for dx in -1..=1 {
                     for &j in starts.get(&(cx + dx, cy + dy)).map(|v| v.as_slice()).unwrap_or(&[]) {
                         let b = &self.lanes[j];
-                        if j == i || b.key == a.key {
+                        if j == i || b.key == a.key || b.rail != a.rail {
                             continue;
                         }
                         let d = b.pts[0] - end;
@@ -294,9 +302,9 @@ impl Network {
             l.next = n;
         }
         // lane changes: the other paths of the same spline that start beside it, going the
-        // same way
+        // same way (a tram keeps to its track: it leaves it only at a switch)
         let mut by_spline: HashMap<(TileKey, i64), Vec<usize>> = HashMap::new();
-        for (i, l) in self.lanes.iter().enumerate().filter(|(_, l)| l.spline) {
+        for (i, l) in self.lanes.iter().enumerate().filter(|(_, l)| l.spline && !l.rail) {
             by_spline.entry((l.key.tile, l.key.id)).or_default().push(i);
         }
         let mut side = vec![Vec::new(); self.lanes.len()];

@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	接続の確認
 Shift: tenths of a degree	Shift: 0.1 度単位
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	数字: 度で回転、Enter またはクリックで確定、Esc で取り消し
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	停留所がどこにあるかで決まります。停留所が道路沿いにもある路面電車では、ここで指定してください
+Roads (bus)	道路（バス）
+Tracks (tram, train)	線路（路面電車、列車）
+km along the tracks (blue in the view)	km（線路沿い、ビューでは青）
+no track within 15 m	15 m以内に線路がありません
+the tracks are not joined, or run the other way (see View > AI lanes)	線路が接続されていないか、逆向きです（表示 > AI車線を参照）
+no track beside	線路なし：
+Drives on	走行

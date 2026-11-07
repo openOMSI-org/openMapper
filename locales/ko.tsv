@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	연결 확인
 Shift: tenths of a degree	Shift: 0.1도 단위
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	숫자: 각도로 회전, Enter 또는 클릭: 완료, Esc: 취소
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	정류장이 어디에 있는지로 정해집니다. 정류장이 도로 옆에도 있는 트램은 직접 지정하세요
+Roads (bus)	도로(버스)
+Tracks (tram, train)	선로(트램, 열차)
+km along the tracks (blue in the view)	km, 선로 기준(뷰에서 파란색)
+no track within 15 m	15 m 이내에 선로 없음
+the tracks are not joined, or run the other way (see View > AI lanes)	선로가 연결되지 않았거나 반대 방향입니다(보기 > AI 차선 참조)
+no track beside	옆에 선로 없음:
+Drives on	운행 경로

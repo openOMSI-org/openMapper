@@ -824,13 +824,14 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
         let net = crate::timetable::network::Network::build(d, &mut files);
         for trip in trips {
             let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| crate::timetable::stop_world(d, &mut files, *id)).collect();
-            let r = crate::timetable::route::find(&net, &pos, d.global.left_hand_traffic);
+            let r = crate::timetable::route::find(&net, &pos, d.global.left_hand_traffic, crate::timetable::route::ways_of(tt, &trip.name, &net, &d.order));
             if r.ok() {
                 continue;
             }
             use crate::timetable::route::Problem;
             let (i, detail) = match r.problems.first() {
                 Some(Problem::NoObject(i)) => (*i, format!("{} {}", tr("the stop has no object:", "у остановки нет объекта:"), stop_name(trip.stations[*i]))),
+                Some(Problem::NoRoad(i)) if r.ways == Some(crate::timetable::route::Ways::Rail) => (*i, format!("{} {}", tr("no track beside", "нет рельсов у"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoRoad(i)) => (*i, format!("{} {}", tr("no road beside", "нет дороги у"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoWay(i)) => (*i, format!("{} {} -> {}", tr("no way", "нет пути"), stop_name(trip.stations[*i]), trip.stations.get(i + 1).map(|s| stop_name(*s)).unwrap_or_default())),
                 None => (0, tr("no way found", "путь не найден").to_string()),
@@ -1078,7 +1079,7 @@ pub fn apply(ed: &mut Editor, fix: &Fix) -> bool {
                 let net = crate::timetable::network::Network::build(doc, &mut crate::timetable::network::Files::new(vec![content.clone(), omsi.clone()]));
                 // the nearest point of a lane, and the way the lane goes there
                 let mut best: Option<(f64, DVec2, DVec2)> = None;
-                for l in net.lanes.iter().filter(|l| !l.against) {
+                for l in net.lanes.iter().filter(|l| !l.against && !l.rail) {
                     for w in l.pts.windows(2) {
                         let (a, b) = (w[0].truncate(), w[1].truncate());
                         let e = b - a;

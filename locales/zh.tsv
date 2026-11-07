@@ -2773,3 +2773,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	连接检查
 Shift: tenths of a degree	Shift：每 0.1 度
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	数字：输入角度，Enter 或点击：确定，Esc：取消
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	根据站点所在位置判定；如果电车的站点也在道路旁，请在此指定
+Roads (bus)	道路（公交）
+Tracks (tram, train)	轨道（有轨电车、火车）
+km along the tracks (blue in the view)	km 沿轨道（视图中为蓝色）
+no track within 15 m	15 m 内没有轨道
+the tracks are not joined, or run the other way (see View > AI lanes)	轨道未连接，或方向相反（见 视图 > AI 车道）
+no track beside	旁边没有轨道：
+Drives on	行驶于

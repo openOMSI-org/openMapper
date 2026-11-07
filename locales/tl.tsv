@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Pagsusuri ng koneksyon
 Shift: tenths of a degree	Shift: ikasampu ng digri
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	mga numero: pagikot sa digri, Enter o klik: tapos, Esc: kanselahin
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Nakukuha mula sa kinatatayuan ng mga hintuan; itakda ito para sa tram na ang mga hintuan ay nasa tabi rin ng kalsada
+Roads (bus)	Mga kalsada (bus)
+Tracks (tram, train)	Mga riles (tram, tren)
+km along the tracks (blue in the view)	km sa mga riles (asul sa view)
+no track within 15 m	walang riles sa loob ng 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	hindi nakakabit ang mga riles, o kabilang direksyon ang takbo (tingnan ang View > Mga AI lane)
+no track beside	walang riles sa tabi ng
+Drives on	Tumatakbo sa

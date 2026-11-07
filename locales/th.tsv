@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	ตรวจการเชื่อมต่อ
 Shift: tenths of a degree	Shift: ทีละ 0.1 องศา
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	ตัวเลข: หมุนเป็นองศา, Enter หรือคลิก: เสร็จ, Esc: ยกเลิก
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	กำหนดจากที่ตั้งของป้ายหยุด ตั้งเองสำหรับรถรางที่ป้ายหยุดอยู่ข้างถนนด้วย
+Roads (bus)	ถนน (รถเมล์)
+Tracks (tram, train)	ราง (รถราง, รถไฟ)
+km along the tracks (blue in the view)	กม. ตามราง (สีน้ำเงินในมุมมอง)
+no track within 15 m	ไม่มีรางภายใน 15 ม.
+the tracks are not joined, or run the other way (see View > AI lanes)	รางไม่ได้เชื่อมกันหรือวิ่งไปอีกทาง (ดู มุมมอง > เลน AI)
+no track beside	ไม่มีรางข้าง
+Drives on	วิ่งบน

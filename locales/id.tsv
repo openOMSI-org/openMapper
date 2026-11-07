@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Periksa sambungan
 Shift: tenths of a degree	Shift: sepersepuluh derajat
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	angka: putaran dalam derajat, Enter atau klik: selesai, Esc: batal
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Ditentukan dari letak haltenya; atur sendiri untuk trem yang haltenya juga berada di samping jalan
+Roads (bus)	Jalan (bus)
+Tracks (tram, train)	Rel (trem, kereta)
+km along the tracks (blue in the view)	km di sepanjang rel (biru di tampilan)
+no track within 15 m	tidak ada rel dalam 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	rel tidak tersambung, atau berlawanan arah (lihat Tampilan > Lajur AI)
+no track beside	tidak ada rel di samping
+Drives on	Berjalan di

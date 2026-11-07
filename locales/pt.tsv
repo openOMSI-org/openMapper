@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Verificação de conexões
 Shift: tenths of a degree	Shift: décimos de grau
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	números: uma rotação em graus, Enter ou clique: feito, Esc: cancelar
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	É deduzido de onde ficam as paradas; defina para um bonde cujas paradas também ficam junto a uma estrada
+Roads (bus)	Estradas (ônibus)
+Tracks (tram, train)	Trilhos (bonde, trem)
+km along the tracks (blue in the view)	km pelos trilhos (azul na vista)
+no track within 15 m	nenhum trilho a 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	os trilhos não estão unidos ou seguem no outro sentido (veja Exibir > Faixas de IA)
+no track beside	sem trilho junto a
+Drives on	Circula por

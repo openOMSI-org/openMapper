@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Kontrola spojení
 Shift: tenths of a degree	Shift: desetiny stupně
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	čísla: otočení ve stupních, Enter nebo klik: hotovo, Esc: zrušit
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Určuje se podle toho, u čeho stojí zastávky; nastavte ručně pro tramvaj, jejíž zastávky stojí i u silnice
+Roads (bus)	Silnicích (autobus)
+Tracks (tram, train)	Kolejích (tramvaj, vlak)
+km along the tracks (blue in the view)	km po kolejích (modře v pohledu)
+no track within 15 m	do 15 m nejsou koleje
+the tracks are not joined, or run the other way (see View > AI lanes)	koleje nejsou spojeny nebo vedou opačně (viz Zobrazení > Pruhy AI)
+no track beside	žádné koleje vedle
+Drives on	Jezdí po

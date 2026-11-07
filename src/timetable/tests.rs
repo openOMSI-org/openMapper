@@ -218,7 +218,7 @@ fn grundorf_routes_like_omsi() {
         // the route through the trip's stops
         let t = tt.trip(trip).unwrap();
         let pos: Vec<Option<DVec3>> = t.stations.iter().map(|id| stop_world(&doc, &mut files, *id)).collect();
-        let r = route::find(&net, &pos, doc.global.left_hand_traffic);
+        let r = route::find(&net, &pos, doc.global.left_hand_traffic, None);
         assert!(r.ok(), "{trip}: {:?}", r.problems);
         let ours: Vec<(f64, f64, f64)> = r.track(&net, &doc.order).iter().map(|e| (e.values[0], e.values[1], e.values[2])).collect();
         let stock: Vec<(f64, f64, f64)> = track.entries.iter().map(|e| (e.values[0], e.values[1], e.values[2])).collect();
@@ -259,7 +259,7 @@ fn a_new_line_on_grundorf_saves_and_reads_back() {
     let line = tt.add_line("99");
     let trip = tt.add_trip(&line, "99_test", stops.clone());
     let pos: Vec<Option<DVec3>> = stops.iter().map(|id| stop_world(&doc, &mut files, *id)).collect();
-    let r = route::find(&net, &pos, false);
+    let r = route::find(&net, &pos, false, None);
     assert!(r.ok(), "{:?}", r.problems);
     tt.set_route(&trip, r.track(&net, &doc.order), r.links(&net, &doc.order, &stops));
     tt.lines.iter_mut().find(|l| l.name == line).unwrap().tours.push(omsi_timetable::Tour {
@@ -320,19 +320,19 @@ fn a_new_map_routes_on_the_right() {
     let net = Network::build(&doc, &mut files);
     assert_eq!(net.stops.len(), 4);
     let pos = |ids: &[i64], files: &mut Files| ids.iter().map(|id| stop_world(&doc, files, *id)).collect::<Vec<_>>();
-    let north = route::find(&net, &pos(&[10, 11], &mut files), false);
+    let north = route::find(&net, &pos(&[10, 11], &mut files), false, None);
     assert!(north.ok(), "{:?}", north.problems);
     let lanes: Vec<(i64, usize)> = north.lanes.iter().map(|l| (net.lanes[*l].key.id, net.lanes[*l].key.path)).collect();
     assert_eq!(lanes, vec![(1, 2), (2, 2)]);
     assert!((north.length() - 80.0).abs() < 1.0, "{}", north.length());
-    let south = route::find(&net, &pos(&[12, 13], &mut files), false);
+    let south = route::find(&net, &pos(&[12, 13], &mut files), false, None);
     assert!(south.ok(), "{:?}", south.problems);
     let lanes: Vec<(i64, usize)> = south.lanes.iter().map(|l| (net.lanes[*l].key.id, net.lanes[*l].key.path)).collect();
     assert_eq!(lanes, vec![(2, 1), (1, 1)]);
     // a stop off any road
     let mut far = pos(&[10, 11], &mut files);
     far.push(Some(DVec3::new(10.0, 10.0, 0.0)));
-    assert_eq!(route::find(&net, &far, false).problems, vec![route::Problem::NoRoad(2)]);
+    assert_eq!(route::find(&net, &far, false, None).problems, vec![route::Problem::NoRoad(2)]);
     // the track names tile index 0 and OMSI's numbers of the paths: four a spline
     let tr = north.track(&net, &doc.order);
     assert_eq!(tr[0].values, vec![1.0, 2.0, 0.0, 2.0, 50.0, 0.0]);
@@ -361,7 +361,7 @@ fn spandau_bus_trips_route() {
     for t in tt.trips.iter().filter(|t| t.stations.len() >= 2) {
         n += 1;
         let pos: Vec<Option<DVec3>> = t.stations.iter().map(|id| stop_world(&doc, &mut files, *id)).collect();
-        let r = route::find(&net, &pos, doc.global.left_hand_traffic);
+        let r = route::find(&net, &pos, doc.global.left_hand_traffic, None);
         if !r.ok() {
             eprintln!("{}: {:?}", t.name, r.problems);
             continue;
@@ -481,3 +481,50 @@ fn the_stock_maps_trips_fit_their_roads_as_read() {
     }
 }
 
+
+/// A tram's stops stand at its track beside a road: its way is found on the track, a bus's
+/// on the road; a track never runs on into a lane; a trip found on the tracks stays there.
+#[test]
+fn a_tram_trip_runs_on_its_track() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let north = |x: f64, y0: f64, y1: f64| vec![DVec3::new(x, y0, 0.0), DVec3::new(x, y1, 0.0)];
+    // a road north in two pieces, and 8 m east of it a track north in two pieces; where the
+    // first piece of track ends a car lane begins as well
+    net.add(PathKey { tile, id: 1, path: 0 }, north(0.0, 0.0, 100.0), 100.0, 0, 0, (true, false));
+    net.add(PathKey { tile, id: 2, path: 0 }, north(0.0, 100.0, 200.0), 100.0, 1, 0, (true, false));
+    net.add(PathKey { tile, id: 3, path: 0 }, north(8.0, 0.0, 100.0), 100.0, 2, 0, (true, true));
+    net.add(PathKey { tile, id: 4, path: 0 }, north(8.0, 100.0, 200.0), 100.0, 3, 0, (true, true));
+    net.add(PathKey { tile, id: 5, path: 0 }, north(8.0, 100.0, 120.0), 20.0, 4, 0, (true, false));
+    net.link();
+    let first_track = net.by_key[&PathKey { tile, id: 3, path: 0 }][0];
+    let ids: Vec<i64> = net.lanes[first_track].next.iter().map(|&l| net.lanes[l].key.id).collect();
+    assert_eq!(ids, vec![4], "a track runs on into the track only");
+    let at = |pts: &[(f64, f64)]| pts.iter().map(|p| Some(DVec3::new(p.0, p.1, 0.0))).collect::<Vec<_>>();
+    let on = |r: &route::Route| r.lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>();
+    // the tram's stops, 3 m east of the track (and 11 m of the road)
+    let tram = at(&[(11.0, 50.0), (11.0, 180.0)]);
+    let r = route::find(&net, &tram, false, None);
+    assert!(r.ok(), "{:?}", r.problems);
+    assert_eq!((r.ways, on(&r)), (Some(route::Ways::Rail), vec![3, 4]));
+    // a bus's stops at the kerb
+    let bus = at(&[(2.5, 50.0), (2.5, 180.0)]);
+    let r = route::find(&net, &bus, false, None);
+    assert_eq!((r.ways, on(&r)), (Some(route::Ways::Road), vec![1, 2]));
+    // a stop too far from the road for a bus: the tracks still serve it
+    let r = route::find(&net, &at(&[(11.0, 50.0), (20.0, 180.0)]), false, None);
+    assert_eq!((r.ways, on(&r)), (Some(route::Ways::Rail), vec![3, 4]));
+    let r = route::find(&net, &at(&[(11.0, 50.0), (20.0, 180.0)]), false, Some(route::Ways::Road));
+    assert_eq!(r.problems, vec![route::Problem::NoRoad(1)]);
+    // set to the road, the tram's stops are driven past on it
+    let r = route::find(&net, &tram, false, Some(route::Ways::Road));
+    assert_eq!((r.ways, on(&r)), (Some(route::Ways::Road), vec![1, 2]));
+    // a trip whose way was found on the tracks is found there again
+    let r = route::find(&net, &tram, false, None);
+    let mut tt = Timetable::default();
+    let line = tt.add_line("5");
+    let trip = tt.add_trip(&line, "5_1", vec![10, 11]);
+    assert_eq!(route::ways_of(&tt, &trip, &net, &[tile]), None);
+    tt.set_route(&trip, r.track(&net, &[tile]), r.links(&net, &[tile], &[10, 11]));
+    assert_eq!(route::ways_of(&tt, &trip, &net, &[tile]), Some(route::Ways::Rail));
+}

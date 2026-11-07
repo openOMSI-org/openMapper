@@ -57,7 +57,7 @@ pub fn build(ed: &mut Editor, assets: &mut Assets, lib: &Library, roots: &Roots,
     // the lanes of the ring
     let mut files = Files::new(vec![roots.content.clone(), roots.omsi.clone()]);
     let net = Network::build(doc, &mut files);
-    let ring: Vec<usize> = (0..net.lanes.len()).filter(|&i| net.lanes[i].spline && !net.lanes[i].against && net.lanes[i].length() > 30.0).collect();
+    let ring: Vec<usize> = (0..net.lanes.len()).filter(|&i| net.lanes[i].spline && !net.lanes[i].rail && !net.lanes[i].against && net.lanes[i].length() > 30.0).collect();
     if ring.is_empty() {
         return Err("the ring has no lanes".into());
     }
@@ -108,7 +108,7 @@ pub fn build(ed: &mut Editor, assets: &mut Assets, lib: &Library, roots: &Roots,
     let mut minutes = Vec::new();
     for (t, ids) in [(&there, [s_a, s_b]), (&back, [s_b2, s_a2])] {
         let pos: Vec<Option<DVec3>> = ids.iter().map(|id| crate::timetable::stop_world(doc, &mut files, *id)).collect();
-        let r = route::find(&net, &pos, left);
+        let r = route::find(&net, &pos, left, None);
         if !r.ok() {
             return Err(format!("trip {t}: {:?}", r.problems));
         }
@@ -147,7 +147,7 @@ pub fn build(ed: &mut Editor, assets: &mut Assets, lib: &Library, roots: &Roots,
 pub fn start_spot(doc: &Document, roots: &Roots) -> Option<(DVec2, f64)> {
     let mut files = Files::new(vec![roots.content.clone(), roots.omsi.clone()]);
     let net = Network::build(doc, &mut files);
-    let lanes: Vec<usize> = (0..net.lanes.len()).filter(|&i| net.lanes[i].spline && net.lanes[i].length() > 20.0).collect();
+    let lanes: Vec<usize> = (0..net.lanes.len()).filter(|&i| net.lanes[i].spline && !net.lanes[i].rail && net.lanes[i].length() > 20.0).collect();
     let spot = |l: usize, s: f64| {
         let lane = &net.lanes[l];
         let s = s.clamp(2.0, (lane.length() - 2.0).max(2.0));

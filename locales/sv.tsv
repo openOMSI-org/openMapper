@@ -2777,3 +2777,11 @@ Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes 
 Link check	Kopplingskontroll
 Shift: tenths of a degree	Shift: tiondels grader
 numbers: a turn in degrees, Enter or a click: done, Esc: cancel	siffror: en vridning i grader, Enter eller klick: klart, Esc: avbryt
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Avgörs av var hållplatserna står; ställ in det för en spårvagn vars hållplatser även står vid en väg
+Roads (bus)	Vägar (buss)
+Tracks (tram, train)	Spår (spårvagn, tåg)
+km along the tracks (blue in the view)	km längs spåren (blått i vyn)
+no track within 15 m	inget spår inom 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	spåren är inte sammanfogade, eller går åt andra hållet (se Visa > AI-körfält)
+no track beside	inget spår vid
+Drives on	Kör på
