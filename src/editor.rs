@@ -5488,71 +5488,25 @@ impl Editor {
                 let lw = (cam.distance * 0.00028).clamp(0.007, 0.18) as f32;
                 let picked = self.crossing_selected.clone();
                 let is_picked_idx = |i: usize| picked.contains(&i);
-                // (a junction of hundreds of paths: draw them coarser, leave out the ones that
-                // cannot be on screen, and stop at a budget instead of building a quarter of
-                // a million overlay points every frame for a 787-path object)
-                const OWN_POINTS: usize = 120_000;
                 let count = paths.len();
-                // (laid out by the metre for a junction of a few, and by the metre and the turn
-                // for one of hundreds: a straight line takes no more points than before, a
-                // bend as many as its radius needs - the coarse 3 m of before turned every arc
-                // into an elbow)
-                let step = if count <= 120 {
-                    0.5
-                } else if count <= 400 {
-                    1.5
-                } else {
-                    4.0
-                };
-                let max_turn = if count <= 120 { 180.0 } else { 6.0 };
-                // (how far ahead the view actually looks. Zoomed in and pitched along a road,
-                // the pivot sits a few metres in front of the eye while the road runs on for
-                // hundreds: a reach of a few times the camera distance hid every path whose
-                // middle was past that, and turning - which swings the pivot - brought them
-                // back. The ground distance the pitch can see is what is kept.)
-                let slope = cam.pitch.to_radians().abs().max(cam.fov_y as f64 * 0.35);
-                let ahead = (cam.distance / slope.tan()).min(900.0);
-                let reach = ahead.max(cam.distance * 3.0).clamp(120.0, 900.0);
-                let disc_reach = cam.distance * 1.5;
+                // (every path of the object, not only those near the camera. A reach and a
+                // point budget used to drop the rest, and turning the view brought them back.
+                // A straight line still takes a point a metre, a bend as many as its radius
+                // needs: the coarse step of a big junction turned every arc into an elbow)
+                let step = 0.5;
+                let max_turn = 6.0;
                 let mut drawn = 0usize;
-                let mut shown = 0usize;
-                // (the picked paths are not in this pass: it stops once the budget is spent,
-                // and a `break` there used to skip the picked one, which was chained on the
-                // end. It vanished on a busy junction and came back when the camera moved
-                // enough other paths out of reach to free the budget)
+                // (the picked paths are drawn after the neighbour lanes, so a lane on the same
+                // line cannot cover the one being edited)
                 for i in (0..count).filter(|&i| !is_picked_idx(i)) {
-                    if drawn >= OWN_POINTS {
-                        continue;
-                    }
                     let p = &paths[i];
-                    // (a path whose middle is far outside the view is not worth any points)
-                    let c = p.curve();
-                    let mid = c.point_at(c.length.max(0.0) * 0.5);
-                    // (a path is kept when any of its ends or its middle is in the view's
-                    // reach: the middle of a long path can sit far past the pivot while the
-                    // end is what the camera is looking along)
-                    let near = [p.start(), mid, p.end()]
-                        .into_iter()
-                        .map(|q| {
-                            let w = world + m.transform_point3(q.as_vec3()).as_dvec3();
-                            (w.truncate() - cam.eye().truncate()).length()
-                        })
-                        .fold(f64::MAX, f64::min);
-                    if near > reach {
-                        continue;
-                    }
                     let pts: Vec<DVec3> = p.points_by_turn(step, max_turn).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
-                    if drawn + pts.len().saturating_sub(1) * 6 > OWN_POINTS {
-                        continue;
-                    }
                     let sink = self.crossing_sink.get(i).copied().unwrap_or(0.0) as f64;
-                    drawn += paint_crossing_path(&mut x.overlay, cam, p, &pts, lw, lift, false, sink, near <= disc_reach);
-                    shown += 1;
+                    drawn += paint_crossing_path(&mut x.overlay, cam, p, &pts, lw, lift, false, sink, true);
                 }
-                // (once in a while, so what the budget saved can be measured)
                 static OVERLAY_LOG: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
                 if OVERLAY_LOG.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 120 == 0 {
-                    log::trace!("crossing path overlay: {shown} of {count} paths, {drawn} points, step {step} m, reach {reach:.0} m");
+                    log::trace!("crossing path overlay: {count} paths, {drawn} points, step {step} m");
                 }
             }
             // (the paths of everything around it - other objects' and the roads' own lanes -
@@ -5649,14 +5603,8 @@ impl Editor {
                 let lift = DVec3::Z * 0.25;
                 let lw = (cam.distance * 0.00028).clamp(0.007, 0.18) as f32;
                 let count = paths.len();
-                let step = if count <= 120 {
-                    0.5
-                } else if count <= 400 {
-                    1.5
-                } else {
-                    4.0
-                };
-                let max_turn = if count <= 120 { 180.0 } else { 6.0 };
+                let step = 0.5;
+                let max_turn = 6.0;
                 for i in self.crossing_selected.iter().copied().filter(|&i| i < count) {
                     let p = &paths[i];
                     let pts: Vec<DVec3> = p.points_by_turn(step, max_turn).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();

@@ -399,6 +399,9 @@ pub struct Joint {
     /// its end shows in the panel. A join arrives on this, so its last piece lines up with the
     /// next segment; `heading` is the other way round at a path's end.
     pub geom: f64,
+    /// The other path's kind (street, footway, track). A path started from this end is the
+    /// same kind, not always a street.
+    pub kind: i32,
 }
 
 impl Joint {
@@ -647,7 +650,7 @@ impl Crossing {
             (norm_deg(c.heading_at(0.0)), q.slope_start())
         };
         let geom = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
-        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom })
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom, kind: q.kind() })
     }
 
     /// The text of the blocks this editor owns, in the order it writes them.
@@ -1306,7 +1309,7 @@ mod arrival {
 
     #[test]
     fn reversing_a_joint_turns_the_way_about_and_the_slope_over() {
-        let j = Joint { pos: DVec3::new(1.0, 2.0, 3.0), heading: 20.0, slope: 0.04, flow: 1, dir: 0, travel: 20.0, geom: 10.0 };
+        let j = Joint { pos: DVec3::new(1.0, 2.0, 3.0), heading: 20.0, slope: 0.04, flow: 1, dir: 0, travel: 20.0, geom: 10.0, kind: 0 };
         let r = j.reversed();
         assert!((r.geom - 190.0).abs() < 1e-6 && (r.heading - 200.0).abs() < 1e-6 && (r.travel - 200.0).abs() < 1e-6);
         assert!((r.slope + 0.04).abs() < 1e-9);
@@ -1317,7 +1320,7 @@ mod arrival {
 
     #[test]
     fn the_two_arrivals_sit_opposite_each_other() {
-        let j = Joint { pos: DVec3::ZERO, heading: 0.0, slope: 0.1, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: DVec3::ZERO, heading: 0.0, slope: 0.1, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let [a, b] = arrival_choices(DVec3::new(4.0, 5.0, 1.0), j, 1.2, j.geom);
         assert!((a.0 - b.0).length() > 2.0, "the two marks are apart");
         assert!((a.1.geom - j.geom).abs() < 1e-6 && (a.1.slope - 0.1).abs() < 1e-9);

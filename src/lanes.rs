@@ -196,6 +196,7 @@ pub struct LaneTip {
     pub along: DVec3,
     pub at_end: bool,
     pub direction: i32,
+    pub kind: i32,
 }
 
 /// The ends within `radius` of `centre`, and nothing else. [`near_skipping`] lays out every
@@ -204,9 +205,9 @@ pub struct LaneTip {
 /// whole of that every frame is what made the nearby-path modes stall.
 pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64, skip: Option<(TileKey, i64)>) -> Vec<LaneTip> {
     let mut tips = Vec::new();
-    let push = |tips: &mut Vec<LaneTip>, pos: DVec3, into: DVec3, at_end: bool, direction: i32| {
+    let push = |tips: &mut Vec<LaneTip>, pos: DVec3, into: DVec3, at_end: bool, direction: i32, kind: i32| {
         if (pos.truncate() - centre).length() <= radius {
-            tips.push(LaneTip { pos, along: into, at_end, direction });
+            tips.push(LaneTip { pos, along: into, at_end, direction, kind });
         }
     };
     for (k, t) in &doc.tiles {
@@ -238,8 +239,8 @@ pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                     (1, true) => 0,
                     (dir, _) => dir,
                 };
-                push(&mut tips, a0, a1 - a0, false, direction);
-                push(&mut tips, b0, b0 - b1, true, direction);
+                push(&mut tips, a0, a1 - a0, false, direction, p.kind);
+                push(&mut tips, b0, b0 - b1, true, direction, p.kind);
             }
         }
         for o in &t.tile.objects {
@@ -271,8 +272,8 @@ pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                 let a1 = to_world(c.point_at(d));
                 let b1 = to_world(c.point_at(c.length - d));
                 let b0 = to_world(c.point_at(c.length));
-                push(&mut tips, a0, a1 - a0, false, p.direction);
-                push(&mut tips, b0, b0 - b1, true, p.direction);
+                push(&mut tips, a0, a1 - a0, false, p.direction, p.kind);
+                push(&mut tips, b0, b0 - b1, true, p.direction, p.kind);
             }
         }
     }

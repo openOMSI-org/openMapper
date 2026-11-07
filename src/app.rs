@@ -188,6 +188,7 @@ fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4)
         dir: j.dir,
         travel: crate::roads::norm_deg(j.travel - object_yaw(m)),
         geom: crate::roads::norm_deg(j.geom - object_yaw(m)),
+        kind: j.kind,
     }
 }
 
@@ -199,34 +200,25 @@ fn nearby_on_map(joints: &[crate::crossing_edit::Joint], world: DVec3, m: &glam:
     joints.iter().map(|j| (world + m.transform_point3(j.pos.as_vec3()).as_dvec3(), *j)).collect()
 }
 
-/// The green circles actually drawn. A junction of hundreds of paths has an end every metre
-/// or two, and a disc on every one of them — most of them off the screen — is what made the
-/// nearby-path modes drop frames. The nearest ends stay, neighbours ahead of this crossing's
-/// own, and only those within `reach` of the view.
+/// The green circles actually drawn. Every end of the crossing's own paths is kept: a reach
+/// and a cap used to drop the far ones, and turning the view brought them back. Neighbours
+/// stay the nearest, and only those within `reach` of the view.
 fn cull_nearby(items: Vec<(DVec3, crate::crossing_edit::Joint)>, own: usize, centre: DVec2, reach: f64, cap: usize) -> Vec<(DVec3, crate::crossing_edit::Joint)> {
     let mut mine = Vec::new();
     let mut ext = Vec::new();
     for (i, item) in items.into_iter().enumerate() {
-        let d = (item.0.truncate() - centre).length();
-        if d > reach {
+        if i < own {
+            mine.push(item);
             continue;
         }
-        if i < own {
-            mine.push((d, item));
-        } else {
+        let d = (item.0.truncate() - centre).length();
+        if d <= reach {
             ext.push((d, item));
         }
     }
-    mine.sort_by(|a, b| a.0.total_cmp(&b.0));
     ext.sort_by(|a, b| a.0.total_cmp(&b.0));
-    let mut out = Vec::with_capacity(cap.min(mine.len() + ext.len()));
-    let ext_n = (cap / 2).min(ext.len());
-    out.extend(ext.iter().take(ext_n).map(|(_, j)| *j));
-    let own_n = cap.saturating_sub(out.len()).min(mine.len());
-    out.extend(mine.iter().take(own_n).map(|(_, j)| *j));
-    if out.len() < cap {
-        out.extend(ext.iter().skip(ext_n).take(cap - out.len()).map(|(_, j)| *j));
-    }
+    let mut out = mine;
+    out.extend(ext.into_iter().take(cap).map(|(_, j)| j));
     out
 }
 
@@ -2549,8 +2541,8 @@ impl App {
                 }
             }
         }
-        // (Ctrl adds the path to the pick rather than replacing it, as it does in the list)
-        let add = self.keys.ctrl;
+        // (Ctrl or Shift adds the path to the pick rather than replacing it, as the list does)
+        let add = self.keys.ctrl || self.keys.shift;
         best.is_some_and(|(_, i)| self.crossing.select_on_map(Some(i), add))
     }
 
@@ -2663,7 +2655,7 @@ impl App {
                 let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let slope = d.z / len;
-                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom });
+                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom, kind: l.kind });
             }
         }
         out
@@ -4352,7 +4344,7 @@ mod tests {
         // (an end 10 m ahead of the object, running along its own way)
         let local = DVec3::new(0.0, 10.0, 1.5);
         let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
-        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let j = joint_in_object(map_joint, world, &m);
         assert!((j.pos.truncate() - local.truncate()).length() < 1e-3, "it is written where the path has it: {:?} vs {local:?}", j.pos);
         assert!(j.heading.abs() < 0.05 || (j.heading - 360.0).abs() < 0.05, "and the way it runs is the object's: {}", j.heading);
@@ -4370,7 +4362,7 @@ mod tests {
         let yaw = 37.0f64;
         let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
         let local = DVec3::new(2.0, 9.0, 1.5);
-        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let drawn = nearby_on_map(&[j], world, &m);
         assert_eq!(drawn.len(), 1);
         let (at, back) = drawn[0];
@@ -4449,19 +4441,21 @@ mod tests {
         let _ = std::fs::remove_dir_all(&roots.content);
     }
 
-    /// Green circles are the ends near the view, not every end of a junction of hundreds of
-    /// paths. A neighbour is kept ahead of this crossing's own far ends.
+    /// Every end of this crossing is drawn, however far it sits. A neighbour is kept when it
+    /// is near the view, and one past the reach is not.
     #[test]
     fn nearby_circles_keep_the_near_ones_and_a_neighbour() {
-        let j = |x: f64| crate::crossing_edit::Joint { pos: DVec3::new(x, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = |x: f64| crate::crossing_edit::Joint { pos: DVec3::new(x, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let near = j(0.0);
         let far = j(500.0);
         let neighbour = j(10.0);
-        let items = vec![(near.pos, near), (far.pos, far), (neighbour.pos, neighbour)];
+        let far_neighbour = j(400.0);
+        let items = vec![(near.pos, near), (far.pos, far), (neighbour.pos, neighbour), (far_neighbour.pos, far_neighbour)];
         let kept = cull_nearby(items, 2, DVec2::ZERO, 80.0, 4);
         let xs: Vec<f64> = kept.iter().map(|(_, q)| q.pos.x).collect();
-        assert!(xs.contains(&10.0), "the neighbour stays");
         assert!(xs.contains(&0.0), "the near own end stays");
-        assert!(!xs.contains(&500.0), "an end outside the view is not drawn");
+        assert!(xs.contains(&500.0), "an own end stays even when it is far from the view");
+        assert!(xs.contains(&10.0), "the neighbour stays");
+        assert!(!xs.contains(&400.0), "a neighbour outside the view is not drawn");
     }
 }
