@@ -184,7 +184,7 @@ impl Find {
                         ui.label(RichText::new(format!("{:>5}", g.at.len())).monospace().color(ACCENT));
                         ui.vertical(|ui| {
                             ui.label(RichText::new(name_of(g)).color(Color32::WHITE));
-                            ui.label(RichText::new(&g.file).small().color(TEXT_DIM));
+                            crate::ui::long_label(ui, &g.file, egui::TextStyle::Small, TEXT_DIM);
                         });
                     });
                     ui.horizontal_wrapped(|ui| {
