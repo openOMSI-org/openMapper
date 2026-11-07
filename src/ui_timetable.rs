@@ -941,7 +941,7 @@ impl TimetableUi {
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(&c.file).strong());
+                    crate::ui::long_label(ui, &c.file, egui::TextStyle::Body, ui.visuals().text_color());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if small_button(ui, Icon::Delete, tr("Delete this assignment", "Удалить это назначение")) {
                             remove = Some(i);

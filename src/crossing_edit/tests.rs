@@ -260,6 +260,63 @@ fn dragging_the_end_turns_and_stretches_a_straight_path() {
 }
 
 #[test]
+fn a_way_that_would_take_a_circle_is_a_straight_to_the_end() {
+    // a path running north; asked to arrive running south, the arc that does it is nearly a
+    // whole circle: its length grows without bound, and the path used to end up millions of
+    // metres long (and every piece laid after it, at a height far from the map)
+    let mut p = Path::default();
+    p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+    let end = p.end();
+    p.fit_end_tangent(180.0);
+    assert!(p.length().is_finite(), "a length: {}", p.length());
+    assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
+    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed: {:?} vs {end:?}", p.end());
+    // the same from the start:
+    let mut p = Path::default();
+    p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+    let end = p.end();
+    p.fit_start_tangent(180.0);
+    assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
+    // (the way the path leaves is the one thing a turn must not change: the arc keeps it, and
+    // the end stops where that arc reaches rather than the path being turned round)
+    assert!((p.heading() - 180.0).abs() < 1e-6, "it still leaves in 180: {}", p.heading());
+    assert!(p.length() <= 40.0 * 8.0, "no loop: {} m", p.length());
+    assert!(p.slope_start().is_finite() && p.slope_end().is_finite());
+
+    // and a path whose length is already broken is only sampled so far
+    // (a path of sixteen million metres used to ask for thirty-two million points)
+    let mut p = Path::default();
+    p.v[5] = 16_340_103.0;
+    assert!(p.points(0.5).len() <= 4001, "{} points", p.points(0.5).len());
+}
+
+#[test]
+fn a_path_takes_the_way_and_rise_of_the_one_it_joins() {
+    // a straight piece running east
+    let mut p = Path::default();
+    p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+    let end = p.end();
+    // asked to arrive running north: it becomes an arc, its start and end staying put
+    p.fit_end_tangent(0.0);
+    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed: {:?} vs {end:?}", p.end());
+    assert!((p.start().truncate() - DVec2::ZERO).length() < 1e-6, "the start stayed");
+    let c = p.curve();
+    assert!(c.heading_at(c.length).abs() < 1e-2, "it arrives running north: {}", c.heading_at(c.length));
+
+    // the rise: the end's height and the way it climbs there, the start's height kept
+    p.set_end_height_and_slope(2.0, 0.15);
+    assert!((p.end().z - 2.0).abs() < 1e-2, "the end is at the height asked for: {}", p.end().z);
+    assert!((p.slope_end() - 0.15).abs() < 1e-6, "and climbs there the way asked for: {}", p.slope_end());
+
+    // and the start's own way: the end stays where it is
+    let end = p.end();
+    p.fit_start_tangent(0.0);
+    assert!((p.end().truncate() - end.truncate()).length() < 1e-3, "the end stayed");
+    let c = p.curve();
+    assert!(c.heading_at(0.0).abs() < 1e-2, "it leaves running north: {}", c.heading_at(0.0));
+}
+
+#[test]
 fn dragging_the_end_of_an_arc_keeps_its_radius() {
     let mut p = Path::default();
     p.v = [0.0, 0.0, 0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
@@ -367,6 +424,53 @@ fn scratch_roots(name: &str) -> crate::install::Roots {
     crate::install::Roots { omsi: dir.join("omsi"), content: dir.join("content") }
 }
 
+/// Writing into the object's own file keeps the file as it stood beside it as a `.bak`, and
+/// nothing is written (nor the backup touched) when the text is the file's own.
+#[test]
+fn a_save_in_place_keeps_the_old_file_as_a_bak() {
+    let dir = std::env::temp_dir().join(format!("om-crossing-{}-inplace", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let abs = dir.join("Kreuzung.sco");
+    std::fs::write(&abs, SAMPLE).unwrap();
+    // (the model the object names: the check that reads it back looks for it)
+    std::fs::write(dir.join("Kreuzung.o3d"), b"x").unwrap();
+    let bytes = std::fs::read(&abs).unwrap();
+    let mut s = sheet();
+    s.crossing.paths[0].v[5] = 20.0;
+    let bak = bak_path(&abs);
+    assert!(!bak.exists(), "no backup before a save");
+
+    assert!(write_in_place(&abs, &s.text(), &bytes, &s.crossing).unwrap(), "the file was written");
+    assert_eq!(std::fs::read(&bak).unwrap(), bytes, "the old file is the backup");
+    assert_ne!(std::fs::read(&abs).unwrap(), bytes, "the file is the new text");
+
+    // the same text again: nothing to write, and the backup is left as it was
+    let now = std::fs::read(&abs).unwrap();
+    let stamp = std::fs::metadata(&bak).unwrap().modified().unwrap();
+    assert!(!write_in_place(&abs, &s.text(), &now, &s.crossing).unwrap(), "nothing changed");
+    assert_eq!(std::fs::metadata(&bak).unwrap().modified().unwrap(), stamp, "the backup was not touched");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Clearing the backups takes only those the editor noted as its own.
+#[test]
+fn clearing_takes_only_the_backups_the_editor_made() {
+    let roots = scratch_roots("baks");
+    let dir = roots.content.join("Sceneryobjects").join("Test");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mine = dir.join("Kreuzung.sco.bak");
+    let other = dir.join("SomethingElse.sco.bak");
+    std::fs::write(&mine, b"x").unwrap();
+    std::fs::write(&other, b"x").unwrap();
+    baks::note(&roots, &mine);
+    assert_eq!(baks::list(&roots).len(), 1, "only what was noted");
+    assert_eq!(baks::clear(&roots), 1, "one backup went");
+    assert!(!mine.exists(), "the editor's backup is gone");
+    assert!(other.exists(), "somebody else's .bak is left alone");
+    let _ = std::fs::remove_dir_all(&roots.content);
+}
+
 const SMALL: &str = "[mesh]\nplate.x\n\n[path]\n0\n0\n0\n0\n0\n10\n0\n0\n0\n3\n0\n0\n\n";
 
 /// One of openMapper's own junctions is a flat file of the folder the copy goes in: it does not
@@ -451,4 +555,154 @@ fn small_numbers_and_foreign_names_are_kept() {
     assert_eq!(num(-0.0), "0");
     let bytes = encode_like("Светофор", b"plain ascii");
     assert_eq!(omsi_cfg::decode_text(&bytes), "Светофор");
+}
+
+// ---------------------------------------------------------------- the timeline
+
+/// A crossing with one light, its phases as `(state, seconds)`.
+fn lit(cycle: Option<f32>, phases: &[(i32, f32)]) -> Crossing {
+    let mut c = Crossing::default();
+    c.cycle = cycle;
+    c.lights.push(omsi_scenery::TrafficLight {
+        name: "Main".into(),
+        phases: phases.iter().map(|&(state, duration)| omsi_scenery::TrafficLightPhase { state, duration }).collect(),
+        approach_dist: None,
+    });
+    c
+}
+
+#[test]
+fn the_phases_lie_one_after_another_over_the_cycle() {
+    let c = lit(Some(60.0), &[(0, 30.0), (3, 5.0), (6, 20.0), (9, 5.0)]);
+    let s = c.segments(0);
+    assert_eq!(s.len(), 4);
+    assert_eq!(s.iter().map(|q| (q.start, q.end)).collect::<Vec<_>>(), vec![(0.0, 30.0), (30.0, 35.0), (35.0, 55.0), (55.0, 60.0)]);
+    assert_eq!(s.iter().map(|q| q.phase).collect::<Vec<_>>(), vec![0, 1, 2, 3]);
+    assert_eq!(s.iter().map(|q| q.state).collect::<Vec<_>>(), vec![0, 3, 6, 9]);
+    // nothing is held: each one ends with its own seconds
+    assert!(s.iter().all(|q| q.own_end == q.end));
+}
+
+#[test]
+fn the_last_phase_holds_to_the_cycles_end_when_the_phases_are_shorter() {
+    let c = lit(Some(60.0), &[(0, 30.0), (6, 20.0)]);
+    let s = c.segments(0);
+    assert_eq!(s[s.len() - 1].start, 30.0);
+    assert_eq!(s[s.len() - 1].own_end, 50.0);
+    assert_eq!(s[s.len() - 1].end, 60.0, "the last one runs to the cycle's end");
+}
+
+#[test]
+fn a_cycle_shorter_than_the_phases_cuts_them() {
+    let c = lit(Some(30.0), &[(0, 20.0), (6, 30.0)]);
+    let s = c.segments(0);
+    assert_eq!(s.len(), 2);
+    assert_eq!((s[1].start, s[1].end), (20.0, 30.0), "cut at the cycle's end");
+    // a phase that would start past the cycle is not on it at all
+    let c = lit(Some(30.0), &[(0, 40.0), (6, 10.0)]);
+    assert_eq!(c.segments(0).len(), 1);
+    assert_eq!(c.segments(0)[0].end, 30.0);
+}
+
+#[test]
+fn a_phase_of_no_length_takes_no_room_on_the_timeline() {
+    let c = lit(Some(30.0), &[(0, 10.0), (3, 0.0), (6, 10.0)]);
+    let s = c.segments(0);
+    assert_eq!(s.len(), 2);
+    assert_eq!(s.iter().map(|q| q.phase).collect::<Vec<_>>(), vec![0, 2]);
+    assert_eq!((s[1].start, s[1].end), (10.0, 30.0));
+    // its phase is still in the file, and still picked in the list
+    assert_eq!(c.lights[0].phases.len(), 3);
+}
+
+#[test]
+fn a_second_of_the_cycle_finds_the_phase_showing_then() {
+    let c = lit(Some(60.0), &[(0, 30.0), (3, 5.0), (6, 20.0), (9, 5.0)]);
+    assert_eq!(c.phase_at(0, 0.0), Some(0));
+    assert_eq!(c.phase_at(0, 29.99), Some(0));
+    assert_eq!(c.phase_at(0, 30.0), Some(1), "the boundary belongs to the phase it starts");
+    assert_eq!(c.phase_at(0, 34.9), Some(1));
+    assert_eq!(c.phase_at(0, 35.0), Some(2));
+    assert_eq!(c.phase_at(0, 59.9), Some(3));
+    assert_eq!(c.phase_at(0, 60.0), None, "the cycle has ended");
+    assert_eq!(c.phase_at(0, -1.0), None);
+    // a light that is not there has nothing
+    assert_eq!(c.phase_at(4, 1.0), None);
+}
+
+#[test]
+fn dragging_an_edge_changes_that_phases_duration_and_the_rest_follows() {
+    let mut c = lit(None, &[(0, 20.0), (6, 20.0)]);
+    assert_eq!(c.cycle_len(), 40.0);
+    assert!(c.resize_phase(0, 0, 30.0));
+    assert_eq!(c.lights[0].phases[0].duration, 30.0);
+    assert_eq!(c.lights[0].phases[1].duration, 20.0, "the other phase keeps its own");
+    assert_eq!(c.cycle_len(), 50.0, "without a stated cycle, the cycle is the sum");
+    assert_eq!(c.segments(0)[1].start, 30.0);
+    // and back the other way, to a whole second
+    assert!(c.resize_phase(0, 0, 12.4));
+    assert_eq!(c.lights[0].phases[0].duration, 12.0);
+}
+
+#[test]
+fn a_stated_cycle_keeps_the_drag_inside_it() {
+    let mut c = lit(Some(60.0), &[(0, 30.0), (6, 20.0)]);
+    assert!(c.resize_phase(0, 0, 200.0));
+    assert_eq!(c.lights[0].phases[0].duration, 60.0, "as far as the cycle goes");
+    // the last phase can be dragged shorter, and then holds to the cycle's end
+    let mut c = lit(Some(60.0), &[(0, 30.0), (6, 20.0)]);
+    assert!(c.resize_phase(0, 1, 40.0));
+    assert_eq!(c.lights[0].phases[1].duration, 10.0, "40 s into the cycle, and it starts at 30");
+    let s = c.segments(0);
+    assert_eq!(s[s.len() - 1].end, 60.0);
+    assert_eq!(s[s.len() - 1].own_end, 40.0, "the rest of the cycle is held");
+}
+
+#[test]
+fn dragging_before_a_phases_own_start_leaves_it_at_nothing() {
+    let mut c = lit(None, &[(0, 20.0), (6, 20.0)]);
+    assert!(c.resize_phase(0, 1, 5.0));
+    assert_eq!(c.lights[0].phases[1].duration, 0.0);
+    assert_eq!(c.segments(0).len(), 1, "a phase of no length has no block");
+    // a drag that changes nothing says so
+    assert!(!c.resize_phase(0, 1, 5.0));
+    assert!(!c.resize_phase(0, 9, 5.0), "no such phase");
+    assert!(!c.resize_phase(7, 0, 5.0), "no such light");
+}
+
+#[test]
+fn phases_and_lights_are_added_and_removed_at_the_picked_place() {
+    let mut c = lit(Some(60.0), &[(0, 30.0), (6, 20.0)]);
+    assert_eq!(c.insert_phase(0, 1), Some(1));
+    assert_eq!(c.lights[0].phases.len(), 3);
+    assert_eq!(c.lights[0].phases[1].state, 0);
+    assert_eq!(c.lights[0].phases[1].duration, 10.0);
+    assert!(c.remove_phase(0, 1));
+    assert_eq!(c.lights[0].phases.len(), 2);
+    assert!(!c.remove_phase(0, 5));
+    let n = c.add_light();
+    assert_eq!(n, 1);
+    assert_eq!(c.lights[1].name, "Light 2");
+    assert_eq!(c.lights[1].phases.len(), 2);
+    assert_eq!(c.lights[1].phases[0].state, 0, "it starts on red");
+    assert_eq!(c.lights[1].phases[1].state, 6, "and goes green");
+}
+
+#[test]
+fn the_timeline_lists_every_light_one_after_another() {
+    let mut c = lit(Some(20.0), &[(0, 10.0), (6, 10.0)]);
+    c.lights.push(omsi_scenery::TrafficLight {
+        name: "Side".into(),
+        phases: vec![
+            omsi_scenery::TrafficLightPhase { state: 0, duration: 10.0 },
+            omsi_scenery::TrafficLightPhase { state: 6, duration: 10.0 },
+        ],
+        approach_dist: None,
+    });
+    let t = c.timeline();
+    assert_eq!(t.len(), 4);
+    assert_eq!(t.iter().map(|s| s.light).collect::<Vec<_>>(), vec![0, 0, 1, 1]);
+    assert_eq!(t.iter().map(|s| s.phase).collect::<Vec<_>>(), vec![0, 1, 0, 1]);
+    // each light's run starts again at nought
+    assert_eq!((t[2].start, t[2].end), (0.0, 10.0));
 }

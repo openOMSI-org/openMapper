@@ -346,7 +346,7 @@ impl RoadTypes {
                     } else if let Some(rel) = self.picked.clone() {
                         let name = lib.find(&rel).map(|a| a.name.clone()).unwrap_or_else(|| rel.clone());
                         ui.label(RichText::new(name).strong().color(Color32::WHITE));
-                        ui.label(RichText::new(&rel).small().color(Color32::from_gray(140)));
+                        crate::ui::long_label(ui, &rel, egui::TextStyle::Small, Color32::from_gray(140));
                         ui.add_space(6.0);
                         if ui.button(icons::labelled(Icon::Road, tr("Build with it", "Строить им"))).clicked() {
                             ed.road_type = Some(rel.clone());
