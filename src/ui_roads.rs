@@ -108,7 +108,8 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let two_way = s.lanes_fwd > 0 && s.lanes_back > 0;
     if mid > 0.0 {
         let col = if s.median_tex.as_os_str().is_empty() { Color32::from_rgb(90, 92, 96) } else { Color32::from_rgb(86, 128, 74) };
-        strip(-mid / 2.0, mid / 2.0, col, med_t, (0.0, 1.0), 0.2);
+        let (ml, mr) = s.median_edges();
+        strip(ml, mr, col, med_t, (0.0, 1.0), 0.2);
     }
     let dash = |m: f32, col: Color32, solid: bool| {
         let mut y = bottom;
@@ -145,8 +146,8 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         lanes(offset - gap - s.lanes_back as f32 * s.lane_width, s.lanes_back, false);
         lanes(offset + gap, s.lanes_fwd, true);
         if mid <= 0.0 && !s.marked {
-            dash(-0.1, yellow, true);
-            dash(0.1, yellow, true);
+            dash(offset - 0.1, yellow, true);
+            dash(offset + 0.1, yellow, true);
         }
     } else {
         lanes(-rw / 2.0, s.lanes_fwd + s.lanes_back, s.lanes_fwd > 0);
@@ -234,7 +235,8 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         let own = !s.median_tex.as_os_str().is_empty();
         let col = if own { Color32::from_rgb(86, 128, 74) } else { Color32::from_rgb(90, 92, 96) };
         let up = if s.median_raised { lift } else { 0.0 };
-        band(-mid / 2.0, mid / 2.0, base - 8.0 - up, col, if own { med_t } else { road_t }, (0.0, 1.0));
+        let (ml, mr) = s.median_edges();
+        band(ml, mr, base - 8.0 - up, col, if own { med_t } else { road_t }, (0.0, 1.0));
     }
     let gap = if two_way { mid / 2.0 } else { 0.0 };
     let lane = |left: f32, fwd: bool| {
