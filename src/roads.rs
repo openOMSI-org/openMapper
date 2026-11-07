@@ -81,9 +81,6 @@ impl Seg {
 /// The most a road drawn to meet an end may turn in all (radians): about 200 degrees.
 pub const MAX_TURN: f64 = 3.5;
 
-/// The smallest radius a drawn road may have (m).
-pub const MIN_RADIUS: f64 = 6.0;
-
 /// The arc that leaves `p` heading `h` and ends at `q` (a straight when `q` lies ahead).
 pub fn arc_to(p: DVec2, h: f64, q: DVec2) -> Option<Seg> {
     let d = q - p;
@@ -99,8 +96,9 @@ pub fn arc_to(p: DVec2, h: f64, q: DVec2) -> Option<Seg> {
     let r = (fwd * fwd + side * side) / (2.0 * side);
     let sweep = 2.0 * side.atan2(fwd);
     let length = r * sweep;
-    // (a loop back past a half turn is not what anyone means)
-    if r.abs() < MIN_RADIUS || sweep.abs() > std::f64::consts::PI * 1.01 || length <= 0.0 {
+    // (a tight bend and one past a half turn are still a road: the game follows the radius
+    // it is given. Only a length that does not run forward is refused)
+    if !r.is_finite() || !length.is_finite() || length <= 0.0 {
         return None;
     }
     Some(Seg { start: p, heading: h, length, radius: r })

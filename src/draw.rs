@@ -55,7 +55,7 @@ fn plan_any(p: DVec2, h: Option<f64>, cursor: DVec2, t: &Typed, straight: bool) 
             let right = to.dot(roads::right(h0)) >= 0.0;
             match (t.radius, t.heading, t.length) {
                 (Some(r), _, _) => {
-                    let r = r.abs().max(roads::MIN_RADIUS);
+                    let r = r.abs();
                     let len = match (t.length, t.heading) {
                         (Some(l), _) => l,
                         (None, Some(hh)) => turn_rad(h0, hh, right) * r,
@@ -82,7 +82,7 @@ fn plan_any(p: DVec2, h: Option<f64>, cursor: DVec2, t: &Typed, straight: bool) 
                         return Some(vec![Seg { start: p, heading: h0, length: l, radius: 0.0 }]);
                     }
                     let r = l / a;
-                    (r >= roads::MIN_RADIUS && l > 0.5).then(|| vec![Seg { start: p, heading: h0, length: l, radius: if right { r } else { -r } }])
+                    (r.is_finite() && r > 0.0 && l > 0.5).then(|| vec![Seg { start: p, heading: h0, length: l, radius: if right { r } else { -r } }])
                 }
                 (None, Some(hh), None) => roads::biarc(p, h0, cursor, hh),
                 (None, None, Some(l)) => {
@@ -99,7 +99,7 @@ fn plan_any(p: DVec2, h: Option<f64>, cursor: DVec2, t: &Typed, straight: bool) 
             // a radius alone: the arc of that radius through the cursor
             (None, Some(r)) => {
                 let d = to.length();
-                let ra = r.abs().max(roads::MIN_RADIUS);
+                let ra = r.abs();
                 if d < 0.5 || d > 2.0 * ra {
                     return None;
                 }
