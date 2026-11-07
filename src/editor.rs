@@ -11,7 +11,7 @@ use crate::doc::{tile_of, tile_origin, tile_size, Document, Sel, TileKey};
 use crate::history::History;
 use crate::i18n::tr;
 use crate::library::{Asset, Library};
-use crate::render::{object_matrix, Brush, FrameExtras, Ghost, OverlayPoint};
+use crate::render::{object_matrix, Brush, FrameExtras, Ghost, OverlayPoint, NEIGHBOUR_POINTS};
 use crate::reshape::{self, Handle};
 use crate::roads::{self, Anchor, Seg};
 use crate::selection::{self, Origin};
@@ -296,6 +296,47 @@ impl Grab {
     }
 }
 
+/// The angle of `p` round `c` on the screen, in radians. Screen y runs down, so an angle that
+/// grows is a turn clockwise as the map is seen - which is a positive heading.
+fn screen_angle(c: (f32, f32), p: (f32, f32)) -> f64 {
+    ((p.1 - c.1) as f64).atan2((p.0 - c.0) as f64)
+}
+
+/// A rotation taken hold of, as Blender's R does: the selection turns round its middle as the
+/// pointer goes round it, Enter or a click keeps the turn, Esc puts it back.
+pub struct RotGrab {
+    /// Where the selection stood when it was taken, and the turns the roads it holds make (read
+    /// once: a junction's arms are not read again for every frame of the drag).
+    from: Vec<Origin>,
+    arms: Vec<(Sel, Vec<selection::Arm>)>,
+    /// The point it turns round.
+    pub pivot: DVec2,
+    /// Where that point appears on the screen, and the pointer's angle round it when the turn
+    /// began. None when the view is not known (a check run): the turn then follows the pointer's
+    /// sideways movement.
+    pivot_px: Option<(f32, f32)>,
+    start_angle: f64,
+    start_mouse: (f32, f32),
+    /// A turn typed in, in degrees: it says what it is, the pointer no more.
+    typed: String,
+    /// How far it has turned (degrees, positive clockwise from above).
+    pub done: f64,
+    /// What it was last asked to turn: a frame that asks the same again has nothing to do.
+    asked: f64,
+    links: Option<selection::SplineWhere>,
+}
+
+impl RotGrab {
+    /// The turn as it is written: "12.3°", with what was typed after it.
+    pub fn readout(&self) -> String {
+        if self.typed.is_empty() {
+            format!("{:.1}°", self.done)
+        } else {
+            format!("{:.1}° ({})", self.done, self.typed)
+        }
+    }
+}
+
 /// What the next click in the view is for: reading an asset off the map, or choosing the
 /// spline an object stands on.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -337,6 +378,27 @@ pub struct Editor {
     /// them, so the map shows the change before it is saved (and the object's own lanes are
     /// not drawn a second time under them).
     pub crossing_draft: Option<(TileKey, i64, Vec<crate::crossing_edit::Path>)>,
+    /// Which of the crossing's paths the window has picked (the first is the one its numbers
+    /// are shown for), so the map draws them all picked.
+    pub crossing_selected: Vec<usize>,
+    /// How far each of the crossing's paths sits above the object's surface (negative: under
+    /// it), a path at a time - the window works it out, the map draws a path under the deck in
+    /// another colour so it is seen and not guessed at.
+    pub crossing_sink: Vec<f32>,
+    /// The crossing editor is open: the map is held, so nothing of it is picked or hovered
+    /// (an object, a spline, and not the crossing's own object either).
+    pub crossing_hold: bool,
+    /// The ends of the paths near the crossing being edited, where they were drawn, and the
+    /// joint a click on that dot takes. The first is the map's point, so the dot is drawn and
+    /// picked exactly where it is seen; the joint is kept in the object's own frame, the one
+    /// the crossing's paths are written in, and is taken as it stands.
+    pub crossing_nearby: Vec<(DVec3, crate::crossing_edit::Joint)>,
+    /// `Complete to a nearby path` is on: each nearby end is two arrows, one each way, and a
+    /// click takes the one it lands on. Off, the end is the single outward tick.
+    pub crossing_complete: bool,
+    /// Where the crossing stood and how it was turned when the last frame was drawn: the same
+    /// place the click is judged by, so a green circle is exactly where it was seen.
+    pub crossing_world: Option<(DVec3, glam::Mat4)>,
     /// Where the selection stood when a move began.
     move_from: Vec<Origin>,
     /// A reshape being dragged: its plan, or why it cannot be.
@@ -607,6 +669,9 @@ pub struct Editor {
     /// The selection taken hold of by G (Blender's grab): it follows the pointer until Enter,
     /// a click, or Esc.
     pub grab: Option<Grab>,
+    /// The selection taken hold of by R (Blender's rotate): it turns round its middle as the
+    /// pointer goes round it, until Enter, a click, or Esc.
+    pub rot: Option<RotGrab>,
     pub toasts: Vec<Toast>,
     pub show_grid: bool,
     // game logic
@@ -662,6 +727,12 @@ impl Default for Editor {
             select_box: None,
             clip: None,
             crossing_draft: None,
+            crossing_selected: Vec::new(),
+            crossing_sink: Vec::new(),
+            crossing_hold: false,
+            crossing_nearby: Vec::new(),
+            crossing_complete: false,
+            crossing_world: None,
             move_from: Vec::new(),
             press_drags: true,
             reshape: None,
@@ -800,6 +871,7 @@ impl Default for Editor {
             picked_tile: None,
             drag: Drag::None,
             grab: None,
+            rot: None,
             toasts: Vec::new(),
             show_grid: true,
             logic: LogicMode::Start,
@@ -828,14 +900,89 @@ impl Default for Editor {
 const ORANGE: [f32; 4] = [0.96, 0.50, 0.19, 1.0];
 const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 0.9];
 const GREEN: [f32; 4] = [0.35, 0.85, 0.45, 1.0];
-/// Links between objects (`[varparent]`).
-const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.9];
+/// Links between objects (`[varparent]`): thin and half transparent, since they say a
+/// relationship rather than draw anything.
+const LINK: [f32; 4] = [0.3, 0.85, 0.95, 0.45];
 /// The face of an object a spline's end would be laid on (surface snapping).
 const SURFACE: [f32; 4] = [0.98, 0.84, 0.25, 0.45];
 
 /// The ring on a face a road would lie on, at a quarter of its first size, and only in the roads tool.
 fn surface_ring(tool: Tool) -> Option<([f32; 4], f32, f32)> {
     (tool == Tool::Roads).then_some((SURFACE, 0.625, 0.3))
+}
+
+/// Where a record of the map stands, for the lines drawn between linked ones: an object, one
+/// hanging on another (at its parent's attachment point), or one laid along a road (at its first
+/// copy, since a row can place many). None when it is not on the map, or hangs on another - that
+/// one is drawn where its parent puts it, and a line to its own bare place would be wrong.
+fn record_point(doc: &Document, sel: Sel) -> Option<DVec3> {
+    match sel {
+        Sel::Object(k, id) => {
+            let o = doc.object(k, id)?;
+            if o.parent_id.is_some() {
+                return None;
+            }
+            Some(doc.object_world(k, o, false) + DVec3::Z * 0.5)
+        }
+        Sel::Attached(k, id) => crate::selection::attachment_first(doc, k, id).map(|ro| ro.pose.pos + DVec3::Z * 0.5),
+        Sel::Spline(..) => None,
+    }
+}
+
+/// A record of the map by its IDCode, whichever of the three kinds it is.
+fn record_by_id(doc: &Document, id: i64) -> Option<Sel> {
+    for (k, t) in &doc.tiles {
+        if t.tile.objects.iter().chain(&t.tile.attach_objects).any(|o| o.id == id) {
+            return Some(Sel::Object(*k, id));
+        }
+        if t.tile.spline_attachments.iter().any(|a| a.id == id) {
+            return Some(Sel::Attached(*k, id));
+        }
+    }
+    None
+}
+
+/// What a record takes its state from (`[varparent]`) and what takes it from this one, with
+/// `true` for the one it takes from. Any of the three kinds can be either end: a signal head on
+/// a pole laid along a road takes its light from that row.
+fn record_links(doc: &Document, sel: Sel) -> Vec<(Sel, bool)> {
+    let me = match sel {
+        Sel::Object(k, id) | Sel::Attached(k, id) => crate::selection::state_holder(doc, k, id),
+        Sel::Spline(..) => None,
+    };
+    let Some((_, parent, _)) = me else { return Vec::new() };
+    let id = match sel {
+        Sel::Object(_, i) | Sel::Attached(_, i) => i,
+        Sel::Spline(..) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    if let Some(p) = parent.and_then(|p| record_by_id(doc, p)) {
+        out.push((p, true));
+    }
+    // (`[varparent]` of a record laid along a road is its row's, not one of the objects')
+    for (k, t) in &doc.tiles {
+        for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
+            if o.var_parent == Some(id) {
+                out.push((Sel::Object(*k, o.id), false));
+            }
+        }
+        for a in &t.tile.spline_attachments {
+            if a.var_parent == Some(id) {
+                out.push((Sel::Attached(*k, a.id), false));
+            }
+        }
+    }
+    out
+}
+
+/// How big a dot marks a linked record: as big as the record is, not as wide as the view.
+fn record_radius(doc: &Document, assets: &mut Assets, sel: Sel) -> f64 {
+    let file = match sel {
+        Sel::Object(k, id) => doc.object(k, id).map(|o| o.file.clone()),
+        Sel::Attached(k, id) => doc.attachment(k, id).map(|a| a.file.clone()),
+        Sel::Spline(..) => None,
+    };
+    file.and_then(|f| assets.object(&f)).map(|m| m.radius() as f64 * 0.2).unwrap_or(0.5)
 }
 /// How far beside a road's own edge the cursor still takes hold of it (m): where a kerb, a
 /// pavement or another line is laid along the road.
@@ -1881,6 +2028,15 @@ impl Editor {
         self.hover = None;
         self.hover_stack.clear();
         self.hover_tile = None;
+        // (the crossing editor holds the map: nothing under the cursor is hovered or picked
+        // there - no object, no spline, and not the crossing's own object either - so the map
+        // does not even answer the pointer while its paths are being edited)
+        if self.crossing_hold {
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
         match self.acts_as() {
             Tool::Select => {
                 if self.drag == Drag::None {
@@ -2432,6 +2588,179 @@ impl Editor {
                 self.ground_to_selection();
                 self.finish_step();
             }
+        }
+    }
+
+    /// Take hold of the selection and turn it, as Blender's R does: it turns round its middle as
+    /// the pointer goes round it, X / Y / Z … no (the map turns about the vertical, as its
+    /// headings are), numbers type a turn in degrees, Enter or a click keeps it, Esc puts it
+    /// back. False when there is nothing selected to turn.
+    pub fn rot_begin(&mut self, mouse: (f32, f32)) -> bool {
+        let sels = self.selection();
+        if sels.is_empty() {
+            return false;
+        }
+        let Some(doc) = self.doc.as_ref() else { return false };
+        let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
+        let Some(pivot) = pivot else { return false };
+        let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return false;
+        }
+        let links = (from.len() > 16).then(|| selection::SplineWhere::of(doc));
+        let arms = self.arms_for(&sels);
+        // (the pivot on the screen: the pointer's angle round it is what the turn follows)
+        let ground = doc.ground(pivot);
+        let pivot_px = self.gizmo_view.as_ref().and_then(|v| crate::selection::project(&v.cam, DVec3::new(pivot.x, pivot.y, ground), v.w, v.h));
+        if self.rot.is_some() {
+            self.rot_cancel();
+        }
+        self.history.begin(tr("Rotate", "Поворот"));
+        let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links });
+        self.xform_value = 0.0;
+        true
+    }
+
+    /// Whether a turn is being taken hold of by R.
+    pub fn rot_dragging(&self) -> bool {
+        self.rot.is_some()
+    }
+
+    /// The pointer has gone to `mouse` (window points): the selection turns to follow it.
+    /// `fine` (Shift) moves it in tenths of a degree.
+    pub fn rot_follow(&mut self, mouse: (f32, f32), fine: bool) {
+        let Some(g) = self.rot.as_ref() else { return };
+        let deg = match g.typed.parse::<f64>() {
+            // (a turn typed in says what it is, the pointer no more, and no snapping either)
+            Ok(v) => v,
+            Err(_) => {
+                let swept = match g.pivot_px {
+                    // (the angle the pointer has swept round the pivot, as Blender's R: the whole
+                    // way it has gone, not a slice of it)
+                    Some(q) => {
+                        let swept = (screen_angle(q, mouse) - g.start_angle).to_degrees();
+                        ((swept + 180.0).rem_euclid(360.0)) - 180.0
+                    }
+                    // (no view at hand: the pointer's sideways movement, a half degree a point, as
+                    // a trackpad turns what is selected)
+                    None => (mouse.0 - g.start_mouse.0) as f64 * 0.5,
+                };
+                // (the angle step holds it, as R's step does: the snapping switch is the same;
+                // Shift moves it in tenths)
+                let step = if self.snap_angle && self.angle_step > 0.0 {
+                    self.angle_step
+                } else if fine {
+                    0.1
+                } else {
+                    0.0
+                };
+                if step > 0.0 { (swept / step).round() * step } else { swept }
+            }
+        };
+        // (nothing asked for that is not already done: the same turn again is the whole map
+        // moved for nothing, and every frame of a still pointer asks for it)
+        if let Some(g) = self.rot.as_mut() {
+            if g.asked.is_finite() && (deg - g.asked).abs() < 1e-9 {
+                return;
+            }
+            g.asked = deg;
+        }
+        self.rot_to(deg);
+    }
+
+    /// A character typed while turning: a turn in degrees (a minus turns the other way).
+    pub fn rot_type(&mut self, ch: char) {
+        let Some(g) = self.rot.as_mut() else { return };
+        match ch {
+            '0'..='9' => g.typed.push(ch),
+            '.' | ',' => {
+                if !g.typed.contains('.') {
+                    g.typed.push('.');
+                }
+            }
+            '-' => {
+                if g.typed.starts_with('-') {
+                    g.typed.remove(0);
+                } else {
+                    g.typed.insert(0, '-');
+                }
+            }
+            _ => return,
+        }
+        let mouse = g.start_mouse;
+        self.rot_follow(mouse, false);
+    }
+
+    /// A digit rubbed out of the turn typed.
+    pub fn rot_backspace(&mut self) {
+        let Some(g) = self.rot.as_mut() else { return };
+        g.typed.pop();
+        let mouse = g.start_mouse;
+        self.rot_follow(mouse, false);
+    }
+
+    /// Keep the turn where it stands.
+    pub fn rot_confirm(&mut self) -> bool {
+        let Some(g) = self.rot.take() else { return false };
+        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).collect();
+        if let Some(doc) = self.doc.as_mut() {
+            selection::unlink_outside(doc, &mut self.history, &sels);
+        }
+        self.ground_to_selection();
+        self.finish_step();
+        self.xform_value = g.done;
+        true
+    }
+
+    /// Call the turn off: everything back where it stood.
+    pub fn rot_cancel(&mut self) -> bool {
+        let Some(g) = self.rot.take() else { return false };
+        if let Some(doc) = self.doc.as_mut() {
+            self.history.rollback(doc);
+        }
+        self.set_selection(g.from.iter().map(|o| o.sel).collect());
+        self.xform_value = 0.0;
+        true
+    }
+
+    /// Turn the selection to `deg`, from where it stood when it was taken.
+    fn rot_to(&mut self, deg: f64) {
+        if deg.abs() < 1e-12 {
+            // (nothing turned: it is put back where it stood, so a drag that comes back to
+            // where it began leaves nothing behind)
+            let Some(g) = self.rot.as_mut() else { return };
+            let Some(doc) = self.doc.as_mut() else { return };
+            let from = std::mem::take(&mut g.from);
+            let now = selection::transform_known(doc, &mut self.history, &from, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            self.set_selection_unique(now);
+            if let Some(g) = self.rot.as_mut() {
+                g.from = from;
+                g.done = 0.0;
+            }
+            self.xform_value = 0.0;
+            return;
+        }
+        let Some(g) = self.rot.as_mut() else { return };
+        let pivot = g.pivot;
+        let mut from = std::mem::take(&mut g.from);
+        let mut arms = std::mem::take(&mut g.arms);
+        let links = g.links.as_ref();
+        let Some(doc) = self.doc.as_mut() else {
+            if let Some(g) = self.rot.as_mut() {
+                g.from = from;
+                g.arms = arms;
+            }
+            return;
+        };
+        let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        self.set_selection_unique(now);
+        self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+        self.xform_value = deg;
+        if let Some(g) = self.rot.as_mut() {
+            g.from = std::mem::take(&mut from);
+            g.arms = std::mem::take(&mut arms);
+            g.done = deg;
         }
     }
 
@@ -5100,6 +5429,17 @@ impl Editor {
         out
     }
 
+    /// The camera distance the neighbour paths were last gathered with.
+    pub fn note_view_distance(&self, distance: f64) {
+        self.view_distance.set(distance);
+    }
+
+    /// How far from the crossing its neighbour paths are gathered and drawn, from the
+    /// distance [`Editor::note_view_distance`] last recorded.
+    pub fn neighbour_reach(&self) -> f64 {
+        crate::lanes::neighbour_reach(self.view_distance.get())
+    }
+
     pub fn extras(&self, cam: &crate::camera::Camera, assets: &mut Assets) -> FrameExtras {
         self.view_distance.set(cam.distance);
         let mut x = FrameExtras { grid: self.show_grid, selected: self.selected, selected_more: self.selection().into_iter().skip(1).collect(), hover: self.hover, ..Default::default() };
@@ -5116,7 +5456,7 @@ impl Editor {
         if self.tool == Tool::Logic || self.show_lanes {
             let r = (cam.distance * 1.3).clamp(40.0, 500.0);
             let (lanes, ends) = crate::lanes::near(doc, assets, cam.target.truncate(), r);
-            let lw = (cam.distance * 0.0012).clamp(0.03, 1.2) as f32;
+            let lw = (cam.distance * 0.00048).clamp(0.012, 0.42) as f32;
             for l in lanes.iter().filter(|l| !(draft.is_some() && l.object == draft)) {
                 let color = match l.kind {
                     0 => [1.0, 0.78, 0.2, 0.9],
@@ -5124,36 +5464,16 @@ impl Editor {
                     _ => [0.35, 0.8, 1.0, 0.9],
                 };
                 let lift = DVec3::Z * 0.15;
-                for s in l.pts.windows(2) {
-                    line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
+                let lifted: Vec<DVec3> = l.pts.iter().map(|q| *q + lift).collect();
+                for s in lifted.windows(2) {
+                    line(&mut x.overlay, cam, s[0], s[1], lw, color);
                 }
-                // a chevron every 8 m (both ways for a two-way lane)
-                let mut acc = 0.0;
-                for s in l.pts.windows(2) {
-                    let seg = (s[1] - s[0]).length();
-                    acc += seg;
-                    // (further apart when seen from far, so they do not merge into a band)
-                    if acc < (cam.distance * 0.06).clamp(6.0, 40.0) || seg < 1e-3 {
-                        continue;
-                    }
-                    acc = 0.0;
-                    let mid = (s[0] + s[1]) * 0.5 + lift;
-                    let d = (s[1] - s[0]).truncate() / seg;
-                    for back in [false, true] {
-                        if (l.direction == 1) != back && l.direction != 2 {
-                            continue;
-                        }
-                        let f = if back { -d } else { d };
-                        let sz = (lw as f64 * 6.0).clamp(0.3, 4.0);
-                        let tip = mid + DVec3::new(f.x, f.y, 0.0) * sz;
-                        let side = DVec3::new(f.y, -f.x, 0.0) * sz * 0.6;
-                        line(&mut x.overlay, cam, tip, mid - side, lw, color);
-                        line(&mut x.overlay, cam, tip, mid + side, lw, color);
-                    }
-                }
+                // (a flat mark beside the lane, not a chevron standing on it)
+                let (along, against) = crate::ui_crossing::path_ways(l.direction);
+                chevrons(&mut x.overlay, cam, &lifted, lw, (lw as f64 * 5.0).clamp(0.16, 0.55), (cam.distance * 0.08).clamp(8.0, 48.0), along, against, color);
             }
             for e in &ends {
-                disc(&mut x.overlay, cam, e.pos + DVec3::Z * 0.2, lw * 1.2, if e.linked { [0.35, 0.85, 0.45, 0.95] } else { [0.95, 0.25, 0.2, 0.95] });
+                disc(&mut x.overlay, cam, e.pos + DVec3::Z * 0.2, (lw * 0.85).max(0.03), if e.linked { [0.35, 0.85, 0.45, 0.95] } else { [0.95, 0.25, 0.2, 0.95] });
             }
         }
         // the crossing being edited: its paths as the window has them, on the map itself
@@ -5163,21 +5483,164 @@ impl Editor {
                 let world = doc.object_world(k, o, abs);
                 let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
                 let lift = DVec3::Z * 0.25;
-                let lw = (cam.distance * 0.0016).clamp(0.04, 1.6) as f32;
-                for p in paths {
-                    let color = match p.kind() {
-                        1 => [0.42, 0.74, 0.92, 0.95],
-                        2 => [0.78, 0.58, 0.84, 0.95],
-                        _ => [0.98, 0.72, 0.22, 0.95],
+                // (thin: the paths of a junction are many, and a wide line hides the road
+                // under it)
+                let lw = (cam.distance * 0.00028).clamp(0.007, 0.18) as f32;
+                let picked = self.crossing_selected.clone();
+                let is_picked_idx = |i: usize| picked.contains(&i);
+                let count = paths.len();
+                // (every path of the object, not only those near the camera. A reach and a
+                // point budget used to drop the rest, and turning the view brought them back.
+                // A straight line still takes a point a metre, a bend as many as its radius
+                // needs: the coarse step of a big junction turned every arc into an elbow)
+                let step = 0.5;
+                let max_turn = 6.0;
+                let mut drawn = 0usize;
+                // (the picked paths are drawn after the neighbour lanes, so a lane on the same
+                // line cannot cover the one being edited)
+                for i in (0..count).filter(|&i| !is_picked_idx(i)) {
+                    let p = &paths[i];
+                    let pts: Vec<DVec3> = p.points_by_turn(step, max_turn).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    let sink = self.crossing_sink.get(i).copied().unwrap_or(0.0) as f64;
+                    drawn += paint_crossing_path(&mut x.overlay, cam, p, &pts, lw, lift, false, sink, true);
+                }
+                static OVERLAY_LOG: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+                if OVERLAY_LOG.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 120 == 0 {
+                    log::trace!("crossing path overlay: {count} paths, {drawn} points, step {step} m");
+                }
+            }
+            // (the paths of everything around it - other objects' and the roads' own lanes -
+            // paler and lower: the crossing is seen in place among its neighbours, and its
+            // own paths are what stand out)
+            if !(self.tool == Tool::Logic || self.show_lanes) {
+                if let Some(o) = doc.object(k, id) {
+                    let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                    let centre = doc.object_world(k, o, abs).truncate();
+                    let radius = crate::lanes::neighbour_reach(cam.distance);
+                    // (thin and pale: they are the crossing's surroundings, not what is edited)
+                    let lw = (cam.distance * 0.00020).clamp(0.005, 0.13) as f32;
+                    let lift = DVec3::Z * 0.1;
+                    let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
+                    // (nearest first: a long spline used to fill the buffer before the roads
+                    // that actually meet the crossing were drawn)
+                    let mut ranked: Vec<(f64, &crate::lanes::Lane)> = Vec::new();
+                    for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
+                        if let Some((_, _, d)) = crate::lanes::visible_span(&l.pts, centre, radius) {
+                            ranked.push((d, l));
+                        }
+                    }
+                    ranked.sort_by(|a, b| a.0.total_cmp(&b.0));
+                    let mut drawn = 0usize;
+                    let mut shown = 0usize;
+                    for (_, l) in &ranked {
+                        if drawn > NEIGHBOUR_POINTS {
+                            break;
+                        }
+                        let Some((lo, hi, _)) = crate::lanes::visible_span(&l.pts, centre, radius) else { continue };
+                        shown += 1;
+                        let color = match (l.kind, l.spline.is_some()) {
+                            (1, _) => [0.35, 0.85, 1.0, 0.8],
+                            (2, _) => [0.85, 0.55, 1.0, 0.8],
+                            // (a road's lane is a little paler than another object's)
+                            (_, true) => [0.45, 0.85, 0.5, 0.55],
+                            _ => [0.45, 0.95, 0.55, 0.8],
+                        };
+                        // (only the part inside the reach, and not every sample: a kilometre
+                        // of road sampled every 3 m used up the buffer on its own)
+                        let mut visible = Vec::new();
+                        let mut i = lo;
+                        while i < hi {
+                            if drawn > NEIGHBOUR_POINTS {
+                                break;
+                            }
+                            let mut j = i + 1;
+                            while j < hi && (l.pts[j].truncate() - l.pts[i].truncate()).length() < 5.0 {
+                                j += 1;
+                            }
+                            if visible.is_empty() {
+                                visible.push(l.pts[i] + lift);
+                            }
+                            visible.push(l.pts[j] + lift);
+                            i = j;
+                        }
+                        // (one ribbon, so a bend of the lane has no notch either)
+                        if visible.len() >= 2 {
+                            ribbon(&mut x.overlay, cam, &visible, lw, color);
+                            drawn += visible.len().saturating_sub(1) * 6;
+                        }
+                        // (which way it goes, as the crossing's own paths do: a lane joined
+                        // to the crossing has to be driven the right way round)
+                        if !visible.is_empty() && drawn < NEIGHBOUR_POINTS {
+                            let (along, against) = crate::ui_crossing::path_ways(l.direction);
+                            let n = chevrons(&mut x.overlay, cam, &visible, lw, (lw as f64 * 5.0).clamp(0.12, 0.40), (cam.distance * 0.09).clamp(9.0, 50.0), along, against, color);
+                            drawn += n * 3;
+                        }
+                        // (their real ends, when the end itself is in reach: a clip of the
+                        // line is not an end, and is not a green circle. An end that already
+                        // has the nearby-path mark is left: that mark is the circle, and a
+                        // second one here was another layer on top of it)
+                        for at in [l.pts.first().copied(), l.pts.last().copied()].into_iter().flatten() {
+                            if (at.truncate() - centre).length() > radius || drawn > NEIGHBOUR_POINTS {
+                                continue;
+                            }
+                            if self.crossing_nearby.iter().any(|(p, _)| (p.truncate() - at.truncate()).length() < 0.6) {
+                                continue;
+                            }
+                            drawn += 60;
+                            disc(&mut x.overlay, cam, at + lift, (lw * 0.7).max(0.016), color);
+                        }
+                    }
+                    log::trace!("crossing neighbours: {shown} of {} paths within {radius} m", ranked.len());
+                }
+            }
+            // (after the neighbours, which are drawn on top of everything before them: a lane
+            // that runs on the picked path covered it, and only turning the view — which
+            // swings a camera-facing ribbon — let it show again)
+            if let Some(o) = doc.object(k, id) {
+                let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                let world = doc.object_world(k, o, abs);
+                let m = crate::render::object_matrix(DVec3::ZERO, o.rot);
+                let lift = DVec3::Z * 0.25;
+                let lw = (cam.distance * 0.00028).clamp(0.007, 0.18) as f32;
+                let count = paths.len();
+                let step = 0.5;
+                let max_turn = 6.0;
+                for i in self.crossing_selected.iter().copied().filter(|&i| i < count) {
+                    let p = &paths[i];
+                    let pts: Vec<DVec3> = p.points_by_turn(step, max_turn).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
+                    let sink = self.crossing_sink.get(i).copied().unwrap_or(0.0) as f64;
+                    paint_crossing_path(&mut x.overlay, cam, p, &pts, lw, lift, true, sink, true);
+                }
+            }
+            // (one mark for both modes: a green disc is the end, and an arrow grows out of
+            // it for the way. Starting has the one way a new path leaves; completing has the
+            // two ways it may arrive, opposite each other)
+            let len = crate::crossing_edit::end_mark_len(cam.distance);
+            let green = [0.36, 0.95, 0.45, 1.0];
+            let head = [0.86, 1.0, 0.9, 1.0];
+            let frame = self.crossing_world.as_ref().map(|(_, m)| *m).unwrap_or(glam::Mat4::IDENTITY);
+            for (pos, j) in &self.crossing_nearby {
+                let lift = DVec3::Z * 0.4;
+                let at = *pos + lift;
+                disc(&mut x.overlay, cam, at, (len * 0.28) as f32, green);
+                // (the joint's headings are the object's: the arrow is on the map, so they
+                // are turned by the same matrix the yellow path is. Completing's two ways
+                // start at the rim: both drawn from the middle covered the circle and read
+                // as a second mark on top of it)
+                let ways = if self.crossing_complete {
+                    [crate::crossing_edit::heading_in_frame(j.geom, &frame), crate::crossing_edit::heading_in_frame(j.geom + 180.0, &frame)]
+                } else {
+                    [crate::crossing_edit::heading_in_frame(j.outward(), &frame), 0.0]
+                };
+                let n = if self.crossing_complete { 2 } else { 1 };
+                for h in ways.into_iter().take(n) {
+                    let origin = if self.crossing_complete {
+                        let d = crate::roads::dir(h);
+                        at + DVec3::new(d.x, d.y, 0.0) * (len * 0.28)
+                    } else {
+                        at
                     };
-                    let pts: Vec<DVec3> = p.points(0.5).into_iter().map(|q| world + m.transform_point3(q.as_vec3()).as_dvec3()).collect();
-                    for s in pts.windows(2) {
-                        line(&mut x.overlay, cam, s[0] + lift, s[1] + lift, lw, color);
-                    }
-                    // the ends, where they are dragged in the window
-                    for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
-                        disc(&mut x.overlay, cam, at + lift, lw * 1.8, color);
-                    }
+                    arrowhead(&mut x.overlay, origin, h, if self.crossing_complete { len * 0.62 } else { len }, head);
                 }
             }
         }
@@ -5191,14 +5654,20 @@ impl Editor {
             for (sel, color) in shown.into_iter().map(|s| (s, ORANGE)).chain(self.hover.map(|h| (h, WHITE))) {
                 let Sel::Spline(k, id) = sel else { continue };
                 let Some(s) = doc.spline(k, id) else { continue };
-                if !editing && !assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false) {
+                let ai = assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false);
+                // (a picked spline always has the thin guide; a hover line only where the
+                // spline itself is not already a road one can see)
+                if color == WHITE && !editing && !ai {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
                 let n = (s.length / 1.0).ceil().max(2.0) as usize;
                 let pts: Vec<DVec3> = (0..=n).map(|i| c.point_at(s.length * i as f64 / n as f64) + DVec3::Z * 0.25).collect();
+                // (a guide along the spline, not a second road: thin, and light enough to see through)
+                let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
+                let guide = [color[0], color[1], color[2], color[3] * 0.45];
                 for p in pts.windows(2) {
-                    line(&mut x.overlay, cam, p[0], p[1], w * 0.6, color);
+                    line(&mut x.overlay, cam, p[0], p[1], sw, guide);
                 }
             }
         }
@@ -5945,14 +6414,23 @@ impl Editor {
                 tr("X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel", "X / Y / Z: закрепить ось, цифры: как далеко, Enter или клик: готово, Esc: отмена")
             ));
         }
-        if let Some((kind, v)) = self.mesh.as_ref().and_then(|m| m.modal_value()) {
-            let what = match kind {
+        if let Some((kind, v)) = self.mesh.as_ref().and_then(|m| m.modal_value()) {            let what = match kind {
                 crate::meshedit::Sizing::Extrude => tr("Extrude", "Выдавливание"),
                 crate::meshedit::Sizing::Inset => tr("Inset", "Вставка"),
                 crate::meshedit::Sizing::Bevel => tr("Bevel", "Фаска"),
                 crate::meshedit::Sizing::LoopCut(_) => tr("Loop cut", "Разрез петлёй"),
             };
             return Some(format!("{what} {v:.3} · {}", tr("click: done, right click / Esc: cancel, wheel: segments", "клик: готово, правый клик / Esc: отмена, колесо: сегменты")));
+        }
+        // (a turn taken hold of by R: how far it has turned, and the keys that steer it)
+        if let Some(g) = &self.rot {
+            return Some(format!(
+                "{} {} · {} · {}",
+                tr("Rotate", "Поворот"),
+                g.readout(),
+                tr("Shift: tenths of a degree", "Shift: десятые градуса"),
+                tr("numbers: a turn in degrees, Enter or a click: done, Esc: cancel", "цифры: поворот в градусах, Enter или клик: готово, Esc: отмена")
+            ));
         }
         let mode = match self.drag {
             Drag::Gizmo { grab, started: true } | Drag::MeshGizmo { grab, started: true } => grab.gizmo.mode,
@@ -8894,19 +9372,21 @@ impl Editor {
         }).fold(0.0, f64::max) };
         self.gizmo_cap.set(if sels.len() == 1 { size.max(2.0) } else { f64::INFINITY });
         // (what is selected glows in the scene itself: no outline or ball is drawn over it)
-        // what one object takes its state from (cyan) and what takes it from it
-        if let (Some(Sel::Object(k, id)), 1) = (self.selected, sels.len()) {
-            let at = |k: TileKey, o: &MapObject| (o.parent_id.is_none()).then(|| doc.object_world(k, o, false) + DVec3::Z * 0.5);
-            if let Some(me) = doc.object(k, id).and_then(|o| at(k, o)) {
-                let parent = doc.object(k, id).and_then(|o| o.var_parent).and_then(|p| selection::object_by_id(doc, p));
-                let others = parent.into_iter().map(|p| (p, true)).chain(selection::var_children(doc, id).into_iter().map(|c| (c, false)));
-                for ((pk, o), up) in others {
-                    let Some(there) = at(pk, o) else { continue };
-                    // (thin, and a dot as big as the linked thing, not as the view is wide)
-                    let r = assets.object(&o.file).map(|m| m.radius() as f64 * 0.2).unwrap_or(0.5).clamp(0.15, 1.5) as f32;
-                    line(&mut x.overlay, cam, me, there, (w * 0.3).min(r), LINK);
-                    disc(&mut x.overlay, cam, there, r * if up { 1.4 } else { 1.0 }, LINK);
-                }
+        // what one record takes its state from (cyan) and what takes it from it. A record is any
+        // of the three the map has - an object, one hanging on another, or one laid along a
+        // road - and a link is drawn whichever of them the selected thing is and whichever the
+        // other end is: a signal head on a pole placed along a road took its light from the
+        // pole, and no line was drawn because the pole is a `[splineAttachement]`.
+        if let (Some(sel), 1) = (self.selected, sels.len())
+            && let Some(me) = record_point(doc, sel)
+        {
+            let others = record_links(doc, sel);
+            for (other, up) in others {
+                let Some(there) = record_point(doc, other) else { continue };
+                let r = record_radius(doc, assets, other).clamp(0.15, 1.5) as f32;
+                let (dash, gap) = ((w as f64 * 1.2).max(0.25), (w as f64 * 0.8).max(0.18));
+                dashed_line(&mut x.overlay, cam, me, there, 0.03, dash, gap, LINK);
+                disc(&mut x.overlay, cam, there, r * if up { 1.4 } else { 1.0 }, LINK);
             }
         }
         if self.acts_as() == Tool::Select {
@@ -8914,8 +9394,12 @@ impl Editor {
             for (sp, h, p) in self.handles() {
                 let on = (self.hover_handle == Some(h) && self.hover_handle_of == Some(sp)) || matches!(self.drag, Drag::Reshape(k, i, d) if d == h && (k, i) == sp);
                 let picked = self.path_point == Some((sp, h));
-                let (c, r) = self.grip(assets, sp, h, p, (p - eye).length());
-                ball(&mut x.overlay_depth, c, r, if picked { ORANGE } else if on { GREEN } else { WHITE });
+                let (_c, r) = self.grip(assets, sp, h, p, (p - eye).length());
+                // (drawn smaller and see-through; the pick still uses the full radius)
+                let shown = r * 0.42;
+                let mut color = if picked { ORANGE } else if on { GREEN } else { WHITE };
+                color[3] = if on || picked { 0.7 } else { 0.48 };
+                ball(&mut x.overlay_depth, p + DVec3::Z * (shown * 0.55), shown, color);
             }
             if let Some((sp, h)) = self.path_connect {
                 if let Some(s) = doc.spline(sp.0, sp.1) {
@@ -8926,7 +9410,8 @@ impl Editor {
                         Handle::Mid => c.point_at(s.length * 0.5),
                     };
                     if let Some(cur) = self.cursor {
-                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, w, ORANGE);
+                        let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
+                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, sw, [ORANGE[0], ORANGE[1], ORANGE[2], 0.45]);
                     }
                 }
             }
@@ -8970,7 +9455,7 @@ fn ball(out: &mut Vec<OverlayPoint>, c: DVec3, r: f64, color: [f32; 4]) {
         let (lat, lon) = (std::f64::consts::PI * i as f64 / rows as f64, std::f64::consts::TAU * j as f64 / cols as f64);
         let n = DVec3::new(lat.sin() * lon.cos(), lat.sin() * lon.sin(), lat.cos());
         let k = (0.5 + 0.5 * n.dot(light).max(0.0)) as f32;
-        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, 1.0] }
+        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, color[3]] }
     };
     for i in 0..rows {
         for j in 0..cols {
@@ -9766,6 +10251,142 @@ fn put_object_3d(doc: &mut Document, hist: &mut History, id: i64, p: DVec3, rot:
     Some(placed)
 }
 
+/// One crossing path on the map. `pts` are already in the world. The picked one is darker,
+/// with its width as a grey band under the line. How many overlay points were added.
+fn paint_crossing_path(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, p: &crate::crossing_edit::Path, pts: &[DVec3], lw: f32, lift: DVec3, picked: bool, sink: f64, discs: bool) -> usize {
+    let before = out.len();
+    // (a path under the deck is not the same as one on it: red, so it is seen without
+    // opening its numbers)
+    let color = if sink < -0.02 {
+        [0.95, 0.32, 0.42, 0.95]
+    } else {
+        match p.kind() {
+            1 => [0.42, 0.74, 0.92, 0.95],
+            2 => [0.78, 0.58, 0.84, 0.95],
+            _ => [0.98, 0.72, 0.22, 0.95],
+        }
+    };
+    // (the one being edited is a step darker, so it is told from the others without a second
+    // bright line on top of it)
+    let ribbon_color = if picked { [color[0] * 0.68, color[1] * 0.68, color[2] * 0.68, 1.0] } else { color };
+    let lifted: Vec<DVec3> = pts.iter().map(|q| *q + lift).collect();
+    // (the picked path shows its own width as a grey band lying on the deck, under its line:
+    // what a vehicle would take, not just where it runs)
+    if picked {
+        band(out, &lifted, p.width() as f64, [0.72, 0.72, 0.75, 0.30]);
+    }
+    // (one ribbon the whole way: the segments drawn one at a time leave a notch on the
+    // outside of every bend)
+    ribbon(out, cam, &lifted, lw, ribbon_color);
+    // (which way it goes: a flat mark beside the line. A piece shorter than a metre says
+    // nothing, and is left out)
+    if p.length() >= 1.0 {
+        let (along, against) = crate::ui_crossing::path_ways(p.direction());
+        chevrons(out, cam, &lifted, lw, (lw as f64 * 5.0).clamp(0.14, 0.48), (cam.distance * 0.09).clamp(9.0, 50.0), along, against, color);
+    }
+    // (how far off the deck it is: a stem from the middle of the path down, or up, to the
+    // surface, so a path floating over it or sunk into it is seen)
+    if sink.abs() > 0.05 && let Some(mid) = pts.get(pts.len() / 2) {
+        let foot = *mid + lift - DVec3::Z * sink;
+        line(out, cam, *mid + lift, foot, lw, [0.95, 0.32, 0.42, 0.8]);
+    }
+    // (the ends, where they are dragged: only near, or the picked path's own)
+    if discs || picked {
+        let a = if picked { (lw * 0.95).max(0.028) } else { (lw * 0.62).max(0.018) };
+        for at in [pts.first().copied(), pts.last().copied()].into_iter().flatten() {
+            disc(out, cam, at + lift, a, color);
+        }
+    }
+    out.len() - before
+}
+
+/// A flat band on the ground along `pts`, `width` metres across and filled in `color`: the
+/// picked path's own width, seen lying on the deck.
+pub fn band(out: &mut Vec<OverlayPoint>, pts: &[DVec3], width: f64, color: [f32; 4]) {
+    let h = width * 0.5;
+    if h <= 0.0 || pts.len() < 2 {
+        return;
+    }
+    let v = |p: DVec3| OverlayPoint { pos: p, color };
+    // (one edge per point, taken from the way of the lines either side of it: a segment's own
+    // normal leaves a notch on the outside of a bend and a double-drawn overlap on the inside)
+    let mut left = Vec::with_capacity(pts.len());
+    let mut right = Vec::with_capacity(pts.len());
+    for (i, q) in pts.iter().enumerate() {
+        let before = (i > 0).then(|| *q - pts[i - 1]);
+        let after = (i + 1 < pts.len()).then(|| pts[i + 1] - *q);
+        let (d0, d1) = match (before, after) {
+            (Some(a), Some(b)) => (a.normalize_or_zero(), b.normalize_or_zero()),
+            (Some(a), None) => (a.normalize_or_zero(), a.normalize_or_zero()),
+            (None, Some(b)) => (b.normalize_or_zero(), b.normalize_or_zero()),
+            (None, None) => continue,
+        };
+        let t = (d0 + d1).normalize_or_zero();
+        let t = if t.length_squared() < 1e-9 { d1 } else { t };
+        let n = DVec3::new(-t.y, t.x, 0.0);
+        // (a miter: the corner of the band reaches further round than a segment's own width,
+        // by 1/cos of half the bend - capped so a hairpin does not flare out)
+        let cos_half = (((1.0 + d0.dot(d1)) * 0.5).sqrt()).max(0.45);
+        let off = n * (h / cos_half);
+        left.push(*q + off);
+        right.push(*q - off);
+    }
+    for i in 0..left.len().saturating_sub(1) {
+        out.extend([v(left[i]), v(right[i]), v(right[i + 1]), v(left[i]), v(right[i + 1]), v(left[i + 1])]);
+    }
+}
+
+/// A polyline as one continuous ribbon facing the camera: each point takes the way of the lines
+/// either side of it, so a bend has no notch on its outer side and no overlap on its inner one -
+/// which drawing the segments one at a time leaves, and which a fine enough sampling cannot fix.
+pub fn ribbon(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, pts: &[DVec3], width: f32, color: [f32; 4]) {
+    if pts.len() < 2 || width <= 0.0 {
+        return;
+    }
+    let eye = cam.eye();
+    let half = width as f64 * 0.5;
+    let mut left = Vec::with_capacity(pts.len());
+    let mut right = Vec::with_capacity(pts.len());
+    for (i, q) in pts.iter().enumerate() {
+        let before = (i > 0).then(|| *q - pts[i - 1]);
+        let after = (i + 1 < pts.len()).then(|| pts[i + 1] - *q);
+        let (d0, d1) = match (before, after) {
+            (Some(a), Some(b)) => (a.normalize_or_zero(), b.normalize_or_zero()),
+            (Some(a), None) => (a.normalize_or_zero(), a.normalize_or_zero()),
+            (None, Some(b)) => (b.normalize_or_zero(), b.normalize_or_zero()),
+            (None, None) => continue,
+        };
+        let mut t = (d0 + d1).normalize_or_zero();
+        if t.length_squared() < 1e-9 {
+            t = d1;
+        }
+        let mut side = t.cross((eye - *q).normalize_or_zero());
+        if side.length_squared() < 1e-8 {
+            // (the path runs straight at the camera: world X is then the view itself when
+            // the road points east, and the ribbon has no width on the screen at all)
+            let view = (eye - *q).normalize_or_zero();
+            let up = if view.z.abs() < 0.9 { DVec3::Z } else { DVec3::X };
+            side = view.cross(up);
+        }
+        // (a bend that passes across the view flips this cross product, and the quad between
+        // the two ways has no area: the path vanishes from that angle and shows from another)
+        if let Some(&prev_left) = left.last() {
+            let prev = prev_left - pts[left.len() - 1];
+            if side.dot(prev) < 0.0 {
+                side = -side;
+            }
+        }
+        let cos_half = (((1.0 + d0.dot(d1)) * 0.5).sqrt()).max(0.45);
+        let side = side.normalize_or_zero() * (half / cos_half);
+        left.push(*q + side);
+        right.push(*q - side);
+    }
+    let v = |p: DVec3| OverlayPoint { pos: p, color };
+    for i in 0..left.len().saturating_sub(1) {
+        out.extend([v(left[i]), v(right[i]), v(right[i + 1]), v(left[i]), v(right[i + 1]), v(left[i + 1])]);
+    }
+}
+
 /// A line drawn as a flat ribbon facing the camera.
 pub fn line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, b: DVec3, width: f32, color: [f32; 4]) {
     let eye = cam.eye();
@@ -9776,6 +10397,112 @@ pub fn line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, 
     out.extend([v(a - side), v(a + side), v(b + side), v(a - side), v(b + side), v(b - side)]);
 }
 
+/// A dashed line: `dash` metres of line, `gap` of nothing, `width` across. It says "a
+/// relationship, not a thing" - what one record takes its state from, where a solid bar would
+/// read as a strip of road lying there.
+pub fn dashed_line(out: &mut Vec<OverlayPoint>, cam: &crate::camera::Camera, a: DVec3, b: DVec3, width: f32, dash: f64, gap: f64, color: [f32; 4]) {
+    let d = b - a;
+    let len = d.length();
+    if len < 1e-6 {
+        return;
+    }
+    let dir = d / len;
+    let mut on = dash.max(1e-3);
+    let mut off = gap.max(0.0);
+    // (a link across a whole town would be thousands of dashes: a longer one serves as well)
+    const MOST: f64 = 1200.0;
+    let period = on + off;
+    if period > 1e-6 && len / period > MOST {
+        let scale = len / (MOST * period);
+        on *= scale;
+        off *= scale;
+    }
+    let mut s = 0.0;
+    while s < len {
+        let e = (s + on).min(len);
+        line(out, cam, a + dir * s, a + dir * e, width, color);
+        s += on + off;
+    }
+}
+
+/// Direction marks along a line at `pts` (world, already lifted): `along` the points' order
+/// and/or `against` it. Each is a flat triangle on the ground, set just to the right of the
+/// line, `step` metres apart and `size` metres long. It is not drawn on the line itself - a
+/// chevron of two strokes there cuts the ribbon and reads as a notch. One is always drawn, so
+/// a line shorter than the step still says which way it goes. How many were drawn is returned.
+#[allow(clippy::too_many_arguments)]
+pub fn chevrons(out: &mut Vec<OverlayPoint>, _cam: &crate::camera::Camera, pts: &[DVec3], width: f32, size: f64, step: f64, along: bool, against: bool, color: [f32; 4]) -> usize {
+    if !along && !against {
+        return 0;
+    }
+    // (pale, with a trace of the line's own colour, so the mark is seen on the road and is
+    // still that path's)
+    let ink = [color[0] * 0.22 + 0.78, color[1] * 0.22 + 0.78, color[2] * 0.22 + 0.78, 0.92];
+    let arrow = |out: &mut Vec<OverlayPoint>, mid: DVec3, d: DVec3| -> usize {
+        let flat = DVec3::new(d.x, d.y, 0.0);
+        let flat = if flat.length_squared() < 1e-8 { return 0 } else { flat.normalize() };
+        let len = size.max(0.04);
+        let half = len * 0.32;
+        let right = DVec3::new(flat.y, -flat.x, 0.0);
+        let centre = mid + right * (width as f64 * 0.5 + half + 0.03) + DVec3::Z * 0.03;
+        let tip = centre + flat * (len * 0.55);
+        let base = centre - flat * (len * 0.45);
+        let v = |p: DVec3| OverlayPoint { pos: p, color: ink };
+        out.extend([v(tip), v(base + right * half), v(base - right * half)]);
+        1
+    };
+    let mut shown = 0;
+    let mut acc = step * 0.5;
+    for w in pts.windows(2) {
+        let seg = (w[1] - w[0]).length();
+        if seg < 1e-6 {
+            continue;
+        }
+        acc += seg;
+        if acc < step {
+            continue;
+        }
+        acc = 0.0;
+        let mid = (w[0] + w[1]) * 0.5;
+        let d = (w[1] - w[0]) / seg;
+        if along {
+            shown += arrow(out, mid, d);
+        }
+        if against {
+            shown += arrow(out, mid, -d);
+        }
+    }
+    if shown == 0 {
+        if let (Some(a), Some(b)) = (pts.first(), pts.last()) {
+            let seg = (*b - *a).length();
+            if seg > 1e-6 {
+                let mid = (*a + *b) * 0.5;
+                let d = (*b - *a) / seg;
+                if along {
+                    shown += arrow(out, mid, d);
+                }
+                if against {
+                    shown += arrow(out, mid, -d);
+                }
+            }
+        }
+    }
+    shown
+}
+
+/// A flat arrow on the ground, tip `len` metres from `origin` along `heading`. It grows out
+/// of an end's disc, so the direction is part of the mark rather than a line lying nearby.
+fn arrowhead(out: &mut Vec<OverlayPoint>, origin: DVec3, heading: f64, len: f64, color: [f32; 4]) {
+    let d = crate::roads::dir(heading);
+    let fwd = DVec3::new(d.x, d.y, 0.0);
+    let right = DVec3::new(d.y, -d.x, 0.0);
+    let o = origin + DVec3::Z * 0.16;
+    let tip = o + fwd * len;
+    let base = o + fwd * (len * 0.22);
+    let half = right * (len * 0.32);
+    let v = |p: DVec3| OverlayPoint { pos: p, color };
+    out.extend([v(tip), v(base + half), v(base - half)]);
+}
 /// A flat disc on the ground.
 pub fn disc(out: &mut Vec<OverlayPoint>, _cam: &crate::camera::Camera, c: DVec3, r: f32, color: [f32; 4]) {
     let n = 20;
@@ -9901,6 +10628,234 @@ mod tests {
         assert!(ray_on_ribbon(DVec3::new(0.0, 5.0, 20.0), down, a, b, 1.8, 2.1).unwrap().0 > 0.5, "the centre line misses the kerb");
         let kerb = ray_on_ribbon(DVec3::new(2.0, 5.0, 20.0), down, a, b, 1.8, 2.1).expect("on the kerb");
         assert!(kerb.0 <= 0.05, "the kerb's own surface");
+    }
+
+    /// Chevrons are drawn along a line, one for a line shorter than the step, and only the ways
+    /// asked for (a one-way lane gets one direction, a two-way one both).
+    #[test]
+    fn a_line_says_which_way_it_goes() {
+        let cam = crate::camera::Camera::default();
+        let long: Vec<DVec3> = (0..=20).map(|i| DVec3::new(0.0, i as f64 * 5.0, 0.0)).collect();
+        let mut out = Vec::new();
+        let n = chevrons(&mut out, &cam, &long, 0.05, 0.5, 20.0, true, false, [1.0, 1.0, 1.0, 1.0]);
+        assert!(n >= 4, "a hundred metres of line shows {n} marks");
+        assert_eq!(out.len(), n * 3, "each mark is one flat triangle");
+        // (nothing for a lane that goes nowhere)
+        assert_eq!(chevrons(&mut Vec::new(), &cam, &long, 0.05, 0.5, 20.0, false, false, [1.0; 4]), 0);
+        // (both ways: two chevrons at each place)
+        let mut both = Vec::new();
+        let m = chevrons(&mut both, &cam, &long, 0.05, 0.5, 20.0, true, true, [1.0; 4]);
+        assert_eq!(m, n * 2);
+        // (a line shorter than the step still shows one)
+        let short = [DVec3::ZERO, DVec3::new(0.0, 1.0, 0.0)];
+        let mut out = Vec::new();
+        assert_eq!(chevrons(&mut out, &cam, &short, 0.05, 0.5, 20.0, true, false, [1.0; 4]), 1);
+        assert!(!out.is_empty());
+    }
+
+    /// A bend laid out as one ribbon has no notch on its outer edge: the edge a quad ends on is
+    /// the edge the next begins with, which per-segment lines do not do.
+    #[test]
+    fn a_bend_is_one_continuous_ribbon() {
+        let cam = crate::camera::Camera::default();
+        // (a quarter circle of radius 8 m, in fine steps: only a notch would show)
+        let n = 40;
+        let pts: Vec<DVec3> = (0..=n)
+            .map(|i| {
+                let a = std::f64::consts::FRAC_PI_2 * i as f64 / n as f64;
+                DVec3::new(8.0 - 8.0 * a.cos(), 8.0 * a.sin(), 0.0)
+            })
+            .collect();
+        let mut out = Vec::new();
+        ribbon(&mut out, &cam, &pts, 0.2, [1.0; 4]);
+        assert_eq!(out.len(), n * 6, "one quad a segment, and no more");
+        // (each quad ends on the two points the next one begins with: one edge, no seam)
+        for k in 0..n - 1 {
+            let here = &out[k * 6..k * 6 + 6];
+            let next = &out[(k + 1) * 6..(k + 1) * 6 + 6];
+            let ends: Vec<DVec3> = vec![here[4].pos, here[5].pos];
+            let starts: Vec<DVec3> = vec![next[0].pos, next[1].pos];
+            for e in &ends {
+                assert!(starts.iter().any(|s| (*s - *e).length() < 1e-9), "a gap between quad {k} and {} at {e:?}", k + 1);
+            }
+        }
+        // (the ribbon follows the arc: its outer edge is further out than its inner one, all
+        // the way round, and the two do not swap over)
+        let mut outer = 0.0f64;
+        for k in 0..n {
+            let d = (out[k * 6].pos - pts[k]).length();
+            assert!((d - 0.1).abs() < 0.05, "the edge is about half a width off the line: {d}");
+            outer += d;
+        }
+        assert!(outer / n as f64 > 0.09, "an edge, not the centre line");
+        // (a degenerate line draws nothing)
+        let mut none = Vec::new();
+        ribbon(&mut none, &cam, &[DVec3::ZERO], 0.2, [1.0; 4]);
+        assert!(none.is_empty());
+    }
+
+    /// A path running straight at the camera still has width. Falling back to world X makes
+    /// an east-west road edge-on from the east, so it vanishes until the view turns.
+    #[test]
+    fn a_path_aimed_at_the_camera_keeps_its_width() {
+        let mut cam = crate::camera::Camera::default();
+        cam.target = DVec3::new(0.0, 10.0, 0.0);
+        cam.yaw = 90.0;
+        cam.pitch = 0.0;
+        cam.distance = 8.0;
+        cam.snap();
+        // (yaw 90 looks west: the eye sits to the east of the pivot, the path runs east-west
+        // through both)
+        let pts: Vec<DVec3> = (0..=8).map(|i| DVec3::new(i as f64 * 4.0 - 6.0, 10.0, 0.0)).collect();
+        let mut out = Vec::new();
+        ribbon(&mut out, &cam, &pts, 0.2, [1.0; 4]);
+        assert!(!out.is_empty());
+        let eye = cam.eye();
+        for w in out.chunks(6) {
+            let across = (w[0].pos - w[1].pos).length();
+            assert!(across > 0.1, "the ribbon is edge-on: width {across}");
+            let mid = (w[0].pos + w[1].pos) * 0.5;
+            let view = (eye - mid).normalize_or_zero();
+            let span = (w[0].pos - w[1].pos).normalize_or_zero();
+            assert!(span.dot(view).abs() < 0.35, "the width must face the camera, not run along the view");
+        }
+    }
+
+    /// The grey band of the picked path is one continuous strip too, not a row of quads with a
+    /// notch at every bend.
+    #[test]
+    fn a_band_has_no_notch_at_a_bend() {
+        let n = 24;
+        let pts: Vec<DVec3> = (0..=n)
+            .map(|i| {
+                let a = std::f64::consts::FRAC_PI_2 * i as f64 / n as f64;
+                DVec3::new(8.0 - 8.0 * a.cos(), 8.0 * a.sin(), 0.0)
+            })
+            .collect();
+        let mut out = Vec::new();
+        band(&mut out, &pts, 3.0, [1.0; 4]);
+        assert_eq!(out.len(), n * 6, "{} points", out.len());
+        // (every point of the band lies half a width off the line)
+        for k in 0..n {
+            let want = 1.5;
+            let d = (out[k * 6].pos - pts[k]).length();
+            assert!((d - want).abs() < 0.05 || d > want, "the edge is a width and a half out: {d}");
+        }
+        for k in 0..n - 1 {
+            let here = &out[k * 6..k * 6 + 6];
+            let next = &out[(k + 1) * 6..(k + 1) * 6 + 6];
+            for e in [here[4].pos, here[5].pos] {
+                assert!(next[..2].iter().any(|s| (s.pos - e).length() < 1e-9), "a gap at {k}");
+            }
+        }
+    }
+
+    /// A bend is as smooth as its radius needs, a straight line as few points as before: laid
+    /// out by the metre alone, a 3 m step across an 8 m radius was a 21° elbow.
+    #[test]
+    fn a_bend_is_sampled_by_its_turn() {
+        let mut p = crate::crossing_edit::Path::default();
+        // (a straight of 12 m: heading 0, radius 0, length 12)
+        p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
+        // (at a 3 m step: five points, as before)
+        let straight = p.points_by_turn(3.0, 6.0);
+        assert_eq!(straight.len(), 5, "{} points", straight.len());
+        // (the same length on an 8 m radius: 12/8 rad is 86°, so 15 pieces at 6° each)
+        p.v[4] = 8.0;
+        let bend = p.points_by_turn(3.0, 6.0);
+        assert!(bend.len() >= 15, "{} points on a bend", bend.len());
+        // (and every piece of it turns no more than the 6 degrees asked for)
+        for w in bend.windows(3) {
+            let a = crate::roads::heading_of((w[1] - w[0]).truncate());
+            let b = crate::roads::heading_of((w[2] - w[1]).truncate());
+            let d = (b - a).rem_euclid(360.0);
+            let d = if d > 180.0 { d - 360.0 } else { d };
+            assert!(d.abs() <= 6.5, "a piece turns {} degrees", d.abs());
+        }
+        // (the cap still holds: no path asks for millions of points)
+        let mut huge = crate::crossing_edit::Path::default();
+        huge.v[5] = 16_340_103.0;
+        huge.v[4] = 2000.0;
+        assert!(huge.points_by_turn(0.5, 4.0).len() <= 4001);
+    }
+
+    /// The line between a record and what it takes its state from is dashed, thin, and cannot
+    /// turn a link across a town into a thousand ribbons.
+    #[test]
+    fn a_link_between_two_records_is_dashed() {
+        let cam = crate::camera::Camera::default();
+        let a = DVec3::ZERO;
+        let b = DVec3::new(0.0, 10.0, 0.0);
+        let mut out = Vec::new();
+        dashed_line(&mut out, &cam, a, b, 0.05, 1.0, 0.5, [1.0; 4]);
+        // (six points per ribbon, and a ten-metre line at a 1.5 m period is seven dashes)
+        let n = out.len() / 6;
+        assert_eq!(n, 7, "{n} dashes over ten metres");
+        assert_eq!(out.len() % 6, 0);
+        // (every dash starts where the one before ended plus the gap: none runs together)
+        let mut starts: Vec<f64> = out.chunks(6).map(|c| c[0].pos.y).collect();
+        starts.sort_by(f64::total_cmp);
+        for w in starts.windows(2) {
+            let step = w[1] - w[0];
+            assert!((step - 1.5).abs() < 1e-6, "dashes {step} m apart, with a 1.5 m period");
+        }
+        // (a line across thirty kilometres is still a few hundred dashes, not millions)
+        let mut far = Vec::new();
+        dashed_line(&mut far, &cam, DVec3::ZERO, DVec3::new(0.0, 30_000.0, 0.0), 0.05, 1.0, 0.5, [1.0; 4]);
+        assert!(far.len() / 6 <= 1201, "{} dashes", far.len() / 6);
+        assert!(!far.is_empty());
+        // (nothing of a line with no length)
+        let mut none = Vec::new();
+        dashed_line(&mut none, &cam, a, a, 0.05, 1.0, 0.5, [1.0; 4]);
+        assert!(none.is_empty());
+    }
+
+    /// A record laid along a road (`[splineAttachement]`) is a record like any other: a signal
+    /// head on such a pole takes its state from it, and the line between them is drawn - where
+    /// the row's first copy stands, not where a bare object would.
+    #[test]
+    fn a_link_reaches_a_record_laid_along_a_road() {
+        let mut doc = flat_map(2);
+        // (a road 30 m long: `add_spline` takes x, y, heading, length, prev, next)
+        add_spline(&mut doc, (0, 0), 1, 0.0, 0.0, 0.0, 30.0, 0, 0);
+        // (a pole laid along the road, three metres in)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.push(omsi_map::SplineAttachment {
+            file: "Sceneryobjects\\pole.sco".into(),
+            id: 40,
+            spline_index: 0,
+            offset: [0.0, 0.0, 3.0],
+            interval: 0.0,
+            range: 0.0,
+            ..Default::default()
+        });
+        // (a signal head taking its light from the pole)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(MapObject {
+            file: "Sceneryobjects\\head.sco".into(),
+            id: 41,
+            pos: [1.0, 4.0, 0.0],
+            var_parent: Some(40),
+            ..Default::default()
+        });
+        let pole = Sel::Attached((0, 0), 40);
+        let head = Sel::Object((0, 0), 41);
+        // (both ends are found, so the line has two points to join)
+        assert!(record_point(&doc, pole).is_some(), "the row's first copy stands where it is drawn");
+        assert!(record_point(&doc, head).is_some());
+        // (the head names the pole, and the pole does not, so one line each way)
+        let up = record_links(&doc, head);
+        assert_eq!(up.len(), 1);
+        assert_eq!(up[0].0, pole, "from the head to the pole");
+        assert!(up[0].1, "the pole is what the head takes from");
+        let down = record_links(&doc, pole);
+        assert_eq!(down.len(), 1);
+        assert_eq!(down[0].0, head);
+        assert!(!down[0].1, "the head is what takes from the pole");
+        // (a record id is found whichever of the three kinds it is)
+        assert_eq!(record_by_id(&doc, 40), Some(pole));
+        assert_eq!(record_by_id(&doc, 41), Some(head));
+        // (a row with no copy on the map - its road is gone - has no place, so no line)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments[0].spline_index = 9;
+        assert!(record_point(&doc, pole).is_none());
     }
 
     #[test]
@@ -12061,6 +13016,73 @@ mod tests {
         let s = ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap();
         assert!((s.pos[0] - 50.0).abs() < 1e-9 && (s.pos[1] - 50.0).abs() < 1e-9, "{:?}", s.pos);
         assert!((s.heading - 90.0).abs() < 1e-9, "{}", s.heading);
+    }
+
+    /// R takes hold of the selection and turns it as the pointer goes round its middle, as
+    /// Blender's R does: no fixed step, no clicking for every degree. A click keeps the turn, a
+    /// typed number says the turn exactly, and Esc puts it back.
+    #[test]
+    fn a_turn_taken_hold_of_follows_the_pointer() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.set_selection(vec![Sel::Object((0, 0), 1), Sel::Object((0, 0), 2)]);
+        let heading = |ed: &Editor| ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().rot[0];
+        let was = heading(&ed);
+        // (the view the handles are drawn in: the turn follows the pointer round the pivot)
+        let cam = crate::camera::Camera::default();
+        ed.set_gizmo_view(&cam, 800.0, 600.0, 400.0, 300.0);
+        assert!(ed.rot_begin((400.0, 300.0)));
+        // (a quarter of a turn round the pivot: from beside it to below it - clockwise, which is
+        // a positive heading. The sweep is measured from where the pointer was when R was
+        // pressed, so the first move sets that line)
+        let Some((px, py)) = ed.rot.as_ref().unwrap().pivot_px else { panic!("the pivot is on the screen") };
+        ed.rot_follow((px + 100.0, py), false);
+        let base = heading(&ed);
+        ed.rot_follow((px, py + 100.0), false);
+        let turned = heading(&ed) - base;
+        assert!((turned - 90.0).abs() < 1.0, "a quarter turn round the pivot: {turned}");
+        // (a click keeps it, as Blender's does, and one undo puts it back)
+        assert!(ed.rot_confirm());
+        assert!(ed.rot.is_none());
+        assert!((heading(&ed) - base - 90.0).abs() < 1.0);
+        ed.undo();
+        assert!((heading(&ed) - was).abs() < 1e-4, "one step back: {}", heading(&ed));
+    }
+
+    /// A turn typed in is exactly what was typed, and Esc puts the selection back where it
+    /// stood - with nothing left in the history to undo.
+    #[test]
+    fn a_turn_typed_in_is_what_it_says() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.angle_step = 15.0;
+        ed.set_selection(vec![Sel::Object((0, 0), 1)]);
+        let heading = |ed: &Editor| ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().rot[0];
+        let was = heading(&ed);
+        assert!(ed.rot_begin((10.0, 10.0)));
+        // (no view at hand: the pointer's sideways movement turns it, half a degree a point)
+        ed.rot_follow((110.0, 10.0), false);
+        assert!((heading(&ed) - was - 50.0).abs() < 1e-4, "the pointer turned it: {}", heading(&ed) - was);
+        // (angle snapping on: it comes to a whole step, as R's step does)
+        ed.snap_angle = true;
+        ed.angle_step = 15.0;
+        ed.rot_follow((108.0, 10.0), false);
+        let snapped = heading(&ed) - was;
+        assert!((snapped / 15.0 - (snapped / 15.0).round()).abs() < 1e-6, "on a whole step: {snapped}");
+        // (typed: exactly 7.5 degrees, not a step)
+        ed.rot_type('7');
+        ed.rot_type('.');
+        ed.rot_type('5');
+        assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "typed exactly: {}", heading(&ed) - was);
+        assert!(ed.rot_confirm());
+        // (Esc: back where it stood)
+        assert!(ed.rot_begin((10.0, 10.0)));
+        ed.rot_follow((200.0, 10.0), false);
+        assert!((heading(&ed) - was).abs() > 1.0, "it had turned");
+        assert!(ed.rot_cancel());
+        assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "back to the kept turn: {}", heading(&ed) - was);
     }
 
     /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.

@@ -170,6 +170,8 @@ impl App {
         crate::hot::own_change();
         if let Some(a) = &mut self.assets {
             a.forget_object(rel, &dir);
+            // (read it back before the frame draws, or the object is missing until the load arrives)
+            let _ = a.object_wait(rel, 2000);
         }
         if let Some(g) = &mut self.gfx {
             g.renderer.forget_model(rel, &dir);
@@ -182,7 +184,8 @@ impl App {
         if let Some(m) = self.ed.mesh.as_mut().filter(|m| m.editing) {
             m.cancel();
             m.editing = false;
-            m.changed();
+            // (leaving is not itself a change: marking it dirty rewrote the object and dropped
+            // its model, so the mesh vanished until the files were read again)
             let mut m = self.ed.mesh.take().unwrap();
             self.write_mesh(&mut m, true);
             self.ed.mesh = Some(m);
