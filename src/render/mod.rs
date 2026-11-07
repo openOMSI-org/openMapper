@@ -76,8 +76,10 @@ pub struct Instance {
 }
 
 /// Tints of what is selected and what is under the mouse.
-// (a selected thing glows orange: a negative alpha asks mesh.wgsl for the rim light)
+// (a selected thing glows orange: a negative alpha asks mesh.wgsl for the rim light.
+// a spline's wash is lighter: the road itself stayed a solid orange band)
 const SELECTED: [f32; 4] = [0.98, 0.52, 0.16, -1.0];
+const SELECTED_SPLINE: [f32; 4] = [0.98, 0.52, 0.16, -0.32];
 const HOVERED: [f32; 4] = [1.0, 1.0, 1.0, 0.2];
 
 /// Surface codes of the depth pull (see mesh.wgsl).
@@ -1712,7 +1714,7 @@ impl Renderer {
                 let h = hashes.get(i).copied().unwrap_or_else(|| spline_hash(s, org));
                 let sel = Some(Sel::Spline(*k, s.id));
                 let tint = if extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
-                    SELECTED
+                    SELECTED_SPLINE
                 } else if extras.hover == sel {
                     HOVERED
                 } else {

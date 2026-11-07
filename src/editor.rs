@@ -5654,14 +5654,20 @@ impl Editor {
             for (sel, color) in shown.into_iter().map(|s| (s, ORANGE)).chain(self.hover.map(|h| (h, WHITE))) {
                 let Sel::Spline(k, id) = sel else { continue };
                 let Some(s) = doc.spline(k, id) else { continue };
-                if !editing && !assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false) {
+                let ai = assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false);
+                // (a picked spline always has the thin guide; a hover line only where the
+                // spline itself is not already a road one can see)
+                if color == WHITE && !editing && !ai {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
                 let n = (s.length / 1.0).ceil().max(2.0) as usize;
                 let pts: Vec<DVec3> = (0..=n).map(|i| c.point_at(s.length * i as f64 / n as f64) + DVec3::Z * 0.25).collect();
+                // (a guide along the spline, not a second road: thin, and light enough to see through)
+                let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
+                let guide = [color[0], color[1], color[2], color[3] * 0.45];
                 for p in pts.windows(2) {
-                    line(&mut x.overlay, cam, p[0], p[1], w * 0.6, color);
+                    line(&mut x.overlay, cam, p[0], p[1], sw, guide);
                 }
             }
         }
@@ -9388,8 +9394,12 @@ impl Editor {
             for (sp, h, p) in self.handles() {
                 let on = (self.hover_handle == Some(h) && self.hover_handle_of == Some(sp)) || matches!(self.drag, Drag::Reshape(k, i, d) if d == h && (k, i) == sp);
                 let picked = self.path_point == Some((sp, h));
-                let (c, r) = self.grip(assets, sp, h, p, (p - eye).length());
-                ball(&mut x.overlay_depth, c, r, if picked { ORANGE } else if on { GREEN } else { WHITE });
+                let (_c, r) = self.grip(assets, sp, h, p, (p - eye).length());
+                // (drawn smaller and see-through; the pick still uses the full radius)
+                let shown = r * 0.42;
+                let mut color = if picked { ORANGE } else if on { GREEN } else { WHITE };
+                color[3] = if on || picked { 0.7 } else { 0.48 };
+                ball(&mut x.overlay_depth, p + DVec3::Z * (shown * 0.55), shown, color);
             }
             if let Some((sp, h)) = self.path_connect {
                 if let Some(s) = doc.spline(sp.0, sp.1) {
@@ -9400,7 +9410,8 @@ impl Editor {
                         Handle::Mid => c.point_at(s.length * 0.5),
                     };
                     if let Some(cur) = self.cursor {
-                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, w, ORANGE);
+                        let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
+                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, sw, [ORANGE[0], ORANGE[1], ORANGE[2], 0.45]);
                     }
                 }
             }
@@ -9444,7 +9455,7 @@ fn ball(out: &mut Vec<OverlayPoint>, c: DVec3, r: f64, color: [f32; 4]) {
         let (lat, lon) = (std::f64::consts::PI * i as f64 / rows as f64, std::f64::consts::TAU * j as f64 / cols as f64);
         let n = DVec3::new(lat.sin() * lon.cos(), lat.sin() * lon.sin(), lat.cos());
         let k = (0.5 + 0.5 * n.dot(light).max(0.0)) as f32;
-        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, 1.0] }
+        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, color[3]] }
     };
     for i in 0..rows {
         for j in 0..cols {
