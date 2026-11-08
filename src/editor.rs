@@ -5654,20 +5654,14 @@ impl Editor {
             for (sel, color) in shown.into_iter().map(|s| (s, ORANGE)).chain(self.hover.map(|h| (h, WHITE))) {
                 let Sel::Spline(k, id) = sel else { continue };
                 let Some(s) = doc.spline(k, id) else { continue };
-                let ai = assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false);
-                // (a picked spline always has the thin guide; a hover line only where the
-                // spline itself is not already a road one can see)
-                if color == WHITE && !editing && !ai {
+                if !editing && !assets.spline(&s.file).map(|m| m.is_ai_path()).unwrap_or(false) {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
                 let n = (s.length / 1.0).ceil().max(2.0) as usize;
                 let pts: Vec<DVec3> = (0..=n).map(|i| c.point_at(s.length * i as f64 / n as f64) + DVec3::Z * 0.25).collect();
-                // (a guide along the spline, not a second road: thin, and light enough to see through)
-                let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
-                let guide = [color[0], color[1], color[2], color[3] * 0.45];
                 for p in pts.windows(2) {
-                    line(&mut x.overlay, cam, p[0], p[1], sw, guide);
+                    line(&mut x.overlay, cam, p[0], p[1], w * 0.6, color);
                 }
             }
         }
@@ -5833,7 +5827,7 @@ impl Editor {
                     }
                 }
                 if let Some((s, _)) = &self.road_start {
-                    disc(&mut x.overlay, cam, s.pos, dw * 3.0, GREEN);
+                    disc(&mut x.overlay, cam, s.pos, dw * 1.5, GREEN);
                 }
                 // free ends near the camera, so the user sees where roads connect (not those
                 // that already join a junction object). Not the whole map: a map of tens of
@@ -5865,9 +5859,9 @@ impl Editor {
                     }
                 }
                 if let Some(a) = &self.road_snap {
-                    disc(&mut x.overlay, cam, a.pos, dw * 2.5, ORANGE);
+                    disc(&mut x.overlay, cam, a.pos, dw * 1.5, ORANGE);
                     let d = roads::dir(a.heading);
-                    line(&mut x.overlay, cam, a.pos, a.pos + DVec3::new(d.x, d.y, 0.0) * (w as f64 * 25.0), w, ORANGE);
+                    line(&mut x.overlay, cam, a.pos, a.pos + DVec3::new(d.x, d.y, 0.0) * (w as f64 * 5.0), w, ORANGE);
                 } else if let (Some(c), true) = (self.cursor, self.cursor_in_view) {
                     disc(&mut x.overlay, cam, c, dw * 2.0, WHITE);
                 }
@@ -9328,6 +9322,40 @@ impl Editor {
 
     // ------------------------------------------------------------ ruler
 
+    /// The status bar's switches, to be kept for the next time the program opens.
+    pub fn snap_settings(&self) -> crate::install::SnapBar {
+        crate::install::SnapBar {
+            auto_align: self.align_to_road,
+            auto_adapt: self.auto_adapt,
+            auto_junction: self.auto_junctions,
+            auto_switch: self.auto_switches,
+            auto_terrain: self.auto_terrain,
+            surface: self.snap_surface,
+            knife: self.cutting,
+            ruler: self.ruler.is_some(),
+            grid: self.snap_grid,
+            grid_step: self.grid_step,
+            angle: self.snap_angle,
+            angle_step: self.angle_step,
+        }
+    }
+
+    /// Puts the status bar back as it was saved.
+    pub fn apply_snap_settings(&mut self, s: crate::install::SnapBar) {
+        self.align_to_road = s.auto_align;
+        self.auto_adapt = s.auto_adapt;
+        self.auto_junctions = s.auto_junction;
+        self.auto_switches = s.auto_switch;
+        self.auto_terrain = s.auto_terrain;
+        self.snap_surface = s.surface;
+        self.cutting = s.knife;
+        self.ruler = if s.ruler { Some((None, None)) } else { None };
+        self.snap_grid = s.grid;
+        self.grid_step = s.grid_step;
+        self.snap_angle = s.angle;
+        self.angle_step = s.angle_step;
+    }
+
     /// The ruler on or off.
     pub fn toggle_ruler(&mut self) {
         self.ruler = if self.ruler.is_some() { None } else { Some((None, None)) };
@@ -9394,12 +9422,8 @@ impl Editor {
             for (sp, h, p) in self.handles() {
                 let on = (self.hover_handle == Some(h) && self.hover_handle_of == Some(sp)) || matches!(self.drag, Drag::Reshape(k, i, d) if d == h && (k, i) == sp);
                 let picked = self.path_point == Some((sp, h));
-                let (_c, r) = self.grip(assets, sp, h, p, (p - eye).length());
-                // (drawn smaller and see-through; the pick still uses the full radius)
-                let shown = r * 0.42;
-                let mut color = if picked { ORANGE } else if on { GREEN } else { WHITE };
-                color[3] = if on || picked { 0.7 } else { 0.48 };
-                ball(&mut x.overlay_depth, p + DVec3::Z * (shown * 0.55), shown, color);
+                let (c, r) = self.grip(assets, sp, h, p, (p - eye).length());
+                ball(&mut x.overlay_depth, c, r, if picked { ORANGE } else if on { GREEN } else { WHITE });
             }
             if let Some((sp, h)) = self.path_connect {
                 if let Some(s) = doc.spline(sp.0, sp.1) {
@@ -9410,8 +9434,7 @@ impl Editor {
                         Handle::Mid => c.point_at(s.length * 0.5),
                     };
                     if let Some(cur) = self.cursor {
-                        let sw = (cam.distance * 0.0011).clamp(0.025, 0.28) as f32;
-                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, sw, [ORANGE[0], ORANGE[1], ORANGE[2], 0.45]);
+                        line(&mut x.overlay, cam, p + DVec3::Z * 0.3, cur + DVec3::Z * 0.3, w, ORANGE);
                     }
                 }
             }
@@ -9455,7 +9478,7 @@ fn ball(out: &mut Vec<OverlayPoint>, c: DVec3, r: f64, color: [f32; 4]) {
         let (lat, lon) = (std::f64::consts::PI * i as f64 / rows as f64, std::f64::consts::TAU * j as f64 / cols as f64);
         let n = DVec3::new(lat.sin() * lon.cos(), lat.sin() * lon.sin(), lat.cos());
         let k = (0.5 + 0.5 * n.dot(light).max(0.0)) as f32;
-        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, color[3]] }
+        OverlayPoint { pos: c + n * r, color: [color[0] * k, color[1] * k, color[2] * k, 1.0] }
     };
     for i in 0..rows {
         for j in 0..cols {

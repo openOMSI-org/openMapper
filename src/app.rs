@@ -306,6 +306,7 @@ impl App {
             }
         }
         // OPENMAPPER_MULTIPLAYER: File > Multiplayer open at the start
+        app.ed.apply_snap_settings(app.prefs.snap);
         app.collab.open = std::env::var_os("OPENMAPPER_MULTIPLAYER").is_some();
         // OPENMAPPER_HELP=1: View > Controls open (checks of the keys without a person at the
         // screen); OPENMAPPER_KEYS=mapper|omsi|blender: that set of keys (and OMSI 2's mouse)
@@ -3098,6 +3099,11 @@ impl App {
         // lost with a skipped frame is never sent again)
         for (id, delta) in &full.textures_delta.set {
             g.egui_renderer.update_texture(&g.gpu.device, &g.gpu.queue, *id, delta);
+        }
+        let snap = self.ed.snap_settings();
+        if snap != self.prefs.snap {
+            self.prefs.snap = snap;
+            self.prefs.save();
         }
         g.renderer.profile.add("ui", crate::render::profile::ms(t_ui));
         let t_acquire = Instant::now();
