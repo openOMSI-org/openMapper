@@ -254,7 +254,7 @@ impl ScriptsUi {
                 ui.label(format!("{}: {}", rel.rsplit('\\').next().unwrap_or(rel), tr("this object has no script", "у этого объекта нет скрипта")));
             }
             Some(rel) => {
-                ui.label(RichText::new(rel.rsplit('\\').next().unwrap_or(rel)).strong());
+                crate::ui::long_label(ui, rel.rsplit('\\').next().unwrap_or(rel), egui::TextStyle::Body, ui.visuals().text_color());
                 let mut pick = self.picked;
                 if self.scripts.len() > 1 {
                     ui.horizontal_wrapped(|ui| {

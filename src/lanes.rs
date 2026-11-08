@@ -187,6 +187,99 @@ pub fn near(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64) -> 
     near_skipping(doc, assets, centre, radius, None)
 }
 
+/// One end of a lane, without the line between the ends. `along` runs with the lane, in the
+/// direction of its length, through this end (world axes, not normalised): its horizontal way
+/// is the lane's heading there, and its rise over its length is the slope.
+#[derive(Clone, Copy)]
+pub struct LaneTip {
+    pub pos: DVec3,
+    pub along: DVec3,
+    pub at_end: bool,
+    pub direction: i32,
+    pub kind: i32,
+}
+
+/// The ends within `radius` of `centre`, and nothing else. [`near_skipping`] lays out every
+/// lane in full — hundreds of points a path, then a link check over all of them — which is
+/// what the lines on the map need. A click on an end needs the two ends only, and doing the
+/// whole of that every frame is what made the nearby-path modes stall.
+pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius: f64, skip: Option<(TileKey, i64)>) -> Vec<LaneTip> {
+    let mut tips = Vec::new();
+    let push = |tips: &mut Vec<LaneTip>, pos: DVec3, into: DVec3, at_end: bool, direction: i32, kind: i32| {
+        if (pos.truncate() - centre).length() <= radius {
+            tips.push(LaneTip { pos, along: into, at_end, direction, kind });
+        }
+    };
+    for (k, t) in &doc.tiles {
+        let org = tile_origin(*k);
+        if (org + DVec2::splat(crate::doc::tile_size() * 0.5) - centre).length() > radius + crate::doc::tile_size() {
+            continue;
+        }
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
+            if (start - centre).length() > s.length + radius + 40.0 {
+                continue;
+            }
+            let Some(m) = assets.spline(&s.file) else { continue };
+            if m.def.paths.is_empty() || !(s.length > 0.05) {
+                continue;
+            }
+            let c = SplineCurve::from_map(s, org);
+            let mirror = if s.mirror { -1.0 } else { 1.0 };
+            let d = 1.5_f64.min(s.length * 0.5).max(0.05);
+            for p in &m.def.paths {
+                let x = p.start[0] as f64 * mirror;
+                let z = p.start[2] as f64;
+                let a0 = c.offset_point(0.0, x, z);
+                let a1 = c.offset_point(d, x, z);
+                let b1 = c.offset_point(s.length - d, x, z);
+                let b0 = c.offset_point(s.length, x, z);
+                let direction = match (p.direction, s.mirror) {
+                    (0, true) => 1,
+                    (1, true) => 0,
+                    (dir, _) => dir,
+                };
+                push(&mut tips, a0, a1 - a0, false, direction, p.kind);
+                push(&mut tips, b0, b0 - b1, true, direction, p.kind);
+            }
+        }
+        for o in &t.tile.objects {
+            if skip == Some((*k, o.id)) {
+                continue;
+            }
+            let Some(model) = assets.object(&o.file) else { continue };
+            if model.paths.is_empty() {
+                continue;
+            }
+            let world = doc.object_world(*k, o, model.abs_height);
+            let mesh = model.radius() as f64;
+            let paths = model.paths.iter().fold(0.0_f64, |m, p| {
+                let start = (p.start[0] as f64).hypot(p.start[1] as f64);
+                m.max(start + (p.end[2] as f64).abs())
+            });
+            if (world.truncate() - centre).length() > radius + mesh.max(paths) {
+                continue;
+            }
+            let pose = Pose::of_object(world, o.rot);
+            let to_world = |q: DVec3| pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3();
+            for p in &model.paths {
+                let c = object_path_curve(p);
+                if !(c.length > 0.05) {
+                    continue;
+                }
+                let d = 1.5_f64.min(c.length * 0.5).max(0.05);
+                let a0 = to_world(c.point_at(0.0));
+                let a1 = to_world(c.point_at(d));
+                let b1 = to_world(c.point_at(c.length - d));
+                let b0 = to_world(c.point_at(c.length));
+                push(&mut tips, a0, a1 - a0, false, p.direction, p.kind);
+                push(&mut tips, b0, b0 - b1, true, p.direction, p.kind);
+            }
+        }
+    }
+    tips
+}
+
 /// The lanes within `radius` of `centre`, and their ends (linked ones marked), leaving out
 /// one object: the crossing editor knows its own object already and used to sample all 787
 /// of its paths only to throw them away afterwards. That object is skipped before anything

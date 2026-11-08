@@ -112,6 +112,14 @@ pub struct CrossingPaths {
     /// The ends of the paths around the crossing - other objects' and the roads' own lanes -
     /// with the way each runs away from it, while `from_nearby` is on.
     nearby: Vec<Joint>,
+    /// How many of `nearby` are this crossing's own ends (they come first). The rest belong
+    /// to other objects and to the roads.
+    nearby_own: usize,
+    /// `nearby` is kept until this clock time, and was gathered for this reach and path
+    /// count. Gathering walks every lane around the crossing; doing it every frame is what
+    /// made the two nearby-path modes stall.
+    nearby_until: f64,
+    nearby_key: (i32, usize, usize),
     /// The end of a path taken with the mouse on the map (the object in 3D).
     map_drag: Option<(usize, bool)>,
     /// The height (world) the map drag keeps the ray on: the end's own height when it was
@@ -234,6 +242,9 @@ impl Default for CrossingPaths {
             from_nearby: false,
             complete_to: false,
             nearby: Vec::new(),
+            nearby_own: 0,
+            nearby_until: 0.0,
+            nearby_key: (0, 0, usize::MAX),
             map_drag: None,
             map_drag_plane: None,
             rot_drag: None,
@@ -1942,7 +1953,7 @@ impl CrossingPaths {
             (p.start(), crate::roads::norm_deg(c.heading_at(0.0)), p.slope_start())
         };
         let geom = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
-        Some(Joint { pos, heading, slope, flow: outward_flow(p.direction(), at_end), dir: p.direction(), travel: p.travel_at(at_end), geom })
+        Some(Joint { pos, heading, slope, flow: outward_flow(p.direction(), at_end), dir: p.direction(), travel: p.travel_at(at_end), geom, kind: p.kind() })
     }
 
     // ---------------------------------------------------------------- undo
@@ -2176,6 +2187,12 @@ impl CrossingPaths {
         &self.nearby
     }
 
+    /// How many of [`CrossingPaths::neighbours`] are this crossing's own ends. They are the
+    /// first ones; the rest are other objects and the roads.
+    pub fn nearby_own(&self) -> usize {
+        self.nearby_own.min(self.nearby.len())
+    }
+
     /// Turn the picking of a nearby end on and off (`Start from a nearby path`).
     pub fn set_from_nearby(&mut self, on: bool) {
         self.from_nearby = on;
@@ -2184,9 +2201,11 @@ impl CrossingPaths {
         }
         if !on {
             self.nearby.clear();
+            self.nearby_own = 0;
         } else {
             // (the drawing is brought to take them in: they lie further out than the crossing)
             self.fit = true;
+            self.nearby_until = 0.0;
         }
     }
 
@@ -2332,6 +2351,7 @@ impl CrossingPaths {
         self.from_nearby = false;
         self.complete_to = false;
         self.nearby.clear();
+        self.nearby_own = 0;
         ok
     }
 
@@ -2344,6 +2364,9 @@ impl CrossingPaths {
         }
         if !on {
             self.nearby.clear();
+            self.nearby_own = 0;
+        } else {
+            self.nearby_until = 0.0;
         }
     }
 
@@ -2379,37 +2402,23 @@ impl CrossingPaths {
         // (the same reach the 3D view draws: a shorter one left green circles on the map
         // that no click could take, because they were never in this list)
         let reach = ed.neighbour_reach();
-        let (lanes, _) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
-        for l in lanes.iter().filter(|l| l.object != Some((k, id))) {
-            let n = l.pts.len();
-            if n < 2 {
-                continue;
-            }
-            // (both ends. `heading` is the way the lane runs *into* its own body from there, as
-            // the crossing's own ends have it - so `outward()` is out of the lane, where a new
-            // path goes. `travel` is the way traffic actually moves there, which is the other
-            // way round when the lane is driven against its geometry)
-            for (pos, geom, at_end) in [
-                (l.pts[0], crate::roads::heading_of((l.pts[1] - l.pts[0]).truncate()), false),
-                (l.pts[n - 1], crate::roads::heading_of((l.pts[n - 1] - l.pts[n - 2]).truncate()), true),
-            ] {
-                // (an end a kilometre down a long spline is not a circle on this crossing)
-                if (pos.truncate() - world.truncate()).length() > reach {
-                    continue;
-                }
-                let d = if at_end { pos - l.pts[n - 2] } else { l.pts[1] - pos };
-                let len = d.truncate().length().max(1e-6);
-                let local = inv.transform_point3((pos - world).as_vec3()).as_dvec3();
-                // (the object's turn is taken out of the lane's headings, the path being
-                // written in the object's frame)
-                let geom = crate::roads::norm_deg(geom - rot[0]);
-                // (into the lane's own body from this end, as the crossing's own ends have it)
-                let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
-                let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
-                out.push(Joint { pos: local, heading, slope: d.z / len, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom });
-            }
+        // (ends only: the lines between them are already drawn, and laying every one out
+        // again just to find its two ends was the stall)
+        let tips = crate::lanes::tips_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
+        for t in &tips {
+            let along = t.along;
+            let len = along.truncate().length().max(1e-6);
+            let local = inv.transform_point3((t.pos - world).as_vec3()).as_dvec3();
+            // (the object's turn is taken out of the lane's headings, the path being
+            // written in the object's frame)
+            let geom = crate::roads::norm_deg(crate::roads::heading_of(along.truncate()) - rot[0]);
+            // (into the lane's own body from this end, as the crossing's own ends have it.
+            // At the far end the geometry runs out of the lane, so heading is turned about)
+            let heading = if t.at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
+            let travel = if t.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
+            out.push(Joint { pos: local, heading, slope: along.z / len, flow: crate::crossing_edit::outward_flow(t.direction, t.at_end), dir: t.direction, travel, geom, kind: t.kind });
         }
-        log::debug!("crossing nearby: {} ends within {reach} m", out.len());
+        log::trace!("crossing nearby: {} ends within {reach} m", out.len());
         out
     }
 
@@ -2438,6 +2447,8 @@ impl CrossingPaths {
         p.v[6] = j.slope as f32;
         p.v[7] = j.slope as f32;
         p.v[10] = j.direction_for(j.outward()) as f32;
+        // (the same kind as the path it leaves: a footway started from a footway, not a street)
+        p.v[8] = j.kind as f32;
         let at = {
             let Some(sheet) = self.sheet.as_mut() else { return None };
             sheet.crossing.paths.push(p);
@@ -2453,6 +2464,8 @@ impl CrossingPaths {
         self.reveal = true;
         self.from_nearby = false;
         self.nearby.clear();
+        self.nearby_own = 0;
+        self.nearby_until = 0.0;
         Some(at)
     }
 
@@ -2779,11 +2792,23 @@ impl CrossingPaths {
         // to follow the surface even when the crossing is not drawn from above)
         self.load_mesh(assets.as_deref_mut());
         // (a new path started from a nearby path: its ends are gathered here, so the drawing
-        // and the map both know what can be clicked)
+        // and the map both know what can be clicked. Kept for a short while: gathering them
+        // walks every lane around the crossing, and doing that every frame stalled the view)
         if self.wants_nearby() && self.sheet.is_some() {
-            self.nearby = self.gather_nearby(ed, assets.as_deref_mut());
+            let now = ctx.input(|i| i.time);
+            let npaths = self.sheet.as_ref().map(|s| s.crossing.paths.len()).unwrap_or(0);
+            let key = ((ed.neighbour_reach() * 10.0).round() as i32, npaths, self.selected.unwrap_or(usize::MAX));
+            if now >= self.nearby_until || key != self.nearby_key {
+                let found = self.gather_nearby(ed, assets.as_deref_mut());
+                let own = self.sheet.as_ref().map(|s| s.crossing.paths.len().saturating_sub(usize::from(self.selected.is_some())) * 2).unwrap_or(0);
+                self.nearby_own = own.min(found.len());
+                self.nearby = found;
+                self.nearby_until = now + 0.5;
+                self.nearby_key = key;
+            }
         } else if !self.nearby.is_empty() {
             self.nearby.clear();
+            self.nearby_own = 0;
         }
         // (each page named as the crossing editor's own window names it)
         let title = match self.tab {
@@ -4414,14 +4439,35 @@ impl CrossingPaths {
         // a new path is started from one of these: the ends of the paths round the crossing,
         // each with the way it runs away from it
         if self.wants_nearby() {
+            let len = (20.0 / scale as f64).clamp(0.35, 1.4);
+            let head = |painter: &egui::Painter, at: DVec3, heading: f64, reach: f64| {
+                let d = crate::roads::dir(heading);
+                let tip = to_screen(at.truncate() + d * reach);
+                let base = at.truncate() + d * (reach * 0.22);
+                let right = DVec2::new(d.y, -d.x) * (reach * 0.32);
+                painter.add(egui::Shape::convex_polygon(
+                    vec![tip, to_screen(base + right), to_screen(base - right)],
+                    Color32::from_rgb(210, 245, 220),
+                    Stroke::NONE,
+                ));
+            };
             for j in &self.nearby {
                 let s = to_screen(j.pos.truncate());
                 if !rect.contains(s) {
                     continue;
                 }
-                painter.circle_stroke(s, 5.4, Stroke::new(1.4, SNAPPED));
-                let d = crate::roads::dir(j.outward());
-                painter.line_segment([s, to_screen(j.pos.truncate() + d * 3.0)], Stroke::new(1.2, SNAPPED));
+                painter.circle_stroke(s, 4.2, Stroke::new(1.3, SNAPPED));
+                if self.complete_to {
+                    // (out at the rim, so the two ways do not lie across the circle as a second one)
+                    let out = |h: f64| {
+                        let d = crate::roads::dir(h);
+                        head(&painter, j.pos + DVec3::new(d.x, d.y, 0.0) * (len * 0.28), h, len * 0.62);
+                    };
+                    out(j.geom);
+                    out(crate::roads::norm_deg(j.geom + 180.0));
+                } else {
+                    head(&painter, j.pos, j.outward(), len);
+                }
             }
         }
 
@@ -4460,13 +4506,23 @@ impl CrossingPaths {
         // of that end)
         if self.wants_nearby() && resp.hovered() && ui.input(|i| i.pointer.primary_pressed()) {
             if let Some(o) = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos()) {
-                let pick = self
-                    .nearby
-                    .iter()
-                    .copied()
-                    .map(|j| (to_screen(j.pos.truncate()).distance(o), j))
-                    .filter(|(d, _)| *d <= GRAB + 6.0)
-                    .min_by(|a, b| a.0.total_cmp(&b.0));
+                let gap = (20.0 / scale as f64).clamp(0.35, 1.4) * 0.7;
+                let pick = if self.complete_to {
+                    self.nearby
+                        .iter()
+                        .copied()
+                        .flat_map(|j| crate::crossing_edit::arrival_choices(j.pos, j, gap, j.geom))
+                        .map(|(at, q)| (to_screen(at.truncate()).distance(o), q))
+                        .filter(|(d, _)| *d <= GRAB + 6.0)
+                        .min_by(|a, b| a.0.total_cmp(&b.0))
+                } else {
+                    self.nearby
+                        .iter()
+                        .copied()
+                        .map(|j| (to_screen(j.pos.truncate()).distance(o), j))
+                        .filter(|(d, _)| *d <= GRAB + 6.0)
+                        .min_by(|a, b| a.0.total_cmp(&b.0))
+                };
                 if let Some((_, j)) = pick {
                     self.take_nearby(j);
                     return;
@@ -5201,11 +5257,12 @@ Main
         w.set_from_nearby(true);
         // (a lane whose traffic runs north, and whose end is here: the new path leaves that end
         // outward, north, so its geometry runs with the traffic)
-        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 180.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 180.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 1 };
         let at = w.start_from_joint(j).expect("started");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert!(ang_delta(p.heading(), 0.0).abs() < 0.5, "outward from it: {}", p.heading());
         assert_eq!(p.direction(), 0, "with its own geometry, so its chevrons point the lane's way");
+        assert_eq!(p.kind(), 1, "the same kind as the path it was started from");
         // (a lane whose traffic runs south, at its start: the new path leaves backwards, so it
         // is driven against its own geometry)
         assert_eq!(j.direction_for(180.0), 1, "leaf and travel are opposite");
@@ -5220,9 +5277,9 @@ Main
     /// begun at the joint leaves outward.
     #[test]
     fn a_joints_rotate_and_its_traffic_are_told_apart() {
-        let leaves = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 1, dir: 0, travel: 90.0, geom: 0.0 };
+        let leaves = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 1, dir: 0, travel: 90.0, geom: 0.0, kind: 0 };
         assert!((leaves.through() - 90.0).abs() < 1e-9, "{}", leaves.through());
-        let arrives = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 0, dir: 0, travel: 270.0, geom: 0.0 };
+        let arrives = Joint { pos: DVec3::ZERO, heading: 90.0, slope: 0.0, flow: 0, dir: 0, travel: 270.0, geom: 0.0, kind: 0 };
         assert!((arrives.through() - 270.0).abs() < 1e-9, "{}", arrives.through());
         // (a path begun at either runs outward, whichever way the traffic goes)
         assert!((leaves.outward() - 270.0).abs() < 1e-9);
@@ -5493,7 +5550,7 @@ Main
         w.selected = Some(2);
         let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
         let n = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let j = Joint { pos: end + DVec3::new(0.08, 0.05, 0.0), heading: 0.0, slope: 0.02, flow: 0, dir: 0, travel: 0.0, geom: 90.0 };
+        let j = Joint { pos: end + DVec3::new(0.08, 0.05, 0.0), heading: 0.0, slope: 0.02, flow: 0, dir: 0, travel: 0.0, geom: 90.0, kind: 0 };
         w.set_complete_to(true);
         let at = w.complete_to_joint(j).expect("it answers");
         assert_eq!(at, 2, "the picked path's own end is the one put on it");
@@ -5511,7 +5568,7 @@ Main
         let mut w = opened(Tab::Paths);
         w.selected = Some(2);
         let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let j = Joint { pos: end + DVec3::new(0.08, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: end + DVec3::new(0.08, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         assert!(w.complete_to_joint(j).is_none(), "the mode is off");
         w.set_complete_to(true);
         let far = Joint { pos: end + DVec3::new(2_000_000.0, 0.0, 0.0), ..j };
@@ -5697,19 +5754,19 @@ Main
         let mut w = opened(Tab::Paths);
         w.set_from_nearby(true);
         let before = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let far = Joint { pos: DVec3::new(-11_748_849.0, -23_623_152.5, 66.8), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let far = Joint { pos: DVec3::new(-11_748_849.0, -23_623_152.5, 66.8), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         assert!(w.start_from_joint(far).is_none(), "a joint ten million metres out is not a join");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before, "nothing was added");
         assert!(w.wants_nearby(), "and the mode stays on, ready for a real one");
 
         // (a nearby end in the object's frame is still taken)
-        let near = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let near = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         assert!(w.start_from_joint(near).is_some());
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1);
         // (and a join across the map is refused too, rather than making a path of millions)
         w.set_complete_to(true);
         let p = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let out = Joint { pos: p + DVec3::new(-2_000_000.0, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let out = Joint { pos: p + DVec3::new(-2_000_000.0, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let n = w.sheet.as_ref().unwrap().crossing.paths.len();
         assert!(w.complete_to_joint(out).is_none());
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), n, "nothing was added");
@@ -5741,7 +5798,7 @@ Main
         w.selected = Some(2);
         w.set_complete_to(true);
         let end = w.sheet.as_ref().unwrap().crossing.paths[2].end();
-        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: end + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let at = w.complete_to_joint(j).expect("joined");
         let p = &w.sheet.as_ref().unwrap().crossing.paths[at];
         assert!(p.radius() > 0.0, "the join turns the way it was told: radius {}", p.radius());
@@ -5897,7 +5954,7 @@ Main
     fn a_path_is_started_from_a_nearby_end() {
         let mut w = opened(Tab::Paths);
         let before = w.sheet.as_ref().unwrap().crossing.paths.len();
-        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: DVec3::new(5.0, 5.0, 1.0), heading: 90.0, slope: 0.05, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         // (not while the mode is off)
         assert!(!w.wants_nearby());
         assert!(w.start_from_joint(j).is_none(), "nothing is done while the mode is off");
@@ -5933,7 +5990,7 @@ Main
         let way = c.heading_at(c.length.max(0.0));
         let rise = p.slope_end();
         // (off to the side, in another way: a corner, so two pieces)
-        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = Joint { pos: a + DVec3::new(6.0, 6.0, 0.4), heading: 180.0, slope: 0.03, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         w.set_complete_to(true);
         assert!(w.completing());
         let last = w.complete_to_joint(j).expect("joined");
@@ -5976,7 +6033,7 @@ Main
         // several pieces rather than one straight)
         let geom = crate::roads::norm_deg(way + 90.0);
         let step = crate::roads::dir(geom) * 0.6;
-        let j = Joint { pos: a + DVec3::new(step.x, step.y, 0.25), heading: geom, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom };
+        let j = Joint { pos: a + DVec3::new(step.x, step.y, 0.25), heading: geom, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom, kind: 0 };
         w.set_complete_to(true);
         let last = w.complete_to_joint(j).expect("joined");
         let paths = &w.sheet.as_ref().unwrap().crossing.paths;
@@ -5998,7 +6055,7 @@ Main
         assert!(w.wants_nearby(), "the nearby ends are gathered while completing");
         // (using one keeps the mode, so the ends are still wanted)
         w.selected = Some(2);
-        let j = Joint { pos: DVec3::new(4.0, 4.0, 0.1), heading: 90.0, slope: 0.0, flow: 0, dir: 0, travel: 90.0, geom: 90.0 };
+        let j = Joint { pos: DVec3::new(4.0, 4.0, 0.1), heading: 90.0, slope: 0.0, flow: 0, dir: 0, travel: 90.0, geom: 90.0, kind: 0 };
         assert!(w.complete_to_joint(j).is_some());
         assert!(w.wants_nearby(), "still gathered after a join");
         // (turning it off is what drops them)
@@ -6036,7 +6093,7 @@ Main
         let d = crate::roads::dir(way);
         let target = a + DVec3::new(d.x, d.y, 0.0) * 8.0;
         w.set_complete_to(true);
-        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom: 0.0 }).expect("joined");
+        let last = w.complete_to_joint(Joint { pos: target, heading: way, slope: 0.0, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 }).expect("joined");
         assert_eq!(w.sheet.as_ref().unwrap().crossing.paths.len(), before + 1, "one straight piece");
         assert_eq!(last, before);
     }

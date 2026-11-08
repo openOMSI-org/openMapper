@@ -188,6 +188,7 @@ fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4)
         dir: j.dir,
         travel: crate::roads::norm_deg(j.travel - object_yaw(m)),
         geom: crate::roads::norm_deg(j.geom - object_yaw(m)),
+        kind: j.kind,
     }
 }
 
@@ -197,6 +198,28 @@ fn joint_in_object(j: crate::crossing_edit::Joint, world: DVec3, m: &glam::Mat4)
 /// millions of metres away and answers no click at all.
 fn nearby_on_map(joints: &[crate::crossing_edit::Joint], world: DVec3, m: &glam::Mat4) -> Vec<(DVec3, crate::crossing_edit::Joint)> {
     joints.iter().map(|j| (world + m.transform_point3(j.pos.as_vec3()).as_dvec3(), *j)).collect()
+}
+
+/// The green circles actually drawn. Every end of the crossing's own paths is kept: a reach
+/// and a cap used to drop the far ones, and turning the view brought them back. Neighbours
+/// stay the nearest, and only those within `reach` of the view.
+fn cull_nearby(items: Vec<(DVec3, crate::crossing_edit::Joint)>, own: usize, centre: DVec2, reach: f64, cap: usize) -> Vec<(DVec3, crate::crossing_edit::Joint)> {
+    let mut mine = Vec::new();
+    let mut ext = Vec::new();
+    for (i, item) in items.into_iter().enumerate() {
+        if i < own {
+            mine.push(item);
+            continue;
+        }
+        let d = (item.0.truncate() - centre).length();
+        if d <= reach {
+            ext.push((d, item));
+        }
+    }
+    ext.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut out = mine;
+    out.extend(ext.into_iter().take(cap).map(|(_, j)| j));
+    out
 }
 
 impl App {
@@ -2387,6 +2410,7 @@ impl App {
         let place = self.crossing_place();
         self.ed.crossing_world = place;
         self.ed.crossing_nearby.clear();
+        self.ed.crossing_complete = false;
         if !self.crossing.wants_nearby() {
             return;
         }
@@ -2394,7 +2418,10 @@ impl App {
         // (the point is the map's, so it can be drawn and clicked where it is; the joint itself
         // stays in the object's frame, the frame the crossing's paths are written in - nothing
         // else is to convert it)
-        self.ed.crossing_nearby = nearby_on_map(self.crossing.neighbours(), world, &m);
+        let mapped = nearby_on_map(self.crossing.neighbours(), world, &m);
+        let reach = (self.cam.distance * 1.6).clamp(40.0, 180.0);
+        self.ed.crossing_nearby = cull_nearby(mapped, self.crossing.nearby_own(), self.cam.target.truncate(), reach, 240);
+        self.ed.crossing_complete = self.crossing.completing();
     }
 
     /// How wide a green circle is on the screen, in pixels, with room for its tick and for
@@ -2402,8 +2429,8 @@ impl App {
     fn nearby_hit_px(&self, at: DVec3) -> f32 {
         // (the disc as it is drawn, which is thinner now: the pick stays generous, since a
         // green end is a small thing to hit on a junction)
-        let r = (self.cam.distance * 0.0030).clamp(0.09, 2.2);
-        let tick = (self.cam.distance * 0.02).clamp(0.6, 6.0);
+        let r = (self.cam.distance * 0.00115).clamp(0.035, 0.72);
+        let tick = (self.cam.distance * 0.012).clamp(0.35, 2.6);
         let Some(a) = self.view_point(at) else { return 40.0 };
         let Some(b) = self.view_point(at + DVec3::X * r.max(tick)) else { return 40.0 };
         let d = ((a.0 - b.0).powi(2) + (a.1 - b.1).powi(2)).sqrt();
@@ -2438,15 +2465,28 @@ impl App {
         // finishing its load in the background can shift)
         if self.crossing.wants_nearby() {
             let mut pick: Option<(f32, crate::crossing_edit::Joint)> = None;
+            // (completing: the two arrows either side of the end, not the disc they share.
+            // The nearer arrow is the way the join arrives)
+            let choices = |w: DVec3, j: crate::crossing_edit::Joint| -> Vec<(DVec3, crate::crossing_edit::Joint)> {
+                if self.crossing.completing() {
+                    let gap = crate::crossing_edit::end_mark_len(self.cam.distance) * 0.7;
+                    let dir = self.ed.crossing_world.as_ref().map(|(_, m)| crate::crossing_edit::heading_in_frame(j.geom, m)).unwrap_or(j.geom);
+                    crate::crossing_edit::arrival_choices(w, j, gap, dir).to_vec()
+                } else {
+                    vec![(w, j)]
+                }
+            };
             for (w, j) in &self.ed.crossing_nearby {
-                // (the circle is drawn 0.55 m up: disc() adds 0.15 on a lift of 0.4. Judging
-                // the click on the ground put it tens of pixels off the circle when the
-                // view is low, so the circle was seen and the click missed)
-                let at = *w + DVec3::Z * 0.55;
-                let Some(s) = self.view_point(at) else { continue };
-                let d = dist(s);
-                if d <= self.nearby_hit_px(at) && pick.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                    pick = Some((d, *j));
+                for (at, q) in choices(*w, *j) {
+                    // (the circle is drawn 0.55 m up: disc() adds 0.15 on a lift of 0.4. Judging
+                    // the click on the ground put it tens of pixels off the circle when the
+                    // view is low, so the circle was seen and the click missed)
+                    let at = at + DVec3::Z * 0.55;
+                    let Some(s) = self.view_point(at) else { continue };
+                    let d = dist(s);
+                    if d <= self.nearby_hit_px(at) && pick.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                        pick = Some((d, q));
+                    }
                 }
             }
             if let Some((_, j)) = pick {
@@ -2501,8 +2541,8 @@ impl App {
                 }
             }
         }
-        // (Ctrl adds the path to the pick rather than replacing it, as it does in the list)
-        let add = self.keys.ctrl;
+        // (Ctrl or Shift adds the path to the pick rather than replacing it, as the list does)
+        let add = self.keys.ctrl || self.keys.shift;
         best.is_some_and(|(_, i)| self.crossing.select_on_map(Some(i), add))
     }
 
@@ -2615,7 +2655,7 @@ impl App {
                 let heading = if at_end { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let travel = if l.direction == 1 { crate::roads::norm_deg(geom + 180.0) } else { geom };
                 let slope = d.z / len;
-                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom });
+                out.push(crate::crossing_edit::Joint { pos, heading, slope, flow: crate::crossing_edit::outward_flow(l.direction, at_end), dir: l.direction, travel, geom, kind: l.kind });
             }
         }
         out
@@ -4304,7 +4344,7 @@ mod tests {
         // (an end 10 m ahead of the object, running along its own way)
         let local = DVec3::new(0.0, 10.0, 1.5);
         let at = world + m.transform_point3(local.as_vec3()).as_dvec3();
-        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let map_joint = crate::crossing_edit::Joint { pos: at, heading: yaw, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let j = joint_in_object(map_joint, world, &m);
         assert!((j.pos.truncate() - local.truncate()).length() < 1e-3, "it is written where the path has it: {:?} vs {local:?}", j.pos);
         assert!(j.heading.abs() < 0.05 || (j.heading - 360.0).abs() < 0.05, "and the way it runs is the object's: {}", j.heading);
@@ -4322,7 +4362,7 @@ mod tests {
         let yaw = 37.0f64;
         let m = crate::render::object_matrix(DVec3::ZERO, [yaw, 0.0, 0.0]);
         let local = DVec3::new(2.0, 9.0, 1.5);
-        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0 };
+        let j = crate::crossing_edit::Joint { pos: local, heading: 12.0, slope: 0.02, flow: 1, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
         let drawn = nearby_on_map(&[j], world, &m);
         assert_eq!(drawn.len(), 1);
         let (at, back) = drawn[0];
@@ -4399,5 +4439,23 @@ mod tests {
         // never a map outside the content folder
         assert!(bin_map(&roots.content.join("maps"), &roots.omsi.join("maps").join("x").join("global.cfg")).is_err());
         let _ = std::fs::remove_dir_all(&roots.content);
+    }
+
+    /// Every end of this crossing is drawn, however far it sits. A neighbour is kept when it
+    /// is near the view, and one past the reach is not.
+    #[test]
+    fn nearby_circles_keep_the_near_ones_and_a_neighbour() {
+        let j = |x: f64| crate::crossing_edit::Joint { pos: DVec3::new(x, 0.0, 0.0), heading: 0.0, slope: 0.0, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
+        let near = j(0.0);
+        let far = j(500.0);
+        let neighbour = j(10.0);
+        let far_neighbour = j(400.0);
+        let items = vec![(near.pos, near), (far.pos, far), (neighbour.pos, neighbour), (far_neighbour.pos, far_neighbour)];
+        let kept = cull_nearby(items, 2, DVec2::ZERO, 80.0, 4);
+        let xs: Vec<f64> = kept.iter().map(|(_, q)| q.pos.x).collect();
+        assert!(xs.contains(&0.0), "the near own end stays");
+        assert!(xs.contains(&500.0), "an own end stays even when it is far from the view");
+        assert!(xs.contains(&10.0), "the neighbour stays");
+        assert!(!xs.contains(&400.0), "a neighbour outside the view is not drawn");
     }
 }

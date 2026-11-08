@@ -201,6 +201,14 @@ impl Path {
 
     /// Points along it for drawing, `step` metres apart.
     pub fn points(&self, step: f64) -> Vec<DVec3> {
+        self.points_by_turn(step, 180.0)
+    }
+
+    /// Points along it for drawing: `step` metres apart, and never coarser than `max_turn`
+    /// degrees a piece. Laid out by the metre alone, an arc is a polygon and a bend shows its
+    /// corners - 3 m across an 8 m radius is 21° a piece, a hard elbow; by the turn too, a
+    /// straight line stays as few points as before while a bend is as smooth as it needs.
+    pub fn points_by_turn(&self, step: f64, max_turn: f64) -> Vec<DVec3> {
         let c = self.curve();
         if !(c.length > 1e-6) {
             return vec![self.start()];
@@ -208,7 +216,10 @@ impl Path {
         // (a broken length - a path of millions of metres - would ask for millions of points,
         // and the drawing would stop answering: the count is capped)
         const MOST: usize = 4000;
-        let n = ((c.length / step.max(0.2)).ceil().max(1.0) as usize).min(MOST);
+        let by_length = (c.length / step.max(0.2)).ceil().max(1.0);
+        let turn = if c.radius.abs() > 1e-6 { (c.length / c.radius.abs()).to_degrees() } else { 0.0 };
+        let by_turn = if max_turn > 1e-6 { (turn / max_turn).ceil() } else { 0.0 };
+        let n = (by_length.max(by_turn).max(1.0) as usize).min(MOST);
         (0..=n).map(|i| c.point_at(c.length * i as f64 / n as f64)).collect()
     }
 
@@ -388,6 +399,9 @@ pub struct Joint {
     /// its end shows in the panel. A join arrives on this, so its last piece lines up with the
     /// next segment; `heading` is the other way round at a path's end.
     pub geom: f64,
+    /// The other path's kind (street, footway, track). A path started from this end is the
+    /// same kind, not always a street.
+    pub kind: i32,
 }
 
 impl Joint {
@@ -402,6 +416,19 @@ impl Joint {
         norm_deg(self.heading + 180.0)
     }
 
+    /// The same end, arrived at the other way round. The geometry, the way into the body and
+    /// the way traffic moves there all turn about, and the slope changes sign: what was a rise
+    /// along the path is a fall when the join comes in against it.
+    pub fn reversed(self) -> Joint {
+        Joint {
+            heading: norm_deg(self.heading + 180.0),
+            slope: -self.slope,
+            travel: norm_deg(self.travel + 180.0),
+            geom: norm_deg(self.geom + 180.0),
+            ..self
+        }
+    }
+
     /// The `direction` for a path whose geometry leaves the joint in `heading`: 0 when that runs
     /// with the traffic here, 1 when it runs against it, 2 when the other path is both ways.
     /// This is what keeps a path drawn out of a lane pointing the same way the lane does instead
@@ -413,6 +440,31 @@ impl Joint {
         let d = norm_deg(heading - self.travel + 180.0) - 180.0;
         if d.abs() <= 90.0 { 0 } else { 1 }
     }
+}
+
+/// The two places a complete-to click can take at one end. `dir` is the heading the first
+/// mark points, in the same frame as `pos` (the map's, when the end is drawn on the map).
+/// The joint handed back is not turned: the crossing's paths are written in the object's frame.
+pub fn arrival_choices(pos: DVec3, j: Joint, gap: f64, dir: f64) -> [(DVec3, Joint); 2] {
+    let d = crate::roads::dir(dir) * gap;
+    let off = DVec3::new(d.x, d.y, 0.0);
+    [(pos + off, j), (pos - off, j.reversed())]
+}
+
+/// `local` heading (object frame) as it lies in the world, through the same matrix the
+/// crossing's paths are drawn with. An arrow drawn with the bare local heading points
+/// across the road whenever the object itself is turned.
+pub fn heading_in_frame(local: f64, m: &glam::Mat4) -> f64 {
+    let d = crate::roads::dir(local);
+    let w = m.transform_vector3(glam::Vec3::new(d.x as f32, d.y as f32, 0.0)).as_dvec3().truncate();
+    if w.length_squared() < 1e-8 { local } else { crate::roads::heading_of(w) }
+}
+
+/// How long the arrow on a nearby end is (m), from how far the camera is. The same length in
+/// both nearby-path modes, so the two modes are told apart by one arrow or two, not by a
+/// different kind of mark.
+pub fn end_mark_len(distance: f64) -> f64 {
+    (distance * 0.007).clamp(0.32, 1.15)
 }
 
 /// The `direction` a path whose geometry leaves a joint in `heading` should have, given the
@@ -598,7 +650,7 @@ impl Crossing {
             (norm_deg(c.heading_at(0.0)), q.slope_start())
         };
         let geom = if at_end { c.heading_at(c.length.max(0.0)) } else { c.heading_at(0.0) };
-        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom })
+        Some(Joint { pos, heading, slope, flow: outward_flow(q.direction(), at_end), dir: q.direction(), travel: q.travel_at(at_end), geom, kind: q.kind() })
     }
 
     /// The text of the blocks this editor owns, in the order it writes them.
@@ -1248,6 +1300,38 @@ pub fn verify(abs: &FsPath, crossing: &Crossing) -> anyhow::Result<()> {
         anyhow::bail!("{}: {}", crate::i18n::tr("a file the object names is missing", "файл, названный объектом, потерян"), f);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod arrival {
+    use super::*;
+    use glam::DVec3;
+
+    #[test]
+    fn reversing_a_joint_turns_the_way_about_and_the_slope_over() {
+        let j = Joint { pos: DVec3::new(1.0, 2.0, 3.0), heading: 20.0, slope: 0.04, flow: 1, dir: 0, travel: 20.0, geom: 10.0, kind: 0 };
+        let r = j.reversed();
+        assert!((r.geom - 190.0).abs() < 1e-6 && (r.heading - 200.0).abs() < 1e-6 && (r.travel - 200.0).abs() < 1e-6);
+        assert!((r.slope + 0.04).abs() < 1e-9);
+        assert_eq!((r.pos, r.flow, r.dir), (j.pos, j.flow, j.dir));
+        let back = r.reversed();
+        assert!((back.geom - j.geom).abs() < 1e-6 && (back.slope - j.slope).abs() < 1e-9);
+    }
+
+    #[test]
+    fn the_two_arrivals_sit_opposite_each_other() {
+        let j = Joint { pos: DVec3::ZERO, heading: 0.0, slope: 0.1, flow: 0, dir: 0, travel: 0.0, geom: 0.0, kind: 0 };
+        let [a, b] = arrival_choices(DVec3::new(4.0, 5.0, 1.0), j, 1.2, j.geom);
+        assert!((a.0 - b.0).length() > 2.0, "the two marks are apart");
+        assert!((a.1.geom - j.geom).abs() < 1e-6 && (a.1.slope - 0.1).abs() < 1e-9);
+        assert!((b.1.geom - 180.0).abs() < 1e-6 && (b.1.slope + 0.1).abs() < 1e-9);
+        assert_eq!(a.1.pos, j.pos);
+        // (a joint's heading is the object's: turning the object's north onto the world's
+        // east must turn the arrow with it)
+        let m = glam::Mat4::from_cols(glam::Vec4::new(0.0, -1.0, 0.0, 0.0), glam::Vec4::new(1.0, 0.0, 0.0, 0.0), glam::Vec4::Z, glam::Vec4::W);
+        let h = heading_in_frame(0.0, &m);
+        assert!((h - 90.0).abs() < 0.1, "north in the object is east on the map, got {h}");
+    }
 }
 
 #[cfg(test)]
