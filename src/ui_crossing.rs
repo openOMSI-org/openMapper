@@ -134,6 +134,12 @@ pub struct CrossingPaths {
     /// a few times a second at most, never every frame.
     sink: Vec<f32>,
     sink_at: f64,
+    /// `Connect the roads` was pressed: the work needs the assets, so it is done after the
+    /// window, where they are still at hand.
+    link_now: bool,
+    /// What the last `Connect the roads` did, a road end at a time: whether it was linked, and
+    /// how, so a road that openOMSI will not join is said rather than silently missed.
+    link_report: Vec<LinkNote>,
     /// The next path whose sink is worked out: the work is spread over frames, so hundreds of
     /// paths do not all sample the mesh in one.
     sink_next: usize,
@@ -237,6 +243,8 @@ impl Default for CrossingPaths {
             surface_grid: None,
             sink: Vec::new(),
             sink_at: 0.0,
+            link_now: false,
+            link_report: Vec::new(),
             sink_next: 0,
             reveal: false,
             snap_mark: None,
@@ -767,6 +775,270 @@ fn split_path(crossing: &mut Crossing, i: usize, at: f64) -> Option<usize> {
     crossing.paths[i] = first;
     insert_after(&mut crossing.paths, i, vec![second]);
     Some(i + 1)
+}
+
+/// How near (m) one lane's leaving end and the next lane's entering end must lie to be joined,
+/// how far apart in height they may be, and how far their headings may differ: openOMSI's own
+/// rule (`openOMSI-main/crates/omsi-sim/src/traffic/extend.rs`, `LINK_TOLERANCE`, `dh < 40`
+/// and `(s.z - e.z).abs() < 3.0`). It joins lanes by geometry and **never reads
+/// `[splinehelper]`**, so a crossing's paths have to meet the roads by these numbers before
+/// openOMSI will drive traffic from one into the other.
+const LINK_TOLERANCE: f64 = 1.5;
+const LINK_RISE: f64 = 3.0;
+const LINK_ANGLE: f64 = 40.0;
+
+/// How far (m) a crossing end may be from a road end and be put onto it, and how far it may be
+/// and still be reached with one connecting piece. Beyond that the road end is taken to be a
+/// lane passing the crossing rather than one ending at it.
+const LINK_MOVE: f64 = 6.0;
+const LINK_CONNECT: f64 = 15.0;
+
+/// One end of a road lane as openOMSI has it, in the crossing object's own frame: where traffic
+/// enters the lane or leaves it, and the heading it moves in there.
+#[derive(Clone, Debug)]
+struct RoadLaneEnd {
+    at: DVec3,
+    heading: f64,
+    /// Traffic enters the lane here (its start); else it leaves it (its end).
+    entering: bool,
+    kind: i32,
+    /// Which lane it is, for the report.
+    who: String,
+    /// The road type of the spline it runs along (a `.sli`), when it is a spline's: what a
+    /// `[splinehelper]` at this end names, for the game's own use.
+    file: Option<String>,
+}
+
+/// One end of a crossing path as openOMSI has it. A path of `direction` 0 makes one lane (its
+/// start to its end), 1 one lane the other way (its end to its start), 2 a lane each way - so
+/// at a path's start traffic may leave, arrive, or both.
+#[derive(Clone, Copy, Debug)]
+struct CrossingEnd {
+    path: usize,
+    at_start: bool,
+    at: DVec3,
+    /// The heading traffic leaving the crossing at this end moves in, when it can leave.
+    leave: Option<f64>,
+    /// The heading traffic arriving at the crossing here moves in, when it can arrive.
+    arrive: Option<f64>,
+    kind: i32,
+}
+
+/// What became of one road end.
+#[derive(Clone, Debug)]
+struct LinkNote {
+    who: String,
+    ok: bool,
+    /// Why not, or how far it was moved.
+    why: String,
+    /// Where the link is, and the way the road leaves the crossing there, for a
+    /// `[splinehelper]` put on it.
+    at: Option<DVec3>,
+    away: f64,
+    /// The road type of that lane's spline, when it is one's.
+    file: Option<String>,
+}
+
+/// The ends of the road lanes round the crossing, in its own frame, as openOMSI sees them.
+fn road_lane_ends(lanes: &[crate::lanes::Lane], world: DVec3, m: &glam::Mat4, yaw: f64, doc: &crate::doc::Document) -> Vec<RoadLaneEnd> {
+    let inv = m.inverse();
+    let local = |p: DVec3| inv.transform_point3((p - world).as_vec3()).as_dvec3();
+    let mut out = Vec::new();
+    for l in lanes {
+        let n = l.pts.len();
+        if n < 2 {
+            continue;
+        }
+        let h0 = crate::roads::heading_of((l.pts[1] - l.pts[0]).truncate());
+        let h1 = crate::roads::heading_of((l.pts[n - 1] - l.pts[n - 2]).truncate());
+        let who = match (l.spline, l.object) {
+            (Some((_, id, _)), _) => format!("spline {id} #{}", l.index),
+            (None, Some((_, id))) => format!("object {id} #{}", l.index),
+            _ => format!("#{}", l.index),
+        };
+        // (the road type the game's `[splinehelper]` names, so a helper put on the link is
+        // the one the road there is)
+        let file = l.spline.and_then(|(k, id, _)| doc.spline(k, id).map(|s| s.file.clone()));
+        let mut push = |at: DVec3, heading: f64, entering: bool| {
+            out.push(RoadLaneEnd { at: local(at), heading: crate::roads::norm_deg(heading - yaw), entering, kind: l.kind, who: who.clone(), file: file.clone() });
+        };
+        // (a lane runs along its points, or against them; both ways makes one each way)
+        if l.direction != 1 {
+            push(l.pts[0], h0, true);
+            push(l.pts[n - 1], h1, false);
+        }
+        if l.direction != 0 {
+            push(l.pts[n - 1], crate::roads::norm_deg(h1 + 180.0), true);
+            push(l.pts[0], crate::roads::norm_deg(h0 + 180.0), false);
+        }
+    }
+    out
+}
+
+/// The ends of a crossing's paths, as openOMSI sees them.
+fn crossing_ends(crossing: &Crossing) -> Vec<CrossingEnd> {
+    let mut out = Vec::new();
+    for (i, p) in crossing.paths.iter().enumerate() {
+        let c = p.curve();
+        let hs = crate::roads::norm_deg(p.heading());
+        let he = crate::roads::norm_deg(c.heading_at(c.length.max(0.0)));
+        let d = p.direction();
+        let (fwd, back) = (d != 1, d != 0);
+        for (at_start, at) in [(true, p.start()), (false, p.end())] {
+            let h = if at_start { hs } else { he };
+            // (a forward lane leaves from the start and arrives at the end; a backward one the
+            // other way round, so both roles exist at each end of a two-way path)
+            let (leave, arrive) = if at_start {
+                (fwd.then_some(h), back.then_some(crate::roads::norm_deg(h + 180.0)))
+            } else {
+                (back.then_some(crate::roads::norm_deg(h + 180.0)), fwd.then_some(h))
+            };
+            out.push(CrossingEnd { path: i, at_start, at, leave, arrive, kind: p.kind() });
+        }
+    }
+    out
+}
+
+/// Put one end of path `i` on `to`, its geometry there on `tangent`, keeping the other end
+/// where it is and the rise between the two. None when the turn would swing the other end
+/// away (it is then restored rather than break a join at that end).
+fn align_end(crossing: &mut Crossing, i: usize, at_start: bool, to: DVec3, tangent: f64) -> bool {
+    let Some(before) = crossing.paths.get(i).cloned() else { return false };
+    let keep = if at_start { before.end() } else { before.start() };
+    {
+        let Some(p) = crossing.paths.get_mut(i) else { return false };
+        if at_start {
+            p.v[0] = to.x as f32;
+            p.v[1] = to.y as f32;
+            p.v[2] = to.z as f32;
+            p.fit_start_tangent(tangent);
+            let l = p.length();
+            if l > 1e-3 {
+                let rise = (2.0 * (keep.z - to.z) / l - p.slope_start() as f64).clamp(-MAX_RISE, MAX_RISE);
+                p.v[7] = rise as f32;
+            }
+        } else {
+            // (x and y move the end; the height comes from the slopes, set below)
+            p.set_end(DVec3::new(to.x, to.y, p.end().z));
+            p.fit_end_tangent(tangent);
+            let l = p.length();
+            if l > 1e-3 {
+                let rise = (2.0 * (to.z - keep.z) / l - p.slope_end() as f64).clamp(-MAX_RISE, MAX_RISE);
+                p.v[6] = rise as f32;
+            }
+        }
+    }
+    let Some(after) = crossing.paths.get(i) else { return false };
+    let far = if at_start { after.end() } else { after.start() };
+    if (far.truncate() - keep.truncate()).length() > 0.05 || (far.z - keep.z).abs() > 0.05 {
+        crossing.paths[i] = before;
+        return false;
+    }
+    true
+}
+
+/// Line the crossing's path ends up with the road lanes round it, so that openOMSI's own lane
+/// joining finds them (see [`LINK_TOLERANCE`]). Each road end is taken in turn, nearest first:
+/// a crossing end of the same kind within [`LINK_MOVE`] is put onto it; within [`LINK_CONNECT`]
+/// one connecting piece is added; further than that it is left and said so.
+///
+/// `tris` is the object's mesh, for seating a connecting piece; `side` is the way round a join
+/// is made. Every note is returned, so the panel can say what happened.
+fn link_crossing(crossing: &mut Crossing, roads: &[RoadLaneEnd], tris: &[f32], side: Side) -> Vec<LinkNote> {
+    let mut notes = Vec::new();
+    let mut ends = crossing_ends(crossing);
+    // (which crossing roles have already been given to a road end: a direction 2 path has both
+    // roles at one point, so the role is part of the key)
+    let mut used: Vec<(usize, bool, bool)> = Vec::new();
+    let mut order: Vec<&RoadLaneEnd> = roads.iter().collect();
+    order.sort_by(|a, b| a.at.truncate().length().total_cmp(&b.at.truncate().length()));
+    for r in order {
+        // (a lane that begins at the crossing is fed by the crossing: the crossing's traffic
+        // arrives here. One that ends at it takes the crossing's traffic onward: it leaves
+        // here)
+        let want_leave = !r.entering;
+        let mut best: Option<(f64, usize)> = None;
+        for (n, e) in ends.iter().enumerate() {
+            if e.kind != r.kind || used.contains(&(e.path, e.at_start, want_leave)) {
+                continue;
+            }
+            let has = if want_leave { e.leave } else { e.arrive };
+            if has.is_none() {
+                continue;
+            }
+            let d = (e.at.truncate() - r.at.truncate()).length();
+            if d > LINK_CONNECT {
+                continue;
+            }
+            if best.is_none_or(|b: (f64, usize)| d < b.0) {
+                best = Some((d, n));
+            }
+        }
+        let Some((d, n)) = best else {
+            notes.push(LinkNote { who: r.who.clone(), ok: false, why: tr("no end of the crossing is near it", "ни один конец перекрёстка не рядом").to_string(), at: None, away: 0.0, file: None });
+            continue;
+        };
+        // (the way the road leaves the crossing there: a helper on the link points out along
+        // it, which is what the game snaps a spline by)
+        let away = if r.entering { r.heading } else { crate::roads::norm_deg(r.heading + 180.0) };
+        let e = ends[n];
+        used.push((e.path, e.at_start, want_leave));
+        if d > LINK_MOVE {
+            // (one piece between the two, laid the way the traffic goes: a road that ends at
+            // the crossing feeds it, so the piece runs from the road end to the crossing end;
+            // a road that begins here is fed by it, so the piece runs the other way. Either
+            // way its ends land exactly on the two points, on their headings)
+            let (start, h_a, end, h_b, z0, z1) = if want_leave {
+                (r.at.truncate(), r.heading, e.at.truncate(), e.leave.unwrap_or(r.heading), r.at.z, e.at.z)
+            } else {
+                (e.at.truncate(), e.arrive.unwrap_or(r.heading), r.at.truncate(), r.heading, e.at.z, r.at.z)
+            };
+            let segs = connect_segs(start, h_a, end, h_b, side);
+            if segs.is_empty() {
+                notes.push(LinkNote { who: r.who.clone(), ok: false, why: tr("the gap has no way through", "промежуток нечем заполнить").to_string(), at: None, away: 0.0, file: None });
+                continue;
+            }
+            let template = crossing.paths[e.path].clone();
+            let a = DVec3::new(start.x, start.y, z0);
+            let made = lay_join(&template, a, 0.0, &segs, PieceEnd::At { z: z1, slope: template.slope_end() }, false, tris);
+            for mut q in made {
+                q.v[8] = r.kind as f32;
+                // (one way with the piece it grows from; a two-way path stays two-way)
+                q.v[10] = if template.direction() == 2 { 2.0 } else { 0.0 };
+                crossing.paths.push(q);
+            }
+            notes.push(LinkNote { who: r.who.clone(), ok: true, why: tr("a piece added", "добавлен отрезок").to_string(), at: Some(r.at), away, file: r.file.clone() });
+            continue;
+        }
+        // (put the crossing end on the road end: the geometry there has to be the road's
+        // heading, or half a turn from it when the crossing's traffic runs the other way)
+        let tangent = if (e.at_start && want_leave) || (!e.at_start && !want_leave) {
+            r.heading
+        } else {
+            crate::roads::norm_deg(r.heading + 180.0)
+        };
+        if align_end(crossing, e.path, e.at_start, r.at, tangent) {
+            ends[n].at = r.at;
+            if want_leave {
+                ends[n].leave = Some(r.heading);
+            } else {
+                ends[n].arrive = Some(r.heading);
+            }
+            notes.push(LinkNote { who: r.who.clone(), ok: true, why: format!("{d:.2} m"), at: Some(r.at), away, file: r.file.clone() });
+        } else {
+            notes.push(LinkNote { who: r.who.clone(), ok: false, why: tr("the other end would have moved", "другой конец сдвинулся бы").to_string(), at: None, away: 0.0, file: None });
+        }
+    }
+    notes
+}
+
+/// The `[splinehelper]` a linked road end is given: at the road end, facing out along the road,
+/// naming the road type there. The game snaps its splines onto the object by it (openOMSI does
+/// not read it, its lanes meeting by geometry).
+fn helper_for(n: &LinkNote) -> Option<Helper> {
+    let at = n.at?;
+    let file = n.file.as_ref().filter(|f| !f.trim().is_empty())?;
+    Some(Helper { spline: file.clone(), x: at.x as f32, up: at.z as f32, fwd: at.y as f32, heading: n.away as f32, length: 0.1, radius: 0.0 })
 }
 
 /// A join further than this from the path it joins is not a join: no crossing is tens of
@@ -2007,6 +2279,58 @@ impl CrossingPaths {
         true
     }
 
+    /// `Connect the roads`: line the crossing's ends up with the road lanes round it, so
+    /// openOMSI joins them. Its rule is geometric - same kind, within [`LINK_TOLERANCE`]
+    /// horizontally, [`LINK_RISE`] in height and [`LINK_ANGLE`] of heading - and it never reads
+    /// `[splinehelper]`, so the helper points alone do not make a road drive through.
+    ///
+    /// True when at least one road end was linked; what happened to every one of them is kept
+    /// in `link_report` for the panel.
+    pub fn link_roads(&mut self, ed: &mut Editor, mut assets: Option<&mut Assets>) -> bool {
+        let Some(Sel::Object(k, id)) = self.target else { return false };
+        let Some(doc) = ed.doc.as_ref() else { return false };
+        let Some(o) = doc.object(k, id) else { return false };
+        let (file, rot) = (o.file.clone(), o.rot);
+        let abs = assets.as_deref_mut().and_then(|a| a.object(&file)).map(|m| m.abs_height).unwrap_or(true);
+        let world = doc.object_world(k, o, abs);
+        let m = crate::render::object_matrix(DVec3::ZERO, rot);
+        // (the roads come up to the crossing's edge: a lane further out than this is passing
+        // it, not ending at it)
+        let reach = (self.span() * 0.6 + 25.0).clamp(40.0, 220.0);
+        let Some(assets) = assets else { return false };
+        let (lanes, _) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
+        let roads = road_lane_ends(&lanes, world, &m, rot[0], doc);
+        if roads.is_empty() {
+            self.link_report.clear();
+            return false;
+        }
+        let tris = std::sync::Arc::clone(&self.surface);
+        let side = self.side;
+        self.push_undo();
+        let notes = {
+            let Some(sheet) = self.sheet.as_mut() else { return false };
+            let notes = link_crossing(&mut sheet.crossing, &roads, &tris, side);
+            // (a `[splinehelper]` on each link, naming the road there: the game snaps its
+            // splines onto the object by it. openOMSI does not read it at all - its lanes meet
+            // by geometry - so this is written for the game, and one is only added where
+            // there is not already one)
+            for n in &notes {
+                let Some(h) = helper_for(n) else { continue };
+                if sheet.crossing.helpers.iter().any(|q| (q.local().truncate() - h.local().truncate()).length() < 0.5) {
+                    continue;
+                }
+                sheet.crossing.helpers.push(h);
+            }
+            notes
+        };
+        let ok = notes.iter().any(|n| n.ok);
+        self.link_report = notes;
+        self.from_nearby = false;
+        self.complete_to = false;
+        self.nearby.clear();
+        ok
+    }
+
     /// Turn `Complete to a nearby path` on and off.
     pub fn set_complete_to(&mut self, on: bool) {
         self.complete_to = on;
@@ -2524,6 +2848,12 @@ impl CrossingPaths {
         }
         #[cfg(not(test))]
         let _ = &shown;
+        // (the roads round the crossing: the lanes come from the map, so this is done here,
+        // where the assets are still at hand, rather than inside the window)
+        if self.link_now {
+            self.link_now = false;
+            self.link_roads(ed, assets.as_deref_mut());
+        }
         // (the crossing put in the middle of the map's view: the object itself, in 3D)
         if self.frame_on_map {
             self.frame_on_map = false;
@@ -2844,6 +3174,21 @@ impl CrossingPaths {
         if ui.selectable_label(complete_to, RichText::new(tr("Complete to a nearby path", "Довести до соседнего пути")).small().color(if complete_to { SNAPPED } else { DIM })).on_hover_text(complete_hint).clicked() {
             let on = !self.complete_to;
             self.set_complete_to(on);
+        }
+        // (openOMSI joins a crossing's lanes to the roads' by geometry alone - it reads the
+        // `[splinehelper]` points and does nothing with them - so the ends have to meet by
+        // those numbers for its traffic to drive through)
+        if ui.button(tr("Connect the roads", "Соединить с дорогами")).on_hover_text(tr("Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers", "Совместить концы перекрёстка с концами полос дорог. openOMSI соединяет полосы по геометрии, а не по точкам привязки")).clicked() {
+            self.link_now = true;
+        }
+        if !self.link_report.is_empty() {
+            let ok = self.link_report.iter().filter(|n| n.ok).count();
+            let total = self.link_report.len();
+            egui::CollapsingHeader::new(RichText::new(format!("{} ({ok}/{total})", tr("Link check", "Проверка соединений"))).small()).id_salt("crossing link check").default_open(ok < total).show(ui, |ui| {
+                for n in &self.link_report {
+                    ui.label(RichText::new(format!("{} {} {}", if n.ok { "✓" } else { "✗" }, n.who, n.why)).small().color(if n.ok { GOOD } else { BAD }));
+                }
+            });
         }
         let mut remove = None;
         let mut move_to = None;
@@ -5248,6 +5593,96 @@ Main
         // (no pick, no cut)
         w.selected = None;
         assert!(!w.split_picked());
+    }
+
+    /// openOMSI's own lane joining (`crates/omsi-sim/src/traffic/extend.rs`): one lane's
+    /// leaving end and the next lane's entering end, of the same kind, within the tolerance,
+    /// within 3 m in height and 40 degrees of heading. It never reads `[splinehelper]`, so this
+    /// is the test a crossing's ends have to pass for its traffic to drive through.
+    fn openomsi_joins(a_end: DVec3, a_h: f64, b_start: DVec3, b_h: f64) -> bool {
+        let d = (b_start.truncate() - a_end.truncate()).length();
+        let dh = (((b_h - a_h + 540.0).rem_euclid(360.0)) - 180.0).abs();
+        d <= LINK_TOLERANCE && dh < LINK_ANGLE && (b_start.z - a_end.z).abs() < LINK_RISE
+    }
+
+    /// `Connect the roads` makes the crossing's ends meet the road lanes' by openOMSI's own
+    /// numbers - both a road that ends at the crossing and one that begins there, and with a
+    /// path driven against its own geometry as well.
+    #[test]
+    fn a_link_replicates_what_openomsi_joins() {
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        // (path 2 runs north from the middle of the crossing: (0, 0) to (0, 10), two-way)
+        let roads = vec![
+            // (a road arriving from the south: its lane ends where the crossing's starts)
+            RoadLaneEnd { at: DVec3::new(0.0, 0.0, 0.0), heading: 0.0, entering: false, kind: 0, who: "south".into(), file: Some("Splines\\road.sli".into()) },
+            // (a road leaving to the north: its lane begins where the crossing's ends)
+            RoadLaneEnd { at: DVec3::new(0.0, 10.0, 0.0), heading: 0.0, entering: true, kind: 0, who: "north".into(), file: None },
+        ];
+        let notes = link_crossing(&mut crossing, &roads, &[], Side::Auto);
+        assert_eq!(notes.len(), 2);
+        assert!(notes.iter().all(|n| n.ok), "{notes:?}");
+        let p = &crossing.paths[2];
+        assert!(openomsi_joins(DVec3::new(0.0, 0.0, 0.0), 0.0, p.start(), p.heading()), "the road feeds the crossing");
+        assert!(openomsi_joins(p.end(), p.curve().heading_at(p.length()), DVec3::new(0.0, 10.0, 0.0), 0.0), "the crossing feeds the road");
+        // (a helper is offered where the road leaves, facing out along it)
+        let h = helper_for(&notes[0]).expect("a helper for the road that has a type");
+        assert!((h.local() - DVec3::new(0.0, 0.0, 0.0)).length() < 1e-3, "{:?}", h.local());
+        assert!((h.heading as f64 - 180.0).abs() < 0.5, "out of the crossing, away from the road's traffic: {}", h.heading);
+        assert!(helper_for(&notes[1]).is_none(), "no road type, no helper");
+
+        // (the same path driven against its own geometry: its lane starts at its geometric
+        // end, so that is the end the road from the north must meet)
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        crossing.paths[2].v[10] = 1.0;
+        let roads = vec![
+            RoadLaneEnd { at: DVec3::new(0.0, 10.0, 0.0), heading: 180.0, entering: false, kind: 0, who: "north".into(), file: None },
+            RoadLaneEnd { at: DVec3::new(0.0, 0.0, 0.0), heading: 180.0, entering: true, kind: 0, who: "south".into(), file: None },
+        ];
+        let notes = link_crossing(&mut crossing, &roads, &[], Side::Auto);
+        assert!(notes.iter().all(|n| n.ok), "{notes:?}");
+        let p = &crossing.paths[2];
+        assert!(openomsi_joins(DVec3::new(0.0, 10.0, 0.0), 180.0, p.end(), crate::roads::norm_deg(p.curve().heading_at(p.length()) + 180.0)), "against its geometry, the lane starts at its end");
+        assert!(openomsi_joins(p.start(), crate::roads::norm_deg(p.heading() + 180.0), DVec3::new(0.0, 0.0, 0.0), 180.0), "and ends at its start");
+    }
+
+    /// A road end too far to be put on is reached with one piece, laid the way its traffic
+    /// goes, so both joins are openOMSI's.
+    #[test]
+    fn a_link_closes_a_gap_with_a_connector() {
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        let before = crossing.paths.len();
+        // (the road begins 7 m north of the crossing's end: too far to move, near enough for a
+        // piece)
+        let roads = vec![RoadLaneEnd { at: DVec3::new(0.0, 17.0, 0.0), heading: 0.0, entering: true, kind: 0, who: "north".into(), file: None }];
+        let notes = link_crossing(&mut crossing, &roads, &[], Side::Auto);
+        assert!(notes[0].ok, "{notes:?}");
+        assert_eq!(crossing.paths.len(), before + 1, "one piece was added");
+        let added = crossing.paths.last().unwrap();
+        assert!((added.start().truncate() - DVec2::new(0.0, 10.0)).length() < 0.05, "it starts at the crossing's end: {:?}", added.start());
+        assert!((added.end().truncate() - DVec2::new(0.0, 17.0)).length() < 0.05, "and ends at the road's start: {:?}", added.end());
+        assert!(ang_delta(added.heading(), 0.0).abs() < 0.5, "leaving the crossing north: {}", added.heading());
+        assert!(ang_delta(added.curve().heading_at(added.length()), 0.0).abs() < 0.5, "arriving north: {}", added.curve().heading_at(added.length()));
+        assert_eq!(added.kind(), 0, "the road's kind");
+        // (both joins are openOMSI's)
+        let p = &crossing.paths[2];
+        assert!(openomsi_joins(p.end(), p.curve().heading_at(p.length()), added.start(), added.heading()));
+        assert!(openomsi_joins(added.end(), added.curve().heading_at(added.length()), DVec3::new(0.0, 17.0, 0.0), 0.0));
+    }
+
+    /// A road end of another kind is not forced onto the crossing: it is reported, and nothing
+    /// in the file moves.
+    #[test]
+    fn an_unlinkable_end_is_reported() {
+        let mut crossing = crate::crossing_edit::Sheet::parse(SCO).crossing;
+        let before = crossing.paths.clone();
+        // (a footway where only street paths are)
+        let roads = vec![RoadLaneEnd { at: DVec3::new(0.0, 0.0, 0.0), heading: 0.0, entering: false, kind: 1, who: "footway".into(), file: None }];
+        let notes = link_crossing(&mut crossing, &roads, &[], Side::Auto);
+        assert_eq!(notes.len(), 1);
+        assert!(!notes[0].ok, "a footway is not joined to a street path");
+        assert!(!notes[0].why.is_empty(), "it says why");
+        assert_eq!(crossing.paths.len(), before.len(), "nothing was added");
+        assert!(crossing.paths.iter().zip(&before).all(|(a, b)| a.v == b.v), "nothing was moved");
     }
 
     /// A nearby end, in the object's own frame, is refused when it is not in that frame at all:

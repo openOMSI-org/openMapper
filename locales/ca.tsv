@@ -2768,3 +2768,10 @@ The way a join turns	Cap a on gira la unió
 Paths picked	Camins triats
 Set what they share. A path's own numbers are edited one at a time	Defineix el que comparteixen. Les xifres pròpies de cada camí es toquen d'un en un
 Several	Diversos
+no end of the crossing is near it	cap extrem del encreuament a prop
+the gap has no way through	el buit no té pas
+a piece added	s'ha afegit un tram
+the other end would have moved	l'altre extrem s'hauria mogut
+Connect the roads	Connecta els carrers
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Alinea els extrems de l'encreuament amb els extrems de les vorades. openOMSI uneix les vorades per la seva geometria, no pels punts d'ancoratge
+Link check	Comprovació d'enllaços

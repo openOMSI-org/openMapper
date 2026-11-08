@@ -2768,3 +2768,10 @@ The way a join turns	जोड़ किस ओर मुड़ता है
 Paths picked	चुने गए पथ
 Set what they share. A path's own numbers are edited one at a time	जो साझा है उसे सेट करें। किसी पथ के अपने अंक एक-एक करके बदले जाते हैं
 Several	कई
+no end of the crossing is near it	क्रॉसिंग का कोई सिरा पास नहीं है
+the gap has no way through	इस अंतराल का कोई रास्ता नहीं
+a piece added	एक टुकड़ा जोड़ा गया
+the other end would have moved	दूसरा सिरा हिल जाता
+Connect the roads	सड़कें जोड़ें
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	क्रॉसिंग के सिरों को सड़क की लेन के सिरों पर मिलाएँ। openOMSI लेन को ज्यामिति से जोड़ता है, स्पलाइन सहायक बिंदुओं से नहीं
+Link check	जोड़ जाँच

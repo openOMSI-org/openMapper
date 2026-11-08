@@ -2768,3 +2768,10 @@ The way a join turns	Hướng rẽ của chỗ nối
 Paths picked	Đường đã chọn
 Set what they share. A path's own numbers are edited one at a time	Đặt phần chung. Số riêng của từng đường được sửa lần lượt
 Several	Nhiều
+no end of the crossing is near it	không có đầu nút giao nào ở gần
+the gap has no way through	khoảng trống này không nối được
+a piece added	đã thêm một đoạn
+the other end would have moved	đầu bên kia sẽ bị dời
+Connect the roads	Nối đường
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Canh đầu nút giao trùng với đầu làn đường. openOMSI nối làn theo hình học, không theo điểm phụ trợ spline
+Link check	Kiểm tra nối

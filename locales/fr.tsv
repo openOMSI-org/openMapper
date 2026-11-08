@@ -2766,3 +2766,10 @@ The way a join turns	De quel côté tourne le raccordement
 Paths picked	Chemins choisis
 Set what they share. A path's own numbers are edited one at a time	Réglez ce qu'ils partagent. Les chiffres propres à un chemin se modifient un par un
 Several	Plusieurs
+no end of the crossing is near it	aucune extrémité du carrefour n'est proche
+the gap has no way through	l'écart n'a pas de passage
+a piece added	un tronçon ajouté
+the other end would have moved	l'autre extrémité aurait bougé
+Connect the roads	Relier les rues
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Aligner les extrémités du carrefour sur celles des voies. openOMSI relie les voies par leur géométrie, pas par les points d'ancrage
+Link check	Vérification des liaisons

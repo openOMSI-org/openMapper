@@ -2768,3 +2768,10 @@ The way a join turns	ทิศที่จุดเชื่อมเลี้�
 Paths picked	เส้นทางที่เลือก
 Set what they share. A path's own numbers are edited one at a time	ตั้งค่าสิ่งที่ใช้ร่วมกัน ตัวเลขของเส้นทางแต่ละเส้นแก้ทีละเส้น
 Several	หลายรายการ
+no end of the crossing is near it	ไม่มีปลายทางแยกอยู่ใกล้
+the gap has no way through	ช่องว่างนี้ต่อไม่ได้
+a piece added	เพิ่มช่วงหนึ่งแล้ว
+the other end would have moved	ปลายอีกข้างจะขยับ
+Connect the roads	เชื่อมถนน
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	จัดปลายทางแยกให้ตรงกับปลายเลนของถนน openOMSI เชื่อมเลนด้วยรูปทรง ไม่ใช่จุดช่วยของ spline
+Link check	ตรวจการเชื่อมต่อ

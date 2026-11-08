@@ -2768,3 +2768,10 @@ The way a join turns	Hacia dónde gira la unión
 Paths picked	Caminos elegidos
 Set what they share. A path's own numbers are edited one at a time	Define lo que comparten. Las cifras propias de cada camino se tocan de una en una
 Several	Varios
+no end of the crossing is near it	ningún extremo del cruce está cerca
+the gap has no way through	el hueco no tiene paso
+a piece added	se ha añadido un tramo
+the other end would have moved	el otro extremo se habría movido
+Connect the roads	Conectar las calles
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Alinea los extremos del cruce con los extremos de los carriles. openOMSI une los carriles por su geometría, no por los puntos auxiliares
+Link check	Comprobación de enlaces

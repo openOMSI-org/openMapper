@@ -2768,3 +2768,10 @@ The way a join turns	Åt vilket håll skarven svänger
 Paths picked	Valda spår
 Set what they share. A path's own numbers are edited one at a time	Ställ in det de delar. Ett spårs egna tal ändras ett i taget
 Several	Flera
+no end of the crossing is near it	ingen ände av korsningen är nära
+the gap has no way through	glappet går inte att fylla
+a piece added	en bit tillagd
+the other end would have moved	den andra änden hade flyttats
+Connect the roads	Koppla ihop vägarna
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Rikta in korsningens ändar mot körfältens ändar. openOMSI kopplar körfält efter geometri, inte efter hjälppunkterna
+Link check	Kopplingskontroll

@@ -2768,3 +2768,10 @@ The way a join turns	Merre kanyarodik az összekötés
 Paths picked	Kijelölt utak
 Set what they share. A path's own numbers are edited one at a time	A közöset állítsd be. Egy út saját számai egyenként szerkeszthetők
 Several	Több
+no end of the crossing is near it	nincs a közelben a kereszteződésnek vége
+the gap has no way through	a rést nem lehet kitölteni
+a piece added	egy szakasz hozzáadva
+the other end would have moved	a másik vég elmozdult volna
+Connect the roads	Utak összekötése
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	A kereszteződés végeit a sávok végeihez igazítja. Az openOMSI a sávokat geometria alapján köti össze, nem a spline segédpontokkal
+Link check	Kapcsolatok ellenőrzése

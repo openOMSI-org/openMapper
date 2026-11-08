@@ -2768,3 +2768,10 @@ The way a join turns	Kudy se spojení stáčí
 Paths picked	Vybrané cesty
 Set what they share. A path's own numbers are edited one at a time	Nastavte, co mají společné. Vlastní čísla cesty se upravují po jedné
 Several	Několik
+no end of the crossing is near it	žádný konec křižovatky není poblíž
+the gap has no way through	mezeru nelze vyplnit
+a piece added	přidán úsek
+the other end would have moved	druhý konec by se posunul
+Connect the roads	Připojit silnice
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Srovnat konce křižovatky s konci pruhů silnic. openOMSI spojuje pruhy podle geometrie, ne podle pomocných bodů
+Link check	Kontrola spojení

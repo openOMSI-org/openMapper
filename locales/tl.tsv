@@ -2768,3 +2768,10 @@ The way a join turns	Kung saan lumiko ang dugtong
 Paths picked	Mga path na pinili
 Set what they share. A path's own numbers are edited one at a time	Itakda ang pinagsasaluhan. Ang sariling numero ng isang path ay iniisa-isa
 Several	Marami
+no end of the crossing is near it	walang dulo ng crossing na malapit
+the gap has no way through	walang daan ang agwat na ito
+a piece added	may naidagdag na bahagi
+the other end would have moved	gagalaw ang kabilang dulo
+Connect the roads	Ikonekta ang mga kalsada
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Itugma ang mga dulo ng crossing sa mga dulo ng linya ng kalsada. Iniugnay ng openOMSI ang mga linya sa hugis, hindi sa mga spline helper
+Link check	Pagsusuri ng koneksyon
