@@ -60,7 +60,8 @@ pub fn arc_through(a: DVec2, m: DVec2, b: DVec2) -> Option<Seg> {
     if t.dot(m - a) < 0.0 {
         t = -t;
     }
-    roads::arc_to(a, roads::heading_of(t), b)
+    // (the middle grip says where the bend goes: as tight as it is dragged)
+    roads::arc_to_any(a, roads::heading_of(t), b)
 }
 
 /// The shape from `a` to `b` through `m`: tangent to the headings given at the ends, and

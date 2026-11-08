@@ -105,7 +105,7 @@ fn plan_any(p: DVec2, h: Option<f64>, cursor: DVec2, t: &Typed, straight: bool) 
                 }
                 let half = (d / (2.0 * ra)).asin().to_degrees();
                 let h0 = roads::heading_of(to) + if r < 0.0 { half } else { -half };
-                let s = roads::arc_to(p, roads::norm_deg(h0), cursor)?;
+                let s = roads::arc_to_any(p, roads::norm_deg(h0), cursor)?;
                 Some(vec![match t.length {
                     Some(l) => Seg { length: l, ..s },
                     None => s,
