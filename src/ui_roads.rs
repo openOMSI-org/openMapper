@@ -108,7 +108,8 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let two_way = s.lanes_fwd > 0 && s.lanes_back > 0;
     if mid > 0.0 {
         let col = if s.median_tex.as_os_str().is_empty() { Color32::from_rgb(90, 92, 96) } else { Color32::from_rgb(86, 128, 74) };
-        strip(-mid / 2.0, mid / 2.0, col, med_t, (0.0, 1.0), 0.2);
+        let (ml, mr) = s.median_edges();
+        strip(ml, mr, col, med_t, (0.0, 1.0), 0.2);
     }
     let dash = |m: f32, col: Color32, solid: bool| {
         let mut y = bottom;
@@ -140,12 +141,13 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
             }
         }
     };
+    let offset = s.centerline();
     if two_way {
-        lanes(-gap - s.lanes_back as f32 * s.lane_width, s.lanes_back, false);
-        lanes(gap, s.lanes_fwd, true);
+        lanes(offset - gap - s.lanes_back as f32 * s.lane_width, s.lanes_back, false);
+        lanes(offset + gap, s.lanes_fwd, true);
         if mid <= 0.0 && !s.marked {
-            dash(-0.1, yellow, true);
-            dash(0.1, yellow, true);
+            dash(offset - 0.1, yellow, true);
+            dash(offset + 0.1, yellow, true);
         }
     } else {
         lanes(-rw / 2.0, s.lanes_fwd + s.lanes_back, s.lanes_fwd > 0);
@@ -233,7 +235,8 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         let own = !s.median_tex.as_os_str().is_empty();
         let col = if own { Color32::from_rgb(86, 128, 74) } else { Color32::from_rgb(90, 92, 96) };
         let up = if s.median_raised { lift } else { 0.0 };
-        band(-mid / 2.0, mid / 2.0, base - 8.0 - up, col, if own { med_t } else { road_t }, (0.0, 1.0));
+        let (ml, mr) = s.median_edges();
+        band(ml, mr, base - 8.0 - up, col, if own { med_t } else { road_t }, (0.0, 1.0));
     }
     let gap = if two_way { mid / 2.0 } else { 0.0 };
     let lane = |left: f32, fwd: bool| {
@@ -243,12 +246,13 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         p.text(Pos2::new(c, y), egui::Align2::CENTER_CENTER, if fwd { Icon::Up.ch() } else { Icon::Down.ch() }, Icon::font(14.0), col);
         p.line_segment([Pos2::new(x(left), base - 8.0), Pos2::new(x(left), base)], Stroke::new(1.0, Color32::from_gray(200)));
     };
+    let offset = s.centerline();
     if two_way {
         for i in 0..s.lanes_back {
-            lane(-gap - (s.lanes_back - i) as f32 * s.lane_width, false);
+            lane(offset - gap - (s.lanes_back - i) as f32 * s.lane_width, false);
         }
         for i in 0..s.lanes_fwd {
-            lane(gap + i as f32 * s.lane_width, true);
+            lane(offset + gap + i as f32 * s.lane_width, true);
         }
     } else {
         for i in 0..(s.lanes_fwd + s.lanes_back) {
