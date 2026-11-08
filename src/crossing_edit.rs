@@ -1192,9 +1192,11 @@ pub fn bak_path(abs: &FsPath) -> std::path::PathBuf {
     std::path::PathBuf::from(s)
 }
 
-/// Write the text into `abs` itself, the file as it stands kept as `abs.bak`: the crossing
-/// editor's ordinary save. False when the text is the file's own already (nothing is written,
-/// and the backup is left as it was).
+/// Write the text into `abs` itself, the file as it stood before the first such save kept as
+/// `abs.bak`: the crossing editor's ordinary save. A `.bak` that is there already is left as it
+/// is - it holds the file from before the editor's first save (or somebody else's backup), and
+/// a second save must not put the first one's text in its place. False when the text is the
+/// file's own already (nothing is written, and the backup is left as it was).
 pub fn write_in_place(abs: &FsPath, text: &str, original: &[u8], crossing: &Crossing) -> anyhow::Result<bool> {
     let encoded = encode_like(text, original);
     if encoded == original {
@@ -1207,12 +1209,15 @@ pub fn write_in_place(abs: &FsPath, text: &str, original: &[u8], crossing: &Cros
         let _ = std::fs::remove_file(&trial);
         return Err(e);
     }
-    // (the file as it stands becomes the backup, then the checked one takes its place)
+    // (the file as it stands becomes the backup, unless there is one, then the checked one
+    // takes its place)
     let bak = bak_path(abs);
-    let kept = std::fs::copy(abs, &bak).map_err(|e| anyhow::anyhow!("{}: {e}", bak.display()));
-    if let Err(e) = kept {
-        let _ = std::fs::remove_file(&trial);
-        return Err(e);
+    if !bak.exists() {
+        let kept = std::fs::copy(abs, &bak).map_err(|e| anyhow::anyhow!("{}: {e}", bak.display()));
+        if let Err(e) = kept {
+            let _ = std::fs::remove_file(&trial);
+            return Err(e);
+        }
     }
     if let Err(e) = std::fs::rename(&trial, abs) {
         let _ = std::fs::remove_file(&trial);
@@ -1228,9 +1233,9 @@ pub fn remove_bak(abs: &FsPath) -> bool {
 
 /// The backup the editor made of a file, if it is one it noted (so clearing never takes a
 /// `.bak` somebody else made).
-pub fn bak_of(abs: &FsPath) -> Option<std::path::PathBuf> {
+pub fn bak_of(abs: &FsPath, roots: &crate::install::Roots) -> Option<std::path::PathBuf> {
     let b = bak_path(abs);
-    b.is_file().then_some(b)
+    baks::list(roots).contains(&b).then_some(b)
 }
 
 /// The list of `.bak`s this editor itself made, kept beside its content so clearing them can

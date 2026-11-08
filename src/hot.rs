@@ -79,23 +79,33 @@ impl Watcher {
                     if !due {
                         continue;
                     }
+                    // (the time is taken before the walk: a write landing while a big folder
+                    // is walked, behind the walk, is then still newer than the clean snapshot)
+                    let walked = Instant::now();
                     let now = fingerprint(root);
                     if now == prints[i] {
-                        last_ok[i] = Instant::now();
+                        last_ok[i] = walked;
                         continue;
                     }
                     // (when the change was first seen: the settle loop below can take a while,
                     // and how long it takes must not decide whether this was our own write)
                     let probe = Instant::now();
-                    // (wait until it has stopped changing)
+                    // (wait until it has stopped changing. The editor's own write is whole when
+                    // it is noted, so it is still the same at the first look again; something
+                    // that goes on changing - a copy begun just after a save - is somebody
+                    // else's, however soon after the save it began)
                     let mut last = now;
+                    let mut still = true;
+                    let mut settled;
                     loop {
                         std::thread::sleep(SETTLE);
+                        settled = Instant::now();
                         let again = fingerprint(root);
                         if again == last || flag.load(Ordering::Relaxed) {
                             last = again;
                             break;
                         }
+                        still = false;
                         last = again;
                     }
                     prints[i] = last;
@@ -103,8 +113,8 @@ impl Watcher {
                     // somebody else's)
                     let own = own_at();
                     let grace = if i == 0 { OWN_GRACE } else { INSTALL_GRACE };
-                    let mine = is_own_write(own, last_ok[i], probe, grace);
-                    last_ok[i] = Instant::now();
+                    let mine = still && is_own_write(own, last_ok[i], probe, grace);
+                    last_ok[i] = settled;
                     if mine {
                         log::debug!("hot reload: {} changed by the editor itself", root.display());
                     } else {

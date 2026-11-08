@@ -128,6 +128,8 @@ pub struct CrossingPaths {
     /// A drag of the start or end rotation, so the pieces it splits into can be rebuilt
     /// from the path as the drag began.
     rot_drag: Option<RotGesture>,
+    /// The press in the drawing took a nearby end: the click it ends in takes nothing more.
+    took_nearby: bool,
     /// The way round a join is made when either would do (automatic, or always left or right).
     side: Side,
     /// The object's mesh, unthinned, so a new path can sit on the surface. The drawing uses
@@ -248,6 +250,7 @@ impl Default for CrossingPaths {
             map_drag: None,
             map_drag_plane: None,
             rot_drag: None,
+            took_nearby: false,
             side: Side::Auto,
             surface: std::sync::Arc::new(Vec::new()),
             surface_for: String::new(),
@@ -855,7 +858,9 @@ struct LinkNote {
 }
 
 /// The ends of the road lanes round the crossing, in its own frame, as openOMSI sees them.
-fn road_lane_ends(lanes: &[crate::lanes::Lane], world: DVec3, m: &glam::Mat4, yaw: f64, doc: &crate::doc::Document) -> Vec<RoadLaneEnd> {
+/// An end already joined to another road lane (`linked`) is not one: it is a joint along the
+/// road, not where the road meets the crossing.
+fn road_lane_ends(lanes: &[crate::lanes::Lane], linked: &[crate::lanes::LaneEnd], world: DVec3, m: &glam::Mat4, yaw: f64, doc: &crate::doc::Document) -> Vec<RoadLaneEnd> {
     let inv = m.inverse();
     let local = |p: DVec3| inv.transform_point3((p - world).as_vec3()).as_dvec3();
     let mut out = Vec::new();
@@ -867,14 +872,18 @@ fn road_lane_ends(lanes: &[crate::lanes::Lane], world: DVec3, m: &glam::Mat4, ya
         let h0 = crate::roads::heading_of((l.pts[1] - l.pts[0]).truncate());
         let h1 = crate::roads::heading_of((l.pts[n - 1] - l.pts[n - 2]).truncate());
         let who = match (l.spline, l.object) {
-            (Some((_, id, _)), _) => format!("spline {id} #{}", l.index),
-            (None, Some((_, id))) => format!("object {id} #{}", l.index),
+            (Some((_, id, _)), _) => format!("{} {id} #{}", tr("spline", "сплайн"), l.index),
+            (None, Some((_, id))) => format!("{} {id} #{}", tr("object", "объект"), l.index),
             _ => format!("#{}", l.index),
         };
+        let joined = |at: DVec3| linked.iter().any(|e| e.linked && e.kind == l.kind && (e.pos - at).truncate().length() < 0.1);
         // (the road type the game's `[splinehelper]` names, so a helper put on the link is
         // the one the road there is)
         let file = l.spline.and_then(|(k, id, _)| doc.spline(k, id).map(|s| s.file.clone()));
         let mut push = |at: DVec3, heading: f64, entering: bool| {
+            if joined(at) {
+                return;
+            }
             out.push(RoadLaneEnd { at: local(at), heading: crate::roads::norm_deg(heading - yaw), entering, kind: l.kind, who: who.clone(), file: file.clone() });
         };
         // (a lane runs along its points, or against them; both ways makes one each way)
@@ -990,6 +999,11 @@ fn link_crossing(crossing: &mut Crossing, roads: &[RoadLaneEnd], tris: &[f32], s
             }
         }
         let Some((d, n)) = best else {
+            // (a road end far from every end of the crossing is a road passing by, not one
+            // that comes to it: it is left out of the report)
+            if !ends.iter().any(|e| (e.at.truncate() - r.at.truncate()).length() <= LINK_CONNECT) {
+                continue;
+            }
             notes.push(LinkNote { who: r.who.clone(), ok: false, why: tr("no end of the crossing is near it", "ни один конец перекрёстка не рядом").to_string(), at: None, away: 0.0, file: None });
             continue;
         };
@@ -1922,6 +1936,39 @@ impl CrossingPaths {
         self.anchor = Some(i);
     }
 
+    /// Run `f` with the sheet back in `self`. The window draws with the sheet taken out of
+    /// `self`, to hand it to the drawing beside `&mut self`, and what reads `self.sheet` from
+    /// there - an undo step, the bin, a join to a nearby end - would find nothing.
+    fn with_sheet<R>(&mut self, sheet: &mut Sheet, f: impl FnOnce(&mut Self) -> R) -> R {
+        self.sheet = Some(sheet.clone());
+        let r = f(self);
+        if let Some(s) = self.sheet.take() {
+            *sheet = s;
+        }
+        r
+    }
+
+    /// One of the two nearby-path modes is on (what the drawing asks: the sheet is out of
+    /// `self` while it draws).
+    fn nearby_mode(&self) -> bool {
+        self.open && (self.from_nearby || self.complete_to)
+    }
+
+    /// Forget what was being done to the crossing that was open: the picks, a drag, a rotation
+    /// being split into pieces. Another crossing - or this one put back as it was - has other
+    /// paths under those indices.
+    fn forget_gestures(&mut self) {
+        self.multi.clear();
+        self.anchor = self.selected;
+        self.drag = None;
+        self.map_drag = None;
+        self.map_drag_plane = None;
+        self.draw_from = None;
+        self.edge = None;
+        self.rot_drag = None;
+        self.took_nearby = false;
+    }
+
     /// A click on the map picks a path: false when nothing of the crossing is at that point.
     /// `add` keeps what was picked (Ctrl), as clicking a list row does.
     pub fn select_on_map(&mut self, hit: Option<usize>, add: bool) -> bool {
@@ -2001,7 +2048,7 @@ impl CrossingPaths {
     }
 
     /// Ctrl+Z: the crossing goes back a step. False when there is nothing to go back to (the
-    /// map's own undo takes the key then).
+    /// key does nothing more then: the map is held while a crossing is open).
     pub fn undo(&mut self) -> bool {
         let Some(prev) = self.undo.pop() else { return false };
         let Some(sheet) = self.sheet.as_ref() else { return false };
@@ -2321,8 +2368,8 @@ impl CrossingPaths {
         // it, not ending at it)
         let reach = (self.span() * 0.6 + 25.0).clamp(40.0, 220.0);
         let Some(assets) = assets else { return false };
-        let (lanes, _) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
-        let roads = road_lane_ends(&lanes, world, &m, rot[0], doc);
+        let (lanes, ends) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
+        let roads = road_lane_ends(&lanes, &ends, world, &m, rot[0], doc);
         if roads.is_empty() {
             self.link_report.clear();
             return false;
@@ -2493,11 +2540,17 @@ impl CrossingPaths {
                 self.phase = None;
             }
         }
+        if self.anchor.is_some_and(|a| a >= paths) {
+            self.anchor = self.selected;
+        }
         self.drag = None;
         self.map_drag = None;
         self.map_drag_plane = None;
         self.draw_from = None;
         self.edge = None;
+        // (a rotation being split into pieces names the path it began on: after an undo that
+        // may be another path, and putting its pieces back would take real paths away)
+        self.rot_drag = None;
     }
 
     /// How far the paths reach, in metres: the width of the view that frames them all.
@@ -2542,6 +2595,7 @@ impl CrossingPaths {
         }
         self.pick_only(i);
         self.map_drag = Some((i, at_end));
+        self.rot_drag = None;
         // (a new grab is judged on this end's own height, not the one a previous drag locked)
         self.map_drag_plane = None;
         true
@@ -2651,12 +2705,8 @@ impl CrossingPaths {
         self.open = false;
         self.sheet = None;
         self.message = None;
-        self.drag = None;
-        self.map_drag = None;
-        self.map_drag_plane = None;
-        self.draw_from = None;
-        self.edge = None;
         self.selected = None;
+        self.forget_gestures();
         self.footprint = None;
         self.snap_pool = None;
     }
@@ -2698,10 +2748,7 @@ impl CrossingPaths {
                 self.save_mode = SaveMode::InPlace;
                 self.sheet = Some(sheet);
                 self.fit = true;
-                self.drag = None;
-                self.map_drag = None;
-        self.map_drag_plane = None;
-                self.draw_from = None;
+                self.forget_gestures();
                 self.footprint = None;
                 self.message = None;
                 true
@@ -2952,8 +2999,8 @@ impl CrossingPaths {
             if let Some(sheet) = self.sheet.as_mut() {
                 sheet.crossing = self.seen.clone();
             }
-            self.drag = None;
-            self.edge = None;
+            self.forget_gestures();
+            self.fix_picks();
             self.message = Some((tr("Back to how it was opened", "Обратно к состоянию при открытии").into(), false));
         }
         if save {
@@ -3002,7 +3049,7 @@ impl CrossingPaths {
                     ui.close();
                 }
                 ui.separator();
-                let own = crossing_edit::bak_of(&me.abs);
+                let own = roots.and_then(|r| crossing_edit::bak_of(&me.abs, r));
                 if ui.add_enabled(own.is_some(), egui::Button::new(tr("Remove this file's .bak", "Удалить .bak этого файла"))).clicked() {
                     if crossing_edit::remove_bak(&me.abs) {
                         me.message = Some((tr("Its .bak is gone", "Его .bak удалён").into(), false));
@@ -3171,7 +3218,7 @@ impl CrossingPaths {
             ui.label(RichText::new(format!("{} ({})", tr("Paths", "Пути"), sheet.crossing.paths.len())).strong());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.small_button(icons::labelled(Icon::Add, "")).on_hover_text(tr("Add a path carried on from the picked one (N)", "Добавить путь, продолжающий выбранный (N)")).clicked() {
-                    self.push_undo();
+                    self.with_sheet(sheet, |me| me.push_undo());
                     // (from the picked path's end, in the way it runs there - not a copy
                     // put beside it: that is what the Duplicate button is for)
                     if let Some(at) = continue_path(&mut sheet.crossing, self.selected) {
@@ -3295,7 +3342,7 @@ impl CrossingPaths {
             if !self.is_picked(i) {
                 self.pick_only(i);
             }
-            changed |= self.delete_picked();
+            changed |= self.with_sheet(sheet, |me| me.delete_picked());
         }
 
         // ---- the numbers of the picked path
@@ -3765,8 +3812,10 @@ impl CrossingPaths {
                 self.view_3d = false;
                 self.frame_on_map = false;
             }
-            ui.label(RichText::new(tr("Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans", "Тяните конец, чтобы сдвинуть его. Притягивается к концу другого пути; с Ctrl — свободно. Притянутый конец принимает и направление, и уклон другого пути, так что они сходятся плавно. Колесо — масштаб, правая/средняя кнопка — сдвиг")).small().color(DIM));
         });
+        // (below the row, where it wraps: in the row it would not, and the window would grow to
+        // its length)
+        ui.label(RichText::new(tr("Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans", "Тяните конец, чтобы сдвинуть его. Притягивается к концу другого пути; с Ctrl — свободно. Притянутый конец принимает и направление, и уклон другого пути, так что они сходятся плавно. Колесо — масштаб, правая/средняя кнопка — сдвиг")).small().color(DIM));
     }
 
     /// The light page's left side: which light, which of its phases, what that phase shows,
@@ -4125,6 +4174,8 @@ impl CrossingPaths {
         // file as it stood is kept as its `.bak`)
         if self.save_mode == SaveMode::InPlace {
             let abs = self.abs.clone();
+            // (a `.bak` that was there before is not the editor's: it is kept, and not noted)
+            let had_bak = crossing_edit::bak_path(&abs).exists();
             match crossing_edit::write_in_place(&abs, &text, &self.bytes, &crossing) {
                 Ok(false) => {
                     self.seen = crossing;
@@ -4134,8 +4185,12 @@ impl CrossingPaths {
                     return;
                 }
                 Ok(true) => {
-                    crossing_edit::baks::note(roots, &crossing_edit::bak_path(&abs));
-                    self.copied = true;
+                    if !had_bak {
+                        crossing_edit::baks::note(roots, &crossing_edit::bak_path(&abs));
+                    }
+                    // (`copied` stays as it was: the file is the object's own, not a copy the
+                    // editor made, and "As a new file" must still make one rather than write
+                    // over it)
                     if let Ok(b) = std::fs::read(&abs) {
                         self.bytes = b;
                     }
@@ -4222,7 +4277,7 @@ impl CrossingPaths {
             }
         }
         // (and the nearby ends a new path can be started from, when that mode is on)
-        if self.wants_nearby() {
+        if self.nearby_mode() {
             for j in &self.nearby {
                 lo = lo.min(j.pos.truncate());
                 hi = hi.max(j.pos.truncate());
@@ -4438,7 +4493,7 @@ impl CrossingPaths {
         }
         // a new path is started from one of these: the ends of the paths round the crossing,
         // each with the way it runs away from it
-        if self.wants_nearby() {
+        if self.nearby_mode() {
             let len = (20.0 / scale as f64).clamp(0.35, 1.4);
             let head = |painter: &egui::Painter, at: DVec3, heading: f64, reach: f64| {
                 let d = crate::roads::dir(heading);
@@ -4504,7 +4559,8 @@ impl CrossingPaths {
         // press itself takes the one nearest the pointer, before anything of the crossing's
         // own paths is looked at - a green circle on top of an end would otherwise be a drag
         // of that end)
-        if self.wants_nearby() && resp.hovered() && ui.input(|i| i.pointer.primary_pressed()) {
+        if self.nearby_mode() && resp.hovered() && ui.input(|i| i.pointer.primary_pressed()) {
+            self.took_nearby = false;
             if let Some(o) = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos()) {
                 let gap = (20.0 / scale as f64).clamp(0.35, 1.4) * 0.7;
                 let pick = if self.complete_to {
@@ -4524,7 +4580,10 @@ impl CrossingPaths {
                         .min_by(|a, b| a.0.total_cmp(&b.0))
                 };
                 if let Some((_, j)) = pick {
-                    self.take_nearby(j);
+                    self.with_sheet(sheet, |me| me.take_nearby(j));
+                    // (the click this press ends in is the same pick, not a second one: a join
+                    // to the end just reached would be laid on top of it)
+                    self.took_nearby = true;
                     return;
                 }
             }
@@ -4545,7 +4604,7 @@ impl CrossingPaths {
                 }
                 self.draw_from = Some(from);
                 self.draw_from_z = z as f32;
-                self.push_undo();
+                self.with_sheet(sheet, |me| me.push_undo());
             }
         }
         if resp.drag_started_by(egui::PointerButton::Primary) {
@@ -4555,7 +4614,10 @@ impl CrossingPaths {
                 self.drag = if self.draw_from.is_some() { None } else { handle(sheet, pos) };
                 if self.drag.is_some() {
                     self.snap_mark = None;
-                    self.push_undo();
+                    // (a rotation split into pieces before is done with: the drag moves the
+                    // paths as they now are)
+                    self.rot_drag = None;
+                    self.with_sheet(sheet, |me| me.push_undo());
                 }
                 if self.drag.is_none() && !self.draw {
                     if let Some(i) = path_at(sheet, pos) {
@@ -4638,7 +4700,7 @@ impl CrossingPaths {
                                 piece.v[10] = j.direction_for(piece.heading()) as f32;
                                 sheet.crossing.paths.push(piece);
                             }
-                            self.selected = Some(sheet.crossing.paths.len() - 1);
+                            self.pick_only(sheet.crossing.paths.len() - 1);
                             self.reveal = true;
                             return;
                         }
@@ -4658,7 +4720,7 @@ impl CrossingPaths {
                             }
                         }
                         sheet.crossing.paths.push(p);
-                        self.selected = Some(sheet.crossing.paths.len() - 1);
+                        self.pick_only(sheet.crossing.paths.len() - 1);
                         self.reveal = true;
                     }
                 }
@@ -4666,7 +4728,7 @@ impl CrossingPaths {
         }
         if resp.clicked() && self.drag.is_none() && !self.draw {
             if let Some(pos) = resp.interact_pointer_pos() {
-                if self.wants_nearby() {
+                if self.nearby_mode() {
                     // (a nearby path's end picked: a new path starts there, or the picked one
                     // is carried on to it)
                     let hit = self
@@ -4675,8 +4737,10 @@ impl CrossingPaths {
                         .copied()
                         .filter(|j| to_screen(j.pos.truncate()).distance(pos) <= GRAB + 6.0)
                         .min_by(|a, b| to_screen(a.pos.truncate()).distance(pos).total_cmp(&to_screen(b.pos.truncate()).distance(pos)));
-                    if let Some(j) = hit {
-                        self.take_nearby(j);
+                    if std::mem::take(&mut self.took_nearby) {
+                        // (the press took it already)
+                    } else if let Some(j) = hit {
+                        self.with_sheet(sheet, |me| me.take_nearby(j));
                     }
                 } else if let Some(i) = path_at(sheet, pos) {
                     // (Ctrl adds to the pick and Shift takes a run, as a list does)
@@ -4689,7 +4753,7 @@ impl CrossingPaths {
             if let Some(pos) = resp.hover_pos() {
                 if handle(sheet, pos).is_some() {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
-                } else if self.draw || self.wants_nearby() {
+                } else if self.draw || self.nearby_mode() {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
                 }
             }

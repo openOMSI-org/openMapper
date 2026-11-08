@@ -1597,13 +1597,18 @@ impl App {
             }
             Action::Undo => {
                 // (the crossing being edited has its own steps: the map's are not what takes
-                // the key while its window is open)
-                if !(self.crossing.open && self.crossing.undo()) {
+                // the key while its window holds one - not even past its first step, which would
+                // undo a change of the map nobody can see while the map is held)
+                if self.crossing_holds() {
+                    self.crossing.undo();
+                } else {
                     self.ed.undo();
                 }
             }
             Action::Redo => {
-                if !(self.crossing.open && self.crossing.redo()) {
+                if self.crossing_holds() {
+                    self.crossing.redo();
+                } else {
                     self.ed.redo();
                 }
             }
@@ -2231,6 +2236,11 @@ impl App {
         }
     }
 
+    /// The crossing editor holds the map: its window is open with a crossing in it.
+    fn crossing_holds(&self) -> bool {
+        self.crossing.open && self.crossing.has_sheet()
+    }
+
     /// The keys a turn taken hold of by R answers: numbers type the angle, Enter keeps it, Esc
     /// puts it back.
     fn rot_key(&mut self, code: Option<KeyCode>) {
@@ -2261,7 +2271,8 @@ impl App {
     }
 
     /// Puts the command being set on the key just pressed (Esc: leaves it as it was).
-    fn capture_key(&mut self, code: KeyCode) {        if code == KeyCode::Escape {
+    fn capture_key(&mut self, code: KeyCode) {
+        if code == KeyCode::Escape {
             self.ui.key_capture = None;
         } else if crate::controls::bindable(code) {
             if let Some(cmd) = self.ui.key_capture.take() {
@@ -2299,7 +2310,8 @@ impl App {
                 // moves it. The OMSI key set keeps R as one turn of the angle step, and Shift
                 // still turns by a step in either set)
                 let blender = matches!(Preset::of(&self.prefs.keys_set, self.prefs.omsi_controls), Preset::Blender);
-                if shift || !blender {
+                // (the Objects tool turns the object it is about to place, by a step, in either set)
+                if shift || !blender || self.ed.places_objects() {
                     self.ed.rotate(if shift { -self.ed.angle_step } else { self.ed.angle_step });
                 } else {
                     self.ed.rot_begin(self.mouse.pos);
@@ -2787,9 +2799,10 @@ impl App {
         }
         // the editor
         let t_ed = Instant::now();
-        // (while the crossing editor is open the map is held: nothing on it answers the
-        // pointer, and the crossing's own paths are what is picked)
-        self.ed.crossing_hold = self.crossing.open;
+        // (while the crossing editor has a crossing open the map is held: nothing on it answers
+        // the pointer, and the crossing's own paths are what is picked. With none open yet, a
+        // crossing is picked on the map as anything is)
+        self.ed.crossing_hold = self.crossing_holds();
         // (gathered in the window below, from this same distance, then placed on the map)
         self.ed.note_view_distance(self.cam.distance);
         self.ed.crossing_nearby.clear();
@@ -3922,7 +3935,7 @@ impl ApplicationHandler for App {
                         } else if pressed && !over_ui && self.ed.rot_dragging() {
                             // (and a click keeps a turn, as Blender's does)
                             self.ed.rot_confirm();
-                        } else if pressed && !over_ui && self.crossing.open {
+                        } else if pressed && !over_ui && self.crossing_holds() {
                             // (the crossing editor holds the map while it is open: nothing on
                             // it is picked and nothing is moved - no object, no spline, and
                             // not the crossing's own object either. Dragging still pans, so
@@ -4025,8 +4038,8 @@ impl ApplicationHandler for App {
                             }
                             // (the crossing editor holds the map: no right-click menu of it,
                             // and nothing of the map is picked by one)
-                            let menu = !self.crossing.open && self.mouse.right_moved < 5.0 && self.ed.right_click();
-                            if self.crossing.open {
+                            let menu = !self.crossing_holds() && self.mouse.right_moved < 5.0 && self.ed.right_click();
+                            if self.crossing_holds() {
                                 // (nothing)
                             } else if menu && self.prefs.omsi_controls && !self.keys.shift {
                                 // (OMSI 2's editor: a right click on the ground goes there; Shift opens the menu)

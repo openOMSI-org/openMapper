@@ -1395,8 +1395,8 @@ impl Editor {
 
     /// Stop what the tool is in the middle of.
     pub fn cancel(&mut self) {
-        // (a grab is called off: nothing of it stands)
-        if self.grab.take().is_some() {
+        // (a grab or a turn taken hold of by R is called off: nothing of it stands)
+        if self.grab.take().is_some() || self.rot.take().is_some() {
             if let Some(doc) = &mut self.doc {
                 self.history.rollback(doc);
             }
@@ -2620,6 +2620,11 @@ impl Editor {
         self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links });
         self.xform_value = 0.0;
         true
+    }
+
+    /// Whether the tool at hand places objects: R turns the one about to be placed, by a step.
+    pub fn places_objects(&self) -> bool {
+        self.acts_as() == Tool::Objects
     }
 
     /// Whether a turn is being taken hold of by R.
@@ -6073,7 +6078,7 @@ impl Editor {
     /// thousand deduplicated on each read was most of a frame.
     /// The selection grows and the map's picture with it: the minimap can wait.
     pub fn moving(&self) -> bool {
-        self.grab.is_some() || !matches!(self.drag, Drag::None)
+        self.grab.is_some() || self.rot.is_some() || !matches!(self.drag, Drag::None)
     }
 
     pub fn selection(&self) -> Vec<Sel> {
@@ -9484,7 +9489,9 @@ impl Editor {
                 let Some(there) = record_point(doc, other) else { continue };
                 let r = record_radius(doc, assets, other).clamp(0.15, 1.5) as f32;
                 let (dash, gap) = ((w as f64 * 1.2).max(0.25), (w as f64 * 0.8).max(0.18));
-                dashed_line(&mut x.overlay, cam, me, there, 0.03, dash, gap, LINK);
+                // (thin, but a share of the view's own scale: a fixed few centimetres was under a
+                // pixel at any ordinary distance)
+                dashed_line(&mut x.overlay, cam, me, there, (w * 0.25).min(r), dash, gap, LINK);
                 disc(&mut x.overlay, cam, there, r * if up { 1.4 } else { 1.0 }, LINK);
             }
         }

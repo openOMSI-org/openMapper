@@ -450,6 +450,11 @@ fn a_save_in_place_keeps_the_old_file_as_a_bak() {
     let stamp = std::fs::metadata(&bak).unwrap().modified().unwrap();
     assert!(!write_in_place(&abs, &s.text(), &now, &s.crossing).unwrap(), "nothing changed");
     assert_eq!(std::fs::metadata(&bak).unwrap().modified().unwrap(), stamp, "the backup was not touched");
+
+    // a second save with other text: the backup still holds the file from before the first
+    s.crossing.paths[0].v[5] = 25.0;
+    assert!(write_in_place(&abs, &s.text(), &now, &s.crossing).unwrap(), "the file was written again");
+    assert_eq!(std::fs::read(&bak).unwrap(), bytes, "the backup is still the original file");
     let _ = std::fs::remove_dir_all(&dir);
 }
 
