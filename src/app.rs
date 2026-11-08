@@ -2056,6 +2056,12 @@ impl App {
             self.grab_key(code);
             return;
         }
+        // (a turn taken hold of by R holds the keyboard as the grab does: numbers say the angle,
+        // Enter or Esc lets it go)
+        if self.ed.rot_dragging() && !self.keys.ctrl {
+            self.rot_key(code);
+            return;
+        }
         // (the crossing editor: N adds a path carried on from the picked one, as its "+"
         // does - before the map's own "new object" takes the key)
         if self.crossing.open
@@ -2190,9 +2196,37 @@ impl App {
         }
     }
 
+    /// The keys a turn taken hold of by R answers: numbers type the angle, Enter keeps it, Esc
+    /// puts it back.
+    fn rot_key(&mut self, code: Option<KeyCode>) {
+        let Some(code) = code else { return };
+        let digit = |c: KeyCode| -> Option<u8> {
+            let rows = [
+                [KeyCode::Digit0, KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6, KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9],
+                [KeyCode::Numpad0, KeyCode::Numpad1, KeyCode::Numpad2, KeyCode::Numpad3, KeyCode::Numpad4, KeyCode::Numpad5, KeyCode::Numpad6, KeyCode::Numpad7, KeyCode::Numpad8, KeyCode::Numpad9],
+            ];
+            rows.iter().find_map(|r| r.iter().position(|k| *k == c).map(|n| n as u8))
+        };
+        match code {
+            KeyCode::Escape => {
+                self.ed.rot_cancel();
+            }
+            KeyCode::Enter | KeyCode::NumpadEnter => {
+                self.ed.rot_confirm();
+            }
+            KeyCode::Backspace => self.ed.rot_backspace(),
+            KeyCode::Minus | KeyCode::NumpadSubtract => self.ed.rot_type('-'),
+            KeyCode::Period | KeyCode::Comma | KeyCode::NumpadDecimal => self.ed.rot_type('.'),
+            _ => {
+                if let Some(n) = digit(code) {
+                    self.ed.rot_type((b'0' + n) as char);
+                }
+            }
+        }
+    }
+
     /// Puts the command being set on the key just pressed (Esc: leaves it as it was).
-    fn capture_key(&mut self, code: KeyCode) {
-        if code == KeyCode::Escape {
+    fn capture_key(&mut self, code: KeyCode) {        if code == KeyCode::Escape {
             self.ui.key_capture = None;
         } else if crate::controls::bindable(code) {
             if let Some(cmd) = self.ui.key_capture.take() {
@@ -2225,7 +2259,17 @@ impl App {
             Cmd::ToolTerrain => self.ed.set_tool(Tool::Terrain),
             Cmd::ToolPaint => self.ed.set_tool(Tool::Paint),
             Cmd::ToolTiles => self.ed.set_tool(Tool::Tiles),
-            Cmd::Rotate => self.ed.rotate(if shift { -self.ed.angle_step } else { self.ed.angle_step }),
+            Cmd::Rotate => {
+                // (Blender's R: the selection is taken hold of and turns with the pointer, as G
+                // moves it. The OMSI key set keeps R as one turn of the angle step, and Shift
+                // still turns by a step in either set)
+                let blender = matches!(Preset::of(&self.prefs.keys_set, self.prefs.omsi_controls), Preset::Blender);
+                if shift || !blender {
+                    self.ed.rotate(if shift { -self.ed.angle_step } else { self.ed.angle_step });
+                } else {
+                    self.ed.rot_begin(self.mouse.pos);
+                }
+            }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
             Cmd::EditMesh => self.toggle_edit_mode(),
@@ -2711,6 +2755,11 @@ impl App {
                 }
             }
             self.mouse.moved = false;
+        }
+        // (a turn taken hold of by R: the selection turns round its middle as the pointer goes
+        // round it)
+        if self.ed.rot_dragging() {
+            self.ed.rot_follow(self.mouse.pos, self.keys.shift);
         }
         // (a grab: the selection follows the pointer, from where it was taken)
         if self.ed.grab.is_some() {
@@ -3813,6 +3862,9 @@ impl ApplicationHandler for App {
                         } else if pressed && !over_ui && self.ed.grab.is_some() {
                             // (a click lets the grab go, as Blender's does)
                             self.ed.grab_confirm();
+                        } else if pressed && !over_ui && self.ed.rot_dragging() {
+                            // (and a click keeps a turn, as Blender's does)
+                            self.ed.rot_confirm();
                         } else if pressed && !over_ui && self.crossing.open {
                             // (the crossing editor holds the map while it is open: nothing on
                             // it is picked and nothing is moved - no object, no spline, and
@@ -3892,6 +3944,9 @@ impl ApplicationHandler for App {
                         if pressed && !over_ui && self.ed.grab.is_some() {
                             // (a right click calls the grab off, as Blender's does)
                             self.ed.grab_cancel();
+                        } else if pressed && !over_ui && self.ed.rot_dragging() {
+                            // (a right click calls a turn off too)
+                            self.ed.rot_cancel();
                         } else if pressed && !over_ui {
                             self.mouse.right = true;
                             self.mouse.right_moved = 0.0;

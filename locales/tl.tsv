@@ -2775,3 +2775,5 @@ the other end would have moved	gagalaw ang kabilang dulo
 Connect the roads	Ikonekta ang mga kalsada
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Itugma ang mga dulo ng crossing sa mga dulo ng linya ng kalsada. Iniugnay ng openOMSI ang mga linya sa hugis, hindi sa mga spline helper
 Link check	Pagsusuri ng koneksyon
+Shift: tenths of a degree	Shift: ikasampu ng digri
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	mga numero: pagikot sa digri, Enter o klik: tapos, Esc: kanselahin

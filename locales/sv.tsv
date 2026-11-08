@@ -2775,3 +2775,5 @@ the other end would have moved	den andra änden hade flyttats
 Connect the roads	Koppla ihop vägarna
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Rikta in korsningens ändar mot körfältens ändar. openOMSI kopplar körfält efter geometri, inte efter hjälppunkterna
 Link check	Kopplingskontroll
+Shift: tenths of a degree	Shift: tiondels grader
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	siffror: en vridning i grader, Enter eller klick: klart, Esc: avbryt

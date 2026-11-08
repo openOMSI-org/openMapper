@@ -296,6 +296,47 @@ impl Grab {
     }
 }
 
+/// The angle of `p` round `c` on the screen, in radians. Screen y runs down, so an angle that
+/// grows is a turn clockwise as the map is seen - which is a positive heading.
+fn screen_angle(c: (f32, f32), p: (f32, f32)) -> f64 {
+    ((p.1 - c.1) as f64).atan2((p.0 - c.0) as f64)
+}
+
+/// A rotation taken hold of, as Blender's R does: the selection turns round its middle as the
+/// pointer goes round it, Enter or a click keeps the turn, Esc puts it back.
+pub struct RotGrab {
+    /// Where the selection stood when it was taken, and the turns the roads it holds make (read
+    /// once: a junction's arms are not read again for every frame of the drag).
+    from: Vec<Origin>,
+    arms: Vec<(Sel, Vec<selection::Arm>)>,
+    /// The point it turns round.
+    pub pivot: DVec2,
+    /// Where that point appears on the screen, and the pointer's angle round it when the turn
+    /// began. None when the view is not known (a check run): the turn then follows the pointer's
+    /// sideways movement.
+    pivot_px: Option<(f32, f32)>,
+    start_angle: f64,
+    start_mouse: (f32, f32),
+    /// A turn typed in, in degrees: it says what it is, the pointer no more.
+    typed: String,
+    /// How far it has turned (degrees, positive clockwise from above).
+    pub done: f64,
+    /// What it was last asked to turn: a frame that asks the same again has nothing to do.
+    asked: f64,
+    links: Option<selection::SplineWhere>,
+}
+
+impl RotGrab {
+    /// The turn as it is written: "12.3°", with what was typed after it.
+    pub fn readout(&self) -> String {
+        if self.typed.is_empty() {
+            format!("{:.1}°", self.done)
+        } else {
+            format!("{:.1}° ({})", self.done, self.typed)
+        }
+    }
+}
+
 /// What the next click in the view is for: reading an asset off the map, or choosing the
 /// spline an object stands on.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -625,6 +666,9 @@ pub struct Editor {
     /// The selection taken hold of by G (Blender's grab): it follows the pointer until Enter,
     /// a click, or Esc.
     pub grab: Option<Grab>,
+    /// The selection taken hold of by R (Blender's rotate): it turns round its middle as the
+    /// pointer goes round it, until Enter, a click, or Esc.
+    pub rot: Option<RotGrab>,
     pub toasts: Vec<Toast>,
     pub show_grid: bool,
     // game logic
@@ -823,6 +867,7 @@ impl Default for Editor {
             picked_tile: None,
             drag: Drag::None,
             grab: None,
+            rot: None,
             toasts: Vec::new(),
             show_grid: true,
             logic: LogicMode::Start,
@@ -2539,6 +2584,179 @@ impl Editor {
                 self.ground_to_selection();
                 self.finish_step();
             }
+        }
+    }
+
+    /// Take hold of the selection and turn it, as Blender's R does: it turns round its middle as
+    /// the pointer goes round it, X / Y / Z … no (the map turns about the vertical, as its
+    /// headings are), numbers type a turn in degrees, Enter or a click keeps it, Esc puts it
+    /// back. False when there is nothing selected to turn.
+    pub fn rot_begin(&mut self, mouse: (f32, f32)) -> bool {
+        let sels = self.selection();
+        if sels.is_empty() {
+            return false;
+        }
+        let Some(doc) = self.doc.as_ref() else { return false };
+        let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
+        let Some(pivot) = pivot else { return false };
+        let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return false;
+        }
+        let links = (from.len() > 16).then(|| selection::SplineWhere::of(doc));
+        let arms = self.arms_for(&sels);
+        // (the pivot on the screen: the pointer's angle round it is what the turn follows)
+        let ground = doc.ground(pivot);
+        let pivot_px = self.gizmo_view.as_ref().and_then(|v| crate::selection::project(&v.cam, DVec3::new(pivot.x, pivot.y, ground), v.w, v.h));
+        if self.rot.is_some() {
+            self.rot_cancel();
+        }
+        self.history.begin(tr("Rotate", "Поворот"));
+        let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links });
+        self.xform_value = 0.0;
+        true
+    }
+
+    /// Whether a turn is being taken hold of by R.
+    pub fn rot_dragging(&self) -> bool {
+        self.rot.is_some()
+    }
+
+    /// The pointer has gone to `mouse` (window points): the selection turns to follow it.
+    /// `fine` (Shift) moves it in tenths of a degree.
+    pub fn rot_follow(&mut self, mouse: (f32, f32), fine: bool) {
+        let Some(g) = self.rot.as_ref() else { return };
+        let deg = match g.typed.parse::<f64>() {
+            // (a turn typed in says what it is, the pointer no more, and no snapping either)
+            Ok(v) => v,
+            Err(_) => {
+                let swept = match g.pivot_px {
+                    // (the angle the pointer has swept round the pivot, as Blender's R: the whole
+                    // way it has gone, not a slice of it)
+                    Some(q) => {
+                        let swept = (screen_angle(q, mouse) - g.start_angle).to_degrees();
+                        ((swept + 180.0).rem_euclid(360.0)) - 180.0
+                    }
+                    // (no view at hand: the pointer's sideways movement, a half degree a point, as
+                    // a trackpad turns what is selected)
+                    None => (mouse.0 - g.start_mouse.0) as f64 * 0.5,
+                };
+                // (the angle step holds it, as R's step does: the snapping switch is the same;
+                // Shift moves it in tenths)
+                let step = if self.snap_angle && self.angle_step > 0.0 {
+                    self.angle_step
+                } else if fine {
+                    0.1
+                } else {
+                    0.0
+                };
+                if step > 0.0 { (swept / step).round() * step } else { swept }
+            }
+        };
+        // (nothing asked for that is not already done: the same turn again is the whole map
+        // moved for nothing, and every frame of a still pointer asks for it)
+        if let Some(g) = self.rot.as_mut() {
+            if g.asked.is_finite() && (deg - g.asked).abs() < 1e-9 {
+                return;
+            }
+            g.asked = deg;
+        }
+        self.rot_to(deg);
+    }
+
+    /// A character typed while turning: a turn in degrees (a minus turns the other way).
+    pub fn rot_type(&mut self, ch: char) {
+        let Some(g) = self.rot.as_mut() else { return };
+        match ch {
+            '0'..='9' => g.typed.push(ch),
+            '.' | ',' => {
+                if !g.typed.contains('.') {
+                    g.typed.push('.');
+                }
+            }
+            '-' => {
+                if g.typed.starts_with('-') {
+                    g.typed.remove(0);
+                } else {
+                    g.typed.insert(0, '-');
+                }
+            }
+            _ => return,
+        }
+        let mouse = g.start_mouse;
+        self.rot_follow(mouse, false);
+    }
+
+    /// A digit rubbed out of the turn typed.
+    pub fn rot_backspace(&mut self) {
+        let Some(g) = self.rot.as_mut() else { return };
+        g.typed.pop();
+        let mouse = g.start_mouse;
+        self.rot_follow(mouse, false);
+    }
+
+    /// Keep the turn where it stands.
+    pub fn rot_confirm(&mut self) -> bool {
+        let Some(g) = self.rot.take() else { return false };
+        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).collect();
+        if let Some(doc) = self.doc.as_mut() {
+            selection::unlink_outside(doc, &mut self.history, &sels);
+        }
+        self.ground_to_selection();
+        self.finish_step();
+        self.xform_value = g.done;
+        true
+    }
+
+    /// Call the turn off: everything back where it stood.
+    pub fn rot_cancel(&mut self) -> bool {
+        let Some(g) = self.rot.take() else { return false };
+        if let Some(doc) = self.doc.as_mut() {
+            self.history.rollback(doc);
+        }
+        self.set_selection(g.from.iter().map(|o| o.sel).collect());
+        self.xform_value = 0.0;
+        true
+    }
+
+    /// Turn the selection to `deg`, from where it stood when it was taken.
+    fn rot_to(&mut self, deg: f64) {
+        if deg.abs() < 1e-12 {
+            // (nothing turned: it is put back where it stood, so a drag that comes back to
+            // where it began leaves nothing behind)
+            let Some(g) = self.rot.as_mut() else { return };
+            let Some(doc) = self.doc.as_mut() else { return };
+            let from = std::mem::take(&mut g.from);
+            let now = selection::transform_known(doc, &mut self.history, &from, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            self.set_selection_unique(now);
+            if let Some(g) = self.rot.as_mut() {
+                g.from = from;
+                g.done = 0.0;
+            }
+            self.xform_value = 0.0;
+            return;
+        }
+        let Some(g) = self.rot.as_mut() else { return };
+        let pivot = g.pivot;
+        let mut from = std::mem::take(&mut g.from);
+        let mut arms = std::mem::take(&mut g.arms);
+        let links = g.links.as_ref();
+        let Some(doc) = self.doc.as_mut() else {
+            if let Some(g) = self.rot.as_mut() {
+                g.from = from;
+                g.arms = arms;
+            }
+            return;
+        };
+        let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        self.set_selection_unique(now);
+        self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+        self.xform_value = deg;
+        if let Some(g) = self.rot.as_mut() {
+            g.from = std::mem::take(&mut from);
+            g.arms = std::mem::take(&mut arms);
+            g.done = deg;
         }
     }
 
@@ -6229,14 +6447,23 @@ impl Editor {
                 tr("X / Y / Z: lock the axis, numbers: how far, Enter or a click: done, Esc: cancel", "X / Y / Z: закрепить ось, цифры: как далеко, Enter или клик: готово, Esc: отмена")
             ));
         }
-        if let Some((kind, v)) = self.mesh.as_ref().and_then(|m| m.modal_value()) {
-            let what = match kind {
+        if let Some((kind, v)) = self.mesh.as_ref().and_then(|m| m.modal_value()) {            let what = match kind {
                 crate::meshedit::Sizing::Extrude => tr("Extrude", "Выдавливание"),
                 crate::meshedit::Sizing::Inset => tr("Inset", "Вставка"),
                 crate::meshedit::Sizing::Bevel => tr("Bevel", "Фаска"),
                 crate::meshedit::Sizing::LoopCut(_) => tr("Loop cut", "Разрез петлёй"),
             };
             return Some(format!("{what} {v:.3} · {}", tr("click: done, right click / Esc: cancel, wheel: segments", "клик: готово, правый клик / Esc: отмена, колесо: сегменты")));
+        }
+        // (a turn taken hold of by R: how far it has turned, and the keys that steer it)
+        if let Some(g) = &self.rot {
+            return Some(format!(
+                "{} {} · {} · {}",
+                tr("Rotate", "Поворот"),
+                g.readout(),
+                tr("Shift: tenths of a degree", "Shift: десятые градуса"),
+                tr("numbers: a turn in degrees, Enter or a click: done, Esc: cancel", "цифры: поворот в градусах, Enter или клик: готово, Esc: отмена")
+            ));
         }
         let mode = match self.drag {
             Drag::Gizmo { grab, started: true } | Drag::MeshGizmo { grab, started: true } => grab.gizmo.mode,
@@ -12553,6 +12780,73 @@ mod tests {
         let s = ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap();
         assert!((s.pos[0] - 50.0).abs() < 1e-9 && (s.pos[1] - 50.0).abs() < 1e-9, "{:?}", s.pos);
         assert!((s.heading - 90.0).abs() < 1e-9, "{}", s.heading);
+    }
+
+    /// R takes hold of the selection and turns it as the pointer goes round its middle, as
+    /// Blender's R does: no fixed step, no clicking for every degree. A click keeps the turn, a
+    /// typed number says the turn exactly, and Esc puts it back.
+    #[test]
+    fn a_turn_taken_hold_of_follows_the_pointer() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.set_selection(vec![Sel::Object((0, 0), 1), Sel::Object((0, 0), 2)]);
+        let heading = |ed: &Editor| ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().rot[0];
+        let was = heading(&ed);
+        // (the view the handles are drawn in: the turn follows the pointer round the pivot)
+        let cam = crate::camera::Camera::default();
+        ed.set_gizmo_view(&cam, 800.0, 600.0, 400.0, 300.0);
+        assert!(ed.rot_begin((400.0, 300.0)));
+        // (a quarter of a turn round the pivot: from beside it to below it - clockwise, which is
+        // a positive heading. The sweep is measured from where the pointer was when R was
+        // pressed, so the first move sets that line)
+        let Some((px, py)) = ed.rot.as_ref().unwrap().pivot_px else { panic!("the pivot is on the screen") };
+        ed.rot_follow((px + 100.0, py), false);
+        let base = heading(&ed);
+        ed.rot_follow((px, py + 100.0), false);
+        let turned = heading(&ed) - base;
+        assert!((turned - 90.0).abs() < 1.0, "a quarter turn round the pivot: {turned}");
+        // (a click keeps it, as Blender's does, and one undo puts it back)
+        assert!(ed.rot_confirm());
+        assert!(ed.rot.is_none());
+        assert!((heading(&ed) - base - 90.0).abs() < 1.0);
+        ed.undo();
+        assert!((heading(&ed) - was).abs() < 1e-4, "one step back: {}", heading(&ed));
+    }
+
+    /// A turn typed in is exactly what was typed, and Esc puts the selection back where it
+    /// stood - with nothing left in the history to undo.
+    #[test]
+    fn a_turn_typed_in_is_what_it_says() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.angle_step = 15.0;
+        ed.set_selection(vec![Sel::Object((0, 0), 1)]);
+        let heading = |ed: &Editor| ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().rot[0];
+        let was = heading(&ed);
+        assert!(ed.rot_begin((10.0, 10.0)));
+        // (no view at hand: the pointer's sideways movement turns it, half a degree a point)
+        ed.rot_follow((110.0, 10.0), false);
+        assert!((heading(&ed) - was - 50.0).abs() < 1e-4, "the pointer turned it: {}", heading(&ed) - was);
+        // (angle snapping on: it comes to a whole step, as R's step does)
+        ed.snap_angle = true;
+        ed.angle_step = 15.0;
+        ed.rot_follow((108.0, 10.0), false);
+        let snapped = heading(&ed) - was;
+        assert!((snapped / 15.0 - (snapped / 15.0).round()).abs() < 1e-6, "on a whole step: {snapped}");
+        // (typed: exactly 7.5 degrees, not a step)
+        ed.rot_type('7');
+        ed.rot_type('.');
+        ed.rot_type('5');
+        assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "typed exactly: {}", heading(&ed) - was);
+        assert!(ed.rot_confirm());
+        // (Esc: back where it stood)
+        assert!(ed.rot_begin((10.0, 10.0)));
+        ed.rot_follow((200.0, 10.0), false);
+        assert!((heading(&ed) - was).abs() > 1.0, "it had turned");
+        assert!(ed.rot_cancel());
+        assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "back to the kept turn: {}", heading(&ed) - was);
     }
 
     /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.

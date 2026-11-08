@@ -2775,3 +2775,5 @@ the other end would have moved	반대쪽 끝이 움직입니다
 Connect the roads	도로 연결
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	교차점의 끝을 도로 차선 끝에 맞춥니다. openOMSI는 스플라인 보조점이 아니라 형상으로 차선을 잇습니다
 Link check	연결 확인
+Shift: tenths of a degree	Shift: 0.1도 단위
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	숫자: 각도로 회전, Enter 또는 클릭: 완료, Esc: 취소

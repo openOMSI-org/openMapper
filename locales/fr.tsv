@@ -2773,3 +2773,5 @@ the other end would have moved	l'autre extrémité aurait bougé
 Connect the roads	Relier les rues
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Aligner les extrémités du carrefour sur celles des voies. openOMSI relie les voies par leur géométrie, pas par les points d'ancrage
 Link check	Vérification des liaisons
+Shift: tenths of a degree	Maj : dixièmes de degré
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	chiffres : une rotation en degrés, Entrée ou clic : terminé, Échap : annuler

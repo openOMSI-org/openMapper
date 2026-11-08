@@ -2775,3 +2775,5 @@ the other end would have moved	a másik vég elmozdult volna
 Connect the roads	Utak összekötése
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	A kereszteződés végeit a sávok végeihez igazítja. Az openOMSI a sávokat geometria alapján köti össze, nem a spline segédpontokkal
 Link check	Kapcsolatok ellenőrzése
+Shift: tenths of a degree	Shift: tizedfokok
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	számok: elforgatás fokban, Enter vagy kattintás: kész, Esc: mégse

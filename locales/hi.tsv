@@ -2775,3 +2775,5 @@ the other end would have moved	दूसरा सिरा हिल जात�
 Connect the roads	सड़कें जोड़ें
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	क्रॉसिंग के सिरों को सड़क की लेन के सिरों पर मिलाएँ। openOMSI लेन को ज्यामिति से जोड़ता है, स्पलाइन सहायक बिंदुओं से नहीं
 Link check	जोड़ जाँच
+Shift: tenths of a degree	Shift: डिग्री के दसवें भाग
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	अंक: डिग्री में घुमाव, Enter या क्लिक: हो गया, Esc: रद्द

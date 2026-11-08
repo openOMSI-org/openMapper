@@ -2775,3 +2775,5 @@ the other end would have moved	екінші ұшы жылжып кетер ед�
 Connect the roads	Жолдарды қосу
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Айналған жолдың ұштарын жол жолақтарының ұштарына сәйкестендіру. openOMSI жолақтарды геометрия бойынша қосады, сплайн көмекші нүктелері бойынша емес
 Link check	Қосылымды тексеру
+Shift: tenths of a degree	Shift: градустың ондық бөлігі
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	сандар: градуспен бұру, Enter немесе басу: дайын, Esc: болдырмау

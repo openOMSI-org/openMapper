@@ -2775,3 +2775,5 @@ the other end would have moved	đầu bên kia sẽ bị dời
 Connect the roads	Nối đường
 Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Canh đầu nút giao trùng với đầu làn đường. openOMSI nối làn theo hình học, không theo điểm phụ trợ spline
 Link check	Kiểm tra nối
+Shift: tenths of a degree	Shift: từng 0,1 độ
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	chữ số: xoay theo độ, Enter hoặc nhấp: xong, Esc: hủy
