@@ -4870,6 +4870,34 @@ Main
         assert_eq!(draft.2.len(), 3);
     }
 
+    /// A junction of a hundred and more AI paths keeps its drawing in the window and the window
+    /// on the screen: the list scrolls, it does not lay its rows out side by side, and no hint
+    /// pulls the window wider than the screen (#108: one row of path names wider than the
+    /// screen, the drawing pushed off it).
+    #[test]
+    fn many_paths_keep_the_drawing_on_the_screen() {
+        let mut w = opened(Tab::Paths);
+        {
+            let c = &mut w.sheet.as_mut().unwrap().crossing;
+            let first = c.paths[0].clone();
+            for i in 0..150 {
+                let mut p = first.clone();
+                p.v[0] += i as f32 * 0.5;
+                c.paths.push(p);
+            }
+        }
+        let mut ed = Editor::default();
+        let ctx = context();
+        run(&ctx, &mut w, &mut ed, vec![], 0.0);
+        run(&ctx, &mut w, &mut ed, vec![], 0.1);
+        let screen = ctx.content_rect();
+        let rect = w.last_window.expect("the window is drawn");
+        assert!(rect.width() <= screen.width(), "the window is {rect:?} on a screen of {screen:?}");
+        let canvas = w.last_canvas_rect.expect("the drawing is laid out");
+        assert!(canvas.width() > 400.0 && canvas.height() > 300.0, "the drawing got {canvas:?}");
+        assert!(canvas.right() <= screen.right() + 1.0 && canvas.left() >= screen.left(), "the drawing {canvas:?} is off the screen {screen:?}");
+    }
+
     fn context() -> egui::Context {
         let ctx = egui::Context::default();
         ctx.set_fonts(icons::fonts());
