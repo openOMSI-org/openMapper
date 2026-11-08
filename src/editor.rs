@@ -6096,6 +6096,77 @@ impl Editor {
         self.also.clear();
     }
 
+    /// `N` outside the roads tool and the AI-path editor: a short spline carried on from the
+    /// end of the selected one, as the crossing editor's N carries a path on. The new piece
+    /// leaves the way that one arrives, on the same radius, eight to fifteen metres long, and
+    /// becomes the selection. False when this key should stay "place a new object".
+    pub fn continue_spline(&mut self) -> bool {
+        if self.acts_as() == Tool::Roads || self.editing_paths() {
+            return false;
+        }
+        let Some(Sel::Spline(k, id)) = self.selected else { return false };
+        let Some(doc) = self.doc.as_ref() else { return false };
+        let Some(s) = doc.spline(k, id).cloned() else { return false };
+        if s.next_id != 0 {
+            self.toast(tr("This end is already joined to something", "Этот конец уже к чему-то присоединён"));
+            return true;
+        }
+        let org = tile_origin(k);
+        let curve = omsi_geometry::SplineCurve::from_map(&s, org);
+        let start = curve.end_point();
+        let heading = roads::norm_deg(curve.heading_at(s.length));
+        let length = s.length.clamp(8.0, 15.0);
+        let radius = if s.radius.is_finite() { s.radius } else { 0.0 };
+        let seg = Seg { start: start.truncate(), heading, length, radius };
+        let nk = tile_of(start.truncate());
+        if !doc.tiles.contains_key(&nk) {
+            self.error(tr("The road leaves the map: add tiles there first", "Дорога выходит за карту: сначала добавьте тайлы"));
+            return true;
+        }
+        let z1 = if self.auto_terrain && !self.keep_height { doc.ground(seg.end()) } else { start.z + curve.slope_at(s.length) * length };
+        let grade = (z1 - start.z) / length * 100.0;
+        let norg = tile_origin(nk);
+        let tex = s.tex_offset + s.length;
+        let chain = s.map_chain_offset.map(|c| c + s.length);
+        self.history.begin(tr("Build road", "Строительство дороги"));
+        let doc = self.doc.as_mut().unwrap();
+        self.history.touch_tile(doc, k);
+        if nk != k {
+            self.history.touch_tile(doc, nk);
+        }
+        self.history.touch_global(doc);
+        let nid = doc.new_id();
+        if let Some(t) = doc.tiles.get_mut(&k) {
+            if let Some(old) = t.tile.splines.iter_mut().find(|sp| sp.id == id && !sp.deleted) {
+                old.next_id = nid;
+            }
+            t.touch_content();
+        }
+        let q = MapSpline {
+            id: nid,
+            prev_id: id,
+            next_id: 0,
+            pos: [start.x - norg.x, start.y - norg.y, start.z],
+            heading,
+            length,
+            radius,
+            grad_start: grade,
+            grad_end: grade,
+            delta_h: Some(z1 - start.z),
+            is_h: true,
+            tex_offset: tex,
+            map_chain_offset: chain,
+            deleted: false,
+            ..s
+        };
+        let t = doc.tiles.get_mut(&nk).unwrap();
+        t.tile.splines.push(q);
+        t.touch_content();
+        self.finish_step();
+        self.select(Some(Sel::Spline(nk, nid)));
+        true
+    }
+
     pub fn set_selection(&mut self, v: Vec<Sel>) {
         let mut v = v.into_iter();
         self.selected = v.next();
@@ -13039,6 +13110,45 @@ mod tests {
         let s = ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap();
         assert!((s.pos[0] - 50.0).abs() < 1e-9 && (s.pos[1] - 50.0).abs() < 1e-9, "{:?}", s.pos);
         assert!((s.heading - 90.0).abs() < 1e-9, "{}", s.heading);
+    }
+
+    /// N outside the roads tool carries a short piece on from the selected spline's end, on
+    /// the same radius, and selects it. The roads tool keeps the key, and an end that already
+    /// continues is left as it is.
+    #[test]
+    fn n_carries_a_spline_on_from_the_selected_one() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.auto_terrain = false;
+        ed.doc.as_mut().unwrap().tiles.get_mut(&(0, 0)).unwrap().tile.splines.iter_mut().find(|s| s.id == 3).unwrap().radius = 40.0;
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        assert!(!ed.continue_spline(), "an object keeps N for a new object");
+        ed.select(Some(Sel::Spline((0, 0), 3)));
+        assert!(ed.continue_spline());
+        let nid = {
+            let doc = ed.doc.as_ref().unwrap();
+            let old = doc.spline((0, 0), 3).unwrap();
+            let nid = old.next_id;
+            let neu = doc.spline((0, 0), nid).unwrap();
+            let end = omsi_geometry::SplineCurve::from_map(old, tile_origin((0, 0))).end_point();
+            assert_eq!(neu.prev_id, 3);
+            assert_eq!(neu.next_id, 0);
+            assert!((neu.length - 15.0).abs() < 1e-9);
+            assert!((neu.radius - 40.0).abs() < 1e-9);
+            assert!((neu.pos[0] - end.x).abs() < 1e-6 && (neu.pos[1] - end.y).abs() < 1e-6, "{:?}", neu.pos);
+            nid
+        };
+        assert_eq!(ed.selected, Some(Sel::Spline((0, 0), nid)));
+        let n = ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile.splines.len();
+        ed.select(Some(Sel::Spline((0, 0), 3)));
+        assert!(ed.continue_spline(), "the key is still taken");
+        assert_eq!(ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile.splines.len(), n, "an end that already continues gains nothing");
+        ed.undo();
+        assert_eq!(ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap().next_id, 0);
+        assert!(ed.doc.as_ref().unwrap().spline((0, 0), nid).is_none());
+        ed.set_tool(Tool::Roads);
+        ed.select(Some(Sel::Spline((0, 0), 3)));
+        assert!(!ed.continue_spline());
     }
 
     /// R takes hold of the selection and turns it as the pointer goes round its middle, as

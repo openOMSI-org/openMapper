@@ -2097,6 +2097,17 @@ impl App {
         {
             return;
         }
+        // (the same N, on the map itself: a spline is selected and the roads tool is not the
+        // one in hand, so a piece is carried on from its end instead of a new object)
+        if !self.crossing.open
+            && code == Some(KeyCode::KeyN)
+            && !self.keys.ctrl
+            && !self.keys.alt
+            && !self.keys.shift
+            && self.ed.continue_spline()
+        {
+            return;
+        }
         // (the crossing editor: Delete takes the picked path out, as the list's bin does)
         if self.crossing.open
             && code == Some(KeyCode::Delete)
