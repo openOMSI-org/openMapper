@@ -4,6 +4,26 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.1.23 - 2026-11-08
+
+### Added
+- **Tram and train lines**: a trip's way is found on the tracks when its stops stand by them, and a trip can be set to drive on the roads or on the tracks (Lines and timetable > a trip > Drives on). A trip found on the tracks stays there.
+- **The crossing editor, reworked**: a path is shaped on the deck in short pieces, with its own angle at each end; paths are joined, split (`K`) and picked several at a time (Ctrl or Shift), and what they share is set for all of them at once. A new path starts from a nearby path's end, or the picked one is carried on to one, turning automatically, left or right. The paths can be edited on the map itself, in 3D, with the panel beside it; Connect the roads lines the crossing's ends up with the road lanes round it; the traffic light page is laid out as the game's own window. Save writes into the object's own file and keeps the file as it was as a `.bak` (or, as before, into a copy), and no longer reads the whole catalogue again.
+- **R in the Blender key set** takes hold of the selection and turns it with the pointer: numbers type the angle, a click or Enter keeps the turn, Esc or a right click puts it back.
+- **N** carries the selected spline on from its end, outside the roads tool.
+- A typed radius and the middle grip can bend a road tighter than 6 m and past a half turn.
+- The status bar's switches are remembered from one start to the next.
+
+### Changed
+- The lines between linked records are thin and dashed, also to and from a record laid along a road.
+- The roads tool's start and snap marks are smaller.
+
+### Fixed
+- **The Crossing paths window** no longer lays its paths out in one row wider than the screen, with the drawing pushed off it (#108).
+- The road maker lays the lanes, markings and middle strip of a road with more lanes one way than the other about their own centreline.
+- Leaving mesh edit no longer makes the object vanish until its files are read again.
+- A row on a spline after one taken away by a chrono `[delete]` names the right spline.
+
 ## 0.1.22 - 2026-11-04
 
 ### Added
