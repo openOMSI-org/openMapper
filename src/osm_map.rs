@@ -201,7 +201,7 @@ fn path_style(h: &str) -> Option<u32> {
     }
 }
 
-fn font() -> Option<&'static FontRef<'static>> {
+pub(crate) fn font() -> Option<&'static FontRef<'static>> {
     static F: OnceLock<Option<FontRef<'static>>> = OnceLock::new();
     F.get_or_init(|| {
         // (the interface's own font: it has Cyrillic as well as Latin)
@@ -214,7 +214,7 @@ fn font() -> Option<&'static FontRef<'static>> {
 }
 
 /// A text as an outline at a size (px): its path with the baseline at y = 0, and its width.
-fn text_path(f: &FontRef, s: &str, px: f32) -> Option<(Path, f32)> {
+pub(crate) fn text_path(f: &FontRef, s: &str, px: f32) -> Option<(Path, f32)> {
     let upm = f.units_per_em()?;
     let k = px / upm;
     let mut pb = PathBuilder::new();

@@ -166,6 +166,9 @@ impl History {
             merged.groups = merged.groups.or(s.groups);
         }
         self.undo.push(merged);
+        // (they count as one step now: a mark taken before them, for a merge round this one,
+        // must not reach past them into the steps before)
+        self.kept -= n as u64 - 1;
     }
 
     /// A finished edit of a window, given as the state before it: one undo step, or part of
@@ -392,5 +395,21 @@ mod tests {
         assert_eq!((height(&doc, (0, 0)), height(&doc, (1, 0))), (1.0, 0.0));
         h.redo(&mut doc);
         assert_eq!((height(&doc, (0, 0)), height(&doc, (1, 0))), (4.0, 3.0));
+        // a merge inside a merge: the outer one takes in only what came after its mark
+        let outer = h.mark();
+        for _ in 0..2 {
+            let inner = h.mark();
+            for v in [5.0, 6.0, 7.0] {
+                h.begin("inner part");
+                h.touch_tile(&doc, (0, 0));
+                doc.tiles.get_mut(&(0, 0)).unwrap().terrain.heights[0] = v;
+                h.commit();
+            }
+            h.merge_since(inner, "inner");
+        }
+        h.merge_since(outer, "outer");
+        assert_eq!(h.steps().0, vec!["before", "all", "outer"]);
+        h.undo(&mut doc);
+        assert_eq!(height(&doc, (0, 0)), 4.0, "the outer step undone, the one before it kept");
     }
 }
