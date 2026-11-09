@@ -28,7 +28,7 @@ egui = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a
 egui-wgpu = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false }
 egui-winit = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false, features = ["clipboard", "links", "wayland", "x11"] }
 
-glam = "0.30"
+glam = "0.34"
 # openMapper's own polygon meshes: primitives, booleans, modifiers, UVs, baking, export
 openmapper-mesh = { path = "crates/mesh" }
 # editing one map together (src/collab): the connection, and openOMSI's own Cloudflare tunnel
