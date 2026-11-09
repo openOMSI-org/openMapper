@@ -4,7 +4,7 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
-## Unreleased
+## 0.1.24 - 2026-11-09
 
 ### Added
 - **The MCP server drives the editor itself**: an agent works on a map with every tool a person has (the tools' settings, clicks, brush strokes, selection, the menu's commands, undo and redo), sees it in a picture from above (`render`), searches the catalogue, and does in one call what takes many clicks: roads, roundabouts, bus pockets, objects by the hundred, named stops, start points, AI paths, hills, ramps, lakes and rivers, paint, plants, whole bus lines with their way and timetable (`make_line`), the check's fixes, the map's script, new maps and exports. `batch` runs many calls at once as one undo step. `--mcp` no longer needs a map to start with.
