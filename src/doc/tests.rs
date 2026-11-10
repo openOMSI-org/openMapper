@@ -480,7 +480,7 @@ fn a_map_keeps_signed_asset_aliases_while_its_document_and_read_snapshot_live() 
     let cfg = map_dir.join("global.cfg");
     let loaded = Document::load(&roots, &cfg, |_| {}).unwrap();
     let snapshot = loaded.for_reading();
-    let object = omsi_cfg::resolve_path(&map_dir, "Sceneryobjects/Fixture/sign.sco");
+    let object = loaded.resolve_alias("Sceneryobjects/Fixture/sign.sco").expect("the map's signed alias resolves");
     assert_eq!(
         omsi_cfg::CfgFile::read(&object).unwrap().lines[1],
         "Protected fixture"

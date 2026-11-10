@@ -481,7 +481,7 @@ impl App {
             g.renderer.reset_map();
         }
         if let Some(assets) = &mut self.assets {
-            assets.set_map_scope(&doc.dir);
+            assets.set_map_scope(doc.source.as_deref().unwrap_or(&doc.dir), doc._publisher_mounts.clone());
         }
         self.ed.open(doc);
         self.ed.set_tool(Tool::Select);
@@ -3747,7 +3747,8 @@ impl App {
             if self.swatches.contains_key(&key) {
                 continue;
             }
-            let path = map_dirs.iter().map(|d| omsi_cfg::resolve_path(d, &rel)).chain([roots.resolve(&rel)]).find(|p| omsi_cfg::vfs::is_file(p));
+            let alias = self.ed.doc.as_ref().and_then(|d| d.resolve_alias(&rel));
+            let path = alias.into_iter().chain(map_dirs.iter().map(|d| omsi_cfg::resolve_path(d, &rel))).chain([roots.resolve(&rel)]).find(|p| omsi_cfg::vfs::is_file(p));
             let Some(path) = path else { continue };
             let Some(img) = assets.texture(&path) else { continue };
             let mut small = img.image.clone();

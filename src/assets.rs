@@ -249,7 +249,7 @@ pub struct Assets {
     pub pending: usize,
     omsi: PathBuf,
     content: PathBuf,
-    map_scope: Option<PathBuf>,
+    map_scope: Option<(PathBuf, Arc<omsi_cfg::publisher::DependencyMounts>)>,
     scope_epoch: u64,
 }
 
@@ -287,9 +287,9 @@ impl Assets {
 
     /// Start a map session; reopening the same directory replaces its dependency mount.
     /// Replies queued for the previous session carry its epoch and are discarded.
-    pub fn set_map_scope(&mut self, map_dir: &Path) {
+    pub fn set_map_scope(&mut self, map_dir: &Path, mounts: Arc<omsi_cfg::publisher::DependencyMounts>) {
         let map = std::fs::canonicalize(map_dir).unwrap_or_else(|_| map_dir.to_path_buf());
-        self.map_scope = Some(map);
+        self.map_scope = Some((map, mounts));
         self.scope_epoch = self.scope_epoch.wrapping_add(1);
         self.objects.clear();
         self.splines.clear();
@@ -299,7 +299,10 @@ impl Assets {
     }
 
     pub(crate) fn resolve(&self, rel: &str) -> PathBuf {
-        if let Some(map) = &self.map_scope {
+        if let Some((map, mounts)) = &self.map_scope {
+            if let Some(alias) = mounts.resolve_map_alias(map, rel) {
+                return alias;
+            }
             let scoped = omsi_cfg::resolve_path(map, rel);
             if omsi_cfg::vfs::is_file(&scoped) {
                 return scoped;
@@ -1101,18 +1104,18 @@ mod tests {
         omsi_cfg::add_content_root(content.clone());
 
         // The two maps declare identical aliases with distinct signed bytes.
-        let _scope_a = omsi_cfg::publisher::validate_map(&map_a).unwrap();
-        let _scope_b = omsi_cfg::publisher::validate_map(&map_b).unwrap();
+        let scope_a = Arc::new(omsi_cfg::publisher::validate_map(&map_a).unwrap());
+        let scope_b = Arc::new(omsi_cfg::publisher::validate_map(&map_b).unwrap());
         let mut assets = Assets::new(PathBuf::new(), content.clone());
         let object_alias = "Sceneryobjects/Fixture/Objects.sco";
         let spline_alias = "Splines/Fixture/Road.sli";
 
-        assets.set_map_scope(&map_a);
+        assets.set_map_scope(&map_a, scope_a.clone());
         assert!(assets.object(object_alias).is_none());
         assert!(assets.spline(spline_alias).is_none());
         // Switch before either queued response is consumed; neither old result may enter the
         // active map's cache even if the worker finishes it first.
-        assets.set_map_scope(&map_b);
+        assets.set_map_scope(&map_b, scope_b.clone());
         let object_b = assets.object_wait(object_alias, 10_000).expect("map B object loads");
         let spline_b = assets.spline_wait(spline_alias, 10_000).expect("map B spline loads");
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
@@ -1125,7 +1128,7 @@ mod tests {
         assert_eq!(spline_b.def.length, 20.0);
         assert_eq!(assets.spline_wait(spline_alias, 100).unwrap().def.length, 20.0);
 
-        assets.set_map_scope(&map_a);
+        assets.set_map_scope(&map_a, scope_a.clone());
         let object_a = assets.object_wait(object_alias, 10_000).expect("map A object loads");
         let spline_a = assets.spline_wait(spline_alias, 10_000).expect("map A spline loads");
         assert!(object_a.radius() < object_b.radius() * 0.5);
@@ -1133,7 +1136,7 @@ mod tests {
 
         // Reopening the same directory creates a fresh publisher mount. Its aliases must not
         // leave the models from the previous mount in the path-keyed cache.
-        drop(_scope_a);
+        drop(scope_a);
         let source_a_again = root.join("source-a-again");
         let import_a_again = root.join("import-a-again");
         let (original_a_again, sco_a_again, mesh_a_again, mesh_name_a_again) =
@@ -1150,8 +1153,8 @@ mod tests {
             15,
         );
         assert_eq!(reopened, a);
-        let _scope_a_again = omsi_cfg::publisher::validate_map(&map_a).unwrap();
-        assets.set_map_scope(&map_a);
+        let scope_a_again = Arc::new(omsi_cfg::publisher::validate_map(&map_a).unwrap());
+        assets.set_map_scope(&map_a, scope_a_again);
         let object_a_again = assets
             .object_wait(object_alias, 10_000)
             .expect("reopened map resolves through its fresh publisher mount");
@@ -1161,7 +1164,7 @@ mod tests {
         assert!(object_a_again.radius() > object_a.radius() * 1.9);
         assert_eq!(spline_a_again.def.length, 15.0);
         drop(assets);
-        drop((_scope_a_again, _scope_b));
+        drop(scope_b);
         omsi_cfg::remove_content_root(&content);
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -1233,7 +1236,7 @@ mod tests {
         );
 
         let mut assets = Assets::new(PathBuf::new(), content);
-        assets.set_map_scope(&map);
+        assets.set_map_scope(&map, Arc::new(Default::default()));
         let virtual_path = assets.resolve(alias);
         assert!(omsi_cfg::vfs::is_file(&virtual_path));
         assert!(!virtual_path.exists(), "protected texture has no plaintext file");

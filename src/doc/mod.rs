@@ -390,6 +390,11 @@ impl Document {
         dirs.len()
     }
 
+    /// A signed publisher alias, through the dependency mounts of the folder the map was read from.
+    pub fn resolve_alias(&self, rel: &str) -> Option<PathBuf> {
+        self._publisher_mounts.resolve_map_alias(self.source.as_deref().unwrap_or(&self.dir), rel)
+    }
+
     /// A copy to read on another thread (the map check): the tiles without their painting
     /// and chrono patches, which take room and are not looked at.
     pub fn for_reading(&self) -> Document {

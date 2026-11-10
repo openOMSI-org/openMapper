@@ -113,7 +113,7 @@ fn restricted_export_round_trips_as_a_dependency_without_copying_publisher_bytes
     omsi_cfg::add_content_root(second.clone());
     let roots2 = Roots { omsi: roots.omsi.clone(), content: second.clone() };
     let back = Document::load(&roots2, &second.join("maps/References/global.cfg"), |_| {}).unwrap();
-    let alias = omsi_cfg::resolve_path(&back.dir, relative);
+    let alias = back.resolve_alias(relative).expect("the imported map resolves its dependency alias");
     assert!(omsi_scenery::SceneryObject::load(&alias).is_ok());
     assert_eq!(omsi_cfg::vfs::read(&alias).unwrap(), bytes);
     // Re-export an owned overlay without losing the references it already carries.
@@ -387,7 +387,9 @@ fn publisher_world_round_trip(protected: bool) {
         20261001,
     )
     .unwrap();
-    let object_virtual = omsi_cfg::resolve_path(&map_dir, object_rel);
+    let mounts = omsi_cfg::publisher::validate_map(&map_dir).unwrap();
+    let alias = |rel: &str| mounts.resolve_map_alias(&map_dir, rel).unwrap_or_else(|| panic!("{rel} is not a signed alias of the map"));
+    let object_virtual = alias(object_rel);
     assert!(omsi_cfg::vfs::is_file(&object_virtual));
     assert!(!object_virtual.exists(), "the object must stay in the signed virtual mount");
     let object = world
@@ -397,8 +399,8 @@ fn publisher_world_round_trip(protected: bool) {
         object.meshes.iter().any(|(mesh, _, _)| mesh.indices.len() >= 3),
         "World::object_type must decode the imported mesh"
     );
-    let mesh_virtual = omsi_cfg::resolve_path(&map_dir, &mesh_rel);
-    let texture_virtual = omsi_cfg::resolve_path(&map_dir, &texture_rel);
+    let mesh_virtual = alias(&mesh_rel);
+    let texture_virtual = alias(&texture_rel);
     assert!(omsi_cfg::vfs::is_file(&mesh_virtual));
     assert!(omsi_cfg::vfs::is_file(&texture_virtual));
     assert!(!mesh_virtual.exists(), "the mesh must stay in the signed virtual mount");
