@@ -267,17 +267,30 @@ impl RoadSpec {
         self.roadway_width() + self.pocket + self.footway_left() + self.footway_right()
     }
 
+    /// Where the two ways meet across the roadway (m from its middle): off the middle when one
+    /// way has more lanes than the other.
+    pub fn centerline(&self) -> f32 {
+        (self.lanes_back as f32 - self.lanes_fwd as f32) * self.lane_width / 2.0
+    }
+
+    /// The middle strip's left and right edges (m from the roadway's middle), about the centreline.
+    pub fn median_edges(&self) -> (f32, f32) {
+        let (c, mid) = (self.centerline(), self.median_width());
+        (c - mid / 2.0, c + mid / 2.0)
+    }
+
     /// Where a place across the roadway (m from its middle) lies in the roadway texture (0..1).
     pub fn roadway_u(&self, x: f32) -> f32 {
         let rw = self.roadway_width();
         let (xl, mid) = (-rw / 2.0, self.median_width());
         if mid > 0.0 && !self.median_tex.as_os_str().is_empty() {
             let lanes_w = (rw - mid).max(0.1);
-            let u_mid = (-mid / 2.0 - xl) / lanes_w;
-            if x <= -mid / 2.0 {
+            let (ml, mr) = self.median_edges();
+            let u_mid = (ml - xl) / lanes_w;
+            if x <= ml {
                 (x - xl) / lanes_w
-            } else if x >= mid / 2.0 {
-                u_mid + (x - mid / 2.0) / lanes_w
+            } else if x >= mr {
+                u_mid + (x - mr) / lanes_w
             } else {
                 u_mid
             }
@@ -328,21 +341,22 @@ impl RoadSpec {
         let line = |x: f32, style: MarkStyle, color: [u8; 3]| Marking { x, style, color, ..Default::default() };
         let mut v = Vec::new();
         let edge = if self.pocket > 0.0 { MarkStyle::Dashed } else { MarkStyle::Solid };
+        let offset = self.centerline();
         v.push(line(-rw / 2.0 + 0.2, MarkStyle::Solid, WHITE));
         v.push(line(rw / 2.0 - 0.2, edge, WHITE));
         if two_way {
             let gap = mid / 2.0;
             if mid <= 0.0 {
-                v.push(line(0.0, MarkStyle::Double, YELLOW));
+                v.push(line(offset, MarkStyle::Double, YELLOW));
             } else {
-                v.push(line(-gap - 0.2, MarkStyle::Solid, WHITE));
-                v.push(line(gap + 0.2, MarkStyle::Solid, WHITE));
+                v.push(line(offset - gap - 0.2, MarkStyle::Solid, WHITE));
+                v.push(line(offset + gap + 0.2, MarkStyle::Solid, WHITE));
             }
             for i in 1..self.lanes_back {
-                v.push(line(-gap - i as f32 * lw, MarkStyle::Dashed, WHITE));
+                v.push(line(offset - gap - i as f32 * lw, MarkStyle::Dashed, WHITE));
             }
             for i in 1..self.lanes_fwd {
-                v.push(line(gap + i as f32 * lw, MarkStyle::Dashed, WHITE));
+                v.push(line(offset + gap + i as f32 * lw, MarkStyle::Dashed, WHITE));
             }
         } else {
             for i in 1..(self.lanes_fwd + self.lanes_back) {
@@ -417,10 +431,11 @@ impl RoadSpec {
         if fl > 0.0 {
             height(&mut s, xl - fl, xl, side_h);
         }
+        let (ml, mr) = self.median_edges();
         if raised {
-            height(&mut s, xl, -mid / 2.0, road_h);
-            height(&mut s, -mid / 2.0, mid / 2.0, side_h);
-            height(&mut s, mid / 2.0, xr, road_h);
+            height(&mut s, xl, ml, road_h);
+            height(&mut s, ml, mr, side_h);
+            height(&mut s, mr, xr, road_h);
         } else {
             height(&mut s, xl, xr, road_h);
         }
@@ -456,21 +471,21 @@ impl RoadSpec {
         // own place, the roadway's u running across the lanes either side of it
         if own_median {
             let lanes_w = rw - mid;
-            let u_mid = ((-mid / 2.0 - xl) / lanes_w).clamp(0.0, 1.0);
+            let u_mid = ((ml - xl) / lanes_w).clamp(0.0, 1.0);
             let y = |on: bool| if on { side_h } else { road_h };
-            profile(&mut s, 0, (xl, road_h, 0.0, rv), (-mid / 2.0, road_h, u_mid, rv));
-            profile(&mut s, 0, (mid / 2.0, road_h, u_mid, rv), (xr, road_h, 1.0, rv));
+            profile(&mut s, 0, (xl, road_h, 0.0, rv), (ml, road_h, u_mid, rv));
+            profile(&mut s, 0, (mr, road_h, u_mid, rv), (xr, road_h, 1.0, rv));
             if raised && side_tex {
-                profile(&mut s, side_ix, (-mid / 2.0, road_h, 0.995, 0.2), (-mid / 2.0, y(true), 0.953, 0.2));
-                profile(&mut s, side_ix, (mid / 2.0, y(true), 0.953, 0.2), (mid / 2.0, road_h, 0.995, 0.2));
+                profile(&mut s, side_ix, (ml, road_h, 0.995, 0.2), (ml, y(true), 0.953, 0.2));
+                profile(&mut s, side_ix, (mr, y(true), 0.953, 0.2), (mr, road_h, 0.995, 0.2));
             }
-            profile(&mut s, median_ix, (-mid / 2.0, y(raised), 0.0, mid), (mid / 2.0, y(raised), 1.0, mid));
+            profile(&mut s, median_ix, (ml, y(raised), 0.0, mid), (mr, y(raised), 1.0, mid));
         } else {
             profile(&mut s, 0, (xl, road_h, 0.0, rv), (xr, road_h, 1.0, rv));
             if raised && side_tex {
-                profile(&mut s, side_ix, (-mid / 2.0, road_h, 0.995, 0.2), (-mid / 2.0, side_h, 0.953, 0.2));
-                profile(&mut s, side_ix, (-mid / 2.0, side_h, 0.953, 0.2), (mid / 2.0, side_h, 0.187, 0.2));
-                profile(&mut s, side_ix, (mid / 2.0, side_h, 0.953, 0.2), (mid / 2.0, road_h, 0.995, 0.2));
+                profile(&mut s, side_ix, (ml, road_h, 0.995, 0.2), (ml, side_h, 0.953, 0.2));
+                profile(&mut s, side_ix, (ml, side_h, 0.953, 0.2), (mr, side_h, 0.187, 0.2));
+                profile(&mut s, side_ix, (mr, side_h, 0.953, 0.2), (mr, road_h, 0.995, 0.2));
             }
         }
         if side_tex {
@@ -497,16 +512,17 @@ impl RoadSpec {
         // lanes: against the road's way left of its middle, with it right of it (as OMSI 2's
         // roads are laid out where traffic keeps right; a left-hand map mirrors the spline)
         let mid_gap = mid / 2.0;
+        let offset = self.centerline();
         let one_way = self.lanes_back == 0 || self.lanes_fwd == 0;
         if fl > 0.0 {
             let _ = write!(s, "[path]\n1\n{}\n{}\n{}\n2\n\n", num(xl - fl / 2.0), num(side_h), num(fl * 0.4));
         }
         for i in 0..self.lanes_back {
-            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { -mid_gap - (self.lanes_back - i) as f32 * self.lane_width + self.lane_width / 2.0 };
+            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { offset - mid_gap - (self.lanes_back - i) as f32 * self.lane_width + self.lane_width / 2.0 };
             let _ = write!(s, "[path]\n0\n{}\n{}\n{}\n1\n\n", num(x), num(road_h), num(self.lane_width * 0.9));
         }
         for i in 0..self.lanes_fwd {
-            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { mid_gap + (i as f32 + 0.5) * self.lane_width };
+            let x = if one_way { xl + (i as f32 + 0.5) * self.lane_width } else { offset + mid_gap + (i as f32 + 0.5) * self.lane_width };
             let _ = write!(s, "[path]\n0\n{}\n{}\n{}\n0\n\n", num(x), num(road_h), num(self.lane_width * 0.9));
         }
         if pw > 0.0 {
@@ -714,6 +730,37 @@ mod tests {
         // an old spec file (before these fields) still reads
         let old: RoadSpec = serde_json::from_str("{\"name\":\"x\",\"lanes_fwd\":1,\"lanes_back\":1}").unwrap();
         assert_eq!(old.footway_right(), old.footway);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn more_lanes_one_way_than_the_other_fill_the_roadway_beside_the_strip() {
+        let dir = std::env::temp_dir().join(format!("om-roadmaker-uneven-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mk = |n: &str, c: u8| {
+            let p = dir.join(n);
+            image::RgbaImage::from_pixel(4, 4, image::Rgba([c, c, c, 255])).save(&p).unwrap();
+            p
+        };
+        let spec = RoadSpec { name: "Uneven".into(), lanes_fwd: 2, lanes_back: 3, lane_width: 3.0, median: 2.0, median_raised: true, footway: 2.0, roadway_tex: mk("a.png", 80), footway_tex: mk("f.png", 150), median_tex: mk("g.png", 100), ..Default::default() };
+        let content = dir.join("content");
+        spec.write(&content).unwrap();
+        let s = omsi_scenery::Spline::load(&content.join("Splines/openMapper/Uneven.sli")).unwrap();
+        let half = spec.roadway_width() / 2.0;
+        let (ml, mr) = spec.median_edges();
+        // the strip stands between the ways: three lanes left of it, two right, none on it
+        assert!((ml - (-half + 3.0 * 3.0)).abs() < 1e-4 && (mr - (half - 2.0 * 3.0)).abs() < 1e-4);
+        let cars: Vec<_> = s.paths.iter().filter(|p| p.kind == 0).collect();
+        assert_eq!(cars.len(), 5);
+        for p in &cars {
+            let x = p.start[0];
+            assert!(x > -half && x < half && (x < ml || x > mr), "lane at {x} lies on the strip or off the roadway");
+        }
+        assert_eq!(cars.iter().filter(|p| p.start[0] < ml && p.direction == 1).count(), 3);
+        assert_eq!(cars.iter().filter(|p| p.start[0] > mr && p.direction == 0).count(), 2);
+        // the strip's kerbs stand at its edges, not about the roadway's middle
+        assert!(s.profiles.iter().any(|p| p.points.iter().any(|q| (q.x - ml).abs() < 1e-3)));
+        assert!(s.profiles.iter().any(|p| p.points.iter().any(|q| (q.x - mr).abs() < 1e-3)));
         let _ = std::fs::remove_dir_all(dir);
     }
 

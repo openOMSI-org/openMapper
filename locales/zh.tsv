@@ -39,7 +39,7 @@ That is not an OMSI 2 folder (Omsi.exe, maps and Vehicles must be in it)	这不�
 This object has no textures to make PBR maps of	此物体没有可生成 PBR 贴图的纹理
 Could not copy the map	无法复制地图
 Could not move the map	无法移动地图
-Terrain flattened; splines laid on it:	地形已抹平；已铺设的样条线：
+Terrain flattened; splines laid on it:	地形已抹平；已铺设的Spline线：
 This road type has no textures to make PBR maps of	此道路类型没有可生成 PBR 贴图的纹理
 Pictures	图片
 Only 100 tiles round the camera are loaded; click on the empty zone to load the next 100	仅加载相机周围的 100 个图块；点击空白区域可加载接下来的 100 个
@@ -100,9 +100,9 @@ Materials added:	已添加材质：
 nothing to bake	没有可烘焙的内容
 the object has no lamps to bake the night light of	此物体没有可烘焙夜间灯光的灯
 Baked into	已烘焙到
-select a road or spline first	请先选择道路或样条线
+select a road or spline first	请先选择道路或Spline线
 the road's type is still loading: try again in a moment	道路类型仍在加载：请稍后再试
-these splines have no shape to see	这些样条线没有可见的形状
+these splines have no shape to see	这些Spline线没有可见的形状
 Replace by an object	替换为物体
 Made into an object: Tab edits its mesh	已转为物体：按 Tab 编辑其网格
 Signal head made: click where it stands (near a crossing with a light program it links to it)	信号灯已创建：点击放置位置（靠近带灯光程序的路口时会自动关联）
@@ -126,10 +126,10 @@ Choose a layer above the base ground	请选择基础地面之上的图层
 No ground on the map is like that	地图上没有这样的地面
 Painted	已涂绘
 Missing objects	缺少物体
-Missing roads and splines	缺少道路和样条线
+Missing roads and splines	缺少道路和Spline线
 Missing textures	缺少纹理
 Road ends not joined	未连接的道路端点
-Links to splines that are gone	指向已消失样条线的链接
+Links to splines that are gone	指向已消失Spline线的链接
 Bus stops away from a road	远离道路的公交站
 Start points away from a road	远离道路的起点
 Start points without their object	缺少物体的起点
@@ -152,10 +152,10 @@ Objects linked to one that is gone	关联到已消失物体的物体
 Signal heads linked to no crossing	未关联路口的信号灯
 Depot files (destinations)	车场文件（终点站）
 The map uses an object (.sco) that is not installed. The game leaves it out. Install the mod it comes from, or delete the object. A junction of openMapper's whose file is gone (the map was moved without it) is made again for its roads with "Fix".	地图使用了未安装的物体（.sco）。游戏会忽略它。请安装其所属的模组，或删除该物体。如果 openMapper 的路口文件丢失（地图被移动时未带上它），“修复”会按其道路重新生成。
-The map uses a road or spline type (.sli) that is not installed: that road is missing in the game, and buses cannot drive there.	地图使用了未安装的道路或样条线类型（.sli）：游戏中该道路将缺失，巴士无法通行。
+The map uses a road or spline type (.sli) that is not installed: that road is missing in the game, and buses cannot drive there.	地图使用了未安装的道路或Spline线类型（.sli）：游戏中该道路将缺失，巴士无法通行。
 An object or road names a picture that cannot be found. It will look white or black in the game.	某个物体或道路引用的图片找不到。它在游戏中将显示为白色或黑色。
 Two road ends lie on one another but are not joined. Traffic still finds its way (the game joins lanes by their ends), but rows of lamps and posts and the road's texture do not run on across, and the editor does not treat them as one road. "Join" links them.	两个道路端点重叠但未连接。交通仍能通行（游戏按端点连接车道），但成排的灯和柱子以及道路纹理不会延续过去，编辑器也不会将它们视为一条道路。“连接”可将它们相连。
-A spline says it goes on into another one that no longer exists. "Fix" forgets that link.	某条样条线声称延伸到另一条已不存在的样条线。“修复”会清除该链接。
+A spline says it goes on into another one that no longer exists. "Fix" forgets that link.	某条Spline线声称延伸到另一条已不存在的Spline线。“修复”会清除该链接。
 A bus stop belongs to the lane it stands beside (within about 25 m). This one has none near, so buses cannot stop at it. Move it next to the road, or "Fix" puts it at the kerb of the nearest lane (within 80 m).	公交站归属于其旁边的车道（约 25 m 以内）。此站附近没有车道，因此巴士无法在此停靠。请将其移到道路旁，或使用“修复”将其放到最近车道（80 m 以内）的路缘上。
 A start point is where the bus appears. This one is away from any lane: fine in a depot yard, otherwise the bus starts off the road.	起点是巴士出现的位置。此起点远离任何车道：在车场院内没问题，否则巴士会出现在路外。
 A start point refers to an object that was deleted. "Fix" removes the start point.	某个起点引用了已删除的物体。“修复”会移除该起点。
@@ -181,9 +181,9 @@ font	字体
 used	使用于
 in	在
 a ground texture of the map	地图的一种地面纹理
-splines	样条线
+splines	Spline线
 apart	相距
-spline	样条线
+spline	Spline线
 goes on into	延伸到
 no road near	附近没有道路
 from the road	距道路
@@ -684,7 +684,7 @@ What the game does not show	游戏中不显示的内容
 AI lanes	AI 车道
 Names of stops and start points	公交站和起点的名称
 Show	显示
-Roads and splines	道路和样条线
+Roads and splines	道路和Spline线
 Overview map (M)	总览地图 (M)
 Assets (B)	资源 (B)
 Flatten the terrain (roads follow)	抹平地形（道路随之调整）
@@ -980,7 +980,7 @@ Picture size	图片大小
 Shapes…	形状…
 Close (B)	关闭 (B)
 Scenery objects	场景物体
-Splines (roads, tracks…)	样条线（道路、轨道…）
+Splines (roads, tracks…)	Spline线（道路、轨道…）
 Favourite on / off	收藏 开 / 关
 content folder (mod, import, own)	内容文件夹（模组、导入、自制）
 OMSI 2	OMSI 2
@@ -1091,7 +1091,7 @@ Multiplayer	多人游戏
 Joining… (a big map takes a while to come)	正在加入…（大地图需要一些时间传输）
 Recover a conflicting edit…	恢复冲突的编辑…
 Recovered your edit; undo is available	已恢复您的编辑；可以撤销
-Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.	一起编辑同一张地图：一人当主机，其他人加入。道路、物体、地面和涂绘会即时共享；时刻表、交通和描述仍归主机，由主机保存地图。所有人都需要安装相同的物体和样条线。
+Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.	一起编辑同一张地图：一人当主机，其他人加入。道路、物体、地面和涂绘会即时共享；时刻表、交通和描述仍归主机，由主机保存地图。所有人都需要安装相同的物体和Spline线。
 Your name	您的名称
 Password	密码
 Host this map	托管此地图
@@ -1167,7 +1167,7 @@ gradient	坡度
 cant	超高
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	道路在此端的行进方向（度）。拖动它会旋转端点；相连的道路会一并转过去。
 Surface	表面
-A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	画出的道路或拖到路上的样条端点会落在路边（路边的地面也算，方便抓到边）并采用该路的高度；在物体上方则落在物体本身的面上（路缘、人行道、桥面、站台——圆圈标出该处）。
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	画出的道路或拖到路上的Spline端点会落在路边（路边的地面也算，方便抓到边）并采用该路的高度；在物体上方则落在物体本身的面上（路缘、人行道、桥面、站台——圆圈标出该处）。
 Snap to road edges and surfaces	吸附到道路边缘和物体表面
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	在路旁画的东西从路边开始；在物体上方则从物体本身的面、以该高度开始
 Banking across the road, %: positive lowers its right side (into a right bend)	道路横向倾斜，%：正值降低右侧（右转弯）
@@ -1197,12 +1197,12 @@ Row step	行距
 Tilted to the ground under it, the way it slopes forward and to the side (a fence, a bench or a shed on a hillside)	按其下方地面倾斜，沿前后和左右的坡度（山坡上的围栏、长椅或棚屋）
 Heights along the ground again, smoothed so it climbs a hill rather than every bump (after shaping the ground or laying a height map over it); where a road not selected joins, its height is kept	高度重新贴合地面并加以平滑，使道路沿山坡爬升而不是随每个小起伏（塑造地面或叠加高度图之后）；与未选中的道路相接处，保留其高度
 Each starts where it ended: the traffic on it goes the other way (a one-way street, a track's direction), the road itself stays where it is	每段从原来的终点开始：其上的交通反向行驶（单行街道、轨道方向），道路本身位置不变
-A second track or the other carriageway: the selected splines copied alongside, bends kept exact, linked as they are	第二条轨道或另一半车行道：将所选样条线复制到旁边，弯曲精确保持，链接与原来一致
+A second track or the other carriageway: the selected splines copied alongside, bends kept exact, linked as they are	第二条轨道或另一半车行道：将所选Spline线复制到旁边，弯曲精确保持，链接与原来一致
 To the left	向左
 To the right	向右
 Left and right of the way the road runs (its arrows with AI lanes shown)	沿道路走向的左侧和右侧（显示 AI 车道时为其箭头）
-For trams and electric trains: a wire spline laid on the selected track, piece for piece and linked (its height is the wire spline's own); the masts go in with Objects along the road	用于有轨电车和电力列车：在所选轨道上逐段铺设并链接一条导线样条线（其高度为导线样条线自身的高度）；立杆用“沿道路的物体”放置
-No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)	未安装导线样条线（名称含 Fahrdraht、Oberleitung 或 wire 的）
+For trams and electric trains: a wire spline laid on the selected track, piece for piece and linked (its height is the wire spline's own); the masts go in with Objects along the road	用于有轨电车和电力列车：在所选轨道上逐段铺设并链接一条导线Spline线（其高度为导线Spline线自身的高度）；立杆用“沿道路的物体”放置
+No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)	未安装导线Spline线（名称含 Fahrdraht、Oberleitung 或 wire 的）
 Lay it	铺设
 Wire pieces laid:	已铺设导线段：
 Paint the ground along it	沿其涂绘地面
@@ -1262,7 +1262,7 @@ stop	站
 Find in map	在地图中查找
 Name, file, IDCode, stop or x, y	名称、文件、IDCode、站点或 x, y
 The point	点
-Spline	样条线
+Spline	Spline线
 Object	物体
 Nothing on the map has this IDCode.	地图上没有任何物体使用此 IDCode。
 kinds	种
@@ -1654,8 +1654,8 @@ A copy of this object's type of its own is made for it, with its meshes, materia
 As a mesh	作为网格
 Copy as an object	复制为物体
 An openMapper object of its shape beside it, to edit as a mesh (vertices, edges, faces)	在旁边生成其形状的 openMapper 物体，可作为网格编辑（顶点、边、面）
-The same, the spline taken away (its lanes go with it)	同上，并删除样条线（其车道随之删除）
-Splines as a mesh	样条线转网格
+The same, the spline taken away (its lanes go with it)	同上，并删除Spline线（其车道随之删除）
+Splines as a mesh	Spline线转网格
 Copy as one object	复制为一个物体
 Replace by one object	替换为一个物体
 Export the selection…	导出所选内容…
@@ -2283,10 +2283,10 @@ Custom junction saved: the Roads tool's automatic junctions use it where roads m
 The junction reaches past the map: add tiles there first	交叉口超出了地图范围:请先在此处添加图块
 draw some pieces first	请先绘制一些部件
 mark the arms (where roads come in): at least two	标记入口(道路进入处):至少两个
-the spline cannot be read	无法读取样条
+the spline cannot be read	无法读取Spline
 Draw some pieces first	请先绘制一些部件
 Complex junction	复杂交叉口
-Complex junction put on the map: its pieces are ordinary splines	复杂交叉口已放置到地图上:其部件为普通样条
+Complex junction put on the map: its pieces are ordinary splines	复杂交叉口已放置到地图上:其部件为普通Spline
 Pick the road type of the pocket first	请先选择停靠港湾的道路类型
 The pocket's road type could not be read	无法读取停靠港湾的道路类型
 Press on a road	请点击一条道路
@@ -2311,7 +2311,7 @@ Click the start, a point on the arc, then the end	点击起点、弧上一点,�
 Arm	入口
 Where a road comes in: click the place, then a point out along the road	道路进入处:点击该位置,再点击沿道路向外的一点
 Snap to the grid and to ends	吸附到网格和端点
-Spline type	样条类型
+Spline type	Spline类型
 Drawing with:	正在绘制:
 Piece	部件
 Lift	抬升
@@ -2327,11 +2327,11 @@ Click the start of the piece, then its end	点击部件的起点,再点击其终
 Click the start, a point the arc passes, then the end	点击起点、圆弧经过的一点,再点击终点
 Click where a road comes in, then a point out along the road	点击道路进入处,再点击沿道路向外的一点
 Wheel zooms, right or middle drag pans, Esc cancels	滚轮缩放,右键或中键拖动平移,Esc 取消
-Pick a spline type on the left first	请先在左侧选择样条类型
+Pick a spline type on the left first	请先在左侧选择Spline类型
 Too short: the points are too close	太短:点距离过近
 arms	个入口
 Put on the map	放置到地图上
-Its pieces become ordinary splines at the middle of the view, to move and change like any other. Nothing about them is automatic	其部件将成为位于视图中心的普通样条,可像其他样条一样移动和修改。不含任何自动功能
+Its pieces become ordinary splines at the middle of the view, to move and change like any other. Nothing about them is automatic	其部件将成为位于视图中心的普通Spline,可像其他Spline一样移动和修改。不含任何自动功能
 Use in automatic junctions	用于自动交叉口
 Where the Roads tool makes a junction by itself and the roads meet as the arms do (same number, facing about the same ways, of the same road types), this one is put there	当“道路”工具自动生成交叉口,且道路的相交方式与入口一致(数量相同、朝向大致相同、道路类型相同)时,将放置此交叉口
 Save as a custom junction	保存为自定义交叉口
@@ -2469,7 +2469,7 @@ Bar	条纹
 Dash	线段
 Gap	断口
 Draw with this line	用此线绘制
-It is made as a spline type of the content folder (Splines\\openMapper\\marks) and chosen: draw it with Line, Arc or Curve, over the asphalt	作为样条类型创建在内容文件夹（Splines\\openMapper\\marks）中并被选中：用直线、圆弧或曲线在沥青上绘制
+It is made as a spline type of the content folder (Splines\\openMapper\\marks) and chosen: draw it with Line, Arc or Curve, over the asphalt	作为Spline类型创建在内容文件夹（Splines\\openMapper\\marks）中并被选中：用直线、圆弧或曲线在沥青上绘制
 Painted line made: draw with it in the junction editor	涂装线已创建：在路口编辑器中用它绘制
 A junction was not made: its roads are too short or too close together. Lengthen them or move the junctions apart.	未创建路口：道路太短或彼此太近。请延长道路或将路口分开。
 Draw road markings	绘制道路标线
@@ -2512,14 +2512,14 @@ Put on a road	放上道路
 The object is gone	物体已不在
 It stands on no road	它不在任何道路上
 There is no tile there	那里没有图块
-Take off the spline	从样条线分离
+Take off the spline	从Spline线分离
 Beside it (right +)	在它旁边（右为 +）
 Above the road	在道路上方
 Distance between two copies; 0: one object only	两个副本之间的距离；0：只有一个物体
 How many copies stand along the road	沿道路站着几个副本
-Detach from the spline	从样条线分离
+Detach from the spline	从Spline线分离
 It becomes a free object where it stands. A row of several copies becomes one object; an object at an absolute height keeps the height above the ground there.	它在所在之处成为自由物体。几个副本排成的一行会变成一个物体；绝对高度的物体会保留当地离地高度。
-Attach to the spline	依附到样条线
+Attach to the spline	依附到Spline线
 It stands on the nearest road and follows it (as OMSI's [splineAttachement]); its IDCode stays	它站在最近的道路上并跟着走（如同 OMSI 的 [splineAttachement]）；它的 IDCode 不变
 OMSI 2's editor: the middle button turns, the right button held and moved zooms, a right click goes there (Shift: menu); G moves the selection, N makes a new object, Enter confirms, the tile grid is on Shift+G	OMSI 2 编辑器：中键旋转、右键按住拖动缩放、右键点地前往（Shift：菜单）；G 移动选取、N 建立物体、Enter 确认，图块网格在 Shift+G
 openMapper's own controls: the camera as chosen under Camera, the keys as in View → Controls	openMapper 自己的操作：相机按「相机」所选，按键按「视图 → 控制」
@@ -2587,24 +2587,24 @@ Flying builds up speed the longer the keys are held	按键按住越久，飞行�
 Reset the camera	重置相机
 Load all tiles at once	一次加载所有图块
 Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and the others are hidden until you click on the empty zone	关闭：与 OMSI 2 的编辑器一样，只加载相机周围的图块，其余图块会隐藏，直到您点击空白区域
-Click a spline in the view	在画面中点一条样条
+Click a spline in the view	在画面中点一条Spline
 Click an object in the view	在画面中点一个物体
-Click an object or a spline in the view	在画面中点一个物体或一条样条
-Click the spline it should stand on. It follows that road and keeps its IDCode	点它要依附的那条样条。它会跟着那条路，并保留 IDCode
+Click an object or a spline in the view	在画面中点一个物体或一条Spline
+Click the spline it should stand on. It follows that road and keeps its IDCode	点它要依附的那条Spline。它会跟着那条路，并保留 IDCode
 That is the one	就是这个
-Along a spline	贴齐样条线
-Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	点击一条样条线：笔刷宽度内两侧的地面会贴到样条线的高度，与它相连的各段也一起
-The brush size is how far either side of the spline the ground is brought to its height.	笔刷大小是样条线左右两侧、地面被贴到其高度的距离。
-Align the selected splines	贴齐所选的样条线
-Select splines first	请先选择样条线
-No spline under the cursor	光标下没有样条线
-The ground follows the spline	地面已跟着样条线
-Align ground to splines	把地面贴齐样条线
+Along a spline	贴齐Spline线
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	点击一条Spline线：笔刷宽度内两侧的地面会贴到Spline线的高度，与它相连的各段也一起
+The brush size is how far either side of the spline the ground is brought to its height.	笔刷大小是Spline线左右两侧、地面被贴到其高度的距离。
+Align the selected splines	贴齐所选的Spline线
+Select splines first	请先选择Spline线
+No spline under the cursor	光标下没有Spline线
+The ground follows the spline	地面已跟着Spline线
+Align ground to splines	把地面贴齐Spline线
 Path	路径
 Ctrl: snap onto a path, F9: the next one	Ctrl：吸附到路径，F9：下一条
 Click the corners of the polygon; the first corner or Enter closes it	点击多边形的角点；第一个角点或 Enter 会将其闭合
-select the roads or splines that make the outline first	请先选择构成轮廓的道路或样条线
-the selected splines do not make one outline: they have to join end to end	所选样条线无法构成单一轮廓：它们必须首尾相连
+select the roads or splines that make the outline first	请先选择构成轮廓的道路或Spline线
+the selected splines do not make one outline: they have to join end to end	所选Spline线无法构成单一轮廓：它们必须首尾相连
 A polygon needs three corners	多边形需要三个角点
 The corners make no area	这些角点无法构成面积
 The polygon lies outside the map	多边形位于地图之外
@@ -2612,13 +2612,13 @@ Polygon made: Tab edits its mesh	已生成多边形：Tab 可编辑其网格
 Polygon	多边形
 Draw a polygon	绘制多边形
 Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	在地图上点击其角点；点击第一个角点或按 Enter 闭合，Esc 撤回最后一个角点。内部会填充为一个物体，可像其他物体一样移动和编辑
-From the selected splines	从所选样条线
-Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	填充所选道路和样条线首尾相连时构成的轮廓（例如安全岛周围的路缘石）
+From the selected splines	从所选Spline线
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	填充所选道路和Spline线首尾相连时构成的轮廓（例如安全岛周围的路缘石）
 No texture: a plain colour	无纹理：纯色
 Texture size, m	纹理大小，m
 Thickness, m	厚度，m
 Above the ground, m	离地高度，m
-Polygon: fill the selected splines, or click its corners	多边形：填充所选样条线，或点击各拐角
+Polygon: fill the selected splines, or click its corners	多边形：填充所选Spline线，或点击各拐角
 Polygon: click its corners	多边形：点击各拐角
 Polygon from it	由此创建多边形
 Polygon from them	由这些创建多边形
@@ -2674,7 +2674,7 @@ Remove this light	删除此信号灯
 A light	信号灯
 A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	有信号灯的路口需要地图上的灯头：游戏只会运行已连接灯头的配时
 Request loops	请求感应线圈
-Spline helpers	曲线辅助点
+Spline helpers	Spline 辅助点
 Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	地图道路接上路口的所在。x、高度、对象坐标中的前方
 The road type it takes (a `.sli`)	它承接的道路类型（`.sli`）
 A helper	辅助点
@@ -2697,9 +2697,90 @@ Keep the ground under roads	让地面保持在道路下方
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	开启：笔刷不会把地面抬高穿过道路。关闭：可像其他地方一样自由修改道路下方和旁边的地面
 There are unsaved changes here: Save or Revert first	这里有未保存的更改：请先保存或还原
 The map has changed since this was opened: open the object again	地图在打开后已更改：请重新打开对象
-A spline helper has no road type: pick one or remove it	有样条辅助点没有道路类型：请选择一种或将其移除
+A spline helper has no road type: pick one or remove it	有Spline辅助点没有道路类型：请选择一种或将其移除
 the object names this file outside its own folder, which a copy would lose	对象引用了其文件夹外的此文件，副本会丢失它
 what was written does not read back the same	写入的内容读回后不一致
 its paths are in a file of their own (`[paths]`), which this editor does not read	其路径位于单独文件（`[paths]`），此编辑器不会读取
 it has no path	它没有路径
 jump	跳转
+Phase	相位
+Traffic light phase	红绿灯相位
+Duration	持续时间
+Timeline	时间轴
+Click a block to edit that phase; drag its right edge to change how long it lasts	点击区块可编辑该相位；拖动右边缘可改变持续时间
+Traffic light	信号灯
+The whole cycle across the width (as the traffic light window has it)	整个周期横向铺满（与信号灯窗口相同）
+Back to 2D	返回 2D
+Draw the crossing from above, in the window, and lay paths there	在窗口内由上而下绘制路口，并在其中绘制路径
+Frame	居中缩放
+Put the crossing in the middle of the map's view	将路口放到地图视图中央
+The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely	路径直接绘制在地图上的路口：拖动端点即可移动，默认吸附到其他路径端点，按住 Ctrl 可自由移动
+Write the paths into the object's own file; the file as it stood is kept as a .bak beside it	将路径写入对象原文件；原文件会保留为同一位置的 .bak
+In the object's own file (a .bak keeps the old one)	保存到对象原文件（旧版本保留为 .bak）
+The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak	地图对象已指向此文件：路径会写入其中，原文件保留为同一位置的 .bak
+As a new file	另存为新文件
+The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy	整个对象会以独立名称复制到 openMapper 的内容文件夹，地图对象改指向该副本
+Remove this file's .bak	删除此文件的 .bak
+Its .bak is gone	已删除其 .bak
+Remove the .bak files this editor made	清除此编辑器创建的 .bak
+in its own file (a .bak keeps the old one)	保存到对象原文件（旧版本保留为 .bak）
+as a new file (a copy is made on saving)	另存为新文件（保存时创建副本）
+Draw path	绘制路径
+Drag from a path's start to its end to add one, as a road is drawn	从路径起点拖动到终点即可添加，与绘制道路相同
+3D	3D
+Show the path on the map itself: the crossing object in 3D, with its paths	在地图上直接显示路径：3D 路口对象及其路径
+2D	2D
+Draw the crossing from above, in the window	在窗口内由上而下绘制路口
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans	拖动端点可移动；默认吸附到其他路径端点，按住 Ctrl 可自由移动；滚轮缩放，按住右键或中键拖动可平移画面
+Save the crossing as a new file instead	请改为另存为新文件
+The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.	在此编辑既有路口的路径、封锁规则及信号灯配时。保存时会写入对象原文件，原文件保留为同一位置的 .bak；也可改为创建对象副本。
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free	在地图上点选一条路径即可选取；拖动端点可移动，默认吸附到其他路径端点，按住 Ctrl 可自由移动
+Crossing editor	路口编辑器
+Crossing editor…	路口编辑器…
+Pick the object	选取对象
+Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines	在地图上选取路口对象本身，以便移动或旋转它；路径线上的点选仍会选取路径
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free	在地图上点选一条路径即可选取；拖动端点可移动，默认吸附到其他路径端点（本路口或附近对象），按住 Ctrl 可自由移动
+Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here	附近对象的路径以较浅颜色显示：可将端点接上它们，但不会在此更改它们
+The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak	路口或交叉对象的路径、封锁规则及信号灯配时，依照 OMSI 2 路口编辑器的方式编辑：写入对象原文件，旧版本保留为 .bak
+Close the crossing editor	关闭路口编辑器
+There are changes here that are not saved yet. Save them before closing?	此处有尚未保存的更改。关闭前要保存吗？
+Save and close	保存并关闭
+Close without saving	不保存直接关闭
+End point	结束点
+Add a path carried on from the picked one (N)	从所选路径接续新增一段（N）
+Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here	附近的路径以较浅颜色显示：包括其他对象的路径及道路本身的车道。可将端点接上它们，但不会在此更改它们
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans	拖动端点可移动；默认吸附到其他路径端点，按住 Ctrl 可自由移动。吸附后会一并取用该路径的方向及坡度，使两段平滑衔接。滚轮缩放，按住右键或中键拖动可平移画面
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly	在地图上点选一条车道即可选取；拖动端点可移动，默认吸附到其他路径端点（本路口或附近对象），按住 Ctrl 可自由移动。吸附后会一并取用该路径的方向及坡度，使两段平滑衔接
+From nearby	从附近路径新增
+Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles	在附近路径的端点新增一段：包括其他对象的路径及道路本身的车道。点选绿色圆圈即可
+Click a green circle: a new path starts at that nearby path's end, in its way	点选绿色圆圈：新路径会从该附近路径的端点开始，并沿其方向延伸
+Start from a nearby path	从附近 Path 开始
+Start a new path at the end of a path nearby. Click one of the green circles	在附近路径的端点新增一段。点选绿色圆圈即可
+Complete to a nearby path	连接至附近路径
+Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	将所选路径延接至附近路径的端点：所选路径的端点、方向及坡度保持不变，以一或两段连接。点选绿色圆圈即可
+Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	点选绿色圆圈：会从所选路径端点向该点新增一或两段，所选路径保持不变
+Even grade	两端均匀坡度
+Both ends take the one rise between their heights	两端取两高度之间的同一坡度
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	此路径出去的方向（度）。点留在原处；一段弧做不到的转角会拆成几段
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	此路径进来的方向（度）。点留在原处；一段弧做不到的转角会拆成几段
+The way a join turns	连接转向哪一边
+Paths picked	已选路径
+Set what they share. A path's own numbers are edited one at a time	设置它们共用的值；每条路径自己的数值要逐条改
+Several	多项
+no end of the crossing is near it	附近没有这一端的路径端点
+the gap has no way through	这段空隙接不上
+a piece added	已加一段
+the other end would have moved	另一端会被移动
+Connect the roads	连接道路
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	把路口的端点对准道路行车道的端点。openOMSI 是按几何连接行车道，不是靠 spline 辅助点
+Link check	连接检查
+Shift: tenths of a degree	Shift：每 0.1 度
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	数字：输入角度，Enter 或点击：确定，Esc：取消
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	根据站点所在位置判定；如果电车的站点也在道路旁，请在此指定
+Roads (bus)	道路（公交）
+Tracks (tram, train)	轨道（有轨电车、火车）
+km along the tracks (blue in the view)	km 沿轨道（视图中为蓝色）
+no track within 15 m	15 m 内没有轨道
+the tracks are not joined, or run the other way (see View > AI lanes)	轨道未连接，或方向相反（见 视图 > AI 车道）
+no track beside	旁边没有轨道：
+Drives on	行驶于

@@ -22,6 +22,19 @@ const LANE_CHANGE: f64 = 15.0;
 const AGAINST_FACTOR: f64 = 4.0;
 const AGAINST: f64 = 150.0;
 
+/// What a trip drives on: the roads' car lanes (a bus) or the tracks (a tram, a train).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Ways {
+    Road,
+    Rail,
+}
+
+impl Ways {
+    fn rail(self) -> bool {
+        self == Ways::Rail
+    }
+}
+
 /// Where a stop lies on a lane.
 #[derive(Debug, Clone, Copy)]
 pub struct StopOn {
@@ -44,13 +57,15 @@ pub struct Route {
     /// Legs that drive a one-way path against its direction (as OMSI's buses do, but a
     /// sign the path was laid the wrong way).
     pub against: Vec<usize>,
+    /// What it drives on.
+    pub ways: Option<Ways>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Problem {
     /// The stop (its place in the trip) has no object on the map.
     NoObject(usize),
-    /// No car lane runs within reach of the stop.
+    /// No car lane (a rail trip: no track) runs within reach of the stop.
     NoRoad(usize),
     /// No way from this stop to the next.
     NoWay(usize),
@@ -130,8 +145,7 @@ impl Route {
 /// one, a station link between their stops) names is gone from the map (`on_map`: the
 /// IDCodes it has), or on a tile `changed` (indices into `order`) no longer as long as the
 /// file says (a road cut by a new junction, moved or deleted). Their ways are to be found again; the others' files stay as they are,
-/// and so do those of trips on lanes the network does not hold (a train's tracks: the
-/// way is found for buses).
+/// and so do those of trips on lanes the network does not hold.
 pub fn stale_trips(tt: &super::Timetable, net: &Network, order: &[TileKey], on_map: &std::collections::HashSet<i64>, changed: &std::collections::HashSet<usize>) -> Vec<String> {
     // (tile index, IDCode, path) -> the length the map gives it now
     let mut now: std::collections::HashMap<(usize, i64, usize), f64> = std::collections::HashMap::new();
@@ -191,11 +205,11 @@ fn entry_values(l: &Lane, order: &[TileKey], link: bool) -> Vec<f64> {
     }
 }
 
-/// The lanes a stop at `p` could be served from, best first (scored by the distance and
-/// by which side of the road it stands on).
-pub fn candidates(net: &Network, p: DVec3, left_hand: bool) -> Vec<(StopOn, f64)> {
+/// The lanes (or tracks) a stop at `p` could be served from, best first (scored by the
+/// distance and by which side of the road it stands on).
+pub fn candidates(net: &Network, p: DVec3, left_hand: bool, ways: Ways) -> Vec<(StopOn, f64)> {
     let mut c: Vec<(StopOn, f64)> = Vec::new();
-    for (i, l) in net.lanes.iter().enumerate() {
+    for (i, l) in net.lanes.iter().enumerate().filter(|(_, l)| l.rail == ways.rail()) {
         let (lo, hi) = bounds(l);
         if p.x < lo.x - REACH || p.y < lo.y - REACH || p.x > hi.x + REACH || p.y > hi.y + REACH {
             continue;
@@ -314,16 +328,70 @@ fn way(found: &HashMap<usize, Reach>, a: usize, b: usize) -> Vec<usize> {
     out
 }
 
-/// The way through the stops at `positions` (None: no such object), the lanes chosen for
-/// all stops at once so that the whole trip is shortest.
-pub fn find(net: &Network, positions: &[Option<DVec3>], left_hand: bool) -> Route {
-    let mut r = Route::default();
+/// The way through the stops at `positions` (None: no such object) on `ways`, or, not
+/// given, on the roads or the tracks: on those the trip can drive, and where it can drive on
+/// both, on those its stops stand nearer (a tram's stop stands at its track, a bus's at the
+/// kerb).
+pub fn find(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Option<Ways>) -> Route {
+    if let Some(w) = ways {
+        return find_on(net, positions, left_hand, w);
+    }
+    let road = find_on(net, positions, left_hand, Ways::Road);
+    if !net.lanes.iter().any(|l| l.rail) {
+        return road;
+    }
+    let rail = find_on(net, positions, left_hand, Ways::Rail);
+    let off = |r: &Route| r.stops.iter().map(|s| s.1.off).sum::<f64>();
+    let no_road = |r: &Route| r.problems.iter().any(|p| matches!(p, Problem::NoRoad(_)));
+    match (road.ok(), rail.ok()) {
+        (true, true) if off(&rail) < off(&road) => rail,
+        (true, _) => road,
+        (false, true) => rail,
+        // (neither: what keeps the one that came further, the tracks where every stop has one
+        // beside it and some stop no lane)
+        (false, false) if !no_road(&rail) && no_road(&road) => rail,
+        (false, false) => road,
+    }
+}
+
+/// What the trip `name`'s saved way drives on (its track, or the station links between its
+/// stops), as the network holds those paths: a trip found on the tracks is found there again.
+pub fn ways_of(tt: &super::Timetable, name: &str, net: &Network, order: &[TileKey]) -> Option<Ways> {
+    let trip = tt.trip(name)?;
+    let paths: Vec<(f64, f64, f64)> = match tt.track(name) {
+        Some(t) => t.entries.iter().filter_map(|e| match e.values[..] {
+            [id, path, tile, ..] => Some((id, path, tile)),
+            _ => None,
+        }).collect(),
+        None => trip.stations.windows(2).flat_map(|w| tt.links.iter().filter(move |l| l.from_id == w[0] && l.to_id == w[1])).flat_map(|l| l.entries.iter().map(|e| (e.values[0], e.values[1], e.values[2]))).collect(),
+    };
+    let (mut road, mut rail) = (0, 0);
+    for (id, path, tile) in paths {
+        let Some(tile) = order.get(tile as usize) else { continue };
+        let key = super::network::PathKey { tile: *tile, id: id as i64, path: path as usize };
+        match net.by_key.get(&key).and_then(|l| l.first()).map(|&l| net.lanes[l].rail) {
+            Some(true) => rail += 1,
+            Some(false) => road += 1,
+            None => {}
+        }
+    }
+    match (road, rail) {
+        (0, 0) => None,
+        (a, b) if b > a => Some(Ways::Rail),
+        _ => Some(Ways::Road),
+    }
+}
+
+/// The way through the stops on `ways`, the lanes chosen for all stops at once so that the
+/// whole trip is shortest.
+fn find_on(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Ways) -> Route {
+    let mut r = Route { ways: Some(ways), ..Default::default() };
     let mut cands: Vec<Vec<(StopOn, f64)>> = Vec::new();
     for (i, p) in positions.iter().enumerate() {
         match p {
             None => r.problems.push(Problem::NoObject(i)),
             Some(p) => {
-                let c = candidates(net, *p, left_hand);
+                let c = candidates(net, *p, left_hand, ways);
                 if c.is_empty() {
                     r.problems.push(Problem::NoRoad(i));
                 }

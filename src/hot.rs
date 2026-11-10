@@ -20,8 +20,15 @@ const WATCHED: [&str; 3] = ["Sceneryobjects", "Splines", "Texture"];
 /// folder is one change, not hundreds).
 const SETTLE: Duration = Duration::from_millis(900);
 
-/// A change the editor wrote itself within this time of a change is its own.
-const OWN_WINDOW: Duration = Duration::from_millis(2500);
+/// How long after an own write a change may still be probed and taken as that write's. The
+/// content folder is looked at every 1.5 s, so a write there is probed at most that much
+/// later; two settle periods cover the probe and a slow filesystem clock.
+const OWN_GRACE: Duration = Duration::from_millis(1800);
+
+/// The installation is looked at every fourth tick (6 s), so its own writes are probed much
+/// later; the ordering test still decides, and this only keeps an install-root save from
+/// being mistaken for somebody else's change.
+const INSTALL_GRACE: Duration = Duration::from_millis(7000);
 
 static OWN: Mutex<Option<Instant>> = Mutex::new(None);
 
@@ -32,8 +39,18 @@ pub fn own_change() {
     *OWN.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
 }
 
-fn recently_own() -> bool {
-    OWN.lock().unwrap_or_else(|e| e.into_inner()).map(|t| t.elapsed() < OWN_WINDOW).unwrap_or(false)
+fn own_at() -> Option<Instant> {
+    *OWN.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Whether a change probed at `probe`, the last clean snapshot being `last_ok`, is the
+/// editor's own write. The write has to be newer than that snapshot (so it happened after
+/// the last time the folder was known to be as the editor left it), and it has to be the
+/// only thing that changed: an external write landing after ours is probed later than the
+/// grace, and is reported. The settle loop's own length is not part of the test, so a large
+/// file written slowly can no longer outlast it.
+fn is_own_write(own: Option<Instant>, last_ok: Instant, probe: Instant, grace: Duration) -> bool {
+    own.is_some_and(|t| t > last_ok && probe <= t + grace)
 }
 
 pub struct Watcher {
@@ -49,6 +66,9 @@ impl Watcher {
         let flag = stop.clone();
         let spawned = std::thread::Builder::new().name("hot-reload".into()).spawn(move || {
             let mut prints = [fingerprint(&content), fingerprint(&omsi)];
+            // (when each root was last seen unchanged: a write made after this is one the
+            // editor did itself)
+            let mut last_ok = [Instant::now(), Instant::now()];
             let mut tick = 0u32;
             while !flag.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(1500));
@@ -59,25 +79,46 @@ impl Watcher {
                     if !due {
                         continue;
                     }
+                    // (the time is taken before the walk: a write landing while a big folder
+                    // is walked, behind the walk, is then still newer than the clean snapshot)
+                    let walked = Instant::now();
                     let now = fingerprint(root);
-                    if now != prints[i] {
-                        // (wait until it has stopped changing)
-                        let mut last = now;
-                        loop {
-                            std::thread::sleep(SETTLE);
-                            let again = fingerprint(root);
-                            if again == last || flag.load(Ordering::Relaxed) {
-                                last = again;
-                                break;
-                            }
+                    if now == prints[i] {
+                        last_ok[i] = walked;
+                        continue;
+                    }
+                    // (when the change was first seen: the settle loop below can take a while,
+                    // and how long it takes must not decide whether this was our own write)
+                    let probe = Instant::now();
+                    // (wait until it has stopped changing. The editor's own write is whole when
+                    // it is noted, so it is still the same at the first look again; something
+                    // that goes on changing - a copy begun just after a save - is somebody
+                    // else's, however soon after the save it began)
+                    let mut last = now;
+                    let mut still = true;
+                    let mut settled;
+                    loop {
+                        std::thread::sleep(SETTLE);
+                        settled = Instant::now();
+                        let again = fingerprint(root);
+                        if again == last || flag.load(Ordering::Relaxed) {
                             last = again;
+                            break;
                         }
-                        prints[i] = last;
-                        if recently_own() {
-                            log::debug!("hot reload: {} changed by the editor itself", root.display());
-                        } else {
-                            changed = true;
-                        }
+                        still = false;
+                        last = again;
+                    }
+                    prints[i] = last;
+                    // (the settled snapshot is a clean one from now on: a change after this is
+                    // somebody else's)
+                    let own = own_at();
+                    let grace = if i == 0 { OWN_GRACE } else { INSTALL_GRACE };
+                    let mine = still && is_own_write(own, last_ok[i], probe, grace);
+                    last_ok[i] = settled;
+                    if mine {
+                        log::debug!("hot reload: {} changed by the editor itself", root.display());
+                    } else {
+                        changed = true;
                     }
                 }
                 if changed && tx.send(tick as usize).is_err() {
@@ -134,8 +175,11 @@ fn visit(dir: &Path, acc: &mut u64, depth: u32) {
             visit(&p, acc, depth + 1);
             continue;
         }
-        // (files being written have a temporary name of ours or a download's)
-        if p.extension().map(|x| matches!(x.to_string_lossy().to_ascii_lowercase().as_str(), "part" | "tmp" | "crdownload")).unwrap_or(false) {
+        // (files being written have a temporary name of ours or a download's; the editor's own
+        // backups and the crossing writer's trial file are bookkeeping, not content)
+        let name = p.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+        let ext = p.extension().map(|x| x.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+        if matches!(ext.as_str(), "part" | "tmp" | "crdownload" | "bak") || name.ends_with(".crossing-check.sco") {
             continue;
         }
         let mut one = DefaultHasher::new();
@@ -166,5 +210,45 @@ mod tests {
         std::fs::write(objs.join("house.part"), "partial").unwrap();
         assert_eq!(fingerprint(&dir), fingerprint(&dir));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The editor's own `.bak` and the crossing writer's trial file must not keep the watcher
+    /// busy: they are bookkeeping beside the content, not content.
+    #[test]
+    fn a_backup_and_a_crossing_trial_do_not_change_the_fingerprint() {
+        let dir = std::env::temp_dir().join(format!("openmapper-hot-bak-{}", std::process::id()));
+        let objs = dir.join("sceneryobjects").join("My");
+        std::fs::create_dir_all(&objs).unwrap();
+        let sco = objs.join("Kreuzung.sco");
+        std::fs::write(&sco, "object").unwrap();
+        let before = fingerprint(&dir);
+        std::fs::write(objs.join("Kreuzung.sco.bak"), "old").unwrap();
+        assert_eq!(fingerprint(&dir), before);
+        std::fs::write(objs.join("Kreuzung.crossing-check.sco"), "trial").unwrap();
+        assert_eq!(fingerprint(&dir), before);
+        // (the real file still counts)
+        std::fs::write(&sco, "object, changed").unwrap();
+        assert_ne!(fingerprint(&dir), before);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// The own-write test is one of ordering, not of how long the settle loop took: a probe
+    /// of a write made after the last clean snapshot is ours even when settling ran long,
+    /// while a probe later than the grace (something else changed too) is reported.
+    #[test]
+    fn an_own_write_is_judged_by_its_order() {
+        let last_ok = Instant::now();
+        let own = last_ok + Duration::from_millis(100);
+        // (probed by the next poll, well before any settle loop)
+        assert!(is_own_write(Some(own), last_ok, own + Duration::from_millis(1500), OWN_GRACE));
+        // (an external write after ours is probed past the grace)
+        assert!(!is_own_write(Some(own), last_ok, own + OWN_GRACE + Duration::from_millis(1), OWN_GRACE));
+        // (a write from before the clean snapshot is not ours)
+        assert!(!is_own_write(Some(last_ok - Duration::from_millis(10)), last_ok, last_ok, OWN_GRACE));
+        assert!(!is_own_write(None, last_ok, last_ok, OWN_GRACE));
+        // (the installation is polled every 6 s: its grace covers that, and no more)
+        let inst = Duration::from_millis(6000);
+        assert!(is_own_write(Some(own), last_ok, own + inst, INSTALL_GRACE));
+        assert!(!is_own_write(Some(own), last_ok, own + INSTALL_GRACE + Duration::from_millis(1), INSTALL_GRACE));
     }
 }

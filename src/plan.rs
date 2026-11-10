@@ -118,7 +118,7 @@ pub fn svg(doc: &Document, lib: &Library, roots: &[PathBuf]) -> String {
             let mut drawn = false;
             for trip in tt.trips.iter().filter(|t| t.line.eq_ignore_ascii_case(&line.name) && t.stations.len() >= 2) {
                 let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| crate::timetable::stop_world(doc, &mut files, *id)).collect();
-                let r = crate::timetable::route::find(&net, &pos, doc.global.left_hand_traffic);
+                let r = crate::timetable::route::find(&net, &pos, doc.global.left_hand_traffic, crate::timetable::route::ways_of(&doc.timetable, &trip.name, &net, &doc.order));
                 let pts: Vec<DVec2> = r.polyline(&net).iter().map(|p| p.truncate()).collect();
                 if pts.len() >= 2 {
                     let _ = write!(ways, r#"<path d="{}" stroke="{colour}"/>"#, path_d(&pts, &flip));

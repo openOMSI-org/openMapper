@@ -39,7 +39,7 @@ That is not an OMSI 2 folder (Omsi.exe, maps and Vehicles must be in it)	這不�
 This object has no textures to make PBR maps of	此物件沒有可製作 PBR 貼圖的貼圖
 Could not copy the map	無法複製地圖
 Could not move the map	無法移動地圖
-Terrain flattened; splines laid on it:	地形已整平；已鋪設的樣條：
+Terrain flattened; splines laid on it:	地形已整平；已鋪設的Spline：
 This road type has no textures to make PBR maps of	此道路類型沒有可製作 PBR 貼圖的貼圖
 Pictures	圖片
 Only 100 tiles round the camera are loaded; click on the empty zone to load the next 100	只載入相機周圍的 100 個圖塊；點擊空白區域可載入接下來的 100 個
@@ -100,12 +100,12 @@ Materials added:	已新增材質：
 nothing to bake	沒有可烘焙的內容
 the object has no lamps to bake the night light of	此物件沒有可烘焙夜間光照的燈
 Baked into	已烘焙至
-select a road or spline first	請先選取道路或樣條
+select a road or spline first	請先選取道路或Spline
 the road's type is still loading: try again in a moment	道路類型仍在載入：請稍後再試
-these splines have no shape to see	這些樣條沒有可見的形狀
+these splines have no shape to see	這些Spline沒有可見的形狀
 Replace by an object	以物件取代
 Made into an object: Tab edits its mesh	已轉為物件：按 Tab 編輯其網格
-Signal head made: click where it stands (near a crossing with a light program it links to it)	已建立號誌燈頭：點擊其所在位置（靠近有燈號程式的路口時會連結到它）
+Signal head made: click where it stands (near a crossing with a light program it links to it)	已建立交通燈燈頭：點擊其所在位置（靠近有燈號程式的路口時會連結到它）
 Choose a picture or a texture	選擇圖片或貼圖
 cannot read the picture	無法讀取圖片
 Picture made: click where it goes (it can be moved, turned and scaled after)	已建立圖片：點擊要放置的位置（之後可移動、旋轉和縮放）
@@ -114,10 +114,14 @@ Choose a sound	選擇聲音
 Sounds	聲音
 Sound source made: click where it plays	已建立音源：點擊其播放位置
 Street lamp made: click where it stands	已建立路燈：點擊其所在位置
-Paint by slope and height	依坡度與高度上色
-By slope and height	依坡度與高度
-The chosen layer painted over the whole map where the ground is so steep (and so high)	將所選圖層塗在整張地圖中地面坡度（與高度）達此條件之處
-Slope	坡度
+Paint by slope and height	依斜度與高度上色
+By slope and height	依斜度與高度
+The chosen layer painted over the whole map where the ground is so steep (and so high)	將所選圖層塗在整張地圖中地面斜度（與高度）達此條件之處
+Slope	斜度
+Even grade	兩端均勻斜度
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	此路徑離開的方向（度）。該點留在原處；一段弧做不到的轉角會分作幾段
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	此路徑到達的方向（度）。該點留在原處；一段弧做不到的轉角會分作幾段
+Both ends take the one rise between their heights	兩端用同一斜度，即兩點高度之差
 Height	高度
 Fade	漸變
 Cover	覆蓋
@@ -126,10 +130,10 @@ Choose a layer above the base ground	請選擇基礎地面之上的圖層
 No ground on the map is like that	地圖上沒有這樣的地面
 Painted	已上色
 Missing objects	缺少物件
-Missing roads and splines	缺少道路與樣條
+Missing roads and splines	缺少道路與Spline
 Missing textures	缺少貼圖
 Road ends not joined	未連接的道路端點
-Links to splines that are gone	指向已不存在樣條的連結
+Links to splines that are gone	指向已不存在Spline的連結
 Bus stops away from a road	遠離道路的站牌
 Start points away from a road	遠離道路的起點
 Start points without their object	缺少物件的起點
@@ -149,17 +153,17 @@ Chrono changes of what is gone	指向已不存在內容的時空變更
 Lamps lighting no ground at night	夜間未照亮地面的路燈
 Tiles with very many objects	物件非常多的圖塊
 Objects linked to one that is gone	連結到已不存在物件的物件
-Signal heads linked to no crossing	未連結任何路口的號誌燈頭
+Signal heads linked to no crossing	未連結任何路口的交通燈燈頭
 Depot files (destinations)	車廠檔案（終點站）
 The map uses an object (.sco) that is not installed. The game leaves it out. Install the mod it comes from, or delete the object. A junction of openMapper's whose file is gone (the map was moved without it) is made again for its roads with "Fix".	地圖使用了未安裝的物件 (.sco)。遊戲會略過它。請安裝其來源模組，或刪除該物件。openMapper 的路口若檔案遺失（地圖在沒有它的情況下被移動），可用「修正」依其道路重新建立。
-The map uses a road or spline type (.sli) that is not installed: that road is missing in the game, and buses cannot drive there.	地圖使用了未安裝的道路或樣條類型 (.sli)：遊戲中沒有該道路，巴士無法在那裡行駛。
+The map uses a road or spline type (.sli) that is not installed: that road is missing in the game, and buses cannot drive there.	地圖使用了未安裝的道路或Spline類型 (.sli)：遊戲中沒有該道路，巴士無法在那裡行駛。
 An object or road names a picture that cannot be found. It will look white or black in the game.	物件或道路指定的圖片找不到。在遊戲中會顯示為白色或黑色。
-Two road ends lie on one another but are not joined. Traffic still finds its way (the game joins lanes by their ends), but rows of lamps and posts and the road's texture do not run on across, and the editor does not treat them as one road. "Join" links them.	兩個道路端點相互重疊但未連接。交通仍可通行（遊戲依端點連接車道），但成排的燈與柱以及道路貼圖不會延續過去，編輯器也不會將它們視為同一條道路。「連接」可將它們連起。
-A spline says it goes on into another one that no longer exists. "Fix" forgets that link.	某個樣條指向一個已不存在的後續樣條。「修正」會移除該連結。
-A bus stop belongs to the lane it stands beside (within about 25 m). This one has none near, so buses cannot stop at it. Move it next to the road, or "Fix" puts it at the kerb of the nearest lane (within 80 m).	站牌屬於其旁邊的車道（約 25 公尺內）。此站牌附近沒有車道，巴士無法在此停靠。請將它移到道路旁，或用「修正」將它放到最近車道的路緣（80 公尺內）。
-A start point is where the bus appears. This one is away from any lane: fine in a depot yard, otherwise the bus starts off the road.	起點是巴士出現的位置。此起點遠離所有車道：在車廠場地內沒問題，否則巴士會從道路外出發。
+Two road ends lie on one another but are not joined. Traffic still finds its way (the game joins lanes by their ends), but rows of lamps and posts and the road's texture do not run on across, and the editor does not treat them as one road. "Join" links them.	兩個道路端點相互重疊但未連接。交通仍可通行（遊戲依端點連接行車線），但成排的燈與柱以及道路貼圖不會延續過去，編輯器也不會將它們視為同一條道路。「連接」可將它們連起。
+A spline says it goes on into another one that no longer exists. "Fix" forgets that link.	某個Spline指向一個已不存在的後續Spline。「修正」會移除該連結。
+A bus stop belongs to the lane it stands beside (within about 25 m). This one has none near, so buses cannot stop at it. Move it next to the road, or "Fix" puts it at the kerb of the nearest lane (within 80 m).	站牌屬於其旁邊的行車線（約 25 公尺內）。此站牌附近沒有行車線，巴士無法在此停靠。請將它移到道路旁，或用「修正」將它放到最近行車線的路緣（80 公尺內）。
+A start point is where the bus appears. This one is away from any lane: fine in a depot yard, otherwise the bus starts off the road.	起點是巴士出現的位置。此起點遠離所有行車線：在車廠場地內沒問題，否則巴士會從道路外出發。
 A start point refers to an object that was deleted. "Fix" removes the start point.	某個起點指向已被刪除的物件。「修正」會移除該起點。
-There is nowhere for the bus to appear. Place a start point (Game logic > Start points) on a road, or "Fix" puts one on a lane some 40 m before a bus stop.	巴士沒有出現的地方。請在道路上放置起點（遊戲邏輯 > 起點），或用「修正」在站牌前約 40 公尺的車道上放置一個。
+There is nowhere for the bus to appear. Place a start point (Game logic > Start points) on a road, or "Fix" puts one on a lane some 40 m before a bus stop.	巴士沒有出現的地方。請在道路上放置起點（遊戲邏輯 > 起點），或用「修正」在站牌前約 40 公尺的行車線上放置一個。
 Two things on the map share one IDCode: links, timetables and start points may pick the wrong one.	地圖上有兩個項目共用同一個 IDCode：連結、時刻表和起點可能會選錯。
 The counter for new IDCodes is below codes already used, so new objects would get codes twice. "Fix" raises it.	新 IDCode 的計數器低於已使用的代碼，新物件會得到重複的代碼。「修正」會將其調高。
 An object standing on the ground lies outside its own tile. The game does not show it. Move it a little or put it again.	放在地面上的物件位於所屬圖塊之外。遊戲不會顯示它。請稍微移動它或重新放置。
@@ -173,17 +177,17 @@ A stop of the timetable that no trip calls at. Nothing is wrong, it is only not 
 A chrono scenario takes away, retypes or relabels something that is no longer on the map (it was deleted or its IDCode changed): that change does nothing. Open Map > Chrono scenarios, the scenario's properties, and take the change out.	時空情境移除、變更類型或更改標籤的內容已不在地圖上（已被刪除或其 IDCode 已變更）：該變更不起作用。請開啟 地圖 > 時空情境，進入情境屬性，移除該變更。
 A tile holds far more objects than the stock maps' tiles (up to some 600): the game may stutter when it loads it or looks across it. Thin out a wood planted too densely (Plant brush, Clear) or plant it with more space between the trees.	圖塊上的物件遠多於原版地圖的圖塊（最多約 600 個）：遊戲在載入或遠眺它時可能會卡頓。請疏減種得太密的樹林（植物筆刷，清除），或讓樹木間距更大。
 Street lamps stand on a tile the game does not light from its lamps ([variable_terrainlightmap] is off): at night the ground under them stays dark (unless the tile's light map file was made by OMSI 2's editor). "Fix" turns it on, as on nearly every tile of the stock maps.	路燈位於遊戲不會用燈來照明的圖塊上（[variable_terrainlightmap] 已關閉）：夜間燈下的地面仍然很暗（除非該圖塊的光照圖檔是由 OMSI 2 編輯器製作）。「修正」會將其開啟，如同原版地圖的幾乎所有圖塊。
-An object takes its state ([varparent]) from an object no longer on the map: a signal head stays dark, a display blank. Link it to another in its properties (Linked objects), or "Fix" forgets the link.	某物件從已不在地圖上的物件取得狀態 ([varparent])：號誌燈頭不亮、顯示器空白。請在其屬性（連結的物件）中連結到其他物件，或用「修正」移除該連結。
-A traffic light's signal head takes its light from a crossing's program ([varparent]); this one is linked to none while others like it are, so it stays dark in the game. Select it and link it in its properties (Linked objects).	紅綠燈的號誌燈頭從路口的程式取得燈號 ([varparent])；此燈未連結任何路口，而同類的燈都有連結，因此在遊戲中不會亮。請選取它並在其屬性（連結的物件）中連結。
+An object takes its state ([varparent]) from an object no longer on the map: a signal head stays dark, a display blank. Link it to another in its properties (Linked objects), or "Fix" forgets the link.	某物件從已不在地圖上的物件取得狀態 ([varparent])：交通燈燈頭不亮、顯示器空白。請在其屬性（連結的物件）中連結到其他物件，或用「修正」移除該連結。
+A traffic light's signal head takes its light from a crossing's program ([varparent]); this one is linked to none while others like it are, so it stays dark in the game. Select it and link it in its properties (Linked objects).	紅綠燈的交通燈燈頭從路口的程式取得燈號 ([varparent])；此燈未連結任何路口，而同類的燈都有連結，因此在遊戲中不會亮。請選取它並在其屬性（連結的物件）中連結。
 A depot file (.hof) gives the buses their destinations, the stop names on their displays and the routes their IBIS knows. Without one the signs stay empty and the IBIS knows no line. "Fix" makes it from the map's lines, or adds what the lines need to the map's own (Map > Depot files to see and change it).	車廠檔案 (.hof) 提供巴士的終點站、顯示器上的站名，以及其 IBIS 所知的路線。沒有它，標示牌會空白，IBIS 也不認得任何路線。「修正」會依地圖的路線建立一個，或將路線所需的內容加入地圖自己的檔案（地圖 > 車廠檔案 可查看與變更）。
 A signal route names a signal or track pieces no longer on the map: the signal may never clear. Open Map > Signal routes and take the track again, or delete the route.	號誌路徑指定的號誌或軌道段已不在地圖上：號誌可能永遠不會放行。請開啟 地圖 > 號誌路徑 重新選取軌道，或刪除該路徑。
 font	字型
 used	已使用
 in	於
 a ground texture of the map	地圖的地面貼圖
-splines	樣條
+splines	Spline
 apart	相距
-spline	樣條
+spline	Spline
 goes on into	延續至
 no road near	附近沒有道路
 from the road	距道路
@@ -366,14 +370,14 @@ Other	其他
 Where the bus appears when a drive starts. Put it on a road or in the depot, facing the way to drive.	開始駕駛時巴士出現的位置。請放在道路或車廠上，朝向行駛方向。
 Where passengers wait. Put it beside the road at the kerb; name it on the right.	乘客等候的位置。請放在道路旁的路緣；名稱在右側設定。
 Where parked cars stand. Click for one; with a row on, click the start and end of a row along the kerb.	停放車輛的位置。點擊放一個；開啟成排後，沿路緣點擊一排的起點與終點。
-Lanes the AI's cars or people follow. Draw like a road: it snaps to lane ends (green: joined, red: dead end) and along lanes. A car path runs the way you draw it.	AI 車輛或行人行走的車道。像畫道路一樣繪製：會吸附到車道端點（綠色：已連接，紅色：死路）及沿車道吸附。車輛路徑依您繪製的方向行進。
+Lanes the AI's cars or people follow. Draw like a road: it snaps to lane ends (green: joined, red: dead end) and along lanes. A car path runs the way you draw it.	AI 車輛或行人行走的行車線。像畫道路一樣繪製：會吸附到行車線端點（綠色：已連接，紅色：死路）及沿行車線吸附。車輛路徑依您繪製的方向行進。
 Sound sources, help arrows and other helpers the game does not show.	音源、輔助箭頭及其他遊戲中看不到的輔助物件。
-Move (V): drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	移動 (V)：沿 X、Y 或 Z 拖曳箭頭，在平面內拖曳方塊，沿地面拖曳圓圈
-Rotate (C): drag a ring to turn about X, Y or Z	旋轉 (C)：拖曳圓環以繞 X、Y 或 Z 旋轉
-Scale (X): drag an arrow to scale along that axis, a square for two, the circle for all three	縮放 (X)：拖曳箭頭沿該軸縮放，方塊為兩軸，圓圈為三軸
-These roads have no lanes of their own to take apart (rails stay as they are)	這些道路沒有可拆開的專屬車道（軌道維持原樣）
-Make the lanes editable	車道已可編輯
-Roads whose lanes are now editable:	車道已可編輯的道路：
+Move (V): drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	移動 (V)：沿 X、Y 或 Z 拖動箭頭，在平面內拖動方塊，沿地面拖動圓圈
+Rotate (C): drag a ring to turn about X, Y or Z	旋轉 (C)：拖動圓環以繞 X、Y 或 Z 旋轉
+Scale (X): drag an arrow to scale along that axis, a square for two, the circle for all three	縮放 (X)：拖動箭頭沿該軸縮放，方塊為兩軸，圓圈為三軸
+These roads have no lanes of their own to take apart (rails stay as they are)	這些道路沒有可拆開的專屬行車線（軌道維持原樣）
+Make the lanes editable	行車線已可編輯
+Roads whose lanes are now editable:	行車線已可編輯的道路：
 Flatten the terrain	整平地形
 Select two things or more to group them	選取兩個以上項目才能群組
 Group	群組
@@ -439,12 +443,12 @@ Bevel	倒角
 Loop cut	環切
 click: done, right click / Esc: cancel, wheel: segments	點擊：完成，右鍵／Esc：取消，滾輪：分段數
 Scale	縮放
-Roads are not scaled: change their length and width in their properties	道路不會縮放：請在其屬性中變更長度和寬度
+Roads are not scaled: change their length and width in their properties	道路不會縮放：請在其屬性中變更長度和闊度
 Only the objects are scaled, the roads stay	只縮放物件，道路不變
 Could not scale	無法縮放
-Too near the end: drag the end's dot instead	太靠近端點：請改為拖曳端點的圓點
+Too near the end: drag the end's dot instead	太靠近端點：請改為拖動端點的圓點
 Add a point to the path	在路徑上加點
-Point added: drag the dot where the pieces meet	已加點：拖曳各段相接處的圓點
+Point added: drag the dot where the pieces meet	已加點：拖動各段相接處的圓點
 Reshape road	重塑道路
 Selected:	已選取：
 Copied:	已複製：
@@ -461,7 +465,7 @@ Stand upright	扶正
 Change height	變更高度
 Change road type	變更道路類型
 The selected roads are not one chain (they branch or leave gaps)	所選道路不是單一路段（有分岔或有缺口）
-Even slope	均勻坡度
+Even slope	均勻斜度
 Lay on the ground	貼合地面
 Remove the rows of objects along it first (they are measured from its start)	請先移除沿線的物件排（它們是從起點開始量測的）
 Reverse direction	反轉方向
@@ -478,7 +482,7 @@ Link to an object	連結到物件
 Unlink	取消連結
 That object already takes its state from this one	該物件已從此物件取得狀態
 Linked	已連結
-Signal head's light	號誌燈頭的燈
+Signal head's light	交通燈燈頭的燈
 Path rules	路徑規則
 Replace objects	取代物件
 Edit road	編輯道路
@@ -506,7 +510,7 @@ openOMSI is loading the map…	openOMSI 正在載入地圖…
 Nothing wrong found	沒有發現問題
 Problems found:	發現的問題：
 Go there	前往該處
-of the places named lie at the map's edge or a road's dead end (greyed): the game measures a lane's last point on the road's very edge, and a bus at the end stands over it; nothing to mend	所列地點位於地圖邊緣或道路死路端（灰色）：遊戲會在道路最邊緣量測車道的最後一點，而末端的巴士就停在其上；無需修正
+of the places named lie at the map's edge or a road's dead end (greyed): the game measures a lane's last point on the road's very edge, and a bus at the end stands over it; nothing to mend	所列地點位於地圖邊緣或道路死路端（灰色）：遊戲會在道路最邊緣量測行車線的最後一點，而末端的巴士就停在其上；無需修正
 The game said nothing about the map	遊戲沒有回報關於地圖的任何內容
 The game's whole output	遊戲的完整輸出
 no key entered	未輸入金鑰
@@ -581,7 +585,7 @@ Trees	樹木
 Stops and start points	站牌與起點
 Junctions	路口
 Tracks	軌道
-Footpaths	人行道
+Footpaths	行人路
 Fences, walls, kerbs	圍欄、牆、路緣
 Technical (AI, helpers)	技術類（AI、輔助物件）
 This map lies on the world's grid ([worldcoordinates]): its tiles cannot be taken yet	此地圖位於世界格網 ([worldcoordinates])：目前還無法取用其圖塊
@@ -681,10 +685,10 @@ Delete	刪除
 Deselect	取消選取
 Tile grid	圖塊格線
 What the game does not show	遊戲中不顯示的內容
-AI lanes	AI 車道
+AI lanes	AI 行車線
 Names of stops and start points	站牌與起點的名稱
 Show	顯示
-Roads and splines	道路與樣條
+Roads and splines	道路與Spline
 Overview map (M)	總覽地圖 (M)
 Assets (B)	資源 (B)
 Flatten the terrain (roads follow)	整平地形（道路會跟隨）
@@ -692,7 +696,7 @@ Saved views…	已儲存的視角…
 Go to selection	前往選取內容
 Camera	攝影機
 Unity: right button looks round and W A S D fly, middle pans, Alt orbits	Unity：右鍵環顧並以 W A S D 飛行，中鍵平移，Alt 環繞
-Map editor: right button looks round and W A S D fly (Q down, E up), middle pans, the wheel zooms to the cursor, drag moves the map	地圖編輯器：右鍵環顧並以 W A S D 飛行（Q 下降，E 上升），中鍵平移，滾輪朝游標縮放，拖曳可移動地圖
+Map editor: right button looks round and W A S D fly (Q down, E up), middle pans, the wheel zooms to the cursor, drag moves the map	地圖編輯器：右鍵環顧並以 W A S D 飛行（Q 下降，E 上升），中鍵平移，滾輪朝游標縮放，拖動可移動地圖
 Load 100 tiles at a time (like OMSI 2's editor)	一次載入 100 個圖塊（如 OMSI 2 的編輯器）
 Time of day	時刻
 Plain day (as the game by day)	一般白天（如遊戲中的白天）
@@ -743,7 +747,7 @@ New map	新增地圖
 Open a map	開啟地圖
 Save (Ctrl+S): there are unsaved changes	儲存 (Ctrl+S)：有未儲存的變更
 Save (Ctrl+S)	儲存 (Ctrl+S)
-Import assets: a mod folder or .zip, a .obj / .x / .o3d model (or drop files on the window)	匯入資源：模組資料夾或 .zip、.obj / .x / .o3d 模型（或將檔案拖曳到視窗）
+Import assets: a mod folder or .zip, a .obj / .x / .o3d model (or drop files on the window)	匯入資源：模組資料夾或 .zip、.obj / .x / .o3d 模型（或將檔案拖動到視窗）
 Redo (Ctrl+Shift+Z)	重做 (Ctrl+Shift+Z)
 Tile grid (G)	圖塊格線 (G)
 Assets: every object and road type, with pictures (B)	資源：所有物件與道路類型，含圖片 (B)
@@ -769,11 +773,11 @@ In a row along a line	沿線成排
 Every	每隔
 Draw new	繪製新的
 Edit existing	編輯現有的
-Click a path to pick it: every point is a dot to drag (the small ones in the middle of a piece bend it). Double-click the path to put a point in. Click a dot, then Del, to take that point out; Del with no dot picked deletes the whole path (Ctrl+Z brings it back). Lanes of roads and junctions belong to their road type: use Edit its AI lanes on the road.	點擊路徑即可選取：每個點都是可拖曳的圓點（各段中間的小圓點可使其彎曲）。按兩下路徑可加點。點擊圓點後按 Del 可移除該點；未選取圓點時按 Del 會刪除整條路徑（Ctrl+Z 可還原）。道路與路口的車道屬於其道路類型：請對道路使用「編輯其 AI 車道」。
+Click a path to pick it: every point is a dot to drag (the small ones in the middle of a piece bend it). Double-click the path to put a point in. Click a dot, then Del, to take that point out; Del with no dot picked deletes the whole path (Ctrl+Z brings it back). Lanes of roads and junctions belong to their road type: use Edit its AI lanes on the road.	點擊路徑即可選取：每個點都是可拖動的圓點（各段中間的小圓點可使其彎曲）。按兩下路徑可加點。點擊圓點後按 Del 可移除該點；未選取圓點時按 Del 會刪除整條路徑（Ctrl+Z 可還原）。道路與路口的行車線屬於其道路類型：請對道路使用「編輯其 AI 行車線」。
 Cars	車輛
 People	行人
 Show these in the other tools too	在其他工具中也顯示這些
-Show the AI's lanes in the other tools too	在其他工具中也顯示 AI 車道
+Show the AI's lanes in the other tools too	在其他工具中也顯示 AI 行車線
 Everything	全部
 Search	搜尋
 Shape the ground under the road	依道路調整其下的地面
@@ -795,7 +799,7 @@ plants (Enter: plant)	株植物（Enter：種植）
 Size	大小
 Apart	間距
 Sows the object chosen below. Right-click entries: "Add to the plant mix" to sow several at random. Clearing takes trees and the mix's objects.	種植下方選取的物件。右鍵點擊項目：「加入植物混合」可隨機種植多種。清除會移除樹木及混合中的物件。
-Mix (picked at random):	混合（隨機挑選）：
+Mix (picked at random):	混合（隨機選取）：
 reading OMSI 2…	正在讀取 OMSI 2…
 items	項
 Nothing found	找不到結果
@@ -810,7 +814,7 @@ Recently used	最近使用
 (not in a folder)	（不在資料夾中）
 Strength	強度
 Mode	模式
-Levels the ground to the height where you start dragging	將地面整平到開始拖曳處的高度
+Levels the ground to the height where you start dragging	將地面整平到開始拖動處的高度
 Softens bumps and edges	使凸起與邊緣變柔和
 Raises the ground under the brush	抬高筆刷下的地面
 Lowers the ground under the brush	降低筆刷下的地面
@@ -818,7 +822,7 @@ Gives flat ground the rolls and dips of a natural field; hold longer for more	�
 Paint a lake or a river: the ground is dug to a bed under the water's level (where you start the stroke, or the tile's water) and the tile gets water at that level. Water in OMSI is one level for a whole tile: another low place on the same tile shows it too	繪製湖或河：地面會挖成水位以下的河床（水位取自筆劃起點處或圖塊的水面），圖塊也會得到該水位的水。OMSI 中整個圖塊只有一個水位：同一圖塊上其他低窪處也會顯示水
 Click where it starts, then where it ends: the ground between becomes one even slope as wide as the brush (an embankment, a ramp, a level bed)	先點擊起點，再點擊終點：兩者之間的地面會變成與筆刷同寬的均勻斜坡（路堤、坡道、平整路基）
 To a height	到指定高度
-Flatten to the height typed instead of the one where the drag starts (a level square, a platform)	整平到輸入的高度，而非拖曳起點處的高度（平整的廣場、平台）
+Flatten to the height typed instead of the one where the drag starts (a level square, a platform)	整平到輸入的高度，而非拖動起點處的高度（平整的廣場、平台）
 Depth	深度
 The water's level is set where a stroke starts: start at the bank.	水位取自筆劃起點：請從岸邊開始。
 Brush	筆刷
@@ -940,13 +944,13 @@ Reset all keys	重設所有按鍵
 Mouse	滑鼠
 Right button held	按住右鍵
 look round; W A S D fly, Q / E down / up, Shift faster, wheel: speed	環顧四周；W A S D 飛行，Q / E 下降／上升，Shift 加速，滾輪：速度
-Middle drag	中鍵拖曳
+Middle drag	中鍵拖動
 pan	平移
-Alt + left / right / middle drag	Alt + 左／右／中鍵拖曳
+Alt + left / right / middle drag	Alt + 左／右／中鍵拖動
 orbit / zoom / pan (as in Unity)	環繞／縮放／平移（如 Unity）
-Left drag on nothing	在空白處左鍵拖曳
+Left drag on nothing	在空白處左鍵拖動
 select with a box	框選
-Alt + left drag	Alt + 左鍵拖曳
+Alt + left drag	Alt + 左鍵拖動
 orbit round the point under the cursor	繞游標下的點環繞
 Wheel	滾輪
 move towards the cursor	朝游標移動
@@ -954,7 +958,7 @@ Trackpad	觸控板
 Two fingers	兩指
 Pinch / twist	捏合／扭轉
 zoom / turn	縮放／旋轉
-Option + two fingers or drag	Option + 兩指或拖曳
+Option + two fingers or drag	Option + 兩指或拖動
 Fixed keys	固定按鍵
 Arrow keys	方向鍵
 move over the map (Shift: faster)	在地圖上移動（Shift：加速）
@@ -964,7 +968,7 @@ move the selection a grid step (Shift: 10 cm)	將選取內容移動一個格線�
 Alt + Page Up / Down	Alt + Page Up / Down
 selection up / down 10 cm (Shift: 1 m)	選取內容上升／下降 10 cm（Shift：1 m）
 add to / take from the selection	加入選取／從選取中移除
-Shift / Ctrl + drag on empty ground	Shift / Ctrl + 在空白地面拖曳
+Shift / Ctrl + drag on empty ground	Shift / Ctrl + 在空白地面拖動
 select with a box (Shift adds)	框選（Shift 為加選）
 Double-click a road	按兩下道路
 select all of it	選取整條道路
@@ -980,11 +984,11 @@ Picture size	圖片大小
 Shapes…	形狀…
 Close (B)	關閉 (B)
 Scenery objects	場景物件
-Splines (roads, tracks…)	樣條（道路、軌道…）
+Splines (roads, tracks…)	Spline（道路、軌道…）
 Favourite on / off	我的最愛 開／關
 content folder (mod, import, own)	內容資料夾（模組、匯入、自有）
 OMSI 2	OMSI 2
-width	寬度
+width	闊度
 Build with it	以此建造
 Place it	放置
 PBR material…	PBR 材質…
@@ -1091,7 +1095,7 @@ Multiplayer	多人遊戲
 Joining… (a big map takes a while to come)	正在加入…（大型地圖需要一段時間傳送）
 Recover a conflicting edit…	復原衝突的編輯…
 Recovered your edit; undo is available	已復原您的編輯；可以復原
-Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.	共同編輯一張地圖：一人主持，其他人加入。道路、物件、地面和上色在製作時即時共享；時刻表、交通和說明仍屬於主機，由主機儲存地圖。每個人都必須安裝相同的物件和樣條。
+Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.	共同編輯一張地圖：一人主持，其他人加入。道路、物件、地面和上色在製作時即時共享；時刻表、交通和說明仍屬於主機，由主機儲存地圖。每個人都必須安裝相同的物件和Spline。
 Your name	您的名稱
 Password	密碼
 Host this map	主持此地圖
@@ -1129,7 +1133,7 @@ Angle	角度
 Snap headings to the angle step	將朝向吸附到角度單位
 Grid	格線
 Snap positions to the grid	將位置吸附到格線
-Click two points to measure the distance and gradient between them (U) · right-click: off	點擊兩點以量測它們之間的距離與坡度 (U) · 右鍵：關閉
+Click two points to measure the distance and gradient between them (U) · right-click: off	點擊兩點以量測它們之間的距離與斜度 (U) · 右鍵：關閉
 Auto-Terrain	自動地形
 What you build follows the ground: roads, paths and tracks take its height (off: they run level from where they start). Only what is built from now on; nothing already there changes	建造的內容會跟隨地面：道路、路徑和軌道採用地面高度（關閉：從起點起保持水平）。僅對之後建造的內容有效；已有的不會變動
 Auto-Switch	自動轉轍器
@@ -1139,7 +1143,7 @@ Auto-Align	自動對齊
 Line objects up with the nearest road (Shift: put it freely)	讓物件對齊最近的道路（Shift：自由放置）
 Selection	選取
 A click on one of it selects all of it, Ctrl + click one alone	點擊其中一個即選取全部，Ctrl + 點擊只選一個
-Keep these together: a click on one selects all, a drag moves all (Ctrl+G)	保持在一起：點擊一個即選取全部，拖曳會移動全部 (Ctrl+G)
+Keep these together: a click on one selects all, a drag moves all (Ctrl+G)	保持在一起：點擊一個即選取全部，拖動會移動全部 (Ctrl+G)
 Apply	套用
 Turn	旋轉
 Level the ground under them	整平其下的地面
@@ -1157,31 +1161,31 @@ Make every road	將所有道路設為
 The road type chosen in the Roads tool's catalogue	「道路」工具目錄中選取的道路類型
 Lay them on the ground	貼合地面
 Reverse their direction	反轉其方向
-Even slope along them	沿線均勻坡度
+Even slope along them	沿線均勻斜度
 One chain of roads: from the height at one end to that at the other, evenly (a bridge, a ramp)	一串道路：從一端的高度均勻變化到另一端的高度（橋、坡道）
-Edit its AI lanes	編輯其 AI 車道
-Its lanes become AI paths of their own (the same lines, the same way) that the Logic tool's Edit existing bends, moves and deletes. The road keeps its look.	其車道會變成獨立的 AI 路徑（相同的線、相同的方向），可用「邏輯」工具的「編輯現有的」彎曲、移動和刪除。道路外觀不變。
+Edit its AI lanes	編輯其 AI 行車線
+Its lanes become AI paths of their own (the same lines, the same way) that the Logic tool's Edit existing bends, moves and deletes. The road keeps its look.	其行車線會變成獨立的 AI 路徑（相同的線、相同的方向），可用「邏輯」工具的「編輯現有的」彎曲、移動和刪除。道路外觀不變。
 Ends (joined roads follow)	端點（相連的道路會跟隨）
 height	高度
-gradient	坡度
+gradient	斜度
 cant	超高
 The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.	道路在此端的行進方向（度）。拖動它會旋轉端點；相連的道路會一併轉過去。
 Surface	表面
-A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	畫出的道路或拖到路上的樣條端點會落在路邊（路邊的地面也算，方便抓到邊）並採用該路的高度；在物件上方則落在物件本身的面上（路緣、行人路、橋面、月台——圓圈標出該處）。
+A road drawn or a spline's end dragged onto a road lands on its edge (the ground just beside it counts, so an edge is easy to hold) and at the road's own height; over an object it lands on the object's own face (a kerb, a pavement, a bridge's deck, a platform - a ring marks the place).	畫出的道路或拖到路上的Spline端點會落在路邊（路邊的地面也算，方便抓到邊）並採用該路的高度；在物件上方則落在物件本身的面上（路緣、行人路、橋面、月台——圓圈標出該處）。
 Snap to road edges and surfaces	貼齊道路邊緣或物件表面
 What is drawn beside a road starts on its edge; over an object it starts on the object's own face, at that height	在路旁畫的東西從路邊開始；在物件上方則從物件本身的面、以該高度開始
 Banking across the road, %: positive lowers its right side (into a right bend)	道路橫向傾斜，%：正值使右側降低（用於右彎）
 End	End
-Even slope end to end	兩端均勻坡度
-Both gradients to the straight climb between the ends' heights	兩個坡度都設為連接兩端高度的直線爬升
+Even slope end to end	兩端均勻斜度
+Both gradients to the straight climb between the ends' heights	兩個斜度都設為連接兩端高度的直線爬升
 Speed limit, km/h	速度限制，km/h
 Traffic density ×	交通密度 ×
 Priority	優先權
 Trucks (0: none)	卡車（0：無）
 No cars	無小客車
 Buses only	僅限巴士
-For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers	對 AI 與玩家在其中一條路徑（車道）上有效，從 0 起算：視圖中會顯示編號
-Path (lane) number	路徑（車道）編號
+For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers	對 AI 與玩家在其中一條路徑（行車線）上有效，從 0 起算：視圖中會顯示編號
+Path (lane) number	路徑（行車線）編號
 Hanging on it	掛在其上
 Points to hang objects on:	可掛物件的點：
 Select it	選取它
@@ -1194,15 +1198,15 @@ Turn each	每份旋轉
 Rows	排數
 More than one: a grid (an orchard, a car park), each row a row step on	多於一排：成為格狀（果園、停車場），每排相隔一個排距
 Row step	排距
-Tilted to the ground under it, the way it slopes forward and to the side (a fence, a bench or a shed on a hillside)	依其下的地面傾斜，順著前後與左右的坡度（山坡上的圍欄、長椅或棚屋）
+Tilted to the ground under it, the way it slopes forward and to the side (a fence, a bench or a shed on a hillside)	依其下的地面傾斜，順著前後與左右的斜度（山坡上的圍欄、長椅或棚屋）
 Heights along the ground again, smoothed so it climbs a hill rather than every bump (after shaping the ground or laying a height map over it); where a road not selected joins, its height is kept	高度再次沿地面，並加以平滑，使其隨山丘爬升而非跟隨每個小起伏（在塑造地形或鋪上高度圖之後）；與未選取道路相接處，保留其高度
 Each starts where it ended: the traffic on it goes the other way (a one-way street, a track's direction), the road itself stays where it is	每段從原本結束處開始：其上的交通方向相反（單行道、軌道方向），道路本身位置不變
-A second track or the other carriageway: the selected splines copied alongside, bends kept exact, linked as they are	第二條軌道或另一側車道：選取的樣條複製到旁邊，彎曲精確，連結與原件相同
+A second track or the other carriageway: the selected splines copied alongside, bends kept exact, linked as they are	第二條軌道或另一側行車線：選取的Spline複製到旁邊，彎曲精確，連結與原件相同
 To the left	向左
 To the right	向右
-Left and right of the way the road runs (its arrows with AI lanes shown)	道路行進方向的左與右（顯示 AI 車道時為其箭頭）
-For trams and electric trains: a wire spline laid on the selected track, piece for piece and linked (its height is the wire spline's own); the masts go in with Objects along the road	供電車與電聯車使用：在選取的軌道上鋪設電線樣條，逐段對應並連結（高度為電線樣條自身的）；電線桿以「沿路物件」放置
-No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)	未安裝電線樣條（名稱中含 Fahrdraht、Oberleitung 或 wire）
+Left and right of the way the road runs (its arrows with AI lanes shown)	道路行進方向的左與右（顯示 AI 行車線時為其箭頭）
+For trams and electric trains: a wire spline laid on the selected track, piece for piece and linked (its height is the wire spline's own); the masts go in with Objects along the road	供電車與電聯車使用：在選取的軌道上鋪設電線Spline，逐段對應並連結（高度為電線Spline自身的）；電線桿以「沿路物件」放置
+No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)	未安裝電線Spline（名稱中含 Fahrdraht、Oberleitung 或 wire）
 Lay it	鋪設
 Wire pieces laid:	已鋪設電線段數：
 Paint the ground along it	沿其為地面上色
@@ -1216,7 +1220,7 @@ Soft edge	柔和邊緣
 A gravel verge, dirt by a track, grass along a path: the brush of the Paint tool touches it up afterwards	碎石路肩、軌道旁的泥土、小徑旁的草：之後可用「上色」工具的筆刷修飾
 Beside	旁側
 Lean with the road	隨道路傾斜
-Each object leans with the road's gradient and banking (bays and arrows on the road); off, it stands upright	每個物件隨道路的坡度與超高傾斜（道路上的停靠灣與箭頭）；關閉時直立
+Each object leans with the road's gradient and banking (bays and arrows on the road); off, it stands upright	每個物件隨道路的斜度與超高傾斜（道路上的停靠灣與箭頭）；關閉時直立
 A text the row's objects show (@ starts a new line)	排中物件顯示的文字（@ 開始新的一行）
 Object:	物件：
 Pick an object (a lamp, a tree, a bollard) in the Objects tool's catalogue	在「物件」工具目錄中選取物件（路燈、樹木、護柱）
@@ -1228,33 +1232,33 @@ Remove all rows	移除所有排
 Roundabout: click the centre, then the ring	環島：先點擊中心，再點擊環道
 A one-way ring of the chosen road type (pick a one-way road); roads inside are cut back to it and joined with junctions	所選道路類型的單向環道（請選單行道）；內部的道路會被裁切到環道並以路口接上
 Keep the height (bridge, embankment)	保持高度（橋、路堤）
-An even gradient from end to end, the ground left as it is; the rise to the end can be typed while drawing. Pillars: select the road and put them along it as objects.	從起點到終點的均勻坡度，地面維持原樣；繪製時可輸入到終點的升高量。橋墩：選取道路，沿線以物件放置。
+An even gradient from end to end, the ground left as it is; the rise to the end can be typed while drawing. Pillars: select the road and put them along it as objects.	從起點到終點的均勻斜度，地面維持原樣；繪製時可輸入到終點的升高量。橋墩：選取道路，沿線以物件放置。
 Rise	升高
 Shift: straight · Enter: build	Shift：直線 · Enter：建造
 Junction	路口
 Traffic lights	紅綠燈
-Lights need three roads or more	號誌燈需要至少三條道路
+Lights need three roads or more	紅綠燈需要至少三條道路
 Main road green	主要道路綠燈
 Side roads green	次要道路綠燈
 The main road is the pair of roads most in line; red-yellow 2 s, yellow 3 s, 2 s all red between	主要道路是最接近一直線的那一對道路；紅黃 2 秒，黃燈 3 秒，兩相之間全紅 2 秒
 Zebra crossings	斑馬線
 Road	道路
 Build it again	重新建立
-Makes the plate, its kerbs and lanes again for the roads as they are now	依道路的目前狀態重新建立路口底板、路緣與車道
+Makes the plate, its kerbs and lanes again for the roads as they are now	依道路的目前狀態重新建立路口底板、路緣與行車線
 Linked objects	連結的物件
-An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.	物件可從另一物件取得狀態 ([varparent])：號誌燈頭顯示其路口程式的燈號，站牌顯示器顯示其站牌。
+An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.	物件可從另一物件取得狀態 ([varparent])：交通燈燈頭顯示其路口程式的燈號，站牌顯示器顯示其站牌。
 Takes its state from	取得狀態自
 Select it: IDCode	選取它：IDCode
 Takes its state from an object that is gone: IDCode	取得狀態自已不存在的物件：IDCode
 Takes its state from nothing	不從任何物件取得狀態
-Light	號誌
+Light	紅綠燈
 Its light is not one of the crossing's: it stays dark	其燈號不是路口的燈號之一：它不會亮
 That object runs no traffic lights: link the head to a crossing with a light program	該物件不控制紅綠燈：請將燈頭連結到有燈號程式的路口
-A signal head: link it to its crossing to have it light	號誌燈頭：請將它連結到其路口才會亮
+A signal head: link it to its crossing to have it light	交通燈燈頭：請將它連結到其路口才會亮
 Click the object in the view… (Esc)	在視圖中點擊物件…（Esc）
 Link to another…	連結到其他…
 Link to an object…	連結到物件…
-Then click the object it is to take its state from (a crossing for a signal head)	然後點擊它要取得狀態的物件（號誌燈頭則為路口）
+Then click the object it is to take its state from (a crossing for a signal head)	然後點擊它要取得狀態的物件（交通燈燈頭則為路口）
 Taking their state from it:	從它取得狀態的：
 light	燈號
 Click the object it takes its state from	點擊它要取得狀態的物件
@@ -1262,7 +1266,7 @@ stop	站牌
 Find in map	在地圖中尋找
 Name, file, IDCode, stop or x, y	名稱、檔案、IDCode、站牌或 x, y
 The point	點
-Spline	樣條
+Spline	Spline
 Object	物件
 Nothing on the map has this IDCode.	地圖上沒有任何項目使用此 IDCode。
 kinds	種
@@ -1281,7 +1285,7 @@ opacity	不透明度
 Load satellite imagery	載入衛星影像
 Place the map on the Earth first (Satellite and terrain…)	請先將地圖放在地球上（衛星與地形…）
 Load image file…	載入圖片檔…
-Your own picture for this tile (a scan, a screenshot): or drop it on the window	此圖塊專用的自有圖片（掃描檔、螢幕截圖）：或將它拖曳到視窗
+Your own picture for this tile (a scan, a screenshot): or drop it on the window	此圖塊專用的自有圖片（掃描檔、螢幕截圖）：或將它拖動到視窗
 Load the OpenStreetMap map	載入 OpenStreetMap 地圖
 OpenStreetMap map for all tiles	所有圖塊的 OpenStreetMap 地圖
 The map as openstreetmap.org draws it (streets with their names, houses, water, green, stop signs), drawn sharp from OpenStreetMap data and laid on the tile in place of a satellite picture: to build roads and houses over by eye. Nothing is generated from it.	如 openstreetmap.org 所繪製的地圖（含名稱的街道、房屋、水域、綠地、站牌標誌），由 OpenStreetMap 資料清晰繪出並鋪在圖塊上取代衛星圖片：方便目測在上面建造道路和房屋。不會由此產生任何內容。
@@ -1375,7 +1379,7 @@ of these tiles have your own pictures. Replace them with satellite imagery?	個�
 Replace them	取代它們
 Keep my pictures	保留我的圖片
 Groups for other maps	供其他地圖使用的群組
-A selection kept under a name, to put down again in any map (a stop with its shelter and signs, a crossing with its lights)	以名稱保存的選取內容，可在任何地圖上再次放下（含候車亭與標誌的站牌、含號誌燈的路口）
+A selection kept under a name, to put down again in any map (a stop with its shelter and signs, a crossing with its lights)	以名稱保存的選取內容，可在任何地圖上再次放下（含候車亭與標誌的站牌、含紅綠燈的路口）
 Keep the selection	保存選取內容
 Group kept	群組已保存
 Select what to keep in the view first.	請先在視圖中選取要保存的內容。
@@ -1407,7 +1411,7 @@ A test drive	試駕
 F5 saves and starts openOMSI on the map: pick line 1 and drive.	F5 會儲存並在 openOMSI 中啟動該地圖：選擇路線 1 即可駕駛。
 A map you can drive in service:	可依班表營運行駛的地圖：
 Show me	帶我看
-Your stops stand away from the roads: a bus serves a stop within 15 m of its lane.	您的站牌離道路太遠：巴士只服務離其車道 15 m 以內的站牌。
+Your stops stand away from the roads: a bus serves a stop within 15 m of its lane.	您的站牌離道路太遠：巴士只服務離其行車線 15 m 以內的站牌。
 A real place? Put the map on the Earth (Map > Satellite and terrain), then Map > From OpenStreetMap brings its streets, stops, lines and trees.	真實地點？請將地圖放在地球上（地圖 > 衛星與地形），再用 地圖 > 從 OpenStreetMap 帶入其街道、站牌、路線與樹木。
 Show this for new maps	新地圖時顯示此內容
 The map has no depot file.	地圖沒有車廠檔案。
@@ -1548,7 +1552,7 @@ Cut away the other side first	先切除另一側
 Weld at the mirror	在鏡像處焊接
 Thickness	厚度
 Close the rim	封閉邊緣
-Width	寬度
+Width	闊度
 Segments	分段
 Levels	層級
 Smooth (Catmull-Clark)	平滑 (Catmull-Clark)
@@ -1629,7 +1633,7 @@ Add a glow	新增輝光
 A lamp's bulb, a lit sign: a glow seen at night	燈泡、發光的招牌：夜間可見的輝光
 Add light on the ground	在地面新增光
 The pool of light a street lamp throws at night	路燈夜間投下的光斑
-Signal head, lamps	號誌燈頭、燈
+Signal head, lamps	交通燈燈頭、燈
 Put it within 40 m of a crossing with a light program: it takes its light from it (or link it in its properties)	請放在有燈號程式的路口 40 m 以內：它會從路口取得燈號（或在屬性中連結）
 Bake	烘焙
 Its textures and colours painted into one picture on a new UV map (one material: fewer draws in the game), with its own shadows and its lamps' night light if chosen	其貼圖和顏色烘焙成一張圖片，放在新的 UV 貼圖上（一個材質：遊戲中繪製次數更少），可選擇包含其自身陰影及燈的夜間光照
@@ -1654,8 +1658,8 @@ A copy of this object's type of its own is made for it, with its meshes, materia
 As a mesh	作為網格
 Copy as an object	複製為物件
 An openMapper object of its shape beside it, to edit as a mesh (vertices, edges, faces)	旁邊建立同樣形狀的 openMapper 物件，可作為網格（頂點、邊、面）編輯
-The same, the spline taken away (its lanes go with it)	相同，但移除樣條（其車道一併移除）
-Splines as a mesh	樣條作為網格
+The same, the spline taken away (its lanes go with it)	相同，但移除Spline（其行車線一併移除）
+Splines as a mesh	Spline作為網格
 Copy as one object	複製為單一物件
 Replace by one object	以單一物件取代
 Export the selection…	匯出選取內容…
@@ -1677,7 +1681,7 @@ Invert (Ctrl+I)	反選 (Ctrl+I)
 Linked (Ctrl+L)	相連 (Ctrl+L)
 More	更多
 Less	減少
-Click, Shift + click to add, drag on nothing for a box, a second click or Alt + click for a loop	點擊；Shift + 點擊為加選；在空白處拖曳為框選；再點一次或 Alt + 點擊為循環
+Click, Shift + click to add, drag on nothing for a box, a second click or Alt + click for a loop	點擊；Shift + 點擊為加選；在空白處拖動為框選；再點一次或 Alt + 點擊為循環
 Change	變更
 Extrude (E)	擠出 (E)
 Inset (I)	內縮 (I)
@@ -1735,7 +1739,7 @@ Material of the selected faces	選取面的材質
 With lamps	含燈
 Street lamp	路燈
 A pole with a lamp that glows and lights the ground at night	附有燈的燈桿，燈會發光並在夜間照亮地面
-Signal head	號誌燈頭
+Signal head	交通燈燈頭
 A traffic light of the lamps below that a crossing's light program drives	由下方的燈組成的紅綠燈，由路口的燈號程式驅動
 Lamps:	燈：
 Picture, light, sound	圖片、光、聲音
@@ -1745,7 +1749,7 @@ Light source	光源
 A lamp that glows and lights the ground round it	會發光並照亮周圍地面的燈
 Sound source…	音源…
 Choose a sound file (.wav): it plays where you put the marker, as far as the radius carries; the marker shows in the editor only	選擇聲音檔 (.wav)：它在標記放置處播放，傳到半徑所及之處；標記只在編輯器中顯示
-Picture width, m	圖片寬度，m
+Picture width, m	圖片闊度，m
 Repeats	重複次數
 on the ground	在地面上
 standing	直立
@@ -1755,7 +1759,7 @@ at night	夜間
 always	一律
 Sound reach, m	聲音範圍，m
 Sound volume	音量
-Overview: click or drag to move there · double-click: larger / smaller · M: hide	總覽：點擊或拖曳以移動到該處 · 按兩下：放大／縮小 · M：隱藏
+Overview: click or drag to move there · double-click: larger / smaller · M: hide	總覽：點擊或拖動以移動到該處 · 按兩下：放大／縮小 · M：隱藏
 Name:	名稱：
 My town	我的城鎮
 Description:	說明：
@@ -1800,7 +1804,7 @@ Downloading…	下載中…
 no type chosen	未選擇類型
 Use the chosen	使用所選的
 One-way roads	單行道
-Each carriageway of a dual road and one-way streets: with a one-way road type they lie side by side as they should; with none chosen they get their kind's	雙向分隔道路的每一側車道與單行街道：使用單行道路類型時會並排鋪設，如應有的樣子；未選擇時則採用各自種類的類型
+Each carriageway of a dual road and one-way streets: with a one-way road type they lie side by side as they should; with none chosen they get their kind's	雙向分隔道路的每一側行車線與單行街道：使用單行道路類型時會並排鋪設，如應有的樣子；未選擇時則採用各自種類的類型
 as their kind	依其種類
 no stop object	沒有站牌物件
 The stop chosen in Game logic > Bus stops	在「遊戲邏輯 > 站牌」中選取的站牌
@@ -1839,14 +1843,14 @@ Pick a tree in the catalogue, then click round the area	在目錄中選取樹木
 Pick a road type, click the centre, then the ring	選取道路類型，點擊中心，再點擊環道
 Select a road (double-click: all of it): its properties show its height profile	選取道路（按兩下：整條）：其屬性中有高度剖面
 Select one of openMapper's junctions: its properties have Traffic lights and crossings	選取 openMapper 的路口：其屬性中有紅綠燈與行人穿越道
-Select the signal head (or a display): Linked objects in its properties, then click its crossing	選取號誌燈頭（或顯示器）：在其屬性中的「連結的物件」，然後點擊其路口
+Select the signal head (or a display): Linked objects in its properties, then click its crossing	選取交通燈燈頭（或顯示器）：在其屬性中的「連結的物件」，然後點擊其路口
 Select a road, pick an object in the Objects catalogue: Objects along the road in its properties	選取道路，並在物件目錄中選取物件：其屬性中的「沿路物件」
 Select a track (double-click: all of it): Overhead wire under Parallel copy in its properties	選取軌道（按兩下：整條）：其屬性中「平行複製」下的「架空電線」
 Select a road or a chain: Parallel copy in its properties	選取道路或一串道路：其屬性中的「平行複製」
 Select a road (double-click: all of it): Paint the ground along it in its properties	選取道路（按兩下：整條）：其屬性中的「沿其為地面上色」
 Click a tile: its water is in the panel; lower the ground under it with the Terrain tool	點擊圖塊：水在面板中；用「地形」工具降低其下的地面
 Height map: at the end of the Terrain panel	高度圖：在「地形」面板底部
-By slope and height: at the end of the Paint panel	依坡度與高度：在「上色」面板底部
+By slope and height: at the end of the Paint panel	依斜度與高度：在「上色」面板底部
 View menu: Time of day, Season	檢視選單：時段、季節
 What do you want to do?	您想做什麼？
 Groups…	群組…
@@ -1861,7 +1865,7 @@ Plant a wood or a park	種植樹林或公園
 Roundabout	環島
 Height profile of a road	道路的高度剖面
 Traffic lights and zebra crossings	紅綠燈與斑馬線
-Link a signal head to its crossing	將號誌燈頭連結到其路口
+Link a signal head to its crossing	將交通燈燈頭連結到其路口
 Objects along a road	沿路物件
 Overhead wire along a track	沿軌道的架空電線
 Parallel copy of a road	道路的平行複製
@@ -1890,14 +1894,14 @@ Delete the PBR material	刪除 PBR 材質
 PBR maps taken away	PBR 貼圖已移除
 Height profile	高度剖面
 over the ground	離地
-Click: go there in the view · drag a dot (a joint) up or down: its height	點擊：在視圖中前往該處 · 上下拖曳圓點（接點）：其高度
+Click: go there in the view · drag a dot (a joint) up or down: its height	點擊：在視圖中前往該處 · 上下拖動圓點（接點）：其高度
 Climbs, falls	爬升、下降
 Steepest	最陡
 at	於
 Highest over the ground	離地最高
 Deepest under it	地下最深
 Over 8 % is steep for a bus; over 12 % few streets go	超過 8 % 對巴士來說太陡；超過 12 % 的街道很少
-roadway	車行道
+roadway	行車道
 Road types	道路類型
 Make a new road type…	建立新道路類型…
 My road	我的道路
@@ -1914,16 +1918,16 @@ Zebra crossings on every arm	每個路口臂都有斑馬線
 Used for the junctions made from now on (where several road types meet, the one asking more wins). A junction already made keeps its own settings: select it to change them.	套用於之後建立的路口（多種道路類型相遇時，以要求較高者為準）。已建立的路口保留自己的設定：選取它即可變更。
 Pick a road type on the left, or make a new one.	請在左側選取道路類型，或建立新的。
 Road maker	道路製作器
-Lanes	車道
+Lanes	行車線
 (▼ 0: one-way)	(▼ 0：單向)
-Lane width	車道寬度
+Lane width	行車線闊度
 Middle strip	中央分隔帶
-Footways	人行道
+Footways	行人路
 Kerb	路緣
-Roadway texture	車行道貼圖
-Footway texture	人行道貼圖
+Roadway texture	行車道貼圖
+Footway texture	行人路貼圖
 Own…	自有…
-The roadway texture is laid once across all its lanes (as OMSI 2's lane textures are painted: pick one with as many lanes); the footway texture's right end is the kerb.	車行道貼圖橫跨所有車道鋪一次（如 OMSI 2 車道貼圖的繪製方式：請選車道數相同的）；人行道貼圖的右端是路緣。
+The roadway texture is laid once across all its lanes (as OMSI 2's lane textures are painted: pick one with as many lanes); the footway texture's right end is the kerb.	行車道貼圖橫跨所有行車線鋪一次（如 OMSI 2 行車線貼圖的繪製方式：請選行車線數相同的）；行人路貼圖的右端是路緣。
 not on the map	不在地圖上
 Signal routes	號誌路徑
 Each railway signal clears when a train wants the track pieces of its route and none stands on them.	當列車需要其路徑的軌道段，且其上沒有車輛時，鐵路號誌即放行。
@@ -1980,11 +1984,11 @@ Add two stops or more: the way between them is found along the roads.	新增兩�
 Finding the way…	正在尋找路徑…
 Route found:	已找到路徑：
 km along the roads (blue in the view)	公里沿道路（視圖中為藍色）
-the way drives a one-way lane against its direction; is a path drawn the wrong way round?	路徑逆著單行車道的方向行駛；是否路徑畫反了？
+the way drives a one-way lane against its direction; is a path drawn the wrong way round?	路徑逆著單行線的方向行駛；是否路徑畫反了？
 is not on the map	不在地圖上
-no road with car lanes within 15 m	15 m 內沒有帶汽車車道的道路
+no road with car lanes within 15 m	15 m 內沒有帶汽車行車線的道路
 No way	沒有路徑
-the roads are not joined, or run the other way (see View > AI lanes)	道路未相連，或方向相反（見 檢視 > AI 車道）
+the roads are not joined, or run the other way (see View > AI lanes)	道路未相連，或方向相反（見 檢視 > AI 行車線）
 The trip is saved, but its way is not until this is mended	班次會儲存，但在此問題修正前路徑不會儲存
 Trip time	行車時間
 Guess:	估算：
@@ -2098,12 +2102,12 @@ Flip ↔	翻轉 ↔
 Flip ↕	翻轉 ↕
 Scale ×2	縮放 ×2
 Scale ÷2	縮放 ÷2
-Fit	符合
+Fit	置中縮放
 Stretched to fill the picture	拉伸以填滿圖片
 Pack islands	打包島
 Average island scale	平均島的縮放
 Seams from islands	依島建立接縫
-Click: a face (Shift adds) · drag: move the selected · wheel: zoom · right button: pan	點擊：面（Shift 為加選）· 拖曳：移動選取內容 · 滾輪：縮放 · 右鍵：平移
+Click: a face (Shift adds) · drag: move the selected · wheel: zoom · right button: pan	點擊：面（Shift 為加選）· 拖動：移動選取內容 · 滾輪：縮放 · 右鍵：平移
 Could not keep the views	無法保存視角
 Saved views	已儲存的視角
 Places of the map to come back to: Ctrl+1…9 goes to the first nine, Ctrl+Shift+1…9 keeps the view there	地圖上方便回來的地點：Ctrl+1…9 前往前九個，Ctrl+Shift+1…9 在那裡記錄視角
@@ -2152,7 +2156,7 @@ This end is already joined to something	這一端已與其他東西相連
 The junction piece could not be read	無法讀取路口零件
 This object has no places for roads to join	此物件沒有可連接道路的位置
 Quiet street	安靜街道
-Street with a footway on one side	一側有人行道的街道
+Street with a footway on one side	一側有行人路的街道
 Main road	主幹道
 Avenue with a green strip	附綠化帶的大道
 One-way street	單行街道
@@ -2171,9 +2175,9 @@ Lit in certain months	在特定月份亮起
 Compulsory stop	必停站
 Request stop	招手停靠站
 Terminus	終點站
-Every bus stops here and people are always waiting	每輛公車都停靠,總有人在等候
-A bus stops only if somebody waits or presses the stop button	只有有人等候或按下下車鈴時,公車才停靠
-Where a line begins or ends: everybody gets off, a bus waits for its departure	路線的起點或終點:所有人下車,公車等待發車
+Every bus stops here and people are always waiting	每輛巴士都停靠,總有人在等候
+A bus stops only if somebody waits or presses the stop button	只有有人等候或按下下車鈴時,巴士才停靠
+Where a line begins or ends: everybody gets off, a bus waits for its departure	路線的起點或終點:所有人下車,巴士等待發車
 when wanted	有需要時
 drive through	直接通過
 when early	提前到達時
@@ -2195,17 +2199,17 @@ No piece is made for this road type; the list holds every piece with places for 
 Start from	以此為基礎
 a ready-made road…	現成的道路…
 raised	抬高
-As high as the footways, with a kerb along it	與人行道等高,沿邊有路緣
+As high as the footways, with a kerb along it	與行人路等高,沿邊有路緣
  m left	 公尺 左側
 a different one on the right	右側另用一種
  m right	 公尺 右側
 Middle strip texture	中央分隔島材質
-like the roadway	與車道相同
+like the roadway	與行車線相同
 No problems found	未發現問題
 Scripts	腳本
 openOMSI: the map's script	openOMSI:地圖腳本
 Object scripts (OMSI 2 and openOMSI)	物件腳本(OMSI 2 和 openOMSI)
-A Lua script that runs in openOMSI while this map is played: it reacts to what happens (a stop reached, a new hour, a new trip) and can show messages, change the traffic and the weather, move the bus. `on` and `every` work for this map only. OMSI 2 does not run Lua: its scripts belong to objects (the next tab).	在玩這張地圖時由 openOMSI 執行的 Lua 腳本:它會對發生的事件作出反應(抵達站牌、新的一小時、新的班次),可以顯示訊息、改變交通和天氣、移動公車。`on` 和 `every` 僅對這張地圖有效。OMSI 2 不執行 Lua:它的腳本屬於物件(下一個分頁)。
+A Lua script that runs in openOMSI while this map is played: it reacts to what happens (a stop reached, a new hour, a new trip) and can show messages, change the traffic and the weather, move the bus. `on` and `every` work for this map only. OMSI 2 does not run Lua: its scripts belong to objects (the next tab).	在玩這張地圖時由 openOMSI 執行的 Lua 腳本:它會對發生的事件作出反應(抵達站牌、新的一小時、新的班次),可以顯示訊息、改變交通和天氣、移動巴士。`on` 和 `every` 僅對這張地圖有效。OMSI 2 不執行 Lua:它的腳本屬於物件(下一個分頁)。
 a ready-made script…	現成的腳本…
 Save the script	儲存腳本
 Written into the content folder's plugins, where openOMSI loads it again at once	寫入內容資料夾的 plugins,openOMSI 會立即重新載入
@@ -2232,17 +2236,17 @@ Waiting, at most	等候人數上限
 Waiting, at least	等候人數下限
 Getting off	下車
 How many of those riding get off here, compared with the other stops: twice the number, twice the riders	與其他站牌相比,乘客在此下車的比例:數值加倍,下車人數也加倍
-How far along the stop people wait and a bus may stand	沿站牌多長的範圍內人們會等候、公車可以停靠
+How far along the stop people wait and a bus may stand	沿站牌多長的範圍內人們會等候、巴士可以停靠
 Platform	月台
 Paired with the stop across the road: one name for both	與道路對面的站牌配對:兩者同名
 Split	拆分
 The stop gets a name of its own (the number is changed in the name box), and renaming one no longer renames the other	該站牌獲得自己的名稱(在名稱欄中修改編號),重新命名其中一個不再重新命名另一個
 Another stop far from here has this name	遠處另一個站牌使用了此名稱
 Make it different	改成不同的
-Which buses drive this line	哪些公車行駛此路線
+Which buses drive this line	哪些巴士行駛此路線
 How the stops are served	站牌的停靠方式
-Always: the bus stops whoever waits (a compulsory stop, a terminus). When wanted: only if somebody gets on or off (a request stop). Drive through: it does not stop on this trip. When early: it stops only if it is ahead of its time.	一律:無論有沒有人等候,公車都停靠(必停站、終點站)。有需要時:僅在有人上下車時停靠(招手停靠站)。直接通過:本班次不停靠。提前到達時:僅在比時刻表提前時停靠。
-The AI buses of this line's tours are taken from the depot group; here the vehicles can be limited by date: only some types, mostly some types, or a fleet number for one tour. A line with nothing here takes any vehicle of the group.	此路線更次所用的 AI 公車取自車庫群組;在此可依日期限制車輛:只用某些車型、主要用某些車型,或為某個更次指定車號。此處沒有設定的路線可使用該群組中的任何車輛。
+Always: the bus stops whoever waits (a compulsory stop, a terminus). When wanted: only if somebody gets on or off (a request stop). Drive through: it does not stop on this trip. When early: it stops only if it is ahead of its time.	一律:無論有沒有人等候,巴士都停靠(必停站、終點站)。有需要時:僅在有人上下車時停靠(招手停靠站)。直接通過:本班次不停靠。提前到達時:僅在比時刻表提前時停靠。
+The AI buses of this line's tours are taken from the depot group; here the vehicles can be limited by date: only some types, mostly some types, or a fleet number for one tour. A line with nothing here takes any vehicle of the group.	此路線更次所用的 AI 巴士取自車庫群組;在此可依日期限制車輛:只用某些車型、主要用某些車型,或為某個更次指定車號。此處沒有設定的路線可使用該群組中的任何車輛。
 Delete this assignment	刪除此指派
 (day, month, year)	(日、月、年)
 It ends before it starts: the game ignores it	結束早於開始:遊戲將忽略它
@@ -2261,13 +2265,13 @@ about 1.2 km	約 1.2 km
 about 1.7 km (the usual)	約 1.7 km（常用）
 about 2.5 km	約 2.5 km
 A big or very detailed map is lighter with fewer tiles: the others are hidden until you click on the empty zone	大型或非常精細的地圖在圖磚較少時更流暢：其餘圖磚會隱藏，直到你點擊空白區域
-Hold Ctrl while drawing to join nothing. Cables, fences and footpaths never join roads or junctions.	繪製時按住 Ctrl 可不連接任何物件。纜線、圍欄和人行道絕不會連接到道路或路口。
+Hold Ctrl while drawing to join nothing. Cables, fences and footpaths never join roads or junctions.	繪製時按住 Ctrl 可不連接任何物件。纜線、圍欄和行人路絕不會連接到道路或路口。
 Auto-Adapt	自動銜接
-Where roads of different width meet, a plate tapers one into the other	在寬度不同的道路相接處，鋪設從一條逐漸過渡到另一條的路面
+Where roads of different width meet, a plate tapers one into the other	在闊度不同的道路相接處，鋪設從一條逐漸過渡到另一條的路面
 A test drive is running: close it first	試駕正在執行：請先關閉
 Write the .x file in its binary form? No: as text, which OMSI 2 and openOMSI read.	要以二進位格式寫入 .x 檔案嗎？不：以文字寫入，OMSI 2 和 openOMSI 都能讀取。
 Where the camera looks	攝影機注視的位置
-Bus stop	公車站
+Bus stop	巴士站
 Vehicle	車輛
 No vehicle (on foot)	無車輛（步行）
 Weather	天氣
@@ -2283,20 +2287,20 @@ Custom junction saved: the Roads tool's automatic junctions use it where roads m
 The junction reaches past the map: add tiles there first	路口超出地圖範圍：請先在該處新增圖磚
 draw some pieces first	請先繪製一些零件
 mark the arms (where roads come in): at least two	標示進出口（道路進入之處）：至少兩個
-the spline cannot be read	無法讀取樣條
+the spline cannot be read	無法讀取Spline
 Draw some pieces first	請先繪製一些零件
 Complex junction	複合路口
-Complex junction put on the map: its pieces are ordinary splines	複合路口已放到地圖上：其零件為一般樣條
-Pick the road type of the pocket first	請先選擇停靠彎的道路類型
-The pocket's road type could not be read	無法讀取停靠彎的道路類型
+Complex junction put on the map: its pieces are ordinary splines	複合路口已放到地圖上：其零件為一般Spline
+Pick the road type of the pocket first	請先選擇停車灣的道路類型
+The pocket's road type could not be read	無法讀取停車灣的道路類型
 Press on a road	請按一下道路
-This stretch is already of the pocket's road type	此路段已是停靠彎的道路類型
-The road type has no drawn width	此道路類型沒有繪製寬度
-Bus pocket	公車停靠彎
-Bus pocket laid	已建立公車停靠彎
-The road is too short here for a pocket of that length	此處道路太短，無法容納該長度的停靠彎
+This stretch is already of the pocket's road type	此路段已是停車灣的道路類型
+The road type has no drawn width	此道路類型沒有繪製闊度
+Bus pocket	巴士停車灣
+Bus pocket laid	已建立巴士停車灣
+The road is too short here for a pocket of that length	此處道路太短，無法容納該長度的停車灣
 The road cannot be cut there	無法在該處切開道路
-Street with a bus pocket	附公車停靠彎的街道
+Street with a bus pocket	附巴士停車灣的街道
 Complex junction editor…	複合路口編輯器…
 Use my custom junctions where they fit	在適用處使用我的自訂路口
 Custom junctions saved from the complex junction editor with Use in automatic junctions on	在複合路口編輯器中儲存且已開啟「用於自動路口」的自訂路口
@@ -2304,14 +2308,14 @@ My junction	我的路口
 Complex junction editor	複合路口編輯器
 Open a saved one…	開啟已儲存的…
 Draw with	繪製方式
-Pick a piece or an arm; drag to move it; Delete removes it	選取零件或進出口；拖曳可移動；按 Delete 可刪除
+Pick a piece or an arm; drag to move it; Delete removes it	選取零件或進出口；拖動可移動；按 Delete 可刪除
 Click the start, then the end	點一下起點，再點終點
 Arc	弧線
 Click the start, a point on the arc, then the end	點一下起點、弧線上的一點，再點終點
 Arm	進出口
 Where a road comes in: click the place, then a point out along the road	道路進入之處：點一下該處，再點沿道路向外的一點
 Snap to the grid and to ends	對齊格線與端點
-Spline type	樣條類型
+Spline type	Spline類型
 Drawing with:	目前繪製：
 Piece	零件
 Lift	抬高
@@ -2322,49 +2326,49 @@ any road type	任何道路類型
 Road: the type chosen	道路：已選擇的類型
 Any	任何
 origin	原點
-Click a piece or an arm to pick it, drag it to move it	點一下零件或進出口即可選取，拖曳可移動
+Click a piece or an arm to pick it, drag it to move it	點一下零件或進出口即可選取，拖動可移動
 Click the start of the piece, then its end	點一下零件的起點，再點其終點
 Click the start, a point the arc passes, then the end	點一下起點、弧線經過的一點，再點終點
 Click where a road comes in, then a point out along the road	點一下道路進入之處，再點沿道路向外的一點
-Wheel zooms, right or middle drag pans, Esc cancels	滾輪縮放，按住右鍵或中鍵拖曳可平移，Esc 取消
-Pick a spline type on the left first	請先在左側選擇樣條類型
+Wheel zooms, right or middle drag pans, Esc cancels	滾輪縮放，按住右鍵或中鍵拖動可平移，Esc 取消
+Pick a spline type on the left first	請先在左側選擇Spline類型
 Too short: the points are too close	太短：兩點距離太近
 arms	進出口
 Put on the map	放到地圖上
-Its pieces become ordinary splines at the middle of the view, to move and change like any other. Nothing about them is automatic	其零件會在檢視中央變成一般樣條，可像其他樣條一樣移動與修改。不含任何自動功能
+Its pieces become ordinary splines at the middle of the view, to move and change like any other. Nothing about them is automatic	其零件會在檢視中央變成一般Spline，可像其他Spline一樣移動與修改。不含任何自動功能
 Use in automatic junctions	用於自動路口
 Where the Roads tool makes a junction by itself and the roads meet as the arms do (same number, facing about the same ways, of the same road types), this one is put there	當「道路」工具自動建立路口，且道路的交會方式與進出口相符（數量相同、方向大致相同、道路類型相同）時，就會放置此路口
 Save as a custom junction	儲存為自訂路口
-Written as a junction piece of the content folder (it shows in the catalogue under Junctions) with lanes for the AI; needs three arms or more	以路口零件的形式寫入內容資料夾（顯示於目錄的「路口」下），並附 AI 用車道；需要三個以上的進出口
+Written as a junction piece of the content folder (it shows in the catalogue under Junctions) with lanes for the AI; needs three arms or more	以路口零件的形式寫入內容資料夾（顯示於目錄的「路口」下），並附 AI 用行車線；需要三個以上的進出口
 Save the drawing	儲存繪圖
 A custom junction is cut back to its arms where roads meet it; draw the roads' own types at the arms so they join cleanly.	道路與自訂路口相接處，路口會在進出口處截斷道路；請在進出口處繪製與道路相同的類型，以便順利銜接。
 Saved as a custom junction	已儲存為自訂路口
-Bus Pocket Tool	公車停靠彎工具
-Tick it, then press on a road: a bus pocket of the road type chosen below is laid there. It stays on, pocket after pocket, until you untick it	勾選後在道路上按一下：會在該處建立下方所選道路類型的公車停靠彎。工具會持續啟用，可連續建立，直到取消勾選
-pick the pocket's road type	選擇停靠彎的道路類型
-Full width over	全寬度，長
-Make a road type with a pocket…	建立含停靠彎的道路類型…
-The stretch is cut out of the road and takes the pocket's type, its ends tapering to the road's width. Made in the road maker (Bus pocket).	該路段會從道路中切出並改用停靠彎的類型，兩端逐漸縮窄至道路寬度。類型在道路製作器（公車停靠彎）中建立。
+Bus Pocket Tool	巴士停車灣工具
+Tick it, then press on a road: a bus pocket of the road type chosen below is laid there. It stays on, pocket after pocket, until you untick it	勾選後在道路上按一下：會在該處建立下方所選道路類型的巴士停車灣。工具會持續啟用，可連續建立，直到取消勾選
+pick the pocket's road type	選擇停車灣的道路類型
+Full width over	全闊度，長
+Make a road type with a pocket…	建立含停車灣的道路類型…
+The stretch is cut out of the road and takes the pocket's type, its ends tapering to the road's width. Made in the road maker (Bus pocket).	該路段會從道路中切出並改用停車灣的類型，兩端逐漸縮窄至道路闊度。類型在道路製作器（巴士停車灣）中建立。
 Top view	俯視圖
 Side view	側視圖
-A lane for buses to stop in, right of the roadway, before the footway. Lay a road type made so where a bay is wanted with the Bus pocket tool of the Roads tool	供公車停靠的車道，位於行車道右側、人行道之前。需要停靠彎的地方，請以「道路」工具的公車停靠彎工具鋪設如此建立的道路類型
+A lane for buses to stop in, right of the roadway, before the footway. Lay a road type made so where a bay is wanted with the Bus pocket tool of the Roads tool	供巴士停靠的行車線，位於行車道右側、行人路之前。需要停車灣的地方，請以「道路」工具的巴士停車灣工具鋪設如此建立的道路類型
 Saved as an object	已儲存為物件
 Saved as an object: it is in the catalogue under Objects, to place like any other	已儲存為物件:位於目錄的「物件」下,可像其他物件一樣放置
 Save as an object	儲存為物件
-The whole drawing as one scenery object of the catalogue (its meshes, and lanes for the AI along its pieces), to place anywhere like any object; arms are not needed	將整幅繪圖作為目錄中的一個場景物件(其網格,以及沿各部分的 AI 車道),可像任何物件一樣放置在任何地方;不需要分支
-Lanes the way the road is drawn	順著道路繪製方向的車道
-Lanes against it	逆向車道
+The whole drawing as one scenery object of the catalogue (its meshes, and lanes for the AI along its pieces), to place anywhere like any object; arms are not needed	將整幅繪圖作為目錄中的一個場景物件(其網格,以及沿各部分的 AI 行車線),可像任何物件一樣放置在任何地方;不需要分支
+Lanes the way the road is drawn	順著道路繪製方向的行車線
+Lanes against it	逆向行車線
 (0 against: one-way)	(逆向 0:單向道)
 The road is too short here for a bay with a taper at both ends	這裡的道路太短,放不下兩端都有漸縮段的停靠灣
 Too near the end of the road for the taper at both ends of the bay	太靠近道路盡頭,放不下停靠灣兩端的漸縮段
 The bay needs a taper at both ends and one could not be laid there	停靠灣兩端都需要漸縮段,而這裡放不下
-Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	選取一段或一條支路;拖曳可移動,拖曳所選段兩端的圓點可修改;Delete 可刪除
+Pick a piece or an arm; drag it to move it, drag the dots at the ends of the picked piece to change it; Delete removes it	選取一段或一條支路;拖動可移動,拖動所選段兩端的圓點可修改;Delete 可刪除
 Click the start, a point on the arc, then the end. Started at the end of a piece with Auto-Align on, two clicks make an arc tangent to it	點選起點、弧上一點,再點終點。在啟用 Auto-Align 時從某段的末端開始,點兩下即可得到與它相切的弧
 Curve	曲線
 A smooth path through every point clicked, for complex turns: Enter, a double click or the button below ends it	通過每個點選位置的平滑路徑,用於複雜的轉彎:Enter、按兩下或下方按鈕可結束
 Finish the curve	完成曲線
 A piece started at the end of another goes on in line with it: a line along its way or across it, an arc or a curve tangent to it. Elsewhere lines keep to steps of 15°	從另一段末端開始的一段會與它順接:沿著它或橫過它的直線、與它相切的弧或曲線。其他地方的直線以 15° 為間隔
-A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	從道路末端開始的不同寬度道路,會保留轉向那一側的邊緣,並鋪設一段漸縮段來銜接
+A road of another width started at the end of a road keeps its edge on the side it bends to, and a taper is laid to get there	從道路末端開始的不同闊度道路,會保留轉向那一側的邊緣,並鋪設一段漸縮段來銜接
 The arms are found by themselves: every free end of a road is where a road comes in. Arms put by hand stay as they are	支路會自動找出:道路的每個自由端都是道路進入之處。手動放置的支路保持不變
 found from a road's free end	由道路的自由端找出
 The whole drawing	整張圖
@@ -2381,13 +2385,13 @@ Higher	較高
 Over the one after it	在後一段之上
 Preview	預覽
 The junction as it will be: the roads running out of the arms, no grid or handles	路口完成後的樣子:從支路延伸出的道路,沒有格線與控制點
-The lanes of the AI over the drawing, with the way they go	AI 的車道疊在圖上,並顯示行進方向
+The lanes of the AI over the drawing, with the way they go	AI 的行車線疊在圖上,並顯示行進方向
 Zoom out (-)	縮小 (-)
 Zoom in (+)	放大 (+)
 The whole drawing in view (F)	整張圖置於視野內 (F)
-Preview: the junction as it will look. Wheel zooms, right or middle drag pans	預覽:路口完成後的樣子。滾輪縮放,按右鍵或中鍵拖曳可平移
+Preview: the junction as it will look. Wheel zooms, right or middle drag pans	預覽:路口完成後的樣子。滾輪縮放,按右鍵或中鍵拖動可平移
 Click the points the curve passes; Enter or a double click ends it	點選曲線經過的點;Enter 或按兩下可結束
-Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	滾輪縮放,按右鍵或中鍵拖曳可平移,F 符合視窗,Ctrl+Z 復原,Esc 取消
+Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels	滾輪縮放，按住右鍵或中鍵拖拉可平移；F 置中縮放；Ctrl+Z 復原；Esc 取消
 Taper in	入口漸縮
 Metres of road the bay takes to open per metre it widens (more: gentler)	停靠灣每加寬一公尺所需展開的道路公尺數(越大:越平緩)
 out	出口
@@ -2400,8 +2404,8 @@ Controls as chosen under Camera	操作方式依「攝影機」中的選擇
 Preset Key Shortcut (from other applications)	其他應用程式的預設快速鍵
 Controls as in OMSI 2's editor	操作方式與 OMSI 2 的編輯器相同
 Off by default. The middle button turns the view, the right button held and moved up and down zooms, a right click on the ground goes there (Shift + right click: the menu), the arrows move the camera, the wheel zooms	預設為關閉。中鍵旋轉視角，按住右鍵上下移動可縮放，在地面按一下右鍵前往該處（Shift + 右鍵：選單），方向鍵移動攝影機，滾輪縮放
-Bay width	停靠彎寬度
-A road type with this pocket lane is made from the chosen one (the road maker's), if it is not the width it has	若所選道路類型（道路製作器中的）寬度不同，則由它建立具有此停靠彎車道的道路類型
+Bay width	停車灣闊度
+A road type with this pocket lane is made from the chosen one (the road maker's), if it is not the width it has	若所選道路類型（道路製作器中的）闊度不同，則由它建立具有此停車灣行車線的道路類型
 Tapers in metres	錐化長度（公尺）
 Give the length of each taper in metres instead of a ratio	以公尺指定每段錐化的長度，而非比例
 Stand a scenery object (a lamp, a shelter, a bin): on a piece it is turned along it, with Auto-Align on	放置場景物件(路燈、候車亭、垃圾桶):在零件上時,若開啟自動對齊,會沿零件方向轉向
@@ -2415,7 +2419,7 @@ The object chosen with the Object tool stood along this piece at the spacing and
 Click where the object stands; on a piece it faces along it	點選物件站立的位置;在零件上時朝向沿零件方向
 Pick an object on the left first	請先在左側選取一個物件
 Turns	轉彎
-A turn of the arm's road type between each two neighbouring arms, so traffic has lanes through the junction	在每兩個相鄰進出口之間，建立一段該進出口道路類型的轉彎，讓車流在路口內有車道可行
+A turn of the arm's road type between each two neighbouring arms, so traffic has lanes through the junction	在每兩個相鄰進出口之間，建立一段該進出口道路類型的轉彎，讓車流在路口內有行車線可行
 Rounded corners	圓角
 Where the roads' middle lines meet, the turn is an arc of this radius (a turn is still made where it does not fit)	道路中心線交會處，轉彎為此半徑的圓弧（圓弧放不下的地方仍會建立轉彎）
 Corner radius	轉角半徑
@@ -2424,12 +2428,12 @@ A piece straight on between arms that face each other	相對的進出口之間�
 auto	自動
 Built by Auto-Junction from the arms	由自動路口依進出口建立
 the plate could not be made from these arms	無法由這些入口建立路板
-Plate with kerbs and footways	帶路緣與人行道的路板
-Junctions as the Roads tool makes them: where roads cross, one ends on another or several end at one place, they are cut back and a plate is laid with rounded kerbs, footways and lanes through it	與道路工具所建相同的路口：道路交叉、一條道路止於另一條，或多條道路止於同一處時，道路會被縮短，並鋪上帶圓弧路緣、人行道與穿過車道的路板
-The bus pocket could not be made	無法建立公車彎
-Tick it, then press on a road: a bus pocket is laid there, on the kerb the road's own traffic keeps to. It stays on, pocket after pocket, until you untick it	開啟後點選道路:會在該道路車流靠的路緣那一側建立公車彎。會一直開啟,直到你關閉
-How much wider the road is along the bay, on the kerb its traffic keeps to; the other side stays as it is	公車彎處道路加寬多少(在其車道的路緣一側);另一側不變
-The stretch is cut out of the road and given the bay along its kerb, its ends tapering to the road's width. The road's own type is widened: nothing to pick.	該路段從道路中切出,並沿路緣加上公車彎,兩端收窄至道路寬度。道路類型會自動加寬:無需選擇。
+Plate with kerbs and footways	帶路緣與行人路的路板
+Junctions as the Roads tool makes them: where roads cross, one ends on another or several end at one place, they are cut back and a plate is laid with rounded kerbs, footways and lanes through it	與道路工具所建相同的路口：道路交叉、一條道路止於另一條，或多條道路止於同一處時，道路會被縮短，並鋪上帶圓弧路緣、行人路與穿過行車線的路板
+The bus pocket could not be made	無法建立巴士停車灣
+Tick it, then press on a road: a bus pocket is laid there, on the kerb the road's own traffic keeps to. It stays on, pocket after pocket, until you untick it	開啟後點選道路:會在該道路車流靠的路緣那一側建立巴士停車灣。會一直開啟,直到你關閉
+How much wider the road is along the bay, on the kerb its traffic keeps to; the other side stays as it is	巴士停車灣處道路加寬多少(在其行車線的路緣一側);另一側不變
+The stretch is cut out of the road and given the bay along its kerb, its ends tapering to the road's width. The road's own type is widened: nothing to pick.	該路段從道路中切出,並沿路緣加上巴士停車灣,兩端收窄至道路闊度。道路類型會自動加寬:無需選擇。
 OMSI's aerial photos	OMSI 航空照片
 One photo a tile, as OMSI's editor lays them on the ground: they are copied into the map and used as they are.	每個圖磚一張照片，就像 OMSI 編輯器鋪在地面上那樣：照片會複製到地圖中，並原樣使用。
 Import them	匯入
@@ -2452,19 +2456,19 @@ Click the river's middle line from its source on and finish on the last point (o
 Add as a ground texture	新增為地面貼圖
 Painted line	塗裝線
 Stop line	停止線
-A wide solid line across a lane: draw it across the road	橫跨車道的寬實線：請橫穿道路繪製
+A wide solid line across a lane: draw it across the road	橫跨行車線的寬實線：請橫穿道路繪製
 Crossing	行人穿越道
 Zebra bars: draw it across the road, the bars lie along it	斑馬線：請橫穿道路繪製，條紋沿道路排列
 Centre line	中心線
 A double yellow line	黃色雙線
-Lane line	車道線
+Lane line	行車線
 A white dashed line	白色虛線
 Solid	實線
 Dashed	虛線
 Double	雙線
 Solid and dashed	實線加虛線
 Crossing (bars)	行人穿越道（條紋）
-A line's width (each line of a double one); a crossing's reach along the road	線的寬度（雙線為每條線）；穿越道沿道路方向的深度
+A line's width (each line of a double one); a crossing's reach along the road	線的闊度（雙線為每條線）；穿越道沿道路方向的深度
 Bar	條紋
 Dash	線段
 Gap	斷開處
@@ -2483,7 +2487,7 @@ Dash length	虛線長度
 Gap between dashes	虛線間距
 Pointing back	反向
 Snap to 5 cm	對齊 5 cm
-Drag to draw. The picture is the roadway as the texture lies on it, up is the way of the road; it repeats along, so what leaves at the top comes in at the bottom.	拖曳以繪製。圖像就是路面貼上材質後的樣子，上方為道路的行進方向；它會沿道路重複，因此從頂部離開的內容會從底部進入。
+Drag to draw. The picture is the roadway as the texture lies on it, up is the way of the road; it repeats along, so what leaves at the top comes in at the bottom.	拖動以繪製。圖像就是路面貼上材質後的樣子，上方為道路的行進方向；它會沿道路重複，因此從頂部離開的內容會從底部進入。
 Pick a roadway texture first	請先選擇路面材質
 Display	顯示
 X-ray (Alt+Z): see and pick through the mesh	透視 (Alt+Z)：穿透網格檢視與選取
@@ -2495,13 +2499,13 @@ Give this material to the selected faces	將此材質指定給所選的面
 Select faces to give them a material.	請選取面以指定材質。
 Road markings	道路標線
 Paint my own markings	自行繪製標線
-The maker paints the lines onto the roadway texture: pick a plain asphalt texture, or its own lines show too	產生器將線條繪製在車行道貼圖上：請選用素面柏油貼圖，否則其自帶的線條也會顯示
-Standard for these lanes	這些車道的預設值
+The maker paints the lines onto the roadway texture: pick a plain asphalt texture, or its own lines show too	產生器將線條繪製在行車道貼圖上：請選用素面柏油貼圖，否則其自帶的線條也會顯示
+Standard for these lanes	這些行車線的預設值
 Add a line	新增線條
 Draw by hand…	手繪…
 A drawing board with a pen, lines, arrows and an eraser: what you draw goes onto the roadway	附有畫筆、線條、箭頭和橡皮擦的繪圖板：您所畫的內容會落在路面上
 a drawing is on the road	路上有一幅繪圖
-Across the roadway from its middle (right of the road's way is plus)	從中線起橫跨車行道（沿道路方向的右側為正）
+Across the roadway from its middle (right of the road's way is plus)	從中線起橫跨行車道（沿道路方向的右側為正）
 Double solid	雙實線
 The line's width	線寬
 Delete object along a road	刪除沿道路的物件
@@ -2558,7 +2562,7 @@ Find	尋找
 a command or a key	指令或按鍵
 Interface	介面
 Camera and mouse	攝影機與滑鼠
-Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	地圖編輯器：按住右鍵環顧四周，滾輪朝游標縮放，拖曳移動地圖
+Map editor: right button looks round, the wheel zooms to the cursor, drag moves the map	地圖編輯器：按住右鍵環顧四周，滾輪朝游標縮放，拖動移動地圖
 Big maps	大型地圖
 Load a part of the tiles at a time (like OMSI 2's editor)	每次只載入部分圖塊（如同 OMSI 2 的編輯器）
 Auto (the best the system has)	自動（系統可用的最佳選項）
@@ -2577,7 +2581,7 @@ Sensitivity of the right button	右鍵的靈敏度
 Orbiting	環繞
 Sensitivity of Alt + left button and of the trackpad	Alt + 左鍵與觸控板的靈敏度
 Panning	平移
-Sensitivity of the middle button and of dragging the map	中鍵與拖曳地圖的靈敏度
+Sensitivity of the middle button and of dragging the map	中鍵與拖動地圖的靈敏度
 Zoom (wheel)	縮放（滾輪）
 How far one wheel step goes	滾輪每一格移動的距離
 Invert looking up and down	反轉上下環顧
@@ -2593,7 +2597,7 @@ Click an object or a spline in the view	在畫面中點一個物件或一條 Spl
 Click the spline it should stand on. It follows that road and keeps its IDCode	點它要依附的那條 Spline。它會跟著那條路，並保留 IDCode
 That is the one	就是這個
 Along a spline	貼齊Spline
-Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	點一條Spline：筆刷寬度內兩側的地面會貼到Spline的高度，與它相連的各段也一起
+Click a spline: the ground under it, as wide as the brush either side, is brought to the spline's height, and the pieces joined to it come with it	點一條Spline：筆刷闊度內兩側的地面會貼到Spline的高度，與它相連的各段也一起
 The brush size is how far either side of the spline the ground is brought to its height.	筆刷大小是Spline左右兩側、地面被貼到其高度的距離。
 Align the selected splines	貼齊所選的Spline
 Select splines first	請先選取Spline
@@ -2603,8 +2607,8 @@ Align ground to splines	把地面貼齊Spline
 Path	路徑
 Ctrl: snap onto a path, F9: the next one	Ctrl：貼上路徑，F9：下一條
 Click the corners of the polygon; the first corner or Enter closes it	點選多邊形的角點；第一個角點或 Enter 會將其封閉
-select the roads or splines that make the outline first	請先選取構成輪廓的道路或樣條
-the selected splines do not make one outline: they have to join end to end	所選樣條無法構成單一輪廓：它們必須首尾相連
+select the roads or splines that make the outline first	請先選取構成輪廓的道路或Spline
+the selected splines do not make one outline: they have to join end to end	所選Spline無法構成單一輪廓：它們必須首尾相連
 A polygon needs three corners	多邊形需要三個角點
 The corners make no area	這些角點無法構成面積
 The polygon lies outside the map	多邊形位於地圖之外
@@ -2612,13 +2616,13 @@ Polygon made: Tab edits its mesh	已建立多邊形：Tab 可編輯其網格
 Polygon	多邊形
 Draw a polygon	繪製多邊形
 Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other	在地圖上點選其角點；點選第一個角點或按 Enter 封閉，Esc 取消最後一個角點。內部會填滿為一個物件，可像其他物件一樣移動與編輯
-From the selected splines	從所選樣條
-Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	填滿所選道路與樣條首尾相連時構成的輪廓（例如安全島周圍的路緣石）
+From the selected splines	從所選Spline
+Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)	填滿所選道路與Spline首尾相連時構成的輪廓（例如安全島周圍的路緣石）
 No texture: a plain colour	無貼圖：純色
 Texture size, m	貼圖大小，m
 Thickness, m	厚度，m
 Above the ground, m	離地高度，m
-Polygon: fill the selected splines, or click its corners	多邊形：填滿選取的樣條，或點擊各轉角
+Polygon: fill the selected splines, or click its corners	多邊形：填滿選取的Spline，或點擊各轉角
 Polygon: click its corners	多邊形：點擊各轉角
 Polygon from it	由此建立多邊形
 Polygon from them	由這些建立多邊形
@@ -2638,9 +2642,9 @@ a file the object names is missing	物件指名的檔案不存在
 Another crossing file	另一個路口檔案
 Crossing paths of the picked object…	所選路口物件的路徑…
 Crossing paths	路口路徑
-The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	路口或交叉物件之路徑、封鎖與紅綠燈時相，在物件的副本中編輯，原始檔案維持不變
-Footway	人行道
-Street	車道
+The paths of a crossing or junction object, its blocking and its traffic light program, edited in a copy of the object - the original is left as it is	路口或交叉物件的行車路線、讓路／互斥規則及紅綠燈燈號階段，在物件的副本中編輯，原始檔案維持不變
+Footway	行人路
+Street	行車線
 Against	逆向
 Both ways	雙向
 Along	順向
@@ -2649,57 +2653,134 @@ Right	右
 Red and yellow	紅與黃
 Green and yellow	綠與黃
 Off	熄滅
-Select a crossing object, or pick one of these	請選擇路口物件，或從下列挑一個
-Pick a crossing object of the map	在地圖上挑選路口物件
-The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	在此編輯既有路口的路径、封鎖與紅綠燈時相。物件會複製到 openMapper 自己的資料庫，原始檔案維持不變。
+Select a crossing object, or pick one of these	請在地圖選取路口物件，或從下方列表選擇
+Pick a crossing object of the map	在地圖上選取路口物件
+The paths, the blocking and the traffic light program of an existing crossing are edited here. The object is copied into openMapper's own folder; the original file is left as it is.	在此編輯現有路口的行車路線、讓路／互斥規則及紅綠燈燈號階段。物件會複製到 openMapper 自己的資料夾，原始檔案維持不變。
 openMapper's copy	openMapper 的副本
-in its own file (a copy is made on saving)	存成自己的檔案（儲存時會建立副本）
+in its own file (a copy is made on saving)	儲存至個人檔案（將建立副本）
 Paths	路徑
 Add a path	新增路徑
 Remove this path	刪除此路徑
 0 is a straight line, above 0 turns right, below 0 left	0 為直線，大於 0 右轉，小於 0 左轉
 Direction	行車方向
-Turn signal	方向燈
-Keeps the junction clear	保持路口淨空
+Turn signal	指揮燈
+Keeps the junction clear	保持路口暢通
 A vehicle waiting on this path holds the crossing empty for the others (`[crossingproblem]`)	停在此路徑的車輛會為其他車輛保留路口淨空（`[crossingproblem]`）
-Blocks	封鎖
+Blocks	路徑互斥
 Cycle	週期
-`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`：一輪的秒數。未設定時取最長號誌時相之總和
-The phases do not add up to the cycle: the last one holds to its end	時相總和不等於週期：最後一個時相會持續到週期結束
+`[traffic_lights_group]`: the seconds of one run. Unset, the longest light's phases add up to it	`[traffic_lights_group]`：一輪的秒數。未設定時取最長燈號階段之總和
+The phases do not add up to the cycle: the last one holds to its end	燈號階段總和不等於週期：最後一個燈號階段會持續到週期結束
 (no name)	（無名稱）
 Detector	偵測距離
 `[approachdist]`: how far before the stop line a vehicle registers a request	`[approachdist]`：車輛在停止線前多少公尺提出請求
-A phase	時相
-Remove this light	刪除此號誌
-A light	號誌
-A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	有號誌的路口需要地圖上的號誌燈頭：遊戲只會執行已連結燈頭的時相
-Request loops	請求感應線圈
-Spline helpers	曲線輔助點
-Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	地圖道路接上路口的位置。x、高度、物件座標中的前方
+A phase	燈號階段
+Remove this light	刪除此紅綠燈
+A light	紅綠燈
+A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to	有號誌的路口需要地圖上的交通燈燈頭：遊戲只會執行已連結燈頭的燈號階段
+Request loops	車輛感應線圈
+Spline helpers	Spline 輔助點
+Where a road of the map snaps onto the crossing. x, height, forward in the object's frame	道路連接路口的位置、X 軸、高度及物件座標前方
 The road type it takes (a `.sli`)	它承接的道路類型（`.sli`）
-A helper	輔助點
+A helper	Spline 輔助點
 At the picked end	在所選端點
 A helper where the picked path ends, facing out of the crossing	在所選路徑終點、朝路口外側的輔助點
 Save as a copy	另存為副本
 Write the paths into openMapper's copy of the object	將路徑寫入物件在 openMapper 的副本
 The object's folder is copied into openMapper's, the paths written there, and the map's object pointed at it: the original file is not touched	物件資料夾會複製到 openMapper 的資料庫，路徑寫入其中，地圖物件改指向該處：原始檔案不會被更動
-Back to how the object was when it was opened (the file is not touched)	回到開啟時的狀態（不會更動檔案）
+Back to how the object was when it was opened (the file is not touched)	還原初始狀態（不會更動檔案）
 Zoom out	縮小
 Zoom in	放大
 The whole crossing in view	檢視整個路口
-Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	拖曳端點可移動。Ctrl 可吸附到另一條路徑的端點。滾輪縮放，右鍵或中鍵拖曳平移
-Back to how it was opened	回到開啟時的狀態
+Drag an end to move it. Ctrl snaps it to another path's end. Wheel zooms, right or middle drag pans	拖動端點可移動。Ctrl 可吸附到另一條路徑的端點。滾輪縮放，右鍵或中鍵拖動平移
+Back to how it was opened	還原初始狀態
 Nothing to edit yet	尚無可編輯的內容
 Crossing paths…	路口路徑…
 Trains	列車
-An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列車使用的隱形軌道車道：在軌道和道岔的軌道車道末端與之相接
+An invisible rail lane for the AI's trains: it joins the rail lanes of tracks and points where they end	供 AI 列車使用的隱形軌道行車線：在軌道和道岔的軌道行車線末端與之相接
 Keep the ground under roads	讓地面保持在道路下方
 On: the brush does not raise the ground through a road. Off: it shapes the ground under and beside roads as freely as anywhere else	開啟：筆刷不會把地面抬高穿過道路。關閉：可像其他地方一樣自由修改道路下方和旁邊的地面
 There are unsaved changes here: Save or Revert first	這裡有未儲存的變更：請先儲存或還原
 The map has changed since this was opened: open the object again	地圖在開啟後已變更：請重新開啟物件
-A spline helper has no road type: pick one or remove it	有樣條輔助點沒有道路類型：請選擇一種或將其移除
+A spline helper has no road type: pick one or remove it	有 Spline 輔助點沒有道路類型：請選擇一種或將其移除
 the object names this file outside its own folder, which a copy would lose	物件引用了其資料夾外的此檔案，複本會遺失它
 what was written does not read back the same	寫入的內容讀回後不一致
 its paths are in a file of their own (`[paths]`), which this editor does not read	其路徑位於獨立檔案（`[paths]`），此編輯器不會讀取
 it has no path	它沒有路徑
 jump	跳轉
+Phase	燈號階段
+Traffic light phase	紅綠燈燈號階段
+Duration	持續時間
+Timeline	時間軸
+Click a block to edit that phase; drag its right edge to change how long it lasts	點擊色塊可編輯燈號階段；拖拉右邊邊緣可調整維持時間
+Traffic light	紅綠燈
+The whole cycle across the width (as the traffic light window has it)	整個週期橫向鋪滿（與紅綠燈視窗相同）
+Back to 2D	返回 2D
+Draw the crossing from above, in the window, and lay paths there	在視窗內由上而下繪製路口，並在此繪製行車線路徑
+Frame	置中對準
+Put the crossing in the middle of the map's view	將路口置於地圖視圖中央
+The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely	行車線路徑直接繪於地圖上的路口：拖拉端點即可移動，預設吸附至其他路徑端點，按住 Ctrl 可自由移動
+Write the paths into the object's own file; the file as it stood is kept as a .bak beside it	將行車路線覆寫至物件原檔；原檔會備份為同目錄的 .bak
+In the object's own file (a .bak keeps the old one)	覆寫物件原檔（舊版本備份為 .bak）
+The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak	地圖物件已指向此檔案：行車路線會覆寫其中，原檔會備份為同目錄的 .bak
+As a new file	另存為新檔案
+The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy	整個物件會以獨立名稱複製到 openMapper 內容資料夾，地圖物件改為指向該副本
+Remove this file's .bak	刪除此檔案的 .bak
+Its .bak is gone	已刪除其 .bak
+Remove the .bak files this editor made	清除此編輯器建立的 .bak
+in its own file (a .bak keeps the old one)	覆寫物件原檔（舊版本備份為 .bak）
+as a new file (a copy is made on saving)	儲存至個人檔案（將建立副本）
+Draw path	繪製路徑
+Drag from a path's start to its end to add one, as a road is drawn	由路徑起點拖拉至終點即可新增，與繪製道路相同
+3D	3D
+Show the path on the map itself: the crossing object in 3D, with its paths	在地圖上直接顯示行車線路徑：3D 路口物件及其路徑
+2D	2D
+Draw the crossing from above, in the window	在視窗內由上而下繪製路口
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans	拖拉端點可移動；預設吸附至其他路徑端點，按住 Ctrl 可自由移動；滾輪縮放，按住右鍵或中鍵拖拉可平移畫面
+Save the crossing as a new file instead	請改為另存為新檔案
+The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.	在此編輯現有路口的行車路線、讓路／互斥規則及紅綠燈燈號階段。儲存時會直接覆寫原檔（原檔將於同目錄備份為 .bak），亦可選擇另存為物件副本。
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free	在地圖上點選一條行車線即可選取；拖拉端點可移動，預設吸附至其他路徑端點，按住 Ctrl 可自由移動
+Crossing editor	路口編輯器
+Crossing editor…	路口編輯器…
+Pick the object	選取物件
+Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines	在地圖上選取路口物件本體，以便移動或旋轉它；路徑線上的點選仍會選取路徑
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free	在地圖上點選一條行車線即可選取；拖拉端點可移動，預設吸附至其他路徑端點（本路口或附近物件），按住 Ctrl 可自由移動
+Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here	附近物件的行車線以較淺顏色顯示：可將端點接上它們，但不會在此更改它們
+The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak	路口或交叉物件的行車路線、讓路／互斥規則及紅綠燈燈號階段，依照 OMSI 2 路口編輯器的方式編輯：直接覆寫物件原檔，舊版本備份為 .bak
+Close the crossing editor	關閉路口編輯器
+There are changes here that are not saved yet. Save them before closing?	此處有尚未儲存的變更。關閉前要儲存嗎？
+Save and close	儲存並關閉
+Close without saving	不儲存直接關閉
+End point	終點
+Add a path carried on from the picked one (N)	從所選路徑接續新增一段（N）
+Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here	附近的路徑以較淺顏色顯示：包括其他物件的路徑及道路本身的行車線。可將端點接上它們，但不會在此更改它們
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans	拖拉端點可移動；預設吸附至其他路徑端點，按住 Ctrl 可自由移動。吸附後會一併取用該路徑的方向及斜度，令兩段平滑衔接。滾輪縮放，按住右鍵或中鍵拖拉可平移畫面
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly	在地圖上點選一條行車線即可選取；拖拉端點可移動，預設吸附至其他路徑端點（本路口或附近物件），按住 Ctrl 可自由移動。吸附後會一併取用該路徑的方向及斜度，令兩段平滑衔接
+From nearby	從附近路徑新增
+Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles	在附近路徑的端點新增一段：包括其他物件的路徑及道路本身的行車線。點選綠色圓圈即可
+Click a green circle: a new path starts at that nearby path's end, in its way	點選綠色圓圈：新路徑會從該附近路徑的端點開始，並沿其方向延伸
+Start from a nearby path	從附近路徑開始
+Start a new path at the end of a path nearby. Click one of the green circles	在附近路徑的端點新增一段。點選綠色圓圈即可
+Complete to a nearby path	連接至附近路徑
+Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	將所選路徑延接至附近路徑的端點：所選路徑的端點、方向及斜度保持不變，以一或兩段連接。點選綠色圓圈即可
+Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	點選綠色圓圈：會從所選路徑端點向該點新增一或兩段，所選路徑保持不變
+The way a join turns	連接的轉向
+Paths picked	已選的路徑
+Set what they share. A path's own numbers are edited one at a time	設定它們共用的值；每條路徑自己的數值要逐條修改
+Several	多項
+no end of the crossing is near it	附近沒有這一端的路徑端點
+the gap has no way through	這段空隙接不上
+a piece added	已加一段
+the other end would have moved	另一端會被移動
+Connect the roads	連接道路
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	把路口的端點對準道路行車道本身的端點。openOMSI 是按幾何連接行車道，不是靠 spline 輔助點
+Link check	連接檢查
+Shift: tenths of a degree	Shift：每 0.1 度
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	數字：輸入角度，Enter 或點擊：確定，Esc：取消
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	依站點所在位置判定；若電車的站點也在道路旁，請在此指定
+Roads (bus)	道路（巴士）
+Tracks (tram, train)	軌道（電車、火車）
+km along the tracks (blue in the view)	公里沿軌道（視圖中為藍色）
+no track within 15 m	15 m 內沒有軌道
+the tracks are not joined, or run the other way (see View > AI lanes)	軌道未相連，或方向相反（見 檢視 > AI 行車線）
+no track beside	旁邊沒有軌道：
+Drives on	行駛於

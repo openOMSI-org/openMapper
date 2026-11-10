@@ -114,6 +114,56 @@ pub struct Prefs {
     /// What the Test drive window was last set to.
     #[serde(default)]
     pub drive: crate::drive::DriveSettings,
+    /// The status bar's snapping switches, as they were left.
+    #[serde(default)]
+    pub snap: SnapBar,
+}
+
+/// The status bar's switches (Auto-Align, Surface, the knife, the ruler, and the rest).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct SnapBar {
+    #[serde(default = "default_on")]
+    pub auto_align: bool,
+    #[serde(default = "default_on")]
+    pub auto_adapt: bool,
+    #[serde(default = "default_on")]
+    pub auto_junction: bool,
+    #[serde(default = "default_on")]
+    pub auto_switch: bool,
+    #[serde(default = "default_on")]
+    pub auto_terrain: bool,
+    #[serde(default)]
+    pub surface: bool,
+    #[serde(default)]
+    pub knife: bool,
+    #[serde(default)]
+    pub ruler: bool,
+    #[serde(default)]
+    pub grid: bool,
+    #[serde(default = "default_grid_step")]
+    pub grid_step: f64,
+    #[serde(default)]
+    pub angle: bool,
+    #[serde(default = "default_angle_step")]
+    pub angle_step: f64,
+}
+
+fn default_on() -> bool {
+    true
+}
+
+fn default_grid_step() -> f64 {
+    1.0
+}
+
+fn default_angle_step() -> f64 {
+    15.0
+}
+
+impl Default for SnapBar {
+    fn default() -> Self {
+        Self { auto_align: true, auto_adapt: true, auto_junction: true, auto_switch: true, auto_terrain: true, surface: false, knife: false, ruler: false, grid: false, grid_step: 1.0, angle: false, angle_step: 15.0 }
+    }
 }
 
 impl Prefs {

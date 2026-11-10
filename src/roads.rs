@@ -81,11 +81,21 @@ impl Seg {
 /// The most a road drawn to meet an end may turn in all (radians): about 200 degrees.
 pub const MAX_TURN: f64 = 3.5;
 
-/// The smallest radius a drawn road may have (m).
+/// The smallest radius a road laid by itself may have (m): one drawn or dragged to the cursor,
+/// a join, a road carried on with its neighbour, an import. A radius typed in, or a bend made
+/// with the middle grip, may be tighter (see [`arc_to_any`]).
 pub const MIN_RADIUS: f64 = 6.0;
 
-/// The arc that leaves `p` heading `h` and ends at `q` (a straight when `q` lies ahead).
+/// The arc that leaves `p` heading `h` and ends at `q` (a straight when `q` lies ahead), as a
+/// road laid by itself has it: no tighter than [`MIN_RADIUS`] and no loop back past a half turn,
+/// which is not what anyone means - a reshape then spreads the bend over the road before it.
 pub fn arc_to(p: DVec2, h: f64, q: DVec2) -> Option<Seg> {
+    arc_to_any(p, h, q).filter(|s| s.radius == 0.0 || (s.radius.abs() >= MIN_RADIUS && s.length / s.radius.abs() <= std::f64::consts::PI * 1.01))
+}
+
+/// The arc that leaves `p` heading `h` and ends at `q`, however tight and however far round:
+/// for a bend asked for in so many words (a radius typed, the middle grip dragged).
+pub fn arc_to_any(p: DVec2, h: f64, q: DVec2) -> Option<Seg> {
     let d = q - p;
     let fwd = d.dot(dir(h));
     let side = d.dot(right(h));
@@ -99,8 +109,9 @@ pub fn arc_to(p: DVec2, h: f64, q: DVec2) -> Option<Seg> {
     let r = (fwd * fwd + side * side) / (2.0 * side);
     let sweep = 2.0 * side.atan2(fwd);
     let length = r * sweep;
-    // (a loop back past a half turn is not what anyone means)
-    if r.abs() < MIN_RADIUS || sweep.abs() > std::f64::consts::PI * 1.01 || length <= 0.0 {
+    // (a tight bend and one past a half turn are still a road: the game follows the radius
+    // it is given. Only a length that does not run forward is refused)
+    if !r.is_finite() || !length.is_finite() || length <= 0.0 {
         return None;
     }
     Some(Seg { start: p, heading: h, length, radius: r })

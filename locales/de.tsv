@@ -2704,3 +2704,85 @@ what was written does not read back the same	das Geschriebene liest sich nicht g
 its paths are in a file of their own (`[paths]`), which this editor does not read	seine Pfade liegen in einer eigenen Datei (`[paths]`), die dieser Editor nicht liest
 it has no path	es hat keinen Pfad
 jump	Sprung
+Phase	Phase
+Traffic light phase	Ampelphase
+Duration	Dauer
+Timeline	Zeitachse
+Click a block to edit that phase; drag its right edge to change how long it lasts	Auf einen Block klicken, um diese Phase zu bearbeiten; am rechten Rand ziehen, um ihre Dauer zu ändern
+Traffic light	Ampel
+The whole cycle across the width (as the traffic light window has it)	Der ganze Umlauf über die Breite (wie im Ampelfenster)
+Back to 2D	Back to 2D
+Draw the crossing from above, in the window, and lay paths there	Draw the crossing from above, in the window, and lay paths there
+Frame	Frame
+Put the crossing in the middle of the map's view	Put the crossing in the middle of the map's view
+The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely	The paths are drawn on the map, over the crossing: drag an end there to move it. It snaps to another path's end; hold Ctrl to move it freely
+Write the paths into the object's own file; the file as it stood is kept as a .bak beside it	Write the paths into the object's own file; the file as it stood is kept as a .bak beside it
+In the object's own file (a .bak keeps the old one)	In the object's own file (a .bak keeps the old one)
+The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak	The map's object already names this file: the paths are written into it, and the file as it stood is kept beside it as its .bak
+As a new file	As a new file
+The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy	The whole object is copied into openMapper's content folder under a name of its own, and the map's object points at the copy
+Remove this file's .bak	Remove this file's .bak
+Its .bak is gone	Its .bak is gone
+Remove the .bak files this editor made	Remove the .bak files this editor made
+in its own file (a .bak keeps the old one)	in its own file (a .bak keeps the old one)
+as a new file (a copy is made on saving)	as a new file (a copy is made on saving)
+Draw path	Draw path
+Drag from a path's start to its end to add one, as a road is drawn	Drag from a path's start to its end to add one, as a road is drawn
+3D	3D
+Show the path on the map itself: the crossing object in 3D, with its paths	Show the path on the map itself: the crossing object in 3D, with its paths
+2D	2D
+Draw the crossing from above, in the window	Draw the crossing from above, in the window
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans	Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. Wheel zooms, right or middle drag pans
+Save the crossing as a new file instead	Save the crossing as a new file instead
+The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.	The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end, and Ctrl keeps it free
+Crossing editor	Crossing editor
+Crossing editor…	Crossing editor…
+Pick the object	Pick the object
+Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines	Pick the crossing object itself on the map, to move or turn it: the paths keep taking the clicks on their lines
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free
+Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here	Nearby objects' paths are drawn paler: an end can be joined to theirs, but they are not changed from here
+The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak	The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak
+Close the crossing editor	Close the crossing editor
+There are changes here that are not saved yet. Save them before closing?	There are changes here that are not saved yet. Save them before closing?
+Save and close	Save and close
+Close without saving	Close without saving
+End point	End point
+Add a path carried on from the picked one (N)	Add a path carried on from the picked one (N)
+Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here	Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here
+Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans	Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans
+Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly	Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly
+From nearby	From nearby
+Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles	Start a new path at the end of a path nearby: another object's, or a road's own lane. Click one of the green circles
+Click a green circle: a new path starts at that nearby path's end, in its way	Click a green circle: a new path starts at that nearby path's end, in its way
+Start from a nearby path	Start from a nearby path
+Start a new path at the end of a path nearby. Click one of the green circles	Start a new path at the end of a path nearby. Click one of the green circles
+Complete to a nearby path	Complete to a nearby path
+Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles	Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles
+Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is	Click a green circle: one piece or two are added from the picked path's end to that one, the picked path left as it is
+Even grade	Gleiche Neigung
+Both ends take the one rise between their heights	Beide Enden nehmen den einen Anstieg zwischen ihren Höhen
+How this path leaves, degrees. The point stays; a turn one arc cannot make is split into pieces	Wie dieser Pfad abgeht, in Grad. Der Punkt bleibt; eine Kurve, die ein Bogen nicht schafft, wird in Stücke geteilt
+How this path arrives, degrees. The point stays; a turn one arc cannot make is split into pieces	Wie dieser Pfad ankommt, in Grad. Der Punkt bleibt; eine Kurve, die ein Bogen nicht schafft, wird in Stücke geteilt
+That path runs back the other way at that end: joining it would be a U-turn. Pick that path's other end, or turn this end below	Dieser Pfad läuft an diesem Ende in die andere Richtung: ein Anschluss wäre eine Kehrtwende. Nimm das andere Ende dieses Pfades oder drehe dieses Ende unten
+The way a join turns	Wohin die Verbindung abbiegt
+Paths picked	Gewählte Wege
+Set what they share. A path's own numbers are edited one at a time	Das Gemeinsame einstellen. Die eigenen Zahlen eines Weges werden einzeln bearbeitet
+Several	Mehrere
+no end of the crossing is near it	kein Ende der Kreuzung ist in der Nähe
+the gap has no way through	die Lücke ist nicht zu schließen
+a piece added	ein Stück ergänzt
+the other end would have moved	das andere Ende hätte sich verschoben
+Connect the roads	Straßen verbinden
+Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers	Die Enden der Kreuzung auf die Enden der Fahrstreifen ausrichten. openOMSI verbindet Fahrstreifen über die Geometrie, nicht über die Spline-Hilfspunkte
+Link check	Verbindungsprüfung
+Shift: tenths of a degree	Shift: Zehntelgrad
+numbers: a turn in degrees, Enter or a click: done, Esc: cancel	Zahlen: eine Drehung in Grad, Enter oder Klick: fertig, Esc: abbrechen
+Found from where its stops stand; set it for a tram whose stops stand by a road as well	Ergibt sich daraus, woran die Haltestellen stehen; für eine Straßenbahn, deren Haltestellen auch an einer Straße stehen, hier festlegen
+Roads (bus)	Straßen (Bus)
+Tracks (tram, train)	Gleisen (Straßenbahn, Zug)
+km along the tracks (blue in the view)	km entlang der Gleise (blau in der Ansicht)
+no track within 15 m	kein Gleis im Umkreis von 15 m
+the tracks are not joined, or run the other way (see View > AI lanes)	die Gleise sind nicht verbunden oder verlaufen in die andere Richtung (siehe Ansicht > KI-Spuren)
+no track beside	kein Gleis neben
+Drives on	Fährt auf

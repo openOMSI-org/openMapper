@@ -918,6 +918,9 @@ pub fn spline_panel(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
 
 /// For several selected objects: join them, booleans, export.
 pub fn many_panel(ui: &mut egui::Ui, keep: &mut bool, objects: usize, splines: usize, actions: &mut Vec<Action>) {
+    // (held to the panel's width, as the properties pages are)
+    ui.set_max_width(ui.available_width());
+    ui.set_min_width(0.0);
     if splines > 0 {
         heading(ui, tr("Splines as a mesh", "Сплайны как меш"));
         ui.horizontal_wrapped(|ui| {

@@ -43,6 +43,7 @@ mod provenance;
 mod publisher;
 mod install;
 mod junction;
+mod join;
 mod lanes;
 mod lanes_edit;
 mod makers;
@@ -169,13 +170,12 @@ fn main() {
         };
         std::process::exit(check::cli(std::path::Path::new(cfg)));
     }
-    // `openmapper --mcp path/to/global.cfg [--allow-edit]`: an MCP server on stdin / stdout
+    // `openmapper --mcp [path/to/global.cfg] [--allow-edit]`: an MCP server on stdin / stdout
+    // (with no map named, one is opened or made with its `open_map` / `new_map` tools)
     if args.get(1).map(|a| a == "--mcp").unwrap_or(false) {
-        let Some(cfg) = args.get(2) else {
-            eprintln!("openmapper --mcp path/to/global.cfg [--allow-edit]");
-            std::process::exit(2);
-        };
-        std::process::exit(mcp::cli(std::path::Path::new(cfg), args.iter().skip(3).any(|a| a == "--allow-edit")));
+        let rest: Vec<String> = args.iter().skip(2).map(|a| a.to_string_lossy().to_string()).collect();
+        let cfg = rest.iter().find(|a| !a.starts_with("--")).map(std::path::PathBuf::from);
+        std::process::exit(mcp::cli(cfg.as_deref(), rest.iter().any(|a| a == "--allow-edit")));
     }
     // `openmapper --export path/to/global.cfg out.zip` / `--import file` (no window)
     match (args.get(1).and_then(|a| a.to_str()), args.get(2), args.get(3)) {
