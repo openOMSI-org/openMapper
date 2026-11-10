@@ -268,12 +268,15 @@ pub fn publish_licensed(
         "per-sale packs must be protected"
     );
     let (metadata, inputs, signer) = load_inputs(specification, specification_data, signing_file)?;
-    let mut folder = std::fs::DirBuilder::new();
     #[cfg(unix)]
-    {
+    let folder = {
         use std::os::unix::fs::DirBuilderExt;
-        folder.mode(0o700);
-    }
+        let mut builder = std::fs::DirBuilder::new();
+        builder.mode(0o700);
+        builder
+    };
+    #[cfg(not(unix))]
+    let folder = std::fs::DirBuilder::new();
     folder.create(output)?;
     let result = publish_sales(output, &metadata, &inputs, &signer, &ids, expires_unix);
     if result.is_err() {
