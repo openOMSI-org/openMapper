@@ -374,12 +374,31 @@ pub struct VertexSnap {
     pub hover: Option<DVec3>,
 }
 
+/// What stage of edge-to-edge snapping is active.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum EdgeSnapStage {
+    /// Select a reference edge on the selected object.
+    PickSource,
+    /// Select a target edge or road segment to align to.
+    PickTarget { source: [DVec3; 2] },
+}
+
+/// The state of the edge-to-edge snapping tool.
+#[derive(Clone, PartialEq, Debug)]
+pub struct EdgeSnap {
+    pub objects: Vec<(TileKey, i64)>,
+    pub stage: EdgeSnapStage,
+    pub hover: Option<([DVec3; 2], DVec3)>,
+}
+
 pub struct Editor {
     pub doc: Option<Document>,
     pub history: History,
     pub tool: Tool,
     /// Vertex-to-vertex snapping mode for aligning scenery objects.
     pub vertex_snap: Option<VertexSnap>,
+    /// Edge-to-edge snapping mode for aligning scenery objects along edges or lines.
+    pub edge_snap: Option<EdgeSnap>,
     /// The selection: the one shown in the properties (None: nothing selected, whatever
     /// `also` holds) and the others selected with it.
     pub selected: Option<Sel>,
@@ -913,6 +932,7 @@ impl Default for Editor {
             aim: None,
             path_numbers: None,
             vertex_snap: None,
+            edge_snap: None,
         }
     }
 }
@@ -1244,6 +1264,29 @@ fn ray_near_piece(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64)> 
     Some((lat, cross))
 }
 
+fn ray_near_edge(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64, DVec3)> {
+    let u = b - a;
+    let au = u.length_squared();
+    let w = a - o;
+    let (bu, du, eu) = (u.dot(d), u.dot(w), d.dot(w));
+    let mut s = 0.0;
+    if au > 1e-12 {
+        let den = bu * bu - au;
+        if den.abs() > 1e-12 {
+            let t = (bu * du - eu * au) / den;
+            s = ((bu * t - du) / au).clamp(0.0, 1.0);
+        }
+    }
+    let p = a + u * s;
+    let rel = p - o;
+    let along = rel.dot(d);
+    if along <= 0.1 {
+        return None;
+    }
+    let lat = (rel - d * along).length();
+    Some((lat, along, p))
+}
+
 /// One drag of an end's heading: the roads as they were, and the last bend that fitted.
 struct HeadingDrag {
     key: TileKey,
@@ -1440,6 +1483,7 @@ impl Editor {
         self.path_connect = None;
         self.cutting = false;
         self.vertex_snap = None;
+        self.edge_snap = None;
         if let Some(doc) = &mut self.doc {
             self.history.commit();
             let _ = doc;
@@ -2073,6 +2117,21 @@ impl Editor {
             self.hover_stack.clear();
             return;
         }
+        if self.edge_snap.is_some() {
+            let target_mode = match self.edge_snap.as_ref().unwrap().stage {
+                EdgeSnapStage::PickSource => false,
+                EdgeSnapStage::PickTarget { .. } => true,
+            };
+            let hover = self.edge_at_ray(assets, o, d, target_mode);
+            if let Some(snap) = &mut self.edge_snap {
+                snap.hover = hover;
+            }
+            self.hover = None;
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
         match self.acts_as() {
             Tool::Select => {
                 if self.drag == Drag::None {
@@ -2324,6 +2383,34 @@ impl Editor {
             }
             return;
         }
+        if let Some(snap) = &mut self.edge_snap {
+            match snap.stage {
+                EdgeSnapStage::PickSource => {
+                    if let Some((edge, hit)) = snap.hover {
+                        let source = if (hit - edge[0]).length_squared() <= (hit - edge[1]).length_squared() {
+                            edge
+                        } else {
+                            [edge[1], edge[0]]
+                        };
+                        snap.stage = EdgeSnapStage::PickTarget { source };
+                        snap.hover = None;
+                        self.toast(tr("Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)", "Исходное ребро выбрано. Щёлкните целевое ребро или дорогу для выравнивания (Shift: только по горизонтали, Esc: отмена)"));
+                    } else {
+                        self.toast(tr("Aim at an edge of the selected object", "Наведите на ребро выбранного объекта"));
+                    }
+                }
+                EdgeSnapStage::PickTarget { source } => {
+                    if let Some((target, target_hit)) = snap.hover {
+                        self.apply_edge_snap(assets, source, target, target_hit, shift);
+                        self.edge_snap = None;
+                        self.toast(tr("Aligned edge to edge! (Ctrl+Z to undo)", "Ребро выровнено по ребру! (Ctrl+Z для отмены)"));
+                    } else {
+                        self.toast(tr("Aim at a target edge or road", "Наведите на целевое ребро или дорогу"));
+                    }
+                }
+            }
+            return;
+        }
         // "Connect to": the next click is the other end of the path, not a new selection
         if self.path_connect.is_some() && self.editing_paths() {
             match (self.hover_handle, self.hover_handle_of) {
@@ -2562,6 +2649,18 @@ impl Editor {
             } else {
                 self.vertex_snap = None;
                 self.toast(tr("Vertex snap cancelled", "Привязка вершины отменена"));
+                return false;
+            }
+        }
+        if let Some(snap) = &mut self.edge_snap {
+            if let EdgeSnapStage::PickTarget { .. } = snap.stage {
+                snap.stage = EdgeSnapStage::PickSource;
+                snap.hover = None;
+                self.toast(tr("Target cancelled. Pick a source edge again", "Выбор цели отменен. Выберите исходное ребро снова"));
+                return false;
+            } else {
+                self.edge_snap = None;
+                self.toast(tr("Edge snap cancelled", "Привязка ребра отменена"));
                 return false;
             }
         }
@@ -6093,6 +6192,39 @@ impl Editor {
                 }
             }
         }
+        if let Some(snap) = &self.edge_snap {
+            let line_w = (cam.distance * 0.002).clamp(0.04, 0.4) as f32;
+            let dot_r = (cam.distance * 0.005).clamp(0.05, 0.8);
+            match snap.stage {
+                EdgeSnapStage::PickSource => {
+                    for &(k, id) in &snap.objects {
+                        let edges = Self::object_edges_for_snap(doc, assets, k, id);
+                        for e in edges {
+                            line(&mut x.overlay, cam, e[0], e[1], (line_w * 0.4).max(0.02), [1.0, 0.65, 0.2, 0.4]);
+                        }
+                    }
+                    if let Some((e, hit)) = snap.hover {
+                        line(&mut x.overlay, cam, e[0], e[1], line_w * 1.8, [1.0, 0.5, 0.1, 1.0]);
+                        ball(&mut x.overlay, e[0], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                        ball(&mut x.overlay, e[1], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                        disc(&mut x.overlay, cam, hit, (dot_r * 1.5) as f32, [1.0, 1.0, 0.3, 0.8]);
+                    }
+                }
+                EdgeSnapStage::PickTarget { source } => {
+                    line(&mut x.overlay, cam, source[0], source[1], line_w * 1.5, [1.0, 0.5, 0.1, 1.0]);
+                    ball(&mut x.overlay, source[0], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                    ball(&mut x.overlay, source[1], dot_r, [1.0, 0.8, 0.2, 1.0]);
+
+                    if let Some((e, hit)) = snap.hover {
+                        line(&mut x.overlay, cam, e[0], e[1], line_w * 1.8, [0.2, 0.95, 0.35, 1.0]);
+                        ball(&mut x.overlay, e[0], dot_r, [0.2, 0.95, 0.35, 0.8]);
+                        ball(&mut x.overlay, e[1], dot_r, [0.2, 0.95, 0.35, 0.8]);
+                        ball(&mut x.overlay, hit, dot_r * 1.2, [0.2, 1.0, 0.5, 1.0]);
+                        line(&mut x.overlay, cam, source[0], hit, line_w * 0.8, [1.0, 0.85, 0.2, 0.9]);
+                    }
+                }
+            }
+        }
         x
     }
 }
@@ -8580,6 +8712,284 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
     }
     out
 }
+
+    /// Start edge-to-edge snapping for the selected objects.
+    pub fn start_edge_snap(&mut self) {
+        let free = self.free_selected();
+        if free.is_empty() {
+            self.toast(tr("Select an object first to align its edge", "Сначала выберите объект для выравнивания ребра"));
+            return;
+        }
+        self.edge_snap = Some(EdgeSnap {
+            objects: free,
+            stage: EdgeSnapStage::PickSource,
+            hover: None,
+        });
+        self.toast(tr("Edge snap: click a source edge on the selected object (Esc to cancel)", "Привязка ребра: выберите исходное ребро на объекте (Esc для отмены)"));
+    }
+
+    /// Cancel the active edge-to-edge snapping.
+    pub fn cancel_edge_snap(&mut self) {
+        if self.edge_snap.take().is_some() {
+            self.toast(tr("Edge snap cancelled", "Привязка ребра отменена"));
+        }
+    }
+
+    /// Find the nearest edge to ray (o, d) on candidate objects or road splines.
+    pub fn edge_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, target_mode: bool) -> Option<([DVec3; 2], DVec3)> {
+        let doc = self.doc.as_ref()?;
+        let dir = d.normalize_or_zero();
+        if dir == DVec3::ZERO {
+            return None;
+        }
+
+        let mut best_metric = 0.045f64; // ~2.5 degrees cone
+        let mut best_edge: Option<([DVec3; 2], DVec3)> = None;
+
+        let snap_objects = self.edge_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
+
+        if !target_mode {
+            // PickSource: evaluate edges of selected objects
+            for &(k, id) in snap_objects {
+                let edges = Self::object_edges_for_snap(doc, assets, k, id);
+                for e in edges {
+                    if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
+                        let metric = lat / along;
+                        if metric < best_metric {
+                            best_metric = metric;
+                            best_edge = Some((e, p));
+                        }
+                    }
+                }
+            }
+        } else {
+            // PickTarget: evaluate other visible objects and road splines
+            let dv = dir.as_vec3();
+            let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
+            let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
+
+            for (k, t) in doc.tiles.iter() {
+                for ob in &t.tile.objects {
+                    if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
+                        continue;
+                    }
+                    let Some(model) = assets.object(&ob.file) else { continue };
+                    if unseen(&model) {
+                        continue;
+                    }
+                    let world = doc.object_world(*k, ob, model.abs_height);
+                    let m = object_matrix(world - o, ob.rot);
+                    let c = m.transform_point3(model.centre());
+                    let r = (model.radius().max(1.0) * 1.5) as f32;
+                    if !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, dv, c, r) {
+                        continue;
+                    }
+
+                    let edges = Self::object_edges_for_snap(doc, assets, *k, ob.id);
+                    for e in edges {
+                        if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
+                            let metric = lat / along;
+                            if metric < best_metric {
+                                best_metric = metric;
+                                best_edge = Some((e, p));
+                            }
+                        }
+                    }
+                }
+
+                // Spline segments and kerb lines
+                for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+                    let curve = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
+                    let step = 8.0f64;
+                    let n = (sp.length / step).ceil().max(1.0) as usize;
+                    let (sx0, sx1) = assets.spline(&sp.file).map(|m| {
+                        let (x0, x1, _, _) = m.surface_span();
+                        if sp.mirror { (-(x1 as f64), -(x0 as f64)) } else { (x0 as f64, x1 as f64) }
+                    }).unwrap_or((0.0, 0.0));
+                    let has_width = (sx1 - sx0).abs() > 0.05;
+
+                    for i in 0..n {
+                        let s0 = sp.length * i as f64 / n as f64;
+                        let s1 = sp.length * (i + 1) as f64 / n as f64;
+                        let p0 = curve.point_at(s0);
+                        let p1 = curve.point_at(s1);
+
+                        // Centerline segment
+                        if let Some((lat, along, p)) = ray_near_edge(o, dir, p0, p1) {
+                            let metric = lat / along;
+                            if metric < best_metric {
+                                best_metric = metric;
+                                best_edge = Some(([p0, p1], p));
+                            }
+                        }
+
+                        if has_width {
+                            let h0 = curve.heading_at(s0).to_radians();
+                            let h1 = curve.heading_at(s1).to_radians();
+                            let r0 = DVec3::new(h0.cos(), -h0.sin(), 0.0);
+                            let r1 = DVec3::new(h1.cos(), -h1.sin(), 0.0);
+                            let left_0 = p0 + r0 * sx0;
+                            let left_1 = p1 + r1 * sx0;
+                            let right_0 = p0 + r0 * sx1;
+                            let right_1 = p1 + r1 * sx1;
+
+                            if let Some((lat, along, p)) = ray_near_edge(o, dir, left_0, left_1) {
+                                let metric = lat / along;
+                                if metric < best_metric {
+                                    best_metric = metric;
+                                    best_edge = Some(([left_0, left_1], p));
+                                }
+                            }
+                            if let Some((lat, along, p)) = ray_near_edge(o, dir, right_0, right_1) {
+                                let metric = lat / along;
+                                if metric < best_metric {
+                                    best_metric = metric;
+                                    best_edge = Some(([right_0, right_1], p));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        best_edge
+    }
+
+    /// Apply edge-to-edge alignment (rotation and translation) to the selected objects.
+    pub fn apply_edge_snap(
+        &mut self,
+        assets: &mut Assets,
+        source: [DVec3; 2],
+        target: [DVec3; 2],
+        target_hit: DVec3,
+        shift: bool,
+    ) {
+        let snap_objects = self.edge_snap.as_ref().map(|s| s.objects.clone()).unwrap_or_default();
+        let mut sels = self.selection();
+        if sels.is_empty() && !snap_objects.is_empty() {
+            sels = snap_objects.iter().map(|&(k, id)| Sel::Object(k, id)).collect();
+        }
+        if sels.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let from: Vec<crate::selection::Origin> = sels.iter().filter_map(|s| crate::selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return;
+        }
+
+        let d0 = (target_hit - target[0]).length();
+        let d1 = (target_hit - target[1]).length();
+        let snap_p = if d0 < 1.0 {
+            target[0]
+        } else if d1 < 1.0 {
+            target[1]
+        } else {
+            target_hit
+        };
+
+        let u_a = (source[1] - source[0]).truncate();
+        let u_b = (target[1] - target[0]).truncate();
+
+        let deg = if u_a.length_squared() < 1e-6 || u_b.length_squared() < 1e-6 {
+            0.0
+        } else {
+            let h_a = roads::heading_of(u_a);
+            let h_b = roads::heading_of(u_b);
+            let diff1 = (h_b - h_a + 540.0).rem_euclid(360.0) - 180.0;
+            let diff2 = (h_b + 180.0 - h_a + 540.0).rem_euclid(360.0) - 180.0;
+            if diff1.abs() <= diff2.abs() {
+                diff1
+            } else {
+                diff2
+            }
+        };
+
+        let pivot = source[0].truncate();
+        let delta_xy = (snap_p - source[0]).truncate();
+        let delta_z = if shift { 0.0 } else { snap_p.z - source[0].z };
+
+        self.history.begin(tr("Snap edge to edge", "Привязка ребра к ребру"));
+        let moved = crate::selection::transform(doc, &mut self.history, &from, pivot, deg, delta_xy);
+
+        for s in &moved {
+            if let Sel::Object(k, id) = *s {
+                self.history.touch_tile(doc, k);
+                let (abs, pos_xy) = match doc.object(k, id) {
+                    Some(o) => (
+                        assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false),
+                        [o.pos[0], o.pos[1]],
+                    ),
+                    None => continue,
+                };
+                let z_adj = if abs {
+                    delta_z
+                } else {
+                    let p_new = glam::DVec2::new(tile_origin(k).x + pos_xy[0], tile_origin(k).y + pos_xy[1]);
+                    let p_old = from.iter().find(|o| o.sel == Sel::Object(k, id)).map(|o| o.pos).unwrap_or(p_new - delta_xy);
+                    let ground_old = doc.ground(p_old);
+                    let ground_new = doc.ground(p_new);
+                    delta_z + (ground_old - ground_new)
+                };
+                if let Some(o) = doc.object_mut(k, id) {
+                    o.pos[2] += z_adj;
+                }
+                if let Some(t) = doc.tiles.get_mut(&k) {
+                    t.touch_content();
+                }
+            }
+        }
+
+        self.selected = moved.first().copied();
+        self.also = moved.into_iter().skip(1).collect();
+        self.history.commit();
+    }
+
+    /// Candidate snap edges for an object: 12 bounding box edges (bottom 4, top 4, vertical 4).
+    pub fn object_edges_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id: i64) -> Vec<[DVec3; 2]> {
+        let Some(o) = doc.object(k, id) else { return Vec::new() };
+        let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
+        let world = doc.object_world(k, o, abs);
+        let pose = crate::place::Pose::of_object(world, o.rot);
+        let mut out = Vec::new();
+
+        if let Some(model) = assets.object(&o.file) {
+            let (lo, hi) = (model.lo, model.hi);
+            let corner = |x: f32, y: f32, z: f32| -> DVec3 {
+                world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3()
+            };
+
+            let c000 = corner(lo.x, lo.y, lo.z);
+            let c100 = corner(hi.x, lo.y, lo.z);
+            let c110 = corner(hi.x, hi.y, lo.z);
+            let c010 = corner(lo.x, hi.y, lo.z);
+
+            let c001 = corner(lo.x, lo.y, hi.z);
+            let c101 = corner(hi.x, lo.y, hi.z);
+            let c111 = corner(hi.x, hi.y, hi.z);
+            let c011 = corner(lo.x, hi.y, hi.z);
+
+            // 4 bottom edges
+            out.push([c000, c100]);
+            out.push([c100, c110]);
+            out.push([c110, c010]);
+            out.push([c010, c000]);
+
+            // 4 top edges
+            out.push([c001, c101]);
+            out.push([c101, c111]);
+            out.push([c111, c011]);
+            out.push([c011, c001]);
+
+            // 4 vertical pillar edges
+            out.push([c000, c001]);
+            out.push([c100, c101]);
+            out.push([c110, c111]);
+            out.push([c010, c011]);
+        }
+        out
+    }
 
     /// Take a `[splineAttachement]` record off its road: it becomes a free object where its
     /// first copy stood, keeping its IDCode. A record of several copies becomes one object.
@@ -15732,5 +16142,71 @@ mod tests {
         assert_eq!((o.pos[0].round(), o.pos[1].round()), (120.0, 150.0));
         // Z should remain 0 because shift keeps horizontal only
         assert!((o.pos[2] - 0.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn test_edge_to_edge_snap() {
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        add_object(&mut doc, (0, 0), 2, 150.0, 200.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+
+        // Select object 1
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        assert_eq!(ed.free_selected(), vec![((0, 0), 1)]);
+
+        // Start edge snapping
+        ed.start_edge_snap();
+        assert!(ed.edge_snap.is_some());
+        assert_eq!(ed.edge_snap.as_ref().unwrap().stage, EdgeSnapStage::PickSource);
+
+        // Pick source edge: (100.0, 100.0, 0.0) -> (110.0, 100.0, 0.0) (heading 90 deg)
+        let src_edge = [DVec3::new(100.0, 100.0, 0.0), DVec3::new(110.0, 100.0, 0.0)];
+        ed.edge_snap.as_mut().unwrap().hover = Some((src_edge, DVec3::new(102.0, 100.0, 0.0)));
+        let lib = crate::library::Library::default();
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.edge_snap.as_ref().unwrap().stage, EdgeSnapStage::PickTarget { source: src_edge });
+
+        // Hover over target edge: (150.0, 200.0, 4.0) -> (150.0, 210.0, 4.0) (heading 0 deg)
+        let tgt_edge = [DVec3::new(150.0, 200.0, 4.0), DVec3::new(150.0, 210.0, 4.0)];
+        ed.edge_snap.as_mut().unwrap().hover = Some((tgt_edge, DVec3::new(150.0, 200.2, 4.0)));
+        ed.left_press(&mut assets, &lib, false);
+
+        // Edge snap completed
+        assert!(ed.edge_snap.is_none());
+
+        // Check object 1 moved to target and rotated -90 deg (270 deg)
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (150.0, 200.0));
+        assert!((o.pos[2] - 4.0).abs() < 1e-4);
+        assert!((o.rot[0] - 270.0).abs() < 1e-4);
+
+        // Test Undo
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (100.0, 100.0));
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+        assert!((o.rot[0] - 0.0).abs() < 1e-4);
+
+        // Test Shift (horizontal only snapping)
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        ed.start_edge_snap();
+        ed.edge_snap.as_mut().unwrap().hover = Some((src_edge, DVec3::new(102.0, 100.0, 0.0)));
+        ed.left_press(&mut assets, &lib, false);
+        ed.edge_snap.as_mut().unwrap().hover = Some((tgt_edge, DVec3::new(150.0, 200.2, 4.0)));
+        // Press with shift = true
+        ed.left_press(&mut assets, &lib, true);
+        assert!(ed.edge_snap.is_none());
+
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (150.0, 200.0));
+        // Z should remain 0 because shift keeps horizontal only
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+        assert!((o.rot[0] - 270.0).abs() < 1e-4);
     }
 }

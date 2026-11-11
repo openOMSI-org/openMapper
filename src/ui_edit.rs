@@ -405,6 +405,17 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                         ed.start_vertex_snap();
                     }
                 }
+                let edge_snap_armed = ed.edge_snap.is_some();
+                if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge to edge (L)", "Привязать ребро к ребру (L)"))).selected(edge_snap_armed))
+                    .on_hover_text(tr("Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel", "Выровнять ребро выбранного объекта по ребру или дороге (L)\nПоворачивает и привязывает по линии\nShift: только по горизонтали, Esc/ПКМ: отмена"))
+                    .clicked()
+                {
+                    if edge_snap_armed {
+                        ed.cancel_edge_snap();
+                    } else {
+                        ed.start_edge_snap();
+                    }
+                }
             }
             if ui.button(icons::labelled(Icon::Flatten, tr("Level the ground under them", "Выровнять землю под ними"))).on_hover_text(tr("Each one's outline made level with its foot, blending into the ground 3 m round it", "Под каждым — ровно на уровне его основания, с плавным переходом 3 м вокруг")).clicked() {
                 ed.level_request = true;

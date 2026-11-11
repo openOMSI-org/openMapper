@@ -2147,6 +2147,18 @@ impl App {
             }
             return;
         }
+        if !self.crossing.open
+            && code == Some(KeyCode::KeyL)
+            && !self.keys.ctrl
+            && !self.keys.alt
+        {
+            if self.ed.edge_snap.is_some() {
+                self.ed.cancel_edge_snap();
+            } else {
+                self.ed.start_edge_snap();
+            }
+            return;
+        }
         let ctrl = self.keys.ctrl;
         let shift = self.keys.shift;
         let mut actions = Vec::new();
@@ -2197,6 +2209,8 @@ impl App {
                 // (only the view's menu closes)
             } else if self.ed.vertex_snap.is_some() {
                 self.ed.cancel_vertex_snap();
+            } else if self.ed.edge_snap.is_some() {
+                self.ed.cancel_edge_snap();
             } else if std::mem::take(&mut self.ed.cutting) {
                 // (only the knife goes, the selection stays)
             } else if self.ed.link_pick.take().is_some() {
@@ -3966,7 +3980,7 @@ impl ApplicationHandler for App {
                             if self.keys.alt {
                                 // Option + drag: turn the camera
                                 self.mouse.alt_orbit = true;
-                            } else if self.ed.vertex_snap.is_some() {
+                            } else if self.ed.vertex_snap.is_some() || self.ed.edge_snap.is_some() {
                                 self.mouse.left = true;
                                 self.mouse.press = self.mouse.pos;
                                 if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
@@ -3975,7 +3989,7 @@ impl ApplicationHandler for App {
                                 if let Some(assets) = self.assets.as_mut() {
                                     self.ed.left_press(assets, &self.lib, self.keys.shift);
                                 }
-                                if self.ed.vertex_snap.is_some() {
+                                if self.ed.vertex_snap.is_some() || self.ed.edge_snap.is_some() {
                                     if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
                                         self.ed.hover_ray(assets, &self.lib, o, d);
                                     }

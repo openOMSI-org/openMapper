@@ -1287,6 +1287,16 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                             ed.start_vertex_snap();
                         }
                     }
+                    let edge_snap_on = ed.edge_snap.is_some();
+                    let r_edge = tool_button(ui, Icon::Line, edge_snap_on, true);
+                    help(st, &r_edge, tr("Snap edge to edge (L)", "Привязать ребро к ребру (L)"));
+                    if r_edge.clicked() {
+                        if edge_snap_on {
+                            ed.cancel_edge_snap();
+                        } else {
+                            ed.start_edge_snap();
+                        }
+                    }
                 }
             }
             ui.separator();

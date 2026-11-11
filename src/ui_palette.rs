@@ -80,6 +80,13 @@ fn commands() -> Vec<Command> {
                 ed.start_vertex_snap();
             }
         }),
+        cmd!(Icon::Line, "Snap edge to edge", "Привязать ребро к ребру", "snap edge align line object привязка ребро линия", "L", |_, ed, _| {
+            if ed.edge_snap.is_some() {
+                ed.cancel_edge_snap();
+            } else {
+                ed.start_edge_snap();
+            }
+        }),
         cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient измерить расстояние уклон", "U", |_, ed, _| ed.toggle_ruler()),
         // Map
         cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
