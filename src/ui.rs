@@ -1476,6 +1476,33 @@ fn tool_panel(
     Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| match ed.tool {
         Tool::Roads => catalogue(ui, st, ed, lib, thumbs, wanted, Kind::Spline, actions),
         Tool::Objects => {
+            if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
+                ui.horizontal_wrapped(|ui| {
+                    let snap_on = ed.vertex_snap.is_some();
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                        .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
+                        .clicked()
+                    {
+                        if snap_on {
+                            ed.cancel_vertex_snap();
+                        } else {
+                            ed.start_vertex_snap();
+                        }
+                    }
+                    let edge_on = ed.edge_snap.is_some();
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                        .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
+                        .clicked()
+                    {
+                        if edge_on {
+                            ed.cancel_edge_snap();
+                        } else {
+                            ed.start_edge_snap();
+                        }
+                    }
+                });
+                ui.add_space(4.0);
+            }
             egui::CollapsingHeader::new(RichText::new(tr("Shapes and lamps", "Фигуры и светильники")).strong()).id_salt("shapes").default_open(false).show(ui, |ui| {
                 crate::ui_mesh::primitives_grid(ui, actions);
                 crate::ui_mesh::lamp_makers(ui, &mut st.signal_lamps, actions);
@@ -1527,6 +1554,33 @@ fn tool_panel(
             }
             ui.label(RichText::new(tr("Click an object or a road in the view to see and change it on the right.", "Кликните объект или дорогу в окне вида: свойства появятся справа.")).color(TEXT_DIM));
             ui.add_space(8.0);
+            if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
+                ui.horizontal_wrapped(|ui| {
+                    let snap_on = ed.vertex_snap.is_some();
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                        .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
+                        .clicked()
+                    {
+                        if snap_on {
+                            ed.cancel_vertex_snap();
+                        } else {
+                            ed.start_vertex_snap();
+                        }
+                    }
+                    let edge_on = ed.edge_snap.is_some();
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                        .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
+                        .clicked()
+                    {
+                        if edge_on {
+                            ed.cancel_edge_snap();
+                        } else {
+                            ed.start_edge_snap();
+                        }
+                    }
+                });
+                ui.add_space(8.0);
+            }
             for t in Tool::ALL.iter().skip(1) {
                 if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(t.key()).min_size(Vec2::new(ui.available_width(), 24.0))).clicked() {
                     ed.set_tool(*t);
@@ -2290,6 +2344,10 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     let mut replace_obj: Option<String> = None;
     let mut detach_road = false;
     let mut arm_attach: Option<bool> = None;
+    let mut toggle_vertex_snap = false;
+    let mut toggle_edge_snap = false;
+    let v_armed = ed.vertex_snap.is_some();
+    let e_armed = ed.edge_snap.is_some();
     // (an attached object's place on its road, its row's shape, and its world rotation)
     let mut new_att: Option<(Option<f64>, Option<f64>, Option<f64>)> = None;
     let mut new_row: Option<(Option<f64>, Option<f64>, Option<bool>)> = None;
@@ -2451,6 +2509,20 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         arm_attach = Some(!armed);
                     }
                 }
+                ui.horizontal_wrapped(|ui| {
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(v_armed))
+                        .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
+                        .clicked()
+                    {
+                        toggle_vertex_snap = true;
+                    }
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(e_armed))
+                        .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
+                        .clicked()
+                    {
+                        toggle_edge_snap = true;
+                    }
+                });
                 let is_stop = a.map(|a| a.is_bus_stop).unwrap_or(false);
                 let is_entry = a.map(|a| a.is_entry_point).unwrap_or(false);
                 if is_entry {
@@ -2731,6 +2803,20 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         } else {
             ed.sample = None;
             ed.attach_to.clear();
+        }
+    }
+    if toggle_vertex_snap {
+        if v_armed {
+            ed.cancel_vertex_snap();
+        } else {
+            ed.start_vertex_snap();
+        }
+    }
+    if toggle_edge_snap {
+        if e_armed {
+            ed.cancel_edge_snap();
+        } else {
+            ed.start_edge_snap();
         }
     }
     // (an object's rules only where it has paths, or rules already)

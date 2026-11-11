@@ -2107,7 +2107,7 @@ impl Editor {
                 VertexSnapStage::PickSource => None,
                 VertexSnapStage::PickTarget { source } => Some(source),
             };
-            let hover = self.vertex_at_ray(assets, o, d, target);
+            let hover = self.vertex_at_ray(assets, o, d, g, target);
             if let Some(snap) = &mut self.vertex_snap {
                 snap.hover = hover;
             }
@@ -2122,7 +2122,7 @@ impl Editor {
                 EdgeSnapStage::PickSource => false,
                 EdgeSnapStage::PickTarget { .. } => true,
             };
-            let hover = self.edge_at_ray(assets, o, d, target_mode);
+            let hover = self.edge_at_ray(assets, o, d, g, target_mode);
             if let Some(snap) = &mut self.edge_snap {
                 snap.hover = hover;
             }
@@ -8509,13 +8509,17 @@ impl Editor {
 
     /// Start vertex-to-vertex snapping for the selected objects.
     pub fn start_vertex_snap(&mut self) {
-        let free = self.free_selected();
-        if free.is_empty() {
+        let objs: Vec<(TileKey, i64)> = self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => Some((k, id)),
+            _ => None,
+        }).collect();
+        if objs.is_empty() {
             self.toast(tr("Select an object first to snap its vertex", "Сначала выберите объект для привязки вершины"));
             return;
         }
+        self.cancel_edge_snap();
         self.vertex_snap = Some(VertexSnap {
-            objects: free,
+            objects: objs,
             stage: VertexSnapStage::PickSource,
             hover: None,
         });
@@ -8530,14 +8534,15 @@ impl Editor {
     }
 
     /// Find the nearest vertex to ray (o, d) on candidate objects.
-    pub fn vertex_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, target_mode: Option<DVec3>) -> Option<DVec3> {
+    pub fn vertex_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, g: Option<DVec3>, target_mode: Option<DVec3>) -> Option<DVec3> {
         let doc = self.doc.as_ref()?;
         let dir = d.normalize_or_zero();
         if dir == DVec3::ZERO {
             return None;
         }
 
-        let mut best_metric = 0.045f64; // ~2.5 degrees cone (approx 35-40 screen px)
+        let max_dist = g.map(|p| (p - o).length() + 3.0).unwrap_or(80.0).min(120.0);
+        let mut best_score = f64::MAX;
         let mut best_pt: Option<DVec3> = None;
 
         let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
@@ -8549,14 +8554,17 @@ impl Editor {
                 for v in verts {
                     let to_v = v - o;
                     let t = to_v.dot(dir);
-                    if t <= 0.1 {
+                    if t <= 0.1 || t > max_dist {
                         continue;
                     }
                     let dist = (to_v - dir * t).length();
-                    let metric = dist / t;
-                    if metric < best_metric {
-                        best_metric = metric;
-                        best_pt = Some(v);
+                    let ang = dist / t;
+                    if ang < 0.045 {
+                        let score = t + ang * 150.0;
+                        if score < best_score {
+                            best_score = score;
+                            best_pt = Some(v);
+                        }
                     }
                 }
             }
@@ -8567,6 +8575,13 @@ impl Editor {
             let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
 
             for (k, t) in doc.tiles.iter() {
+                let org = tile_origin(*k);
+                if let Some(gp) = g {
+                    if (org.x + 150.0 - gp.x).abs() > 300.0 || (org.y + 150.0 - gp.y).abs() > 300.0 {
+                        continue;
+                    }
+                }
+
                 for ob in &t.tile.objects {
                     if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
                         continue;
@@ -8587,14 +8602,17 @@ impl Editor {
                     for v in verts {
                         let to_v = v - o;
                         let t = to_v.dot(dir);
-                        if t <= 0.1 {
+                        if t <= 0.1 || t > max_dist {
                             continue;
                         }
                         let dist = (to_v - dir * t).length();
-                        let metric = dist / t;
-                        if metric < best_metric {
-                            best_metric = metric;
-                            best_pt = Some(v);
+                        let ang = dist / t;
+                        if ang < 0.045 {
+                            let score = t + ang * 150.0;
+                            if score < best_score {
+                                best_score = score;
+                                best_pt = Some(v);
+                            }
                         }
                     }
                 }
@@ -8605,14 +8623,17 @@ impl Editor {
                     for pt in [curve.point_at(0.0), curve.end_point()] {
                         let to_v = pt - o;
                         let t = to_v.dot(dir);
-                        if t <= 0.1 {
+                        if t <= 0.1 || t > max_dist {
                             continue;
                         }
                         let dist = (to_v - dir * t).length();
-                        let metric = dist / t;
-                        if metric < best_metric {
-                            best_metric = metric;
-                            best_pt = Some(pt);
+                        let ang = dist / t;
+                        if ang < 0.045 {
+                            let score = t + ang * 150.0;
+                            if score < best_score {
+                                best_score = score;
+                                best_pt = Some(pt);
+                            }
                         }
                     }
                 }
@@ -8661,6 +8682,7 @@ impl Editor {
                     delta.z + (ground_old - ground_new)
                 };
                 if let Some(o) = doc.object_mut(k, id) {
+                    o.parent_id = None;
                     o.pos[2] += z_adj;
                 }
                 if let Some(t) = doc.tiles.get_mut(&k) {
@@ -8715,13 +8737,16 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
 
     /// Start edge-to-edge snapping for the selected objects.
     pub fn start_edge_snap(&mut self) {
-        let free = self.free_selected();
-        if free.is_empty() {
+        let objs: Vec<(TileKey, i64)> = self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => Some((k, id)),
+            _ => None,
+        }).collect();
+        if objs.is_empty() {
             self.toast(tr("Select an object first to align its edge", "Сначала выберите объект для выравнивания ребра"));
             return;
         }
         self.edge_snap = Some(EdgeSnap {
-            objects: free,
+            objects: objs,
             stage: EdgeSnapStage::PickSource,
             hover: None,
         });
@@ -8736,14 +8761,15 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
     }
 
     /// Find the nearest edge to ray (o, d) on candidate objects or road splines.
-    pub fn edge_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, target_mode: bool) -> Option<([DVec3; 2], DVec3)> {
+    pub fn edge_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, g: Option<DVec3>, target_mode: bool) -> Option<([DVec3; 2], DVec3)> {
         let doc = self.doc.as_ref()?;
         let dir = d.normalize_or_zero();
         if dir == DVec3::ZERO {
             return None;
         }
 
-        let mut best_metric = 0.045f64; // ~2.5 degrees cone
+        let max_dist = g.map(|p| (p - o).length() + 3.0).unwrap_or(80.0).min(120.0);
+        let mut best_score = f64::MAX;
         let mut best_edge: Option<([DVec3; 2], DVec3)> = None;
 
         let snap_objects = self.edge_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
@@ -8754,9 +8780,16 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
                 let edges = Self::object_edges_for_snap(doc, assets, k, id);
                 for e in edges {
                     if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
-                        let metric = lat / along;
-                        if metric < best_metric {
-                            best_metric = metric;
+                        if along <= 0.1 || along > max_dist {
+                            continue;
+                        }
+                        let ang = lat / along;
+                        if ang > 0.045 {
+                            continue;
+                        }
+                        let score = along + ang * 150.0;
+                        if score < best_score {
+                            best_score = score;
                             best_edge = Some((e, p));
                         }
                     }
@@ -8769,6 +8802,12 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
             let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
 
             for (k, t) in doc.tiles.iter() {
+                if let Some(gp) = g.map(|p| p.truncate()) {
+                    let org = tile_origin(*k);
+                    if (org.x + 150.0 - gp.x).abs() > 300.0 || (org.y + 150.0 - gp.y).abs() > 300.0 {
+                        continue;
+                    }
+                }
                 for ob in &t.tile.objects {
                     if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
                         continue;
@@ -8788,9 +8827,16 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
                     let edges = Self::object_edges_for_snap(doc, assets, *k, ob.id);
                     for e in edges {
                         if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
-                            let metric = lat / along;
-                            if metric < best_metric {
-                                best_metric = metric;
+                            if along <= 0.1 || along > max_dist {
+                                continue;
+                            }
+                            let ang = lat / along;
+                            if ang > 0.045 {
+                                continue;
+                            }
+                            let score = along + ang * 150.0;
+                            if score < best_score {
+                                best_score = score;
                                 best_edge = Some((e, p));
                             }
                         }
@@ -8816,10 +8862,15 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
 
                         // Centerline segment
                         if let Some((lat, along, p)) = ray_near_edge(o, dir, p0, p1) {
-                            let metric = lat / along;
-                            if metric < best_metric {
-                                best_metric = metric;
-                                best_edge = Some(([p0, p1], p));
+                            if along > 0.1 && along <= max_dist {
+                                let ang = lat / along;
+                                if ang <= 0.045 {
+                                    let score = along + ang * 150.0;
+                                    if score < best_score {
+                                        best_score = score;
+                                        best_edge = Some(([p0, p1], p));
+                                    }
+                                }
                             }
                         }
 
@@ -8834,17 +8885,27 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
                             let right_1 = p1 + r1 * sx1;
 
                             if let Some((lat, along, p)) = ray_near_edge(o, dir, left_0, left_1) {
-                                let metric = lat / along;
-                                if metric < best_metric {
-                                    best_metric = metric;
-                                    best_edge = Some(([left_0, left_1], p));
+                                if along > 0.1 && along <= max_dist {
+                                    let ang = lat / along;
+                                    if ang <= 0.045 {
+                                        let score = along + ang * 150.0;
+                                        if score < best_score {
+                                            best_score = score;
+                                            best_edge = Some(([left_0, left_1], p));
+                                        }
+                                    }
                                 }
                             }
                             if let Some((lat, along, p)) = ray_near_edge(o, dir, right_0, right_1) {
-                                let metric = lat / along;
-                                if metric < best_metric {
-                                    best_metric = metric;
-                                    best_edge = Some(([right_0, right_1], p));
+                                if along > 0.1 && along <= max_dist {
+                                    let ang = lat / along;
+                                    if ang <= 0.045 {
+                                        let score = along + ang * 150.0;
+                                        if score < best_score {
+                                            best_score = score;
+                                            best_edge = Some(([right_0, right_1], p));
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -8933,6 +8994,7 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
                     delta_z + (ground_old - ground_new)
                 };
                 if let Some(o) = doc.object_mut(k, id) {
+                    o.parent_id = None;
                     o.pos[2] += z_adj;
                 }
                 if let Some(t) = doc.tiles.get_mut(&k) {
@@ -8946,7 +9008,7 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
         self.history.commit();
     }
 
-    /// Candidate snap edges for an object: 12 bounding box edges (bottom 4, top 4, vertical 4).
+    /// Candidate snap edges for an object: mesh edges or 12 bounding box edges.
     pub fn object_edges_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id: i64) -> Vec<[DVec3; 2]> {
         let Some(o) = doc.object(k, id) else { return Vec::new() };
         let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
@@ -8955,38 +9017,77 @@ fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id:
         let mut out = Vec::new();
 
         if let Some(model) = assets.object(&o.file) {
-            let (lo, hi) = (model.lo, model.hi);
-            let corner = |x: f32, y: f32, z: f32| -> DVec3 {
-                world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3()
-            };
+            let mut mesh_edges = Vec::new();
+            let mut seen_edges = std::collections::HashSet::new();
 
-            let c000 = corner(lo.x, lo.y, lo.z);
-            let c100 = corner(hi.x, lo.y, lo.z);
-            let c110 = corner(hi.x, hi.y, lo.z);
-            let c010 = corner(lo.x, hi.y, lo.z);
+            for part in &model.parts {
+                let pos = &part.mesh.positions;
+                let indices = &part.mesh.indices;
+                if indices.len() >= 3 {
+                    for tri in indices.chunks_exact(3) {
+                        let idxs = [tri[0] as usize, tri[1] as usize, tri[2] as usize];
+                        if idxs[0] < pos.len() && idxs[1] < pos.len() && idxs[2] < pos.len() {
+                            let pairs = [(idxs[0], idxs[1]), (idxs[1], idxs[2]), (idxs[2], idxs[0])];
+                            for (a, b) in pairs {
+                                let key = if a < b { (a, b) } else { (b, a) };
+                                if seen_edges.insert(key) {
+                                    let pa = world + pose.rot.transform_vector3(pos[a]).as_dvec3();
+                                    let pb = world + pose.rot.transform_vector3(pos[b]).as_dvec3();
+                                    if (pa - pb).length_squared() > 1e-4 {
+                                        mesh_edges.push([pa, pb]);
+                                    }
+                                }
+                                if mesh_edges.len() >= 1000 {
+                                    break;
+                                }
+                            }
+                        }
+                        if mesh_edges.len() >= 1000 {
+                            break;
+                        }
+                    }
+                }
+                if mesh_edges.len() >= 1000 {
+                    break;
+                }
+            }
 
-            let c001 = corner(lo.x, lo.y, hi.z);
-            let c101 = corner(hi.x, lo.y, hi.z);
-            let c111 = corner(hi.x, hi.y, hi.z);
-            let c011 = corner(lo.x, hi.y, hi.z);
+            if !mesh_edges.is_empty() {
+                out.extend(mesh_edges);
+            } else {
+                let (lo, hi) = (model.lo, model.hi);
+                let corner = |x: f32, y: f32, z: f32| -> DVec3 {
+                    world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3()
+                };
 
-            // 4 bottom edges
-            out.push([c000, c100]);
-            out.push([c100, c110]);
-            out.push([c110, c010]);
-            out.push([c010, c000]);
+                let c000 = corner(lo.x, lo.y, lo.z);
+                let c100 = corner(hi.x, lo.y, lo.z);
+                let c110 = corner(hi.x, hi.y, lo.z);
+                let c010 = corner(lo.x, hi.y, lo.z);
 
-            // 4 top edges
-            out.push([c001, c101]);
-            out.push([c101, c111]);
-            out.push([c111, c011]);
-            out.push([c011, c001]);
+                let c001 = corner(lo.x, lo.y, hi.z);
+                let c101 = corner(hi.x, lo.y, hi.z);
+                let c111 = corner(hi.x, hi.y, hi.z);
+                let c011 = corner(lo.x, hi.y, hi.z);
 
-            // 4 vertical pillar edges
-            out.push([c000, c001]);
-            out.push([c100, c101]);
-            out.push([c110, c111]);
-            out.push([c010, c011]);
+                // 4 bottom edges
+                out.push([c000, c100]);
+                out.push([c100, c110]);
+                out.push([c110, c010]);
+                out.push([c010, c000]);
+
+                // 4 top edges
+                out.push([c001, c101]);
+                out.push([c101, c111]);
+                out.push([c111, c011]);
+                out.push([c011, c001]);
+
+                // 4 vertical pillar edges
+                out.push([c000, c001]);
+                out.push([c100, c101]);
+                out.push([c110, c111]);
+                out.push([c010, c011]);
+            }
         }
         out
     }
