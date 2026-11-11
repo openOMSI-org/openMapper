@@ -8492,7 +8492,11 @@ impl Editor {
 
     /// Apply the vertex snap translation to the selected objects.
     pub fn apply_vertex_snap(&mut self, assets: &mut Assets, delta: DVec3) {
-        let sels = self.selection();
+        let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.clone()).unwrap_or_default();
+        let mut sels = self.selection();
+        if sels.is_empty() && !snap_objects.is_empty() {
+            sels = snap_objects.iter().map(|&(k, id)| Sel::Object(k, id)).collect();
+        }
         if sels.is_empty() || delta.length_squared() < 1e-12 {
             return;
         }

@@ -3966,6 +3966,20 @@ impl ApplicationHandler for App {
                             if self.keys.alt {
                                 // Option + drag: turn the camera
                                 self.mouse.alt_orbit = true;
+                            } else if self.ed.vertex_snap.is_some() {
+                                self.mouse.left = true;
+                                self.mouse.press = self.mouse.pos;
+                                if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
+                                    self.ed.hover_ray(assets, &self.lib, o, d);
+                                }
+                                if let Some(assets) = self.assets.as_mut() {
+                                    self.ed.left_press(assets, &self.lib, self.keys.shift);
+                                }
+                                if self.ed.vertex_snap.is_some() {
+                                    if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
+                                        self.ed.hover_ray(assets, &self.lib, o, d);
+                                    }
+                                }
                             } else if self.ed.mesh.as_ref().map(|m| m.editing).unwrap_or(false) {
                                 // (the edit mode: a press picks or takes a handle; on nothing it
                                 // draws a box)
