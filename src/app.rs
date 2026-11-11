@@ -2135,6 +2135,18 @@ impl App {
             self.ed.toast(tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"));
             return;
         }
+        if !self.crossing.open
+            && code == Some(KeyCode::KeyV)
+            && !self.keys.ctrl
+            && !self.keys.alt
+        {
+            if self.ed.vertex_snap.is_some() {
+                self.ed.cancel_vertex_snap();
+            } else {
+                self.ed.start_vertex_snap();
+            }
+            return;
+        }
         let ctrl = self.keys.ctrl;
         let shift = self.keys.shift;
         let mut actions = Vec::new();
@@ -2183,6 +2195,8 @@ impl App {
         if let Key::Named(NamedKey::Escape) = logical {
             if self.ui.view_menu.take().is_some() {
                 // (only the view's menu closes)
+            } else if self.ed.vertex_snap.is_some() {
+                self.ed.cancel_vertex_snap();
             } else if std::mem::take(&mut self.ed.cutting) {
                 // (only the knife goes, the selection stays)
             } else if self.ed.link_pick.take().is_some() {

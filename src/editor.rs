@@ -357,10 +357,29 @@ pub(crate) fn attach_hint(n: usize) -> &'static str {
     }
 }
 
+/// What stage of vertex-to-vertex snapping is active.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum VertexSnapStage {
+    /// Select a reference vertex on the selected object.
+    PickSource,
+    /// Select a target vertex on another object or road end to snap to.
+    PickTarget { source: DVec3 },
+}
+
+/// The state of the vertex-to-vertex snapping tool.
+#[derive(Clone, PartialEq, Debug)]
+pub struct VertexSnap {
+    pub objects: Vec<(TileKey, i64)>,
+    pub stage: VertexSnapStage,
+    pub hover: Option<DVec3>,
+}
+
 pub struct Editor {
     pub doc: Option<Document>,
     pub history: History,
     pub tool: Tool,
+    /// Vertex-to-vertex snapping mode for aligning scenery objects.
+    pub vertex_snap: Option<VertexSnap>,
     /// The selection: the one shown in the properties (None: nothing selected, whatever
     /// `also` holds) and the others selected with it.
     pub selected: Option<Sel>,
@@ -893,6 +912,7 @@ impl Default for Editor {
             reveal: None,
             aim: None,
             path_numbers: None,
+            vertex_snap: None,
         }
     }
 }
@@ -1419,6 +1439,7 @@ impl Editor {
         self.sample_browser = false;
         self.path_connect = None;
         self.cutting = false;
+        self.vertex_snap = None;
         if let Some(doc) = &mut self.doc {
             self.history.commit();
             let _ = doc;
@@ -2037,6 +2058,21 @@ impl Editor {
             self.hover_stack.clear();
             return;
         }
+        if self.vertex_snap.is_some() {
+            let target = match self.vertex_snap.as_ref().unwrap().stage {
+                VertexSnapStage::PickSource => None,
+                VertexSnapStage::PickTarget { source } => Some(source),
+            };
+            let hover = self.vertex_at_ray(assets, o, d, target);
+            if let Some(snap) = &mut self.vertex_snap {
+                snap.hover = hover;
+            }
+            self.hover = None;
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
         match self.acts_as() {
             Tool::Select => {
                 if self.drag == Drag::None {
@@ -2259,6 +2295,33 @@ impl Editor {
 
     pub fn left_press(&mut self, assets: &mut Assets, lib: &Library, shift: bool) {
         if self.doc.is_none() {
+            return;
+        }
+        if let Some(snap) = &mut self.vertex_snap {
+            match snap.stage {
+                VertexSnapStage::PickSource => {
+                    if let Some(hover) = snap.hover {
+                        snap.stage = VertexSnapStage::PickTarget { source: hover };
+                        snap.hover = None;
+                        self.toast(tr("Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)", "Исходная точка выбрана. Щёлкните целевую вершину для привязки (Shift: только по горизонтали, Esc: отмена)"));
+                    } else {
+                        self.toast(tr("Aim at a vertex of the selected object", "Наведите на вершину выбранного объекта"));
+                    }
+                }
+                VertexSnapStage::PickTarget { source } => {
+                    if let Some(target) = snap.hover {
+                        let mut delta = target - source;
+                        if shift {
+                            delta.z = 0.0;
+                        }
+                        self.apply_vertex_snap(assets, delta);
+                        self.vertex_snap = None;
+                        self.toast(tr("Snapped to vertex! (Ctrl+Z to undo)", "Привязано к вершине! (Ctrl+Z для отмены)"));
+                    } else {
+                        self.toast(tr("Aim at a target vertex or spline endpoint", "Наведите на целевую вершину или конец дороги"));
+                    }
+                }
+            }
             return;
         }
         // "Connect to": the next click is the other end of the path, not a new selection
@@ -2490,6 +2553,18 @@ impl Editor {
     /// A right click without a drag: what the tool was doing is called off; true when the
     /// view's menu is to open instead.
     pub fn right_click(&mut self) -> bool {
+        if let Some(snap) = &mut self.vertex_snap {
+            if let VertexSnapStage::PickTarget { .. } = snap.stage {
+                snap.stage = VertexSnapStage::PickSource;
+                snap.hover = None;
+                self.toast(tr("Target cancelled. Pick a source vertex again", "Выбор цели отменен. Выберите исходную вершину снова"));
+                return false;
+            } else {
+                self.vertex_snap = None;
+                self.toast(tr("Vertex snap cancelled", "Привязка вершины отменена"));
+                return false;
+            }
+        }
         if let Some(m) = self.mesh.as_mut().filter(|m| m.modal_active()) {
             m.cancel();
             return false;
@@ -5978,6 +6053,46 @@ impl Editor {
                 disc(&mut x.overlay, cam, p + lift, w * 2.5, [1.0, 0.85, 0.2, 1.0]);
             }
         }
+        if let Some(snap) = &self.vertex_snap {
+            let ball_r = (cam.distance * 0.007).clamp(0.06, 1.2);
+            let disc_r = (ball_r * 1.6) as f32;
+            let line_w = (cam.distance * 0.0012).clamp(0.02, 0.2) as f32;
+            match snap.stage {
+                VertexSnapStage::PickSource => {
+                    for &(k, id) in &snap.objects {
+                        if let Some(o) = doc.object(k, id) {
+                            let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
+                            let world = doc.object_world(k, o, abs);
+                            let pose = crate::place::Pose::of_object(world, o.rot);
+                            if let Some(model) = assets.object(&o.file) {
+                                let (lo, hi) = (model.lo, model.hi);
+                                let dot_r = (cam.distance * 0.003).clamp(0.03, 0.35);
+                                for x_c in [lo.x, hi.x] {
+                                    for y_c in [lo.y, hi.y] {
+                                        for z_c in [lo.z, hi.z] {
+                                            let p = world + pose.rot.transform_vector3(glam::Vec3::new(x_c, y_c, z_c)).as_dvec3();
+                                            ball(&mut x.overlay, p, dot_r, [1.0, 0.45, 0.45, 0.7]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [1.0, 0.2, 0.2, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [1.0, 0.85, 0.2, 0.6]);
+                    }
+                }
+                VertexSnapStage::PickTarget { source } => {
+                    ball(&mut x.overlay, source, ball_r, [1.0, 0.2, 0.2, 1.0]);
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [0.2, 0.95, 0.35, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [0.2, 0.95, 0.35, 0.6]);
+                        line(&mut x.overlay, cam, source, hover, line_w, [1.0, 0.85, 0.2, 0.95]);
+                    }
+                }
+            }
+        }
         x
     }
 }
@@ -8259,6 +8374,208 @@ impl Editor {
         self.attach_to = ids;
         self.toast(attach_hint(n));
     }
+
+    /// Start vertex-to-vertex snapping for the selected objects.
+    pub fn start_vertex_snap(&mut self) {
+        let free = self.free_selected();
+        if free.is_empty() {
+            self.toast(tr("Select an object first to snap its vertex", "Сначала выберите объект для привязки вершины"));
+            return;
+        }
+        self.vertex_snap = Some(VertexSnap {
+            objects: free,
+            stage: VertexSnapStage::PickSource,
+            hover: None,
+        });
+        self.toast(tr("Vertex snap: click a source vertex on the selected object (Esc to cancel)", "Привязка вершины: выберите исходную вершину на объекте (Esc для отмены)"));
+    }
+
+    /// Cancel the active vertex-to-vertex snapping.
+    pub fn cancel_vertex_snap(&mut self) {
+        if self.vertex_snap.take().is_some() {
+            self.toast(tr("Vertex snap cancelled", "Привязка вершины отменена"));
+        }
+    }
+
+    /// Find the nearest vertex to ray (o, d) on candidate objects.
+    pub fn vertex_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, target_mode: Option<DVec3>) -> Option<DVec3> {
+        let doc = self.doc.as_ref()?;
+        let dir = d.normalize_or_zero();
+        if dir == DVec3::ZERO {
+            return None;
+        }
+
+        let mut best_metric = 0.045f64; // ~2.5 degrees cone (approx 35-40 screen px)
+        let mut best_pt: Option<DVec3> = None;
+
+        let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
+
+        if target_mode.is_none() {
+            // PickSource: only evaluate vertices of the selected objects
+            for &(k, id) in snap_objects {
+                let verts = Self::object_vertices_for_snap(doc, assets, k, id);
+                for v in verts {
+                    let to_v = v - o;
+                    let t = to_v.dot(dir);
+                    if t <= 0.1 {
+                        continue;
+                    }
+                    let dist = (to_v - dir * t).length();
+                    let metric = dist / t;
+                    if metric < best_metric {
+                        best_metric = metric;
+                        best_pt = Some(v);
+                    }
+                }
+            }
+        } else {
+            // PickTarget: evaluate other visible objects and spline endpoints
+            let dv = dir.as_vec3();
+            let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
+            let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
+
+            for (k, t) in doc.tiles.iter() {
+                for ob in &t.tile.objects {
+                    if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
+                        continue;
+                    }
+                    let Some(model) = assets.object(&ob.file) else { continue };
+                    if unseen(&model) {
+                        continue;
+                    }
+                    let world = doc.object_world(*k, ob, model.abs_height);
+                    let m = object_matrix(world - o, ob.rot);
+                    let c = m.transform_point3(model.centre());
+                    let r = (model.radius().max(1.0) * 1.5) as f32;
+                    if !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, dv, c, r) {
+                        continue;
+                    }
+
+                    let verts = Self::object_vertices_for_snap(doc, assets, *k, ob.id);
+                    for v in verts {
+                        let to_v = v - o;
+                        let t = to_v.dot(dir);
+                        if t <= 0.1 {
+                            continue;
+                        }
+                        let dist = (to_v - dir * t).length();
+                        let metric = dist / t;
+                        if metric < best_metric {
+                            best_metric = metric;
+                            best_pt = Some(v);
+                        }
+                    }
+                }
+
+                // Spline endpoints
+                for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+                    let curve = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
+                    for pt in [curve.point_at(0.0), curve.end_point()] {
+                        let to_v = pt - o;
+                        let t = to_v.dot(dir);
+                        if t <= 0.1 {
+                            continue;
+                        }
+                        let dist = (to_v - dir * t).length();
+                        let metric = dist / t;
+                        if metric < best_metric {
+                            best_metric = metric;
+                            best_pt = Some(pt);
+                        }
+                    }
+                }
+            }
+        }
+
+        best_pt
+    }
+
+    /// Apply the vertex snap translation to the selected objects.
+    pub fn apply_vertex_snap(&mut self, assets: &mut Assets, delta: DVec3) {
+        let sels = self.selection();
+        if sels.is_empty() || delta.length_squared() < 1e-12 {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let from: Vec<crate::selection::Origin> = sels.iter().filter_map(|s| crate::selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return;
+        }
+
+        self.history.begin(tr("Snap vertex to vertex", "Привязка вершины к вершине"));
+        let moved = crate::selection::transform(doc, &mut self.history, &from, glam::DVec2::ZERO, 0.0, glam::DVec2::new(delta.x, delta.y));
+
+        for s in &moved {
+            if let Sel::Object(k, id) = *s {
+                self.history.touch_tile(doc, k);
+                let (abs, pos_xy) = match doc.object(k, id) {
+                    Some(o) => (
+                        assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false),
+                        [o.pos[0], o.pos[1]],
+                    ),
+                    None => continue,
+                };
+                let z_adj = if abs {
+                    delta.z
+                } else {
+                    let p_new = glam::DVec2::new(tile_origin(k).x + pos_xy[0], tile_origin(k).y + pos_xy[1]);
+                    let p_old = p_new - glam::DVec2::new(delta.x, delta.y);
+                    let ground_old = doc.ground(p_old);
+                    let ground_new = doc.ground(p_new);
+                    delta.z + (ground_old - ground_new)
+                };
+                if let Some(o) = doc.object_mut(k, id) {
+                    o.pos[2] += z_adj;
+                }
+                if let Some(t) = doc.tiles.get_mut(&k) {
+                    t.touch_content();
+                }
+            }
+        }
+
+        self.selected = moved.first().copied();
+        self.also = moved.into_iter().skip(1).collect();
+        self.history.commit();
+    }
+
+/// Candidate snap vertices for an object: origin, bounding box corners, mesh vertices, and helpers.
+fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id: i64) -> Vec<DVec3> {
+    let Some(o) = doc.object(k, id) else { return Vec::new() };
+    let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
+    let world = doc.object_world(k, o, abs);
+    let pose = crate::place::Pose::of_object(world, o.rot);
+    let mut out = Vec::new();
+    out.push(world);
+
+    if let Some(model) = assets.object(&o.file) {
+        let (lo, hi) = (model.lo, model.hi);
+        for x in [lo.x, hi.x] {
+            for y in [lo.y, hi.y] {
+                for z in [lo.z, hi.z] {
+                    out.push(world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3());
+                }
+            }
+        }
+        let mut seen = std::collections::HashSet::new();
+        for part in &model.parts {
+            for &p in &part.mesh.positions {
+                let key = (
+                    (p.x * 200.0).round() as i64,
+                    (p.y * 200.0).round() as i64,
+                    (p.z * 200.0).round() as i64,
+                );
+                if seen.insert(key) {
+                    out.push(world + pose.rot.transform_vector3(p).as_dvec3());
+                }
+            }
+        }
+        for (h, _) in &model.helpers {
+            let hp = glam::Vec3::new(h[0], h[1], h[2]);
+            out.push(world + pose.rot.transform_vector3(hp).as_dvec3());
+        }
+    }
+    out
+}
 
     /// Take a `[splineAttachement]` record off its road: it becomes a free object where its
     /// first copy stood, keeping its IDCode. A record of several copies becomes one object.
@@ -15348,5 +15665,68 @@ mod tests {
             eprintln!("grab follow (chain) {i}: {:?}", t.elapsed());
         }
         ed.grab_cancel();
+    }
+
+    #[test]
+    fn test_vertex_to_vertex_snap() {
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        add_object(&mut doc, (0, 0), 2, 120.0, 150.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+
+        // Select object 1
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        assert_eq!(ed.free_selected(), vec![((0, 0), 1)]);
+
+        // Start vertex snapping
+        ed.start_vertex_snap();
+        assert!(ed.vertex_snap.is_some());
+        assert_eq!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickSource);
+
+        // Advance to PickTarget with source vertex at (100.0, 100.0, 0.0)
+        let source = DVec3::new(100.0, 100.0, 0.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(source);
+        let lib = crate::library::Library::default();
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickTarget { source });
+
+        // Hover over target vertex at (120.0, 150.0, 5.0) and click
+        let target = DVec3::new(120.0, 150.0, 5.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(target);
+        ed.left_press(&mut assets, &lib, false);
+
+        // Snapping completed
+        assert!(ed.vertex_snap.is_none());
+
+        // Check object 1 position moved by (20.0, 50.0, 5.0)
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (120.0, 150.0));
+        assert!((o.pos[2] - 5.0).abs() < 1e-4);
+
+        // Test Undo
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (100.0, 100.0));
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+
+        // Test Shift (horizontal only snapping)
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        ed.start_vertex_snap();
+        ed.vertex_snap.as_mut().unwrap().hover = Some(source);
+        ed.left_press(&mut assets, &lib, false);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(target);
+        // Press with shift = true
+        ed.left_press(&mut assets, &lib, true);
+        assert!(ed.vertex_snap.is_none());
+
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (120.0, 150.0));
+        // Z should remain 0 because shift keeps horizontal only
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
     }
 }

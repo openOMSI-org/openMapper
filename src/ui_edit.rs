@@ -394,6 +394,17 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                         ed.arm_attach(free);
                     }
                 }
+                let snap_armed = ed.vertex_snap.is_some();
+                if ui.add(egui::Button::new(icons::labelled(Icon::Select, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"))).selected(snap_armed))
+                    .on_hover_text(tr("Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel", "Привязать вершину выбранного объекта к вершине другого объекта (V)\nShift: только по горизонтали, Esc/ПКМ: отмена"))
+                    .clicked()
+                {
+                    if snap_armed {
+                        ed.cancel_vertex_snap();
+                    } else {
+                        ed.start_vertex_snap();
+                    }
+                }
             }
             if ui.button(icons::labelled(Icon::Flatten, tr("Level the ground under them", "Выровнять землю под ними"))).on_hover_text(tr("Each one's outline made level with its foot, blending into the ground 3 m round it", "Под каждым — ровно на уровне его основания, с плавным переходом 3 м вокруг")).clicked() {
                 ed.level_request = true;
