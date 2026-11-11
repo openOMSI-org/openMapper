@@ -1277,6 +1277,16 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                             ed.xform = if ed.xform == x { crate::editor::Xform::Select } else { x };
                         }
                     }
+                    let snap_on = ed.vertex_snap.is_some();
+                    let r = tool_button(ui, Icon::Focus, snap_on, true);
+                    help(st, &r, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"));
+                    if r.clicked() {
+                        if snap_on {
+                            ed.cancel_vertex_snap();
+                        } else {
+                            ed.start_vertex_snap();
+                        }
+                    }
                 }
             }
             ui.separator();

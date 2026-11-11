@@ -395,7 +395,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     }
                 }
                 let snap_armed = ed.vertex_snap.is_some();
-                if ui.add(egui::Button::new(icons::labelled(Icon::Select, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"))).selected(snap_armed))
+                if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"))).selected(snap_armed))
                     .on_hover_text(tr("Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel", "Привязать вершину выбранного объекта к вершине другого объекта (V)\nShift: только по горизонтали, Esc/ПКМ: отмена"))
                     .clicked()
                 {
