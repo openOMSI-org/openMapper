@@ -2811,3 +2811,10 @@ Snap edge (L)	Krawędź zatrzaskowa (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Przyciągnij krawędź tego obiektu do innej krawędzi lub drogi (skrót: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Przyciągnij wierzchołek wybranego obiektu do wierzchołka innego obiektu (V)\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Wyrównaj krawędź wybranego obiektu do krawędzi lub drogi (L)\nObraca i przyciąga współliniowo\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punkt 1 wyrównany! Kliknij 2. punkt na obiekcie, aby obrócić, lub Esc, aby zakończyć
+Reference angle set. Click a target point or spline to align (Esc: finish)	Kąt odniesienia ustawiony. Kliknij punkt docelowy lub drogę, aby wyrównać (Esc: zakończ)
+Pick a different vertex on the object	Wybierz inny wierzchołek na obiekcie
+Click a 2nd reference point on the object, or Esc to finish	Kliknij 2. punkt odniesienia na obiekcie lub Esc, aby zakończyć
+Aligned angle! (Ctrl+Z to undo)	Kąt wyrównany! (Ctrl+Z, aby cofnąć)
+Vertex snap complete	Przyciąganie wierzchołka zakończone
+Align vertex angle	Wyrównaj kąt wierzchołka

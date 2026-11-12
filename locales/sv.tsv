@@ -2811,3 +2811,10 @@ Snap edge (L)	Snäppkant (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Fäst en kant av detta objekt till en annan kant eller väg (genväg: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Fäst en vertex av det markerade objektet till en vertex av ett annat objekt (V)\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Justera en kant på det markerade objektet mot en kant eller väg (L)\nRoterar och fäster kolinjärt\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punkt 1 justerad! Klicka på en andra punkt på objektet för att rotera, eller Esc för att slutföra
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referensvinkel inställd. Klicka på en målpunkt eller väg för att justera (Esc: slutför)
+Pick a different vertex on the object	Välj ett annat hörn på objektet
+Click a 2nd reference point on the object, or Esc to finish	Klicka på en andra referenspunkt på objektet, eller Esc för att slutföra
+Aligned angle! (Ctrl+Z to undo)	Vinkel justerad! (Ctrl+Z för att ångra)
+Vertex snap complete	Hörnfästning slutförd
+Align vertex angle	Justera hörnvinkel

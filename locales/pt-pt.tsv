@@ -2811,3 +2811,10 @@ Snap edge (L)	Borda de encaixe (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Encaixe uma aresta deste objeto em outra aresta ou estrada (Atalho: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajustar um vértice do objeto selecionado a um vértice de outro objeto (V)\nShift: Somente horizontal, Esc/Clique com o botão direito: Cancelar
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinha uma aresta do objeto selecionado a uma aresta ou estrada (L)\nGira e ajusta colinearmente\nShift: Somente horizontal, Esc/Clique com o botão direito: Cancelar
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Ponto 1 alinhado! Clique num 2º ponto no objeto para rodar, ou Esc para terminar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Ângulo de referência definido. Clique num ponto alvo ou estrada para alinhar (Esc: terminar)
+Pick a different vertex on the object	Escolha um vértice diferente no objeto
+Click a 2nd reference point on the object, or Esc to finish	Clique num 2º ponto de referência no objeto, ou Esc para terminar
+Aligned angle! (Ctrl+Z to undo)	Ângulo alinhado! (Ctrl+Z para anular)
+Vertex snap complete	Encaixe de vértice concluído
+Align vertex angle	Alinhar ângulo de vértice

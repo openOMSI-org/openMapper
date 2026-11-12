@@ -2811,3 +2811,10 @@ Snap edge (L)	ขอบสแนป (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	สแนปขอบของวัตถุนี้ไปยังขอบหรือถนนอื่น (ทางลัด: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	สแน็ปจุดยอดของวัตถุที่เลือกไปยังจุดยอดของวัตถุอื่น (V)\nShift: แนวนอนเท่านั้น Esc/คลิกขวา: ยกเลิก
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	จัดขอบของวัตถุที่เลือกให้ตรงกับขอบหรือถนน (L)\nหมุนและจัดชิดแนว\nShift: แนวนอนเท่านั้น Esc/คลิกขวา: ยกเลิก
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	จัดตำแหน่งจุดที่ 1 แล้ว! คลิกจุดที่ 2 บนวัตถุเพื่อหมุน หรือกด Esc เพื่อเสร็จสิ้น
+Reference angle set. Click a target point or spline to align (Esc: finish)	ตั้งค่ามุมอ้างอิงแล้ว คลิกจุดเป้าหมายหรือถนนเพื่อจัดแนว (Esc: เสร็จสิ้น)
+Pick a different vertex on the object	เลือกจุดยอดอื่นบนวัตถุ
+Click a 2nd reference point on the object, or Esc to finish	คลิกจุดอ้างอิงจุดที่ 2 บนวัตถุ หรือกด Esc เพื่อเสร็จสิ้น
+Aligned angle! (Ctrl+Z to undo)	จัดแนวมุมแล้ว! (Ctrl+Z เพื่อเลิกทำ)
+Vertex snap complete	ตรึงจุดยอดเสร็จสมบูรณ์
+Align vertex angle	จัดแนวมุมของจุดยอด

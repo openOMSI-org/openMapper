@@ -2809,3 +2809,10 @@ Snap edge (L)	Bord à pression (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Aligner un bord de cet objet sur un autre bord ou une autre route (Raccourci : L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Aligner un sommet de l'objet sélectionné sur un sommet d'un autre objet (V)\nMaj : horizontal uniquement, Échap/Clic droit : Annuler
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Aligner un bord de l'objet sélectionné sur un bord ou une route (L)\nFait pivoter et accroche\ncolinéaire Maj : horizontal uniquement, Échap/Clic droit : Annuler
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Point 1 aligné ! Cliquez sur un 2e point de l'objet pour pivoter, ou Échap pour terminer
+Reference angle set. Click a target point or spline to align (Esc: finish)	Angle de référence défini. Cliquez sur un point cible ou une route pour aligner (Échap : terminer)
+Pick a different vertex on the object	Choisissez un autre sommet sur l'objet
+Click a 2nd reference point on the object, or Esc to finish	Cliquez sur un 2e point de référence sur l'objet, ou Échap pour terminer
+Aligned angle! (Ctrl+Z to undo)	Angle aligné ! (Ctrl+Z pour annuler)
+Vertex snap complete	Accrochage de sommet terminé
+Align vertex angle	Aligner l'angle du sommet

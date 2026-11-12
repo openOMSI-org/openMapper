@@ -2811,3 +2811,10 @@ Snap edge (L)	Zacvakávací okraj (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Přichyťte okraj tohoto objektu k jinému okraji nebo silnici (Zkratka: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Přichytit vrchol vybraného objektu k vrcholu jiného objektu (V)\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Zarovnat okraj vybraného objektu k okraji nebo silnici (L)\nOtočí a přichytí kolineárně\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Bod 1 zarovnán! Klikněte na 2. bod na objektu pro otočení, nebo Esc pro dokončení
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenční úhel nastaven. Klikněte na cílový bod nebo silnici pro zarovnání (Esc: dokončit)
+Pick a different vertex on the object	Vyberte jiný vrchol na objektu
+Click a 2nd reference point on the object, or Esc to finish	Klikněte na 2. referenční bod na objektu nebo Esc pro dokončení
+Aligned angle! (Ctrl+Z to undo)	Úhel zarovnán! (Ctrl+Z pro vrácení zpět)
+Vertex snap complete	Přichycení vrcholu dokončeno
+Align vertex angle	Zarovnat úhel vrcholu

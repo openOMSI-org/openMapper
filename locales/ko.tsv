@@ -2811,3 +2811,10 @@ Snap edge (L)	스냅 엣지(L)
 Snap an edge of this object to another edge or road (Shortcut: L)	이 개체의 가장자리를 다른 가장자리나 도로에 스냅합니다(단축키: L).
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 객체의 정점을 다른 객체의 정점에 스냅(V)\nShift: 수평만, Esc/우클릭: 취소
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 개체의 가장자리를 가장자리 또는 도로에 정렬(L)\n동일 선상에 회전하고 스냅합니다.\nShift: 수평만, Esc/오른쪽 클릭: 취소
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1번 점 정렬 완료! 회전할 개체의 2번째 점을 클릭하거나 Esc 키로 완료하세요
+Reference angle set. Click a target point or spline to align (Esc: finish)	기준 각도 설정됨. 정렬할 대상 점이나 도로를 클릭하세요 (Esc: 완료)
+Pick a different vertex on the object	개체에서 다른 꼭짓점을 선택하세요
+Click a 2nd reference point on the object, or Esc to finish	개체에서 2번째 기준점을 클릭하거나 Esc 키로 완료하세요
+Aligned angle! (Ctrl+Z to undo)	각도 정렬 완료! (Ctrl+Z: 실행 취소)
+Vertex snap complete	꼭짓점 스냅 완료
+Align vertex angle	꼭짓점 각도 정렬

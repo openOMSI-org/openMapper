@@ -2807,3 +2807,10 @@ Snap edge (L)	吸附边缘 (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	将此对象的边缘吸附至另一边缘或道路（快捷键：L）
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	将所选对象的顶点吸附至另一对象的顶点 (V)\nShift：仅水平，Esc／右键：取消
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	将所选对象的边缘对齐至边缘或道路 (L)\n旋转并同线吸附\nShift：仅水平，Esc／右键：取消
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	第 1 点已对齐！点击物体上的第 2 个点进行旋转，或按 Esc 完成
+Reference angle set. Click a target point or spline to align (Esc: finish)	参考角度已设定。点击目标点或道路以对齐（Esc：完成）
+Pick a different vertex on the object	请选择物体上的其他顶点
+Click a 2nd reference point on the object, or Esc to finish	点击物体上的第 2 个参考点，或按 Esc 完成
+Aligned angle! (Ctrl+Z to undo)	已对齐角度！（Ctrl+Z 撤销）
+Vertex snap complete	顶点吸附完成
+Align vertex angle	对齐顶点角度

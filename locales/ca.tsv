@@ -2811,3 +2811,10 @@ Snap edge (L)	Vora ajustada (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Fixeu una vora d'aquest objecte a una altra vora o carretera (Drecera: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajusta un vèrtex de l'objecte seleccionat a un vèrtex d'un altre objecte (V)\nMaj: només horitzontal, Esc/Clic dret: Cancel·la
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinea una vora de l'objecte seleccionat a una vora o una carretera (L)\nGira i ajusta colineal\nCanvi: només horitzontal, Esc/Clic dret: Cancel·la
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 alineat! Feu clic a un 2n punt de l'objecte per girar, o Esc per finalitzar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Angle de referència establert. Feu clic a un punt objectiu o carretera per alinear (Esc: finalitzar)
+Pick a different vertex on the object	Trieu un vèrtex diferent de l'objecte
+Click a 2nd reference point on the object, or Esc to finish	Feu clic a un 2n punt de referència a l'objecte, o Esc per finalitzar
+Aligned angle! (Ctrl+Z to undo)	Angle alineat! (Ctrl+Z per desfer)
+Vertex snap complete	Ajust de vèrtex completat
+Align vertex angle	Alinea l'angle del vèrtex

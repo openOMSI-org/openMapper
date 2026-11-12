@@ -2811,3 +2811,11 @@ Snap edge (L)	Snaprand (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Plaats een rand van dit object op een andere rand of weg (sneltoets: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Plaats een hoekpunt van het geselecteerde object op een hoekpunt van een ander object (V)\nShift: alleen horizontaal, Esc/klik met de rechtermuisknop: annuleren
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Lijn een rand van het geselecteerde object uit op een rand of weg (L)\nRoteert en snapt collineair\nShift: alleen horizontaal, Esc/rechts klikken: annuleren
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 uitgelijnd! Klik op een 2e punt op het object om te draaien, of Esc om te voltooien
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referentiehoek ingesteld. Klik op een doelpunt of weg om uit te lijnen (Esc: voltooien)
+Pick a different vertex on the object	Kies een ander hoekpunt op het object
+Click a 2nd reference point on the object, or Esc to finish	Klik op een 2e referentiepunt op het object, of Esc om te voltooien
+Aligned angle! (Ctrl+Z om ongedaan te maken)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Vertex snap complete	Hoekpunt magnetisch uitlijnen voltooid
+Align vertex angle	Hoekpunt uitlijningshoek aanpassen
+Aligned angle! (Ctrl+Z to undo)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)

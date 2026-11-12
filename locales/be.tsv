@@ -2811,3 +2811,10 @@ Snap edge (L)	Край фіксацыі (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Прывязаць край гэтага аб'екта да іншага краю або дарогі (Ярлык: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Прывязаць вяршыню выбранага аб'екта да вяршыні іншага аб'екта (V)\nShift: толькі па гарызанталі, Esc/пстрычка правай кнопкай мышы: адмена
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Выраўнаваць край абранага аб'екта па краі або дарозе (L)\nПаварочвае і замацоўвае коллінеарна\nЗрух: толькі па гарызанталі, Esc/пстрычка правай кнопкай мышы: адмена
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Точка 1 выраўнавана! Клікніце другую кропку на аб'екце для павароту або Esc для завяршэння
+Reference angle set. Click a target point or spline to align (Esc: finish)	Апорны кут зададзены. Клікніце мэтавую кропку або дарогу для выраўноўвання (Esc: завяршыць)
+Pick a different vertex on the object	Выберыце іншую вяршыню на аб'екце
+Click a 2nd reference point on the object, or Esc to finish	Клікніце 2-ю апорную кропку на аб'екце або націсніце Esc для завяршэння
+Aligned angle! (Ctrl+Z to undo)	Кут выраўнаваны! (Ctrl+Z для адмены)
+Vertex snap complete	Прывязка вяршыні завершана
+Align vertex angle	Выраўнаваць кут вяршыні

@@ -2811,3 +2811,10 @@ Snap edge (L)	Bepattanó él (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Illessze az objektum szélét egy másik szélhez vagy úthoz (Gyorsbillentyű: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	A kiválasztott objektum csúcsának rögzítése egy másik objektum csúcsához (V)\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	A kijelölt objektum élének igazítása egy élhez vagy úthoz (L)\nElforgatja és kollineárisan rögzíti\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1. pont igazítva! Kattintson a 2. pontra a forgatáshoz, vagy nyomjon Esc billentyűt a befejezéshez
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenciaszög beállítva. Kattintson egy célpontra vagy útra az igazításhoz (Esc: kész)
+Pick a different vertex on the object	Válasszon egy másik csúcspontot az objektumon
+Click a 2nd reference point on the object, or Esc to finish	Kattintson egy 2. referenciapontra az objektumon, vagy Esc a befejezéshez
+Aligned angle! (Ctrl+Z to undo)	Szög igazítva! (Ctrl+Z a visszavonáshoz)
+Vertex snap complete	Csúcspont illesztése kész
+Align vertex angle	Csúcspontszög igazítása

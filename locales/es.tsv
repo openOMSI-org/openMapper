@@ -2811,3 +2811,10 @@ Snap edge (L)	Borde a presión (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Ajustar un borde de este objeto a otro borde o carretera (atajo: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajustar un vértice del objeto seleccionado a un vértice de otro objeto (V)\nMayús: Solo horizontal, Esc/Clic derecho: Cancelar
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinear un borde del objeto seleccionado con un borde o carretera (L)\nGira y ajusta\ncolineal Mayús: Solo horizontal, Esc/Clic derecho: Cancelar
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	¡Punto 1 alineado! Haga clic en un 2.º punto del objeto para rotar, o Esc para finalizar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Ángulo de referencia establecido. Haga clic en un punto objetivo o carretera para alinear (Esc: finalizar)
+Pick a different vertex on the object	Elija un vértice diferente en el objeto
+Click a 2nd reference point on the object, or Esc to finish	Haga clic en un 2.º punto de referencia en el objeto, o Esc para finalizar
+Aligned angle! (Ctrl+Z to undo)	¡Ángulo alineado! (Ctrl+Z para deshacer)
+Vertex snap complete	Ajuste de vértice completado
+Align vertex angle	Alinear ángulo del vértice

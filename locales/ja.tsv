@@ -2811,3 +2811,10 @@ Snap edge (L)	スナップエッジ(L)
 Snap an edge of this object to another edge or road (Shortcut: L)	このオブジェクトのエッジを別のエッジまたは道路にスナップします (ショートカット: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの頂点を別のオブジェクトの頂点にスナップします (V)\nShift: 水平方向のみ、Esc/右クリック: キャンセル
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトのエッジをエッジまたは道路に位置合わせします (L)\n回転して同一線上にスナップします\nShift: 水平のみ、Esc/右クリック: キャンセル
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	ポイント1を配置しました！オブジェクト上の2点目をクリックして回転、またはEscで完了
+Reference angle set. Click a target point or spline to align (Esc: finish)	基準角度を設定しました。位置合わせ先の頂点または道路をクリックしてください（Esc：完了）
+Pick a different vertex on the object	オブジェクトの別の頂点を選択してください
+Click a 2nd reference point on the object, or Esc to finish	オブジェクト上の2点目の基準点をクリック、またはEscで完了
+Aligned angle! (Ctrl+Z to undo)	角度を合わせました！（Ctrl+Z で元に戻す）
+Vertex snap complete	頂点吸着完了
+Align vertex angle	頂点の角度を合わせる

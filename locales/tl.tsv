@@ -2811,3 +2811,10 @@ Snap edge (L)	Snap na gilid (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	I-snap ang isang gilid ng bagay na ito sa isa pang gilid o kalsada (Shortcut: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Mag-snap ng vertex ng napiling object papunta sa vertex ng isa pang object (V)\nShift: Horizontal lang, Esc/Right-click: Cancel
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	I-align ang isang gilid ng napiling bagay sa isang gilid o kalsada (L)\nUmiikot at kumukuha ng collinear\nShift: Pahalang lamang, Esc/Right-click: Kanselahin
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Naitugma ang Punto 1! Mag-click ng ika-2 punto sa bagay upang paikutin, o Esc upang matapos
+Reference angle set. Click a target point or spline to align (Esc: finish)	Naitakda ang anggulo ng sanggunian. Mag-click ng target na punto o daan upang itugma (Esc: tapusin)
+Pick a different vertex on the object	Pumili ng ibang vertex sa bagay
+Click a 2nd reference point on the object, or Esc to finish	Mag-click ng ika-2 sangguniang punto sa bagay, o Esc upang matapos
+Aligned angle! (Ctrl+Z to undo)	Naitugma ang anggulo! (Ctrl+Z upang i-undo)
+Vertex snap complete	Nakumpleto ang snap ng vertex
+Align vertex angle	Itugma ang anggulo ng vertex

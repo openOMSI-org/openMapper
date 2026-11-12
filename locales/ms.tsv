@@ -2811,3 +2811,10 @@ Snap edge (L)	Snap tepi (L)
 Snap an edge of this object to another edge or road (Shortcut: L)	Tangkap tepi objek ini ke tepi atau jalan lain (Pintasan: L)
 Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Tangkap bucu objek yang dipilih ke bucu objek lain (V)\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
 Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Jajarkan tepi objek yang dipilih ke tepi atau jalan (L)\nBerpusing dan mengetuk kolinear\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Titik 1 dijajarkan! Klik titik ke-2 pada objek untuk memutar, atau Esc untuk selesai
+Reference angle set. Click a target point or spline to align (Esc: finish)	Sudut rujukan ditetapkan. Klik titik sasaran atau jalan untuk menjajarkan (Esc: selesai)
+Pick a different vertex on the object	Pilih bucu lain pada objek
+Click a 2nd reference point on the object, or Esc to finish	Klik titik rujukan ke-2 pada objek, atau Esc untuk selesai
+Aligned angle! (Ctrl+Z to undo)	Sudut dijajarkan! (Ctrl+Z untuk membuat asal)
+Vertex snap complete	Lekatan bucu selesai
+Align vertex angle	Jajarkan sudut bucu
