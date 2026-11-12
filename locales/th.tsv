@@ -2785,3 +2785,29 @@ no track within 15 m	ไม่มีรางภายใน 15 ม.
 the tracks are not joined, or run the other way (see View > AI lanes)	รางไม่ได้เชื่อมกันหรือวิ่งไปอีกทาง (ดู มุมมอง > เลน AI)
 no track beside	ไม่มีรางข้าง
 Drives on	วิ่งบน
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	เลือกจุดยอดต้นทางแล้ว คลิกจุดยอดเป้าหมายเพื่อสแนป (Shift: แนวนอนเท่านั้น Esc: ยกเลิก)
+Aim at a vertex of the selected object	เล็งไปที่จุดยอดของวัตถุที่เลือก
+Snapped to vertex! (Ctrl+Z to undo)	ทะลุจุดยอด! (Ctrl+Z เพื่อเลิกทำ)
+Aim at a target vertex or spline endpoint	เล็งไปที่จุดยอดเป้าหมายหรือจุดปลายเส้นโค้ง
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	เลือกขอบแหล่งที่มาแล้ว คลิกที่ขอบหรือถนนเป้าหมายเพื่อจัดแนว (Shift: แนวนอนเท่านั้น Esc: ยกเลิก)
+Aim at an edge of the selected object	เล็งไปที่ขอบของวัตถุที่เลือก
+Aligned edge to edge! (Ctrl+Z to undo)	ชิดขอบ! (Ctrl+Z เพื่อเลิกทำ)
+Aim at a target edge or road	เล็งไปที่ขอบเป้าหมายหรือถนน
+Target cancelled. Pick a source vertex again	เป้าหมายถูกยกเลิก เลือกจุดยอดต้นทางอีกครั้ง
+Vertex snap cancelled	ยกเลิกจุดยอดสแนปแล้ว
+Target cancelled. Pick a source edge again	เป้าหมายถูกยกเลิก เลือกขอบแหล่งที่มาอีกครั้ง
+Edge snap cancelled	ยกเลิกการสแนปขอบแล้ว
+Select an object first to snap its vertex	เลือกวัตถุก่อนเพื่อสแนปจุดยอด
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: คลิกจุดยอดต้นทางบนวัตถุที่เลือก (Esc เพื่อยกเลิก)
+Snap vertex to vertex	สแน็ปจุดยอดไปยังจุดยอด
+Select an object first to align its edge	เลือกวัตถุก่อนเพื่อจัดแนวขอบ
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: คลิกขอบต้นทางบนวัตถุที่เลือก (Esc เพื่อยกเลิก)
+Snap edge to edge	ชิดขอบถึงขอบ
+Snap vertex to vertex (V)	สแน็ปจุดยอดถึงจุดยอด (V)
+Snap edge to edge (L)	ชิดขอบถึงขอบ (L)
+Snap vertex (V)	จุดยอดสแนป (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	สแน็ปจุดยอดของวัตถุนี้ไปยังจุดยอดอื่น (ทางลัด: V)
+Snap edge (L)	ขอบสแนป (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	สแนปขอบของวัตถุนี้ไปยังขอบหรือถนนอื่น (ทางลัด: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	สแน็ปจุดยอดของวัตถุที่เลือกไปยังจุดยอดของวัตถุอื่น (V)\nShift: แนวนอนเท่านั้น Esc/คลิกขวา: ยกเลิก
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	จัดขอบของวัตถุที่เลือกให้ตรงกับขอบหรือถนน (L)\nหมุนและจัดชิดแนว\nShift: แนวนอนเท่านั้น Esc/คลิกขวา: ยกเลิก

@@ -2785,3 +2785,29 @@ no track within 15 m	inget spår inom 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	spåren är inte sammanfogade, eller går åt andra hållet (se Visa > AI-körfält)
 no track beside	inget spår vid
 Drives on	Kör på
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Källa vertex vald. Klicka på en målpunkt för att fästa (Shift: endast horisontell, Esc: avbryt)
+Aim at a vertex of the selected object	Sikta på ett hörn av det valda objektet
+Snapped to vertex! (Ctrl+Z to undo)	Snäppt till vertex! (Ctrl+Z för att ångra)
+Aim at a target vertex or spline endpoint	Sikta på en målpunkt eller spline-ändpunkt
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Källkant vald. Klicka på en målkant eller väg för att justera (Skift: endast horisontellt, Esc: avbryt)
+Aim at an edge of the selected object	Sikta på en kant av det markerade objektet
+Aligned edge to edge! (Ctrl+Z to undo)	Riktat kant i kant! (Ctrl+Z för att ångra)
+Aim at a target edge or road	Sikta på en målkant eller väg
+Target cancelled. Pick a source vertex again	Målet avbröts. Välj ett källpunkt igen
+Vertex snap cancelled	Vertex snap avbröts
+Target cancelled. Pick a source edge again	Målet avbröts. Välj en källkant igen
+Edge snap cancelled	Edge snap avbruten
+Select an object first to snap its vertex	Välj ett objekt först för att fästa dess vertex
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: klicka på en källpunkt på det valda objektet (Esc för att avbryta)
+Snap vertex to vertex	Fäst vertex till vertex
+Select an object first to align its edge	Välj ett objekt först för att justera dess kant
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: klicka på en källkant på det valda objektet (Esc för att avbryta)
+Snap edge to edge	Snäpp kant i kant
+Snap vertex to vertex (V)	Fäst vertex till vertex (V)
+Snap edge to edge (L)	Snäpp kant i kant (L)
+Snap vertex (V)	Snap vertex (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Fäst en vertex av detta objekt till en annan vertex (genväg: V)
+Snap edge (L)	Snäppkant (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Fäst en kant av detta objekt till en annan kant eller väg (genväg: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Fäst en vertex av det markerade objektet till en vertex av ett annat objekt (V)\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Justera en kant på det markerade objektet mot en kant eller väg (L)\nRoterar och fäster kolinjärt\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt

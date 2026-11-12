@@ -2785,3 +2785,29 @@ no track within 15 m	tiada landasan dalam 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	landasan tidak bercantum, atau menuju arah lain (lihat Lihat > Lorong AI)
 no track beside	tiada landasan di sebelah
 Drives on	Bergerak di
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Puncak sumber dipilih. Klik bucu sasaran untuk mengambil (Shift: mendatar sahaja, Esc: batal)
+Aim at a vertex of the selected object	Sasarkan pada bucu objek yang dipilih
+Snapped to vertex! (Ctrl+Z to undo)	Tersentap ke puncak! (Ctrl+Z untuk membuat asal)
+Aim at a target vertex or spline endpoint	Sasarkan pada bucu sasaran atau titik akhir spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Tepi sumber dipilih. Klik tepi sasaran atau jalan untuk menjajarkan (Anjakan: mendatar sahaja, Esc: batal)
+Aim at an edge of the selected object	Sasarkan pada tepi objek yang dipilih
+Aligned edge to edge! (Ctrl+Z to undo)	Dijajarkan tepi ke tepi! (Ctrl+Z untuk membuat asal)
+Aim at a target edge or road	Sasar pada tepi sasaran atau jalan
+Target cancelled. Pick a source vertex again	Sasaran dibatalkan. Pilih puncak sumber sekali lagi
+Vertex snap cancelled	Pucuk snap dibatalkan
+Target cancelled. Pick a source edge again	Sasaran dibatalkan. Pilih kelebihan sumber sekali lagi
+Edge snap cancelled	Snap tepi dibatalkan
+Select an object first to snap its vertex	Pilih objek terlebih dahulu untuk mengambil bucunya
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Pucuk snap: klik puncak sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap vertex to vertex	Snap bucu ke bucu
+Select an object first to align its edge	Pilih objek dahulu untuk menjajarkan tepinya
+Edge snap: click a source edge on the selected object (Esc to cancel)	Snap tepi: klik tepi sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap edge to edge	Selak tepi ke tepi
+Snap vertex to vertex (V)	Tangkap bucu ke bucu (V)
+Snap edge to edge (L)	Paut tepi ke tepi (L)
+Snap vertex (V)	Bucu snap (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Tangkap bucu objek ini ke bucu lain (Pintasan: V)
+Snap edge (L)	Snap tepi (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Tangkap tepi objek ini ke tepi atau jalan lain (Pintasan: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Tangkap bucu objek yang dipilih ke bucu objek lain (V)\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Jajarkan tepi objek yang dipilih ke tepi atau jalan (L)\nBerpusing dan mengetuk kolinear\nShift: Mendatar sahaja, Esc/Klik kanan: Batal

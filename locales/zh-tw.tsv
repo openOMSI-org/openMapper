@@ -2781,3 +2781,29 @@ no track within 15 m	15 m 內沒有軌道
 the tracks are not joined, or run the other way (see View > AI lanes)	軌道未相連，或方向相反（見 檢視 > AI 行車線）
 no track beside	旁邊沒有軌道：
 Drives on	行駛於
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	已選擇來源頂點。點擊目標頂點以吸附（Shift：僅水平，Esc：取消）
+Aim at a vertex of the selected object	對準所選物件的頂點
+Snapped to vertex! (Ctrl+Z to undo)	已吸附至頂點！（Ctrl+Z 復原）
+Aim at a target vertex or spline endpoint	對準目標頂點或道路端點
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	已選擇來源邊緣。點擊目標邊緣或道路以對齊（Shift：僅水平，Esc：取消）
+Aim at an edge of the selected object	對準所選物件的邊緣
+Aligned edge to edge! (Ctrl+Z to undo)	已完成邊緣對齊！（Ctrl+Z 復原）
+Aim at a target edge or road	對準目標邊緣或道路
+Target cancelled. Pick a source vertex again	目標已取消。請重新選取來源頂點
+Vertex snap cancelled	已取消頂點吸附
+Target cancelled. Pick a source edge again	目標已取消。請重新選取來源邊緣
+Edge snap cancelled	已取消邊緣吸附
+Select an object first to snap its vertex	請先選取物件以吸附其頂點
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	頂點吸附：點擊所選物件上的來源頂點（Esc 取消）
+Snap vertex to vertex	頂點對頂點吸附
+Select an object first to align its edge	請先選取物件以對齊其邊緣
+Edge snap: click a source edge on the selected object (Esc to cancel)	邊緣吸附：點擊所選物件上的來源邊緣（Esc 取消）
+Snap edge to edge	邊緣對邊緣吸附
+Snap vertex to vertex (V)	頂點對頂點吸附 (V)
+Snap edge to edge (L)	邊緣對邊緣吸附 (L)
+Snap vertex (V)	吸附頂點 (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	將此物件的頂點吸附至另一頂點（快捷鍵：V）
+Snap edge (L)	吸附邊緣 (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	將此物件的邊緣吸附至另一邊緣或道路（快捷鍵：L）
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	將所選物件的頂點吸附至另一物件的頂點 (V)\nShift：僅水平，Esc／右鍵：取消
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	將所選物件的邊緣對齊至邊緣或道路 (L)\n旋轉並同線吸附\nShift：僅水平，Esc／右鍵：取消

@@ -2785,3 +2785,29 @@ no track within 15 m	do 15 m nejsou koleje
 the tracks are not joined, or run the other way (see View > AI lanes)	koleje nejsou spojeny nebo vedou opačně (viz Zobrazení > Pruhy AI)
 no track beside	žádné koleje vedle
 Drives on	Jezdí po
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Zvolený zdrojový vertex. Klikněte na cílový vrchol, který chcete přichytit (Shift: pouze horizontální, Esc: zrušení)
+Aim at a vertex of the selected object	Zamiřte na vrchol vybraného objektu
+Snapped to vertex! (Ctrl+Z to undo)	Přichyceno k vrcholu! (Ctrl+Z pro vrácení zpět)
+Aim at a target vertex or spline endpoint	Zamiřte na cílový vrchol nebo koncový bod spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Okraj zdroje vybrán. Kliknutím na cílovou hranu nebo cestu zarovnáte (Shift: pouze vodorovně, Esc: zrušení)
+Aim at an edge of the selected object	Zamiřte na okraj vybraného objektu
+Aligned edge to edge! (Ctrl+Z to undo)	Zarovnáno od okraje k okraji! (Ctrl+Z pro vrácení zpět)
+Aim at a target edge or road	Zamiřte na cílovou hranu nebo silnici
+Target cancelled. Pick a source vertex again	Cíl zrušen. Znovu vyberte zdrojový vrchol
+Vertex snap cancelled	Vertex snap zrušeno
+Target cancelled. Pick a source edge again	Cíl zrušen. Znovu vyberte okraj zdroje
+Edge snap cancelled	Uchopení okraje zrušeno
+Select an object first to snap its vertex	Nejprve vyberte objekt, abyste přichytili jeho vrchol
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Uchop vertexu: klikněte na zdrojový vertex na vybraném objektu (Esc pro zrušení)
+Snap vertex to vertex	Přichytit vrchol k vrcholu
+Select an object first to align its edge	Nejprve vyberte objekt a zarovnejte jeho okraj
+Edge snap: click a source edge on the selected object (Esc to cancel)	Uchopení hrany: klikněte na zdrojovou hranu na vybraném objektu (zrušte pomocí klávesy Esc)
+Snap edge to edge	Přichytit okraj k okraji
+Snap vertex to vertex (V)	Přichytit vrchol k vrcholu (V)
+Snap edge to edge (L)	Přichytit okraj k okraji (L)
+Snap vertex (V)	Vrchol přichycení (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Přichyťte vrchol tohoto objektu k jinému vrcholu (Zkratka: V)
+Snap edge (L)	Zacvakávací okraj (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Přichyťte okraj tohoto objektu k jinému okraji nebo silnici (Zkratka: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Přichytit vrchol vybraného objektu k vrcholu jiného objektu (V)\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Zarovnat okraj vybraného objektu k okraji nebo silnici (L)\nOtočí a přichytí kolineárně\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit

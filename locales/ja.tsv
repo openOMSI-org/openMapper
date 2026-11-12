@@ -2785,3 +2785,29 @@ no track within 15 m	15 m以内に線路がありません
 the tracks are not joined, or run the other way (see View > AI lanes)	線路が接続されていないか、逆向きです（表示 > AI車線を参照）
 no track beside	線路なし：
 Drives on	走行
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	ソース頂点が選択されました。スナップする対象の頂点をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at a vertex of the selected object	選択したオブジェクトの頂点を狙う
+Snapped to vertex! (Ctrl+Z to undo)	頂点にスナップされました! (元に戻すには Ctrl+Z)
+Aim at a target vertex or spline endpoint	ターゲットの頂点またはスプラインの終点を目指します
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	ソースエッジが選択されました。整列する対象のエッジまたは道路をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at an edge of the selected object	選択したオブジェクトの端を狙う
+Aligned edge to edge! (Ctrl+Z to undo)	端から端まで揃っています！ (元に戻すには Ctrl+Z)
+Aim at a target edge or road	ターゲットのエッジまたは道路を狙う
+Target cancelled. Pick a source vertex again	ターゲットはキャンセルされました。ソース頂点を再度選択します
+Vertex snap cancelled	頂点スナップがキャンセルされました
+Target cancelled. Pick a source edge again	ターゲットはキャンセルされました。ソースエッジを再度選択します
+Edge snap cancelled	エッジスナップがキャンセルされました
+Select an object first to snap its vertex	最初にオブジェクトを選択して、その頂点をスナップします
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	頂点スナップ: 選択したオブジェクト上のソース頂点をクリックします(キャンセルするにはEsc)
+Snap vertex to vertex	頂点を頂点にスナップ
+Select an object first to align its edge	まずオブジェクトを選択してエッジを揃えます
+Edge snap: click a source edge on the selected object (Esc to cancel)	エッジ スナップ: 選択したオブジェクトのソース エッジをクリックします (キャンセルするには Esc)
+Snap edge to edge	端から端までスナップ
+Snap vertex to vertex (V)	頂点を頂点にスナップ(V)
+Snap edge to edge (L)	端から端までスナップ (L)
+Snap vertex (V)	頂点スナップ(V)
+Snap a vertex of this object to another vertex (Shortcut: V)	このオブジェクトの頂点を別の頂点にスナップします(ショートカット: V)
+Snap edge (L)	スナップエッジ(L)
+Snap an edge of this object to another edge or road (Shortcut: L)	このオブジェクトのエッジを別のエッジまたは道路にスナップします (ショートカット: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの頂点を別のオブジェクトの頂点にスナップします (V)\nShift: 水平方向のみ、Esc/右クリック: キャンセル
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトのエッジをエッジまたは道路に位置合わせします (L)\n回転して同一線上にスナップします\nShift: 水平のみ、Esc/右クリック: キャンセル

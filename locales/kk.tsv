@@ -2785,3 +2785,29 @@ no track within 15 m	15 м ішінде рельс жоқ
 the tracks are not joined, or run the other way (see View > AI lanes)	рельстер жалғанбаған немесе кері жаққа кетеді (Көрініс > ЖИ жолақтары қараңыз)
 no track beside	жанында рельс жоқ:
 Drives on	Жүретін жолы
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Таңдалған бастапқы шың. Кесу үшін мақсатты шыңды басыңыз (Shift: тек көлденең, Esc: бас тарту)
+Aim at a vertex of the selected object	Таңдалған нысанның шыңына бағыттаңыз
+Snapped to vertex! (Ctrl+Z to undo)	Шыңға ілінді! (Болдырмау үшін Ctrl+Z)
+Aim at a target vertex or spline endpoint	Мақсатты шыңға немесе сплайнның соңғы нүктесіне бағыттаңыз
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Бастапқы жиегі таңдалды. Түзету үшін мақсатты жиекті немесе жолды басыңыз (Shift: тек көлденең, Esc: бас тарту)
+Aim at an edge of the selected object	Таңдалған нысанның шетіне бағыттаңыз
+Aligned edge to edge! (Ctrl+Z to undo)	Шетінен шетіне тураланған! (Болдырмау үшін Ctrl+Z)
+Aim at a target edge or road	Мақсатты шетке немесе жолға бағыттаңыз
+Target cancelled. Pick a source vertex again	Мақсат жойылды. Қайтадан бастапқы шыңды таңдаңыз
+Vertex snap cancelled	Vertex snap бас тартылды
+Target cancelled. Pick a source edge again	Мақсат жойылды. Қайтадан бастапқы жиекті таңдаңыз
+Edge snap cancelled	Жиекті қысу тоқтатылды
+Select an object first to snap its vertex	Шыңын бекіту үшін алдымен нысанды таңдаңыз
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Шыңға қондырма: таңдалған нысандағы бастапқы шыңды басыңыз (бас тарту үшін Esc пернесін басыңыз)
+Snap vertex to vertex	Төбенің шыңына қарай бекітіңіз
+Select an object first to align its edge	Шетін туралау үшін алдымен нысанды таңдаңыз
+Edge snap: click a source edge on the selected object (Esc to cancel)	Жиекті қысу: таңдалған нысандағы бастапқы жиекті басыңыз (бас тарту үшін Esc пернесін басыңыз)
+Snap edge to edge	Шетінен шетіне қарай сырғытыңыз
+Snap vertex to vertex (V)	Шыңды шыңға (V) сырғыту
+Snap edge to edge (L)	Шеттен шетке сырғыту (L)
+Snap vertex (V)	Төбесі (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Осы нысанның төбесін басқа төбеге бекітіңіз (Таңбаша: V)
+Snap edge (L)	Кесетін жиегі (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Осы нысанның шетін басқа жиекке немесе жолға сырғытыңыз (таңбаша: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Таңдалған нысанның төбесін басқа нысанның шыңына бекіту (V)\nShift: тек көлденең, Esc/тінтуірдің оң жақ түймешігімен басыңыз: Болдырмау
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Таңдалған нысанның шетін жиекке немесе жолға туралау (L)\nБірдей етіп айналдырады және түсіреді\nShift: Тек көлденең, Esc/тінтуірдің оң жақ түймешігімен басыңыз: Болдырмау

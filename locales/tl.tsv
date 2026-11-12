@@ -2785,3 +2785,29 @@ no track within 15 m	walang riles sa loob ng 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	hindi nakakabit ang mga riles, o kabilang direksyon ang takbo (tingnan ang View > Mga AI lane)
 no track beside	walang riles sa tabi ng
 Drives on	Tumatakbo sa
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Pinili ang source vertex. I-click ang isang target na vertex para i-snap (Shift: pahalang lang, Esc: kanselahin)
+Aim at a vertex of the selected object	Layunin ang isang vertex ng napiling bagay
+Snapped to vertex! (Ctrl+Z to undo)	Na-snap sa vertex! (Ctrl+Z para i-undo)
+Aim at a target vertex or spline endpoint	Layunin ang isang target na vertex o spline endpoint
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Pinili ang gilid ng pinagmulan. Mag-click ng target na gilid o kalsada para i-align (Shift: pahalang lang, Esc: kanselahin)
+Aim at an edge of the selected object	Layunin ang isang gilid ng napiling bagay
+Aligned edge to edge! (Ctrl+Z to undo)	Naka-align gilid sa gilid! (Ctrl+Z para i-undo)
+Aim at a target edge or road	Layunin ang isang target na gilid o kalsada
+Target cancelled. Pick a source vertex again	Kinansela ang target. Pumili muli ng source vertex
+Vertex snap cancelled	Kinansela ang vertex snap
+Target cancelled. Pick a source edge again	Kinansela ang target. Pumili muli ng gilid ng pinagmulan
+Edge snap cancelled	Kinansela ang Edge snap
+Select an object first to snap its vertex	Pumili muna ng isang bagay upang kunin ang tuktok nito
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: mag-click ng source vertex sa napiling object (Esc para kanselahin)
+Snap vertex to vertex	Mag-snap vertex sa vertex
+Select an object first to align its edge	Pumili muna ng isang bagay upang ihanay ang gilid nito
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: mag-click ng source edge sa napiling object (Esc para kanselahin)
+Snap edge to edge	Snap gilid sa gilid
+Snap vertex to vertex (V)	I-snap ang vertex sa vertex (V)
+Snap edge to edge (L)	Snap gilid sa gilid (L)
+Snap vertex (V)	Snap vertex (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Mag-snap ng vertex ng object na ito sa isa pang vertex (Shortcut: V)
+Snap edge (L)	Snap na gilid (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	I-snap ang isang gilid ng bagay na ito sa isa pang gilid o kalsada (Shortcut: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Mag-snap ng vertex ng napiling object papunta sa vertex ng isa pang object (V)\nShift: Horizontal lang, Esc/Right-click: Cancel
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	I-align ang isang gilid ng napiling bagay sa isang gilid o kalsada (L)\nUmiikot at kumukuha ng collinear\nShift: Pahalang lamang, Esc/Right-click: Kanselahin

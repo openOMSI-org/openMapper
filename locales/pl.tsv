@@ -2785,3 +2785,29 @@ no track within 15 m	w promieniu 15 m brak torów
 the tracks are not joined, or run the other way (see View > AI lanes)	tory nie są połączone lub biegną w drugą stronę (zobacz Widok > Pasy AI)
 no track beside	brak torów przy
 Drives on	Jeździ po
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Wybrano wierzchołek źródłowy. Kliknij docelowy wierzchołek, aby go przyciągnąć (Shift: tylko w poziomie, Esc: anuluj)
+Aim at a vertex of the selected object	Wyceluj w wierzchołek wybranego obiektu
+Snapped to vertex! (Ctrl+Z to undo)	Przyciągnięty do wierzchołka! (Ctrl+Z, aby cofnąć)
+Aim at a target vertex or spline endpoint	Wyceluj w docelowy wierzchołek lub punkt końcowy splajnu
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Wybrano krawędź źródłową. Kliknij docelową krawędź lub drogę, aby ją wyrównać (Shift: tylko w poziomie, Esc: anuluj)
+Aim at an edge of the selected object	Wyceluj w krawędź wybranego obiektu
+Aligned edge to edge! (Ctrl+Z to undo)	Wyrównane od krawędzi do krawędzi! (Ctrl+Z, aby cofnąć)
+Aim at a target edge or road	Celuj w docelową krawędź lub drogę
+Target cancelled. Pick a source vertex again	Cel anulowany. Wybierz ponownie wierzchołek źródłowy
+Vertex snap cancelled	Przyciąganie wierzchołków anulowane
+Target cancelled. Pick a source edge again	Cel anulowany. Wybierz ponownie krawędź źródłową
+Edge snap cancelled	Przyciąganie krawędzi anulowane
+Select an object first to snap its vertex	Najpierw wybierz obiekt, aby przyciągnąć jego wierzchołek
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Lokalizacja wierzchołka: kliknij wierzchołek źródłowy na wybranym obiekcie (Esc, aby anulować)
+Snap vertex to vertex	Przyciągaj wierzchołek do wierzchołka
+Select an object first to align its edge	Najpierw wybierz obiekt, aby wyrównać jego krawędzie
+Edge snap: click a source edge on the selected object (Esc to cancel)	Przyciąganie do krawędzi: kliknij krawędź źródłową wybranego obiektu (Esc, aby anulować)
+Snap edge to edge	Przyciągaj krawędź do krawędzi
+Snap vertex to vertex (V)	Przyciągaj wierzchołek do wierzchołka (V)
+Snap edge to edge (L)	Przyciągaj krawędź do krawędzi (L)
+Snap vertex (V)	Wierzchołek przyciągania (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Przyciągnij wierzchołek tego obiektu do innego wierzchołka (skrót: V)
+Snap edge (L)	Krawędź zatrzaskowa (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Przyciągnij krawędź tego obiektu do innej krawędzi lub drogi (skrót: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Przyciągnij wierzchołek wybranego obiektu do wierzchołka innego obiektu (V)\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Wyrównaj krawędź wybranego obiektu do krawędzi lub drogi (L)\nObraca i przyciąga współliniowo\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
