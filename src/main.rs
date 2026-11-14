@@ -127,7 +127,6 @@ mod ui_stops;
 mod ui_sync;
 mod ui_newmap;
 mod trace;
-mod translit;
 mod ui_timetable;
 mod ui_trace;
 mod ui_traffic;

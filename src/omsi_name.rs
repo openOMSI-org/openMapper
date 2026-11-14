@@ -135,6 +135,17 @@ fn latin(c: char) -> Option<&'static str> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn typed_names_come_out_in_ascii() {
+        assert_eq!(ascii_stem("Main street 4"), "Main_street_4");
+        assert_eq!(ascii_stem("Дорога 2+2"), "Doroga_2_2");
+        assert_eq!(ascii_stem("Große Straße"), "Grosse_Strasse");
+        assert_eq!(ascii_stem("  "), "");
+        for n in ["Щёлковское шоссе", "Їжак", "Ъ", "Ünter-Weg_1", "道路"] {
+            assert!(ascii_stem(n).chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'), "{n}");
+        }
+    }
+
     use super::*;
 
     #[test]
