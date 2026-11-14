@@ -112,7 +112,7 @@ impl Lane {
 /// Zoomed in, still wide enough for the roads that meet a large junction; zoomed out, not
 /// the whole map (a map of lanes overflowed the graphics buffer).
 pub fn neighbour_reach(distance: f64) -> f64 {
-    (distance * 3.0).clamp(250.0, 700.0)
+    (distance * 3.0).clamp(300.0, 3500.0)
 }
 
 /// The samples of a lane that fall inside `radius` of `centre`, widened by one sample so the
@@ -426,9 +426,10 @@ mod tests {
 
     #[test]
     fn neighbour_reach_stays_between_a_junction_and_the_map() {
-        assert_eq!(neighbour_reach(10.0), 250.0);
+        assert_eq!(neighbour_reach(10.0), 300.0);
         assert_eq!(neighbour_reach(100.0), 300.0);
-        assert_eq!(neighbour_reach(1_000.0), 700.0);
+        assert_eq!(neighbour_reach(1_000.0), 3000.0);
+        assert_eq!(neighbour_reach(2_000.0), 3500.0);
     }
 
     #[test]

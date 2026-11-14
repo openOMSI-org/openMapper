@@ -2443,8 +2443,8 @@ impl App {
         // stays in the object's frame, the frame the crossing's paths are written in - nothing
         // else is to convert it)
         let mapped = nearby_on_map(self.crossing.neighbours(), world, &m);
-        let reach = (self.cam.distance * 1.6).clamp(40.0, 180.0);
-        self.ed.crossing_nearby = cull_nearby(mapped, self.crossing.nearby_own(), self.cam.target.truncate(), reach, 240);
+        let reach = (self.cam.distance * 3.0).clamp(500.0, 3500.0);
+        self.ed.crossing_nearby = cull_nearby(mapped, self.crossing.nearby_own(), self.cam.target.truncate(), reach, 500);
         self.ed.crossing_complete = self.crossing.completing();
     }
 
@@ -2652,11 +2652,9 @@ impl App {
     fn crossing_neighbour_joints(&mut self) -> Vec<crate::crossing_edit::Joint> {
         let Some(Sel::Object(k, id)) = self.crossing.object() else { return Vec::new() };
         let Some(doc) = self.ed.doc.as_ref() else { return Vec::new() };
-        let Some(o) = doc.object(k, id) else { return Vec::new() };
-        let file = o.file.clone();
-        let abs = self.assets.as_mut().and_then(|a| a.object(&file)).map(|m| m.abs_height).unwrap_or(true);
-        let centre = doc.object_world(k, o, abs).truncate();
-        let radius = (self.cam.distance * 2.0).clamp(80.0, 260.0);
+        let Some(_o) = doc.object(k, id) else { return Vec::new() };
+        let centre = self.cam.target.truncate();
+        let radius = (self.cam.distance * 3.0).clamp(300.0, 3500.0);
         let Some(assets) = self.assets.as_mut() else { return Vec::new() };
         let (lanes, _) = crate::lanes::near_skipping(doc, assets, centre, radius, Some((k, id)));
         // (roads' lanes as well as other objects': a crossing's end is put onto either. Their

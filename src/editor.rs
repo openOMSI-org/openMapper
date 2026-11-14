@@ -5455,11 +5455,11 @@ impl Editor {
         x.show_technical = self.show_technical || self.tool == Tool::Logic;
         x.hide = self.hide;
         // (the crossing being edited draws its own paths below, not the file's)
-        let draft = self.crossing_draft.as_ref().filter(|d| !d.2.is_empty()).map(|d| (d.0, d.1));
+        let draft = self.crossing_draft.as_ref().map(|d| (d.0, d.1));
         // the AI's lanes: arrows the way traffic goes, ends green where joined, red where not
         // (thin and small: a lane is a line on the road, not a road of its own)
         if self.tool == Tool::Logic || self.show_lanes {
-            let r = (cam.distance * 1.3).clamp(40.0, 500.0);
+            let r = (cam.distance * 2.5).clamp(100.0, 3500.0);
             let (lanes, ends) = crate::lanes::near(doc, assets, cam.target.truncate(), r);
             let lw = (cam.distance * 0.00048).clamp(0.012, 0.42) as f32;
             for l in lanes.iter().filter(|l| !(draft.is_some() && l.object == draft)) {
@@ -5482,7 +5482,7 @@ impl Editor {
             }
         }
         // the crossing being edited: its paths as the window has them, on the map itself
-        if let (Some((k, id)), Some((_, _, paths))) = (draft, self.crossing_draft.as_ref()) {
+        if let Some((k, id, paths)) = self.crossing_draft.as_ref().map(|(k, id, p)| (*k, *id, p)) {
             if let Some(o) = doc.object(k, id) {
                 let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
                 let world = doc.object_world(k, o, abs);
@@ -5519,12 +5519,12 @@ impl Editor {
             // own paths are what stand out)
             if !(self.tool == Tool::Logic || self.show_lanes) {
                 if let Some(o) = doc.object(k, id) {
-                    let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
-                    let centre = doc.object_world(k, o, abs).truncate();
-                    let radius = crate::lanes::neighbour_reach(cam.distance);
+                    let _abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                    let centre = cam.target.truncate();
+                    let radius = crate::lanes::neighbour_reach(cam.distance).max(500.0);
                     // (thin and pale: they are the crossing's surroundings, not what is edited)
-                    let lw = (cam.distance * 0.00020).clamp(0.005, 0.13) as f32;
-                    let lift = DVec3::Z * 0.1;
+                    let lw = (cam.distance * 0.00045).clamp(0.02, 0.35) as f32;
+                    let lift = DVec3::Z * 0.25;
                     let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
                     // (nearest first: a long spline used to fill the buffer before the roads
                     // that actually meet the crossing were drawn)
@@ -5544,11 +5544,11 @@ impl Editor {
                         let Some((lo, hi, _)) = crate::lanes::visible_span(&l.pts, centre, radius) else { continue };
                         shown += 1;
                         let color = match (l.kind, l.spline.is_some()) {
-                            (1, _) => [0.35, 0.85, 1.0, 0.8],
-                            (2, _) => [0.85, 0.55, 1.0, 0.8],
+                            (1, _) => [0.35, 0.85, 1.0, 0.9],
+                            (2, _) => [0.85, 0.55, 1.0, 0.9],
                             // (a road's lane is a little paler than another object's)
-                            (_, true) => [0.45, 0.85, 0.5, 0.55],
-                            _ => [0.45, 0.95, 0.55, 0.8],
+                            (_, true) => [0.38, 0.90, 0.48, 0.85],
+                            _ => [0.38, 0.98, 0.48, 0.95],
                         };
                         // (only the part inside the reach, and not every sample: a kilometre
                         // of road sampled every 3 m used up the buffer on its own)
