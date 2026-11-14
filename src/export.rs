@@ -24,6 +24,11 @@ pub struct Plan {
     pub packed: BTreeSet<String>,
     /// Files the map names that are nowhere.
     pub missing: BTreeSet<String>,
+    pub references: omsi_cfg::publisher::MapReferences,
+    pub dependency_file: Option<String>,
+    pub warnings: Vec<String>,
+    pub errors: Vec<String>,
+    pub rights_available: bool,
 }
 
 /// Where a referenced file is.
@@ -95,7 +100,9 @@ impl Collector<'_> {
         while let Some(d) = stack.pop() {
             for e in std::fs::read_dir(&d).into_iter().flatten().flatten() {
                 let p = e.path();
-                if p.is_dir() {
+                if e.file_type().map(|t| t.is_symlink()).unwrap_or(true) {
+                    self.plan.errors.push(format!("symbolic links cannot be exported: {}", p.display()));
+                } else if p.is_dir() {
                     stack.push(p);
                 } else if let Some(r) = rel_of(&p, &self.roots.content) {
                     self.pack(&p, &r);
@@ -206,7 +213,15 @@ impl Collector<'_> {
 
 /// What exporting the (saved) map packs.
 pub fn plan(doc: &Document, roots: &Roots) -> Plan {
+    plan_with_rights(doc, roots, false)
+}
+
+fn plan_with_rights(doc: &Document, roots: &Roots, rights: bool) -> Plan {
     let mut c = Collector { roots, plan: Plan::default(), seen: BTreeSet::new() };
+    if doc._publisher_protected_source {
+        c.plan.errors.push("protected publisher maps support playback only".into());
+        return c.plan;
+    }
     // the map's own folder, all of it
     c.pack_dir(&doc.dir);
     crate::geo::export_filter(&doc.dir, &mut c.plan.files);
@@ -243,6 +258,54 @@ pub fn plan(doc: &Document, roots: &Roots) -> Plan {
     for f in tr.parked.iter().chain(&tr.humans).chain(&tr.drivers) {
         c.file(f, true);
     }
+    let metadata = doc.dir.join("dependencies.json");
+    let mut previous_asset_dependencies = Vec::new();
+    if omsi_cfg::vfs::is_file(&metadata) {
+        if let Err(error) = omsi_cfg::publisher::validate_map(&doc.dir) {
+            c.plan.errors.push(error.to_string());
+        }
+        let previous = omsi_cfg::vfs::read_bounded(&metadata, 1024 * 1024)
+            .map_err(anyhow::Error::from)
+            .and_then(|bytes| Ok(serde_json::from_slice::<omsi_cfg::publisher::MapReferences>(&bytes)?));
+        match previous {
+            Ok(references) if references.format_version == 1 && references.assets.len() <= 4096 && references.dependencies.len() <= 128 => {
+                previous_asset_dependencies.extend(references.assets.iter().map(|a| a.dependency.clone()));
+                c.plan.references = references;
+            }
+            Ok(_) => c.plan.errors.push("unsupported or oversized dependency manifest".into()),
+            Err(error) => c.plan.errors.push(error.to_string()),
+        }
+    }
+    if let Some(relative) = rel_of(&metadata, &roots.content) {
+        let relative = relative.replace('\\', "/");
+        c.plan.files.remove(&relative);
+        c.plan.dependency_file = Some(relative);
+    }
+    match crate::export_policy::filter(&mut c.plan.files, &roots.content, rights) {
+        Ok(policy) => {
+            c.plan.rights_available = policy.rights_available;
+            c.plan.warnings = policy.warnings;
+            c.plan.errors.extend(policy.unresolved);
+            // An explicit ordinary rights override may retain a physical authored overlay.
+            c.plan.references.assets.retain(|a| !c.plan.files.keys().any(|p| p.eq_ignore_ascii_case(&a.path)));
+            for asset in policy.references.assets {
+                c.plan.references.assets.retain(|a| !a.path.eq_ignore_ascii_case(&asset.path));
+                c.plan.references.assets.push(asset);
+            }
+            for dependency in policy.references.dependencies {
+                if !c.plan.references.dependencies.contains(&dependency) {
+                    c.plan.references.dependencies.push(dependency);
+                }
+            }
+            c.plan.references.dependencies.retain(|dependency| !previous_asset_dependencies.contains(dependency)
+                || c.plan.references.assets.iter().any(|a| &a.dependency == dependency));
+            c.plan.missing.retain(|path| !c.plan.references.assets.iter().any(|a| a.path.replace('/', "\\").eq_ignore_ascii_case(path)));
+        }
+        Err(error) => c.plan.errors.push(error.to_string()),
+    }
+    if c.plan.references.assets.len() > 4096 || c.plan.references.dependencies.len() > 128 {
+        c.plan.errors.push("map dependency limits exceeded".into());
+    }
     c.plan
 }
 
@@ -278,31 +341,77 @@ pub fn readme(doc: &Document, plan: &Plan) -> String {
             o.push_str(&format!("  {f}\n"));
         }
     }
+    if !plan.references.dependencies.is_empty() {
+        o.push_str("\nPublisher packs required separately (exact versions):\n");
+        for d in &plan.references.dependencies {
+            o.push_str(&format!("  {}/{}/{}\n", d.publisher_id, d.pack_id, d.version));
+        }
+    }
+    for warning in &plan.warnings { o.push_str(&format!("\n{warning}\n")); }
     o.push_str(&format!("\nExported with openMapper {} ({} files).\n", env!("CARGO_PKG_VERSION"), plan.files.len()));
     o.replace('\n', "\r\n")
 }
 
+fn temporary_output(target: &Path) -> std::io::Result<(PathBuf, std::fs::File)> {
+    let name = omsi_pack::sha256_hex(&omsi_cfg::vfs::random_key()?);
+    let path = target.with_file_name(format!(".openmapper-{name}.openmapper-new"));
+    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path)?;
+    Ok((path, file))
+}
+
 /// Write the zip: the planned files and the readme.
 pub fn write_zip(plan: &Plan, readme: &str, out: &Path) -> anyhow::Result<u64> {
-    let tmp = out.with_extension("zip.openmapper-new");
-    let f = std::fs::File::create(&tmp)?;
-    let mut z = zip::ZipWriter::new(f);
-    let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-    z.start_file("readme.txt", opts)?;
-    z.write_all(readme.as_bytes())?;
-    for (rel, p) in &plan.files {
-        z.start_file(rel.as_str(), opts)?;
-        z.write_all(&std::fs::read(p)?)?;
+    validate(plan)?;
+    let (tmp, f) = temporary_output(out)?;
+    let result = (|| {
+        let mut z = zip::ZipWriter::new(f);
+        let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        z.start_file("readme.txt", opts)?;
+        z.write_all(readme.as_bytes())?;
+        for (rel, p) in &plan.files {
+            z.start_file(rel.as_str(), opts)?;
+            std::io::copy(&mut std::fs::File::open(p)?, &mut z)?;
+        }
+        if let Some((relative, bytes)) = dependency_bytes(plan)? {
+            z.start_file(relative, opts)?;
+            z.write_all(&bytes)?;
+        }
+        z.finish()?;
+        std::fs::rename(&tmp, out)?;
+        Ok(std::fs::metadata(out).map(|m| m.len()).unwrap_or(0))
+    })();
+    if result.is_err() { let _ = std::fs::remove_file(&tmp); }
+    result
+}
+
+fn dependency_bytes(plan: &Plan) -> anyhow::Result<Option<(&str, Vec<u8>)>> {
+    if plan.references.dependencies.is_empty() && plan.references.assets.is_empty() { return Ok(None); }
+    let relative = plan.dependency_file.as_deref().ok_or_else(|| anyhow::anyhow!("save the map into the content folder before exporting dependencies"))?;
+    anyhow::ensure!(relative.split('/').all(|p| !p.is_empty() && p != "." && p != ".." && !p.contains([':', '\\'])), "unsafe dependency output path");
+    let bytes = serde_json::to_vec(&plan.references)?;
+    anyhow::ensure!(bytes.len() <= 1024 * 1024, "dependency manifest exceeds its size limit");
+    Ok(Some((relative, bytes)))
+}
+
+fn validate(plan: &Plan) -> anyhow::Result<()> {
+    anyhow::ensure!(plan.errors.is_empty(), "{}", plan.errors.join("\n"));
+    for (relative, path) in &plan.files {
+        anyhow::ensure!(relative.split('/').all(|p| !p.is_empty() && p != "." && p != ".." && !p.contains([':', '\\'])), "unsafe export path");
+        anyhow::ensure!(!omsi_cfg::vfs::is_sealed(path), "protected playback assets cannot be exported: {relative}");
+        anyhow::ensure!(std::fs::symlink_metadata(path)?.is_file(), "export input must be a regular file: {relative}");
     }
-    z.finish()?;
-    std::fs::rename(&tmp, out)?;
-    Ok(std::fs::metadata(out).map(|m| m.len()).unwrap_or(0))
+    if let Some(relative) = &plan.dependency_file {
+        anyhow::ensure!(relative.split('/').all(|p| !p.is_empty() && p != "." && p != ".." && !p.contains([':', '\\'])), "unsafe dependency output path");
+    }
+    dependency_bytes(plan)?;
+    Ok(())
 }
 
 /// Put the planned files into an OMSI 2 folder (`maps\<folder>`, the objects, roads and
 /// textures made for the map), the way unpacking the exported zip into it would. A file that is
 /// already there and as new as ours is left alone. (copied, left alone)
 pub fn install_into(plan: &Plan, omsi: &Path) -> anyhow::Result<(usize, usize)> {
+    validate(plan)?;
     let (mut copied, mut same) = (0, 0);
     for (rel, src) in &plan.files {
         let dst = rel.split('/').fold(omsi.to_path_buf(), |p, part| p.join(part));
@@ -321,24 +430,48 @@ pub fn install_into(plan: &Plan, omsi: &Path) -> anyhow::Result<(usize, usize)> 
             std::fs::create_dir_all(dir).map_err(|e| anyhow::anyhow!("{}: {e}", dir.display()))?;
         }
         // (under a temporary name first: a program that is reading the file never sees half of it)
-        let tmp = dst.with_extension("openmapper-new");
-        std::fs::copy(src, &tmp).map_err(|e| anyhow::anyhow!("{}: {e}", dst.display()))?;
-        std::fs::rename(&tmp, &dst).map_err(|e| anyhow::anyhow!("{}: {e}", dst.display()))?;
+        let (tmp, mut file) = temporary_output(&dst)?;
+        let result = (|| {
+            std::io::copy(&mut std::fs::File::open(src)?, &mut file)?;
+            file.sync_all()?;
+            drop(file);
+            std::fs::rename(&tmp, &dst)
+        })();
+        if result.is_err() { let _ = std::fs::remove_file(&tmp); }
+        result.map_err(|e| anyhow::anyhow!("{}: {e}", dst.display()))?;
         copied += 1;
+    }
+    if let Some((relative, bytes)) = dependency_bytes(plan)? {
+        let path = omsi.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap())?;
+        let (temporary, mut file) = temporary_output(&path)?;
+        let result = file.write_all(&bytes).and_then(|_| file.sync_all());
+        drop(file);
+        let result = result.and_then(|_| std::fs::rename(&temporary, path));
+        if result.is_err() { let _ = std::fs::remove_file(&temporary); }
+        result?;
+        copied += 1;
+    } else if let Some(relative) = &plan.dependency_file {
+        let path = omsi.join(relative);
+        if path.exists() { std::fs::remove_file(path)?; }
     }
     Ok((copied, same))
 }
 
 /// Export the saved map to `out`.
 pub fn export(doc: &Document, roots: &Roots, out: &Path) -> anyhow::Result<(Plan, u64)> {
-    let plan = plan(doc, roots);
+    export_with_rights(doc, roots, out, false)
+}
+
+pub fn export_with_rights(doc: &Document, roots: &Roots, out: &Path, rights: bool) -> anyhow::Result<(Plan, u64)> {
+    let plan = plan_with_rights(doc, roots, rights);
     let bytes = write_zip(&plan, &readme(doc, &plan), out)?;
     log::info!("export: {} files ({:.1} MB) to {}; {} installation folders needed, {} missing", plan.files.len(), bytes as f64 / 1e6, out.display(), plan.stock.len(), plan.missing.len());
     Ok((plan, bytes))
 }
 
 /// `openmapper --export path/to/global.cfg out.zip`: export a map without a window.
-pub fn cli_export(cfg: &Path, out: &Path) -> i32 {
+pub fn cli_export(cfg: &Path, out: &Path, rights: bool) -> i32 {
     let Some(omsi) = crate::install::find_omsi_root(&crate::install::Prefs::load()) else {
         eprintln!("no OMSI 2 installation found");
         return 2;
@@ -355,8 +488,9 @@ pub fn cli_export(cfg: &Path, out: &Path) -> i32 {
         eprintln!("{}: save the map into the content folder first (open and save it in openMapper)", cfg.display());
         return 2;
     }
-    match export(&doc, &roots, out) {
+    match export_with_rights(&doc, &roots, out, rights) {
         Ok((plan, bytes)) => {
+            for warning in &plan.warnings { eprintln!("{warning}"); }
             println!("{}: {} files, {:.1} MB; needs {} installation folders; {} missing", out.display(), plan.files.len(), bytes as f64 / 1e6, plan.stock.len(), plan.missing.len());
             0
         }

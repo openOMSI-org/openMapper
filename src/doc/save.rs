@@ -81,6 +81,7 @@ pub(crate) fn prepare_save(doc: &Document) -> SaveJob {
         source: doc.source.clone(),
     };
     let copy = Document {
+        _publisher_mounts: doc._publisher_mounts.clone(),
         global: doc.global.clone(),
         tiles: doc
             .tiles
@@ -110,6 +111,7 @@ pub(crate) fn prepare_save(doc: &Document) -> SaveJob {
         traffic: doc.traffic.clone(),
         descriptions: doc.descriptions.clone(),
         groups: Vec::new(),
+        _publisher_protected_source: doc._publisher_protected_source,
     };
     SaveJob { doc: copy, known: doc.tiles.keys().copied().collect(), stamp }
 }
@@ -165,6 +167,10 @@ pub fn save(doc: &mut Document) -> anyhow::Result<()> {
 }
 
 fn save_with(doc: &mut Document, known: &HashSet<TileKey>) -> anyhow::Result<()> {
+    // (here, not in `save`, so the save made on another thread is stopped too)
+    if doc._publisher_protected_source {
+        anyhow::bail!("publisher-protected maps cannot be saved as plaintext");
+    }
     std::fs::create_dir_all(&doc.dir)?;
     // a map of the installation (or the template) is copied over first: its timetables,
     // AI lists, light maps and chrono folders come along

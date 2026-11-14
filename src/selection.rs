@@ -740,6 +740,8 @@ pub mod tests {
         crate::doc::hold_map_for_test();
         let mut doc = Document {
             global: omsi_map::GlobalCfg { next_id_code: 100, ..Default::default() },
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: std::env::temp_dir().join("openmapper-test"),

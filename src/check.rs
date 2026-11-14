@@ -204,6 +204,8 @@ struct Snapshot {
     unlit: HashSet<TileKey>,
     ground: Vec<String>,
     map_dir: PathBuf,
+    /// The map's signed publisher aliases (the objects and splines a pack gives it).
+    mounts: std::sync::Arc<omsi_cfg::publisher::DependencyMounts>,
     tiles: HashSet<TileKey>,
     /// Objects something hangs on (`[attachObj]`).
     parents: HashSet<i64>,
@@ -316,6 +318,7 @@ fn snapshot(doc: &Document, lib: &Library) -> Snapshot {
         unlit: doc.tiles.iter().filter(|(_, t)| !t.tile.variable_terrain_lightmap).map(|(k, _)| *k).collect(),
         ground: doc.global.ground_textures.iter().flat_map(|g| [g.texture.clone(), g.detail_texture.clone()]).collect(),
         map_dir: src,
+        mounts: doc._publisher_mounts.clone(),
         tiles: present,
         parents: doc.tiles.values().flat_map(|t| t.tile.attach_objects.iter().filter_map(|a| a.parent_id)).collect(),
         var_links: doc.tiles.iter().flat_map(|(k, t)| {
@@ -464,7 +467,7 @@ fn run(s: Snapshot, roots: Vec<PathBuf>) -> Vec<Issue> {
     let mut obj_paths: HashMap<String, Vec<omsi_scenery::PathDef>> = HashMap::new();
     for (file, (is_spline, n, at, sel)) in &files {
         let name = s.objects.iter().map(|o| &o.file).chain(s.splines.iter().map(|x| &x.file)).find(|f| f.to_lowercase() == *file).cloned().unwrap_or_else(|| file.clone());
-        match find_file(&name, &roots) {
+        match s.mounts.resolve_map_alias(&s.map_dir, &name).filter(|p| omsi_cfg::vfs::is_file(p)).or_else(|| find_file(&name, &roots)) {
             None => {
                 let (kind, sev) = if *is_spline { (Kind::MissingSpline, Severity::Error) } else { (Kind::MissingObject, Severity::Error) };
                 // (openMapper's own junction plates are made again for their roads)
@@ -498,7 +501,7 @@ fn run(s: Snapshot, roots: Vec<PathBuf>) -> Vec<Issue> {
             continue;
         }
         let here = omsi_cfg::resolve_path(&s.map_dir, g);
-        if !omsi_cfg::vfs::is_file(&here) && find_file(g, &roots).is_none() {
+        if !omsi_cfg::vfs::is_file(&here) && s.mounts.resolve_map_alias(&s.map_dir, g).is_none() && find_file(g, &roots).is_none() {
             out.push(issue(Severity::Warning, Kind::MissingTexture, g.clone(), tr("a ground texture of the map", "текстура земли карты").to_string(), None, None, None));
         }
     }
@@ -1365,7 +1368,7 @@ mod tests {
     fn snap(splines: Vec<SplineRec>) -> Snapshot {
         let mut kinds = HashMap::new();
         kinds.insert("splines\\road.sli".to_string(), KindRec { cat: Category::Roads, half_width: 4.0, bus_stop: false, lanes: true, abs_height: false, lamp: false, light_head: false });
-        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new() }
+        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), mounts: Default::default(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new() }
     }
 
     #[test]
@@ -1383,6 +1386,8 @@ mod tests {
     fn doc_with(tiles: &[TileKey]) -> Document {
         let mut doc = Document {
             global: Default::default(),
+            _publisher_mounts: std::sync::Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: Default::default(),
             order: Vec::new(),
             dir: PathBuf::new(),

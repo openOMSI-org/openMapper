@@ -11,6 +11,8 @@ fn server(allow_edit: bool) -> Server {
     let roots = crate::install::Roots { omsi: nowhere.clone(), content: nowhere };
     let mut doc = Document {
         global: Default::default(),
+        _publisher_mounts: std::sync::Arc::new(Default::default()),
+        _publisher_protected_source: false,
         tiles: Default::default(),
         order: Vec::new(),
         dir: PathBuf::new(),
@@ -67,6 +69,17 @@ fn speaks_the_protocol_and_is_read_only_unless_told() {
     assert_eq!(v["failed"], 1);
     let r = talk(&mut s, r#"{"jsonrpc":"2.0","id":5,"method":"nothing"}"#);
     assert_eq!(r["error"]["code"], -32601);
+}
+
+#[test]
+fn a_publisher_protected_map_is_not_exposed_through_any_tool() {
+    let mut s = server(true);
+    s.ed.doc.as_mut().unwrap()._publisher_protected_source = true;
+    let names: Vec<String> = s.tools().iter().filter_map(|t| t["name"].as_str().map(String::from)).collect();
+    for name in names.iter().filter(|n| !["open_map", "new_map", "catalogue", "list_maps"].contains(&n.as_str())) {
+        assert_eq!(s.call(name, &json!({})).err().as_deref(), Some(PROTECTED), "protected source escaped through {name}");
+    }
+    assert!(names.iter().any(|n| n == "render") && names.iter().any(|n| n == "batch"));
 }
 
 #[test]

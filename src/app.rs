@@ -480,6 +480,9 @@ impl App {
         if let Some(g) = &mut self.gfx {
             g.renderer.reset_map();
         }
+        if let Some(assets) = &mut self.assets {
+            assets.set_map_scope(doc.source.as_deref().unwrap_or(&doc.dir), doc._publisher_mounts.clone());
+        }
         self.ed.open(doc);
         self.ed.set_tool(Tool::Select);
         // (the loaded window of tiles starts round where the map opened)
@@ -1011,9 +1014,36 @@ impl App {
         let (Some(doc), Some(roots)) = (&self.ed.doc, &self.roots) else { return };
         let folder = doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into());
         let Some(out) = rfd::FileDialog::new().add_filter("zip", &["zip"]).set_file_name(format!("{folder}.zip")).set_title(tr("Export the map for sharing", "Экспорт карты для обмена")).save_file() else { return };
-        match crate::export::export(doc, roots, &out) {
+        let planned = crate::export::plan(doc, roots);
+        let rights = if planned.rights_available {
+            let references = tr("Use dependencies", "Использовать зависимости");
+            let rights = tr("I hold the redistribution rights", "У меня есть права на распространение");
+            let detail = format!("{}\n\n{}: {}\n{}: {}", planned.warnings.iter().take(8).cloned().collect::<Vec<_>>().join("\n"), tr("Yes", "Да"), references, tr("No", "Нет"), rights);
+            match rfd::MessageDialog::new()
+                .set_title(tr("Export the map for sharing", "Экспорт карты для обмена"))
+                .set_description(&detail)
+                .set_level(rfd::MessageLevel::Warning)
+                .set_buttons(rfd::MessageButtons::YesNoCancelCustom(references.into(), rights.into(), tr("Cancel", "Отмена").into()))
+                .show()
+            {
+                rfd::MessageDialogResult::No => true,
+                rfd::MessageDialogResult::Yes => false,
+                rfd::MessageDialogResult::Custom(choice) if choice == rights => true,
+                rfd::MessageDialogResult::Custom(choice) if choice == references => false,
+                _ => return,
+            }
+        } else { false };
+        let result = if rights {
+            crate::export::export_with_rights(doc, roots, &out, true)
+        } else {
+            crate::export::write_zip(&planned, &crate::export::readme(doc, &planned), &out).map(|bytes| (planned, bytes))
+        };
+        match result {
             Ok((plan, bytes)) => {
                 self.ed.toast(format!("{} {} ({} {}, {:.1} MB)", tr("Exported:", "Экспортировано:"), out.display(), plan.files.len(), tr("files", "файлов"), bytes as f64 / 1e6));
+                if !plan.warnings.is_empty() {
+                    self.ed.error(plan.warnings.iter().take(8).cloned().collect::<Vec<_>>().join("\n"));
+                }
                 if !plan.missing.is_empty() {
                     self.ed.error(format!("{} {}", plan.missing.len(), tr("files the map names were not found: the readme lists them", "файлов, которые называет карта, не найдено: они перечислены в readme")));
                 }
@@ -1081,6 +1111,10 @@ impl App {
     }
 
     fn save(&mut self) -> bool {
+        if self.ed.doc.as_ref().is_some_and(|doc| doc._publisher_protected_source) {
+            self.ed.error(format!("{}: protected publisher maps support playback only", tr("Could not save (the changes are still here, nothing is lost)", "Не удалось сохранить (изменения остались здесь, ничего не потеряно)")));
+            return false;
+        }
         if self.collab.is_guest() {
             self.ed.error(tr("In multiplayer the host saves the map. Leave the session to save this as a copy of your own.", "В совместной правке карту сохраняет хост. Выйдите из сессии, чтобы сохранить копию для себя."));
             return false;
@@ -3739,7 +3773,8 @@ impl App {
             if self.swatches.contains_key(&key) {
                 continue;
             }
-            let path = map_dirs.iter().map(|d| omsi_cfg::resolve_path(d, &rel)).chain([roots.resolve(&rel)]).find(|p| omsi_cfg::vfs::is_file(p));
+            let alias = self.ed.doc.as_ref().and_then(|d| d.resolve_alias(&rel));
+            let path = alias.into_iter().chain(map_dirs.iter().map(|d| omsi_cfg::resolve_path(d, &rel))).chain([roots.resolve(&rel)]).find(|p| omsi_cfg::vfs::is_file(p));
             let Some(path) = path else { continue };
             let Some(img) = assets.texture(&path) else { continue };
             let mut small = img.image.clone();

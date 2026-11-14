@@ -62,6 +62,14 @@ impl From<Value> for Out {
 
 pub(crate) type Reply = Result<Out, String>;
 
+const PROTECTED: &str = "publisher-protected maps cannot be exposed through MCP";
+
+pub(crate) fn load_document(roots: &crate::install::Roots, cfg: &Path) -> anyhow::Result<Document> {
+    let doc = Document::load(roots, cfg, |_| {})?;
+    anyhow::ensure!(!doc._publisher_protected_source, PROTECTED);
+    Ok(doc)
+}
+
 pub(crate) struct Server {
     pub roots: crate::install::Roots,
     pub cfg: Option<PathBuf>,
@@ -186,7 +194,7 @@ impl Server {
 
     /// Open a map (its global.cfg), dropping the one open.
     pub fn open(&mut self, cfg: &Path) -> Result<(), String> {
-        let doc = Document::load(&self.roots, cfg, |_| {}).map_err(|e| format!("{}: {e}", cfg.display()))?;
+        let doc = load_document(&self.roots, cfg).map_err(|e| format!("{}: {e}", cfg.display()))?;
         self.put(doc);
         self.cfg = Some(cfg.to_path_buf());
         Ok(())
@@ -259,7 +267,9 @@ impl Server {
             "list_maps" => return self.list_maps(),
             _ => {}
         }
-        self.doc()?;
+        if self.doc()?._publisher_protected_source {
+            return Err(PROTECTED.into());
+        }
         match name {
             // seeing
             "map_info" => self.map_info().map(Out::from),

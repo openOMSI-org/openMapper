@@ -951,7 +951,7 @@ impl Server {
         if let Some(i) = doc.global.ground_textures.iter().position(|g| g.texture.eq_ignore_ascii_case(&rel)) {
             return Ok(i);
         }
-        let exists = [&content, &omsi].iter().any(|r| omsi_cfg::vfs::exists(&omsi_cfg::resolve_path(r, &rel))) || omsi_cfg::vfs::exists(&omsi_cfg::resolve_path(&doc.dir, &rel));
+        let exists = [&content, &omsi].iter().any(|r| omsi_cfg::vfs::exists(&omsi_cfg::resolve_path(r, &rel))) || omsi_cfg::vfs::exists(&omsi_cfg::resolve_path(&doc.dir, &rel)) || doc.resolve_alias(&rel).is_some();
         if !exists {
             return Err(format!("no texture {rel} (a path like Texture\\\\...)"));
         }
