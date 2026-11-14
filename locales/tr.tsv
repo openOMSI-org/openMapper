@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Nesne üzerinde 2. r
 Aligned angle! (Ctrl+Z to undo)	Açı hizalandı! (Geri almak için Ctrl+Z)
 Vertex snap complete	Köşe yakalama tamamlandı
 Align vertex angle	Köşe açısını hizala
+Complete to	Şuraya kadar tamamla
+Complete to: a new piece between the free ends of the selected splines	Şuraya kadar tamamla: seçili spline'ların serbest uçları arasına yeni parça
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Seçili spline'ların iki serbest ucu arasına, ilk seçilen spline'ın türünde, ikisiyle de konum, yön ve yükseklikte buluşan yeni bir parça; ikisi değişmez. Tekrar: kalan iki uç birleştirilir, halka kapanır.
+The two ends already meet	İki uç zaten buluşuyor
+Select the splines whose free ends are to be joined	Serbest uçları birleştirilecek spline'ları seçin
+No piece of spline can join these two ends	Hiçbir spline parçası bu iki ucu birleştiremez

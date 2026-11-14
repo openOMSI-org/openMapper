@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Feu clic a un 2n pun
 Aligned angle! (Ctrl+Z to undo)	Angle alineat! (Ctrl+Z per desfer)
 Vertex snap complete	Ajust de vèrtex completat
 Align vertex angle	Alinea l'angle del vèrtex
+Complete to	Completa fins a
+Complete to: a new piece between the free ends of the selected splines	Completa fins a: un tram nou entre els extrems lliures de les splines seleccionades
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Un tram nou del tipus de la primera spline seleccionada entre dos extrems lliures de les splines seleccionades, que coincideix amb tots dos en posició, direcció i alçada; aquestes no canvien. Un altre cop: s'uneixen els dos extrems que queden i es tanca l'anell.
+The two ends already meet	Els dos extrems ja es troben
+Select the splines whose free ends are to be joined	Selecciona les splines els extrems lliures de les quals s'han d'unir
+No piece of spline can join these two ends	Cap tram de spline no pot unir aquests dos extrems

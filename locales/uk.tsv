@@ -2816,3 +2816,9 @@ Click a 2nd reference point on the object, or Esc to finish	Клацніть 2-�
 Aligned angle! (Ctrl+Z to undo)	Кут вирівняно! (Ctrl+Z для скасування)
 Vertex snap complete	Прив'язку вершини завершено
 Align vertex angle	Вирівняти кут вершини
+Complete to	Добудувати до
+Complete to: a new piece between the free ends of the selected splines	Добудувати до: новий шматок між вільними кінцями вибраних сплайнів
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Новий шматок типу першого вибраного сплайна між двома вільними кінцями вибраних сплайнів, що збігається з обома за місцем, напрямком і висотою; самі вони не змінюються. Ще раз: з'єднуються два кінці, що лишилися, кільце замикається.
+The two ends already meet	Ці два кінці вже сходяться
+Select the splines whose free ends are to be joined	Виберіть сплайни, вільні кінці яких треба з'єднати
+No piece of spline can join these two ends	Жоден шматок сплайна не з'єднає ці два кінці

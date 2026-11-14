@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Нысанда 2-ш�
 Aligned angle! (Ctrl+Z to undo)	Бұрыш тураланды! (Болдырмау үшін Ctrl+Z)
 Vertex snap complete	Төбені бекіту аяқталды
 Align vertex angle	Төбе бұрышын туралау
+Complete to	Дейін толықтыру
+Complete to: a new piece between the free ends of the selected splines	Дейін толықтыру: таңдалған сплайндардың бос ұштары арасында жаңа бөлік
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Таңдалған сплайндардың екі бос ұшы арасында бірінші таңдалған сплайн түріндегі жаңа бөлік, екеуімен орны, бағыты және биіктігі бойынша сәйкес келеді; олардың өздері өзгермейді. Тағы бір рет: қалған екі ұш қосылып, сақина тұйықталады.
+The two ends already meet	Бұл екі ұш бұрыннан түйіседі
+Select the splines whose free ends are to be joined	Бос ұштарын қосатын сплайндарды таңдаңыз
+No piece of spline can join these two ends	Бұл екі ұшты ешбір сплайн бөлігі қоса алмайды

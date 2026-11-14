@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Bấm điểm tham c
 Aligned angle! (Ctrl+Z to undo)	Đã căn chỉnh góc! (Ctrl+Z để hoàn tác)
 Vertex snap complete	Bắt dính đỉnh hoàn tất
 Align vertex angle	Căn chỉnh góc đỉnh
+Complete to	Hoàn thiện đến
+Complete to: a new piece between the free ends of the selected splines	Hoàn thiện đến: đoạn mới giữa các đầu tự do của các spline đã chọn
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Một đoạn mới cùng loại với spline được chọn đầu tiên, nằm giữa hai đầu tự do của các spline đã chọn, khớp với cả hai về vị trí, hướng và độ cao; hai spline đó không bị thay đổi. Làm lại: hai đầu còn lại được nối, khép kín vòng.
+The two ends already meet	Hai đầu đã gặp nhau
+Select the splines whose free ends are to be joined	Chọn các spline có đầu tự do cần nối
+No piece of spline can join these two ends	Không đoạn spline nào nối được hai đầu này

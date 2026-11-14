@@ -15,6 +15,7 @@ mod controls;
 mod chrono_edit;
 mod chrono_tt;
 mod clipboard;
+mod complete;
 mod collab;
 mod descriptions;
 mod doc;

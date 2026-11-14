@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	개체에서 2번째
 Aligned angle! (Ctrl+Z to undo)	각도 정렬 완료! (Ctrl+Z: 실행 취소)
 Vertex snap complete	꼭짓점 스냅 완료
 Align vertex angle	꼭짓점 각도 정렬
+Complete to	여기까지 완성
+Complete to: a new piece between the free ends of the selected splines	여기까지 완성: 선택한 스플라인의 빈 끝 사이에 새 조각
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	처음 선택한 스플라인의 종류로, 선택한 스플라인의 빈 끝 두 곳 사이에 위치·방향·높이가 모두 맞는 새 조각을 만듭니다. 원래 두 조각은 바뀌지 않습니다. 한 번 더: 남은 두 끝이 이어져 고리가 닫힙니다.
+The two ends already meet	두 끝이 이미 만납니다
+Select the splines whose free ends are to be joined	빈 끝을 이을 스플라인을 선택하세요
+No piece of spline can join these two ends	이 두 끝을 이을 수 있는 스플라인 조각이 없습니다

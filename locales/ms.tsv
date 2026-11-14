@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Klik titik rujukan k
 Aligned angle! (Ctrl+Z to undo)	Sudut dijajarkan! (Ctrl+Z untuk membuat asal)
 Vertex snap complete	Lekatan bucu selesai
 Align vertex angle	Jajarkan sudut bucu
+Complete to	Lengkapkan hingga
+Complete to: a new piece between the free ends of the selected splines	Lengkapkan hingga: keping baharu antara hujung bebas spline yang dipilih
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Keping baharu jenis spline pertama yang dipilih di antara dua hujung bebas spline yang dipilih, bertemu kedua-duanya pada kedudukan, arah dan ketinggian; kedua-duanya tidak diubah. Sekali lagi: dua hujung yang tinggal dicantum, gelang ditutup.
+The two ends already meet	Kedua-dua hujung sudah bertemu
+Select the splines whose free ends are to be joined	Pilih spline yang hujung bebasnya hendak dicantum
+No piece of spline can join these two ends	Tiada keping spline yang dapat mencantum kedua-dua hujung ini

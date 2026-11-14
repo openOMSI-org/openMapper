@@ -2816,3 +2816,9 @@ Click a 2nd reference point on the object, or Esc to finish	Klicken Sie auf eine
 Aligned angle! (Ctrl+Z to undo)	Winkel ausgerichtet! (Strg+Z zum Rückgängigmachen)
 Vertex snap complete	Scheitelpunkt-Ausrichtung abgeschlossen
 Align vertex angle	Scheitelpunktwinkel ausrichten
+Complete to	Vervollständigen bis
+Complete to: a new piece between the free ends of the selected splines	Vervollständigen bis: ein neues Stück zwischen den freien Enden der ausgewählten Splines
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Ein neues Stück vom Typ des zuerst ausgewählten Splines zwischen zwei freien Enden der ausgewählten Splines, das an beide in Lage, Richtung und Höhe anschließt; die beiden selbst bleiben unverändert. Noch einmal: die beiden übrigen Enden werden verbunden, der Ring schließt sich.
+The two ends already meet	Die beiden Enden treffen sich schon
+Select the splines whose free ends are to be joined	Die Splines auswählen, deren freie Enden verbunden werden sollen
+No piece of spline can join these two ends	Kein Splinestück kann diese beiden Enden verbinden

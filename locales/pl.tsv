@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Kliknij 2. punkt odn
 Aligned angle! (Ctrl+Z to undo)	Kąt wyrównany! (Ctrl+Z, aby cofnąć)
 Vertex snap complete	Przyciąganie wierzchołka zakończone
 Align vertex angle	Wyrównaj kąt wierzchołka
+Complete to	Dokończ do
+Complete to: a new piece between the free ends of the selected splines	Dokończ do: nowy odcinek między wolnymi końcami zaznaczonych spline'ów
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Nowy odcinek typu pierwszego zaznaczonego spline'u między dwoma wolnymi końcami zaznaczonych spline'ów, zgodny z oboma położeniem, kierunkiem i wysokością; same one się nie zmieniają. Jeszcze raz: łączą się dwa pozostałe końce i pierścień się zamyka.
+The two ends already meet	Te dwa końce już się stykają
+Select the splines whose free ends are to be joined	Zaznacz spline'y, których wolne końce mają zostać połączone
+No piece of spline can join these two ends	Żaden odcinek spline'u nie połączy tych dwóch końców

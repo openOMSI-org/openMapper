@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	オブジェクト�
 Aligned angle! (Ctrl+Z to undo)	角度を合わせました！（Ctrl+Z で元に戻す）
 Vertex snap complete	頂点吸着完了
 Align vertex angle	頂点の角度を合わせる
+Complete to	ここまで補完
+Complete to: a new piece between the free ends of the selected splines	ここまで補完：選択したスプラインの空いた端の間に新しい部品
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	最初に選択したスプラインの種類で、選択したスプラインの空いた二つの端の間に新しい部品を作り、両方と位置・向き・高さを合わせます。元の二つは変わりません。もう一度押すと、残る二つの端がつながり、輪が閉じます。
+The two ends already meet	この二つの端はもうつながっています
+Select the splines whose free ends are to be joined	空いた端をつなぐスプラインを選択してください
+No piece of spline can join these two ends	この二つの端をつなげるスプラインの部品がありません

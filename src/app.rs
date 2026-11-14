@@ -2347,6 +2347,7 @@ impl App {
             }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
+            Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
                 let splines = self.ed.selection().iter().any(|s| matches!(s, Sel::Spline(..)));

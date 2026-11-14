@@ -2819,3 +2819,9 @@ Aligned angle! (Ctrl+Z om ongedaan te maken)	Hoek uitgelijnd! (Ctrl+Z om ongedaa
 Vertex snap complete	Hoekpunt magnetisch uitlijnen voltooid
 Align vertex angle	Hoekpunt uitlijningshoek aanpassen
 Aligned angle! (Ctrl+Z to undo)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Complete to	Aanvullen tot
+Complete to: a new piece between the free ends of the selected splines	Aanvullen tot: een nieuw stuk tussen de vrije uiteinden van de geselecteerde splines
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Een nieuw stuk van het type van de eerst geselecteerde spline tussen twee vrije uiteinden van de geselecteerde splines, dat op beide aansluit in plaats, richting en hoogte; die zelf veranderen niet. Nog eens: de twee overgebleven uiteinden worden verbonden en de ring sluit.
+The two ends already meet	De twee uiteinden raken elkaar al
+Select the splines whose free ends are to be joined	Selecteer de splines waarvan de vrije uiteinden verbonden moeten worden
+No piece of spline can join these two ends	Geen stuk spline kan deze twee uiteinden verbinden

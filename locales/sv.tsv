@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Klicka på en andra 
 Aligned angle! (Ctrl+Z to undo)	Vinkel justerad! (Ctrl+Z för att ångra)
 Vertex snap complete	Hörnfästning slutförd
 Align vertex angle	Justera hörnvinkel
+Complete to	Komplettera till
+Complete to: a new piece between the free ends of the selected splines	Komplettera till: en ny del mellan de valda splinernas fria ändar
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	En ny del av den först valda splinens typ mellan två fria ändar på de valda splinerna, som möter båda i läge, riktning och höjd; de själva ändras inte. Igen: de två ändar som är kvar sammanfogas och ringen sluts.
+The two ends already meet	De två ändarna möts redan
+Select the splines whose free ends are to be joined	Välj de spliner vars fria ändar ska sammanfogas
+No piece of spline can join these two ends	Ingen splinedel kan sammanfoga dessa två ändar

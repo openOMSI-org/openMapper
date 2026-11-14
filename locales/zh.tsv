@@ -2814,3 +2814,9 @@ Click a 2nd reference point on the object, or Esc to finish	点击物体上的�
 Aligned angle! (Ctrl+Z to undo)	已对齐角度！（Ctrl+Z 撤销）
 Vertex snap complete	顶点吸附完成
 Align vertex angle	对齐顶点角度
+Complete to	补全至
+Complete to: a new piece between the free ends of the selected splines	补全至：在所选Spline线的空端之间加一段新的
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	在所选Spline线的两个空端之间加一段新的，类型同第一条所选Spline线，位置、方向和高度都与两端吻合；原有两段不变。再按一次：剩下的两端相接，环就闭合。
+The two ends already meet	这两端已经相接
+Select the splines whose free ends are to be joined	请选择要连接空端的Spline线
+No piece of spline can join these two ends	没有任何Spline段能连接这两端

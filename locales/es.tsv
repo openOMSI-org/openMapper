@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	Haga clic en un 2.º
 Aligned angle! (Ctrl+Z to undo)	¡Ángulo alineado! (Ctrl+Z para deshacer)
 Vertex snap complete	Ajuste de vértice completado
 Align vertex angle	Alinear ángulo del vértice
+Complete to	Completar hasta
+Complete to: a new piece between the free ends of the selected splines	Completar hasta: una pieza nueva entre los extremos libres de los splines seleccionados
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Una pieza nueva del tipo del primer spline seleccionado entre dos extremos libres de los splines seleccionados, que coincide con ambos en posición, dirección y altura; ellos no cambian. Otra vez: se unen los dos extremos que quedan y se cierra el anillo.
+The two ends already meet	Los dos extremos ya se encuentran
+Select the splines whose free ends are to be joined	Selecciona los splines cuyos extremos libres hay que unir
+No piece of spline can join these two ends	Ninguna pieza de spline puede unir estos dos extremos

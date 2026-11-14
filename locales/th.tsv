@@ -2818,3 +2818,9 @@ Click a 2nd reference point on the object, or Esc to finish	คลิกจุ�
 Aligned angle! (Ctrl+Z to undo)	จัดแนวมุมแล้ว! (Ctrl+Z เพื่อเลิกทำ)
 Vertex snap complete	ตรึงจุดยอดเสร็จสมบูรณ์
 Align vertex angle	จัดแนวมุมของจุดยอด
+Complete to	ต่อให้ถึง
+Complete to: a new piece between the free ends of the selected splines	ต่อให้ถึง: ชิ้นใหม่ระหว่างปลายว่างของสไปลน์ที่เลือก
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	ชิ้นใหม่ชนิดเดียวกับสไปลน์ที่เลือกเป็นอันแรก ระหว่างปลายว่างสองปลายของสไปลน์ที่เลือก โดยตรงกับทั้งสองทั้งตำแหน่ง ทิศทาง และความสูง ส่วนสองชิ้นเดิมไม่เปลี่ยน กดอีกครั้ง: ปลายสองปลายที่เหลือจะต่อกันและปิดวง
+The two ends already meet	ปลายทั้งสองบรรจบกันอยู่แล้ว
+Select the splines whose free ends are to be joined	เลือกสไปลน์ที่ต้องการต่อปลายว่าง
+No piece of spline can join these two ends	ไม่มีชิ้นสไปลน์ใดต่อปลายทั้งสองนี้ได้
