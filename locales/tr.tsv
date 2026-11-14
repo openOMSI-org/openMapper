@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	İki uç zaten buluşuyor
 Select the splines whose free ends are to be joined	Serbest uçları birleştirilecek spline'ları seçin
 No piece of spline can join these two ends	Hiçbir spline parçası bu iki ucu birleştiremez
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Bu haritanın openMapper kopyası içerik klasöründe açıldı (OMSI 2 klasöründeki asla yazılmaz)
+Read in again, changed on disk by another program:	Yeniden okundu, diskte başka bir program tarafından değiştirildi:
+Could not bring the changes over	Değişiklikler aktarılamadı
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Haritanın dosyaları bu otomatik kayıttan sonra değiştirildi (başka bir programla, örneğin OMSI 2 editörüyle). Geri yüklemek, kayıttaki eski karoları bu değişikliklerin üzerine koyar.
+tile(s)	karo
+the global settings	genel ayarlar
+the timetable	tarife
+the traffic	trafik
+the descriptions	açıklamalar
+Reload from disk	Diskten yeniden yükle
+The map changed on disk	Harita diskte değişti
+Another program changed the map's files where it has changes here not saved yet:	Başka bir program, burada kaydedilmemiş değişiklikler olan yerlerde haritanın dosyalarını değiştirdi:
+The other changes made on disk were read in already.	Diskteki diğer değişiklikler zaten okundu.
+Keep mine	Benimkileri tut
+The map changed in OMSI 2's folder	Harita OMSI 2 klasöründe değişti
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Bu haritanın kurulumdaki kopyası, openMapper'ın içerik klasöründeki kopyası kaydedildikten sonra değiştirildi, örneğin OMSI 2 editörüyle
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Değişiklikleri aktarmak openMapper kopyasındaki bu dosyaları değiştirir; değiştirilen dosyalar bir yedekte tutulur (Dosya > Önceki sürümler).
+Bring the changes over	Değişiklikleri aktar
+Keep openMapper's copy	openMapper kopyasını tut

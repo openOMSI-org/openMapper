@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	De två ändarna möts redan
 Select the splines whose free ends are to be joined	Välj de spliner vars fria ändar ska sammanfogas
 No piece of spline can join these two ends	Ingen splinedel kan sammanfoga dessa två ändar
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Öppnade openMappers kopia av kartan i innehållsmappen (den i OMSI 2-mappen skrivs aldrig)
+Read in again, changed on disk by another program:	Inläst igen, ändrad på disken av ett annat program:
+Could not bring the changes over	Kunde inte föra över ändringarna
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Kartans filer ändrades efter denna autosparning (av ett annat program, t.ex. OMSI 2:s editor). Att återställa lägger autosparningens äldre rutor över de ändringarna.
+tile(s)	ruta/rutor
+the global settings	de globala inställningarna
+the timetable	tidtabellen
+the traffic	trafiken
+the descriptions	beskrivningarna
+Reload from disk	Läs in från disken igen
+The map changed on disk	Kartan ändrades på disken
+Another program changed the map's files where it has changes here not saved yet:	Ett annat program ändrade kartans filer där den har osparade ändringar här:
+The other changes made on disk were read in already.	Övriga ändringar på disken är redan inlästa.
+Keep mine	Behåll mina
+The map changed in OMSI 2's folder	Kartan ändrades i OMSI 2-mappen
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopian av kartan i installationen ändrades efter att openMappers kopia i innehållsmappen sparades, t.ex. av OMSI 2:s editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Att föra över ändringarna ersätter de filerna i openMappers kopia; de ersatta filerna sparas i en säkerhetskopia (Arkiv > Tidigare versioner).
+Bring the changes over	För över ändringarna
+Keep openMapper's copy	Behåll openMappers kopia

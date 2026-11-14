@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Бұл екі ұш бұрыннан түйіседі
 Select the splines whose free ends are to be joined	Бос ұштарын қосатын сплайндарды таңдаңыз
 No piece of spline can join these two ends	Бұл екі ұшты ешбір сплайн бөлігі қоса алмайды
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Осы картаның openMapper көшірмесі контент қалтасында ашылды (OMSI 2 қалтасындағы карта өзгертілмейді)
+Read in again, changed on disk by another program:	Қайта жүктелді, дискіде басқа бағдарлама өзгертті:
+Could not bring the changes over	Өзгерістерді көшіру мүмкін болмады
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Карта файлдары осы автосақтаудан кейін өзгертілген (басқа бағдарлама, мысалы OMSI 2 редакторы). Қалпына келтіру автосақтаудағы ескі тайлдарды осы өзгерістердің үстіне қояды.
+tile(s)	тайл
+the global settings	жалпы баптаулар
+the timetable	кесте
+the traffic	қозғалыс
+the descriptions	сипаттамалар
+Reload from disk	Дискіден жүктеу
+The map changed on disk	Карта дискіде өзгерді
+Another program changed the map's files where it has changes here not saved yet:	Басқа бағдарлама карта файлдарын осында сақталмаған өзгерістер бар жерде өзгертті:
+The other changes made on disk were read in already.	Дискідегі қалған өзгерістер жүктеліп қойды.
+Keep mine	Менікін қалдыру
+The map changed in OMSI 2's folder	Карта OMSI 2 қалтасында өзгерді
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Осы картаның OMSI 2 орнатуындағы көшірмесі openMapper көшірмесі контент қалтасында сақталғаннан кейін өзгертілген, мысалы OMSI 2 редакторымен
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Көшіру openMapper көшірмесіндегі осы файлдарды ауыстырады; ауыстырылған файлдар сақтық көшірмеде қалады (Файл > Алдыңғы нұсқалар).
+Bring the changes over	Өзгерістерді көшіру
+Keep openMapper's copy	openMapper көшірмесін қалдыру

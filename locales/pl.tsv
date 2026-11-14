@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Te dwa końce już się stykają
 Select the splines whose free ends are to be joined	Zaznacz spline'y, których wolne końce mają zostać połączone
 No piece of spline can join these two ends	Żaden odcinek spline'u nie połączy tych dwóch końców
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Otwarto kopię tej mapy openMappera w folderze z zawartością (mapa w folderze OMSI 2 nigdy nie jest zapisywana)
+Read in again, changed on disk by another program:	Wczytano ponownie, zmienione na dysku przez inny program:
+Could not bring the changes over	Nie udało się przenieść zmian
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Pliki mapy zmieniono po tym autozapisie (innym programem, np. edytorem OMSI 2). Przywrócenie położy starsze kafelki z autozapisu na te zmiany.
+tile(s)	kafelek(-ki)
+the global settings	ustawienia globalne
+the timetable	rozkład jazdy
+the traffic	ruch
+the descriptions	opisy
+Reload from disk	Wczytaj ponownie z dysku
+The map changed on disk	Mapa zmieniła się na dysku
+Another program changed the map's files where it has changes here not saved yet:	Inny program zmienił pliki mapy tam, gdzie są tu niezapisane zmiany:
+The other changes made on disk were read in already.	Pozostałe zmiany z dysku zostały już wczytane.
+Keep mine	Zachowaj moje
+The map changed in OMSI 2's folder	Mapa zmieniła się w folderze OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopia tej mapy w instalacji została zmieniona po zapisaniu kopii openMappera w folderze z zawartością, np. edytorem OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Przeniesienie zmian zastąpi te pliki w kopii openMappera; zastąpione pliki zostają w kopii zapasowej (Plik > Wcześniejsze wersje).
+Bring the changes over	Przenieś zmiany
+Keep openMapper's copy	Zachowaj kopię openMappera

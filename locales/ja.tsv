@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	この二つの端はもうつながっています
 Select the splines whose free ends are to be joined	空いた端をつなぐスプラインを選択してください
 No piece of spline can join these two ends	この二つの端をつなげるスプラインの部品がありません
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	このマップの openMapper のコピーをコンテンツフォルダで開きました(OMSI 2 フォルダのものは書き換えません)
+Read in again, changed on disk by another program:	読み直しました。別のプログラムがディスク上で変更:
+Could not bring the changes over	変更を取り込めませんでした
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	この自動保存の後にマップのファイルが変更されています(別のプログラム、例えば OMSI 2 のエディタによる)。復元すると、自動保存の古いタイルがその変更の上に置かれます。
+tile(s)	タイル
+the global settings	全体設定
+the timetable	時刻表
+the traffic	交通
+the descriptions	説明
+Reload from disk	ディスクから再読み込み
+The map changed on disk	マップがディスク上で変更されました
+Another program changed the map's files where it has changes here not saved yet:	ここに未保存の変更がある部分のマップファイルを、別のプログラムが変更しました:
+The other changes made on disk were read in already.	ディスク上のその他の変更は読み込み済みです。
+Keep mine	自分の変更を残す
+The map changed in OMSI 2's folder	OMSI 2 フォルダでマップが変更されました
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	コンテンツフォルダの openMapper のコピーを保存した後に、インストール先のこのマップが変更されました(例えば OMSI 2 のエディタで)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	取り込むと openMapper のコピーのそれらのファイルが置き換わります。置き換えられたファイルはバックアップに残ります(ファイル > 以前のバージョン)。
+Bring the changes over	変更を取り込む
+Keep openMapper's copy	openMapper のコピーを残す

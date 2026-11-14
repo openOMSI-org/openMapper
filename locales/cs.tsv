@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Tyto dva konce se už stýkají
 Select the splines whose free ends are to be joined	Vyberte spliny, jejichž volné konce se mají spojit
 No piece of spline can join these two ends	Žádný kus splinu tyto dva konce nespojí
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Otevřena kopie této mapy od openMapperu ve složce obsahu (mapa ve složce OMSI 2 se nikdy nezapisuje)
+Read in again, changed on disk by another program:	Načteno znovu, změněno na disku jiným programem:
+Could not bring the changes over	Změny se nepodařilo převzít
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Soubory mapy byly změněny po tomto automatickém uložení (jiným programem, např. editorem OMSI 2). Obnovení položí starší dlaždice z uložení přes tyto změny.
+tile(s)	dlaždice
+the global settings	globální nastavení
+the timetable	jízdní řád
+the traffic	provoz
+the descriptions	popisy
+Reload from disk	Znovu načíst z disku
+The map changed on disk	Mapa se na disku změnila
+Another program changed the map's files where it has changes here not saved yet:	Jiný program změnil soubory mapy tam, kde jsou zde neuložené změny:
+The other changes made on disk were read in already.	Ostatní změny z disku už byly načteny.
+Keep mine	Ponechat moje
+The map changed in OMSI 2's folder	Mapa se změnila ve složce OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopie této mapy v instalaci byla změněna po uložení kopie openMapperu ve složce obsahu, např. editorem OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Převzetí změn nahradí tyto soubory v kopii openMapperu; nahrazené soubory zůstanou v záloze (Soubor > Dřívější verze).
+Bring the changes over	Převzít změny
+Keep openMapper's copy	Ponechat kopii openMapperu

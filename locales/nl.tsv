@@ -2825,3 +2825,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	De twee uiteinden raken elkaar al
 Select the splines whose free ends are to be joined	Selecteer de splines waarvan de vrije uiteinden verbonden moeten worden
 No piece of spline can join these two ends	Geen stuk spline kan deze twee uiteinden verbinden
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	openMappers kopie van deze kaart in de inhoudsmap geopend (die in de OMSI 2-map wordt nooit beschreven)
+Read in again, changed on disk by another program:	Opnieuw ingelezen, op schijf gewijzigd door een ander programma:
+Could not bring the changes over	De wijzigingen konden niet worden overgenomen
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	De bestanden van de kaart zijn na deze automatische opslag gewijzigd (door een ander programma, zoals de OMSI 2-editor). Herstellen legt de oudere tegels uit de opslag over die wijzigingen.
+tile(s)	tegel(s)
+the global settings	de algemene instellingen
+the timetable	de dienstregeling
+the traffic	het verkeer
+the descriptions	de beschrijvingen
+Reload from disk	Opnieuw laden van schijf
+The map changed on disk	De kaart is op schijf gewijzigd
+Another program changed the map's files where it has changes here not saved yet:	Een ander programma heeft bestanden van de kaart gewijzigd waar hier niet-opgeslagen wijzigingen zijn:
+The other changes made on disk were read in already.	De overige wijzigingen op schijf zijn al ingelezen.
+Keep mine	Mijne behouden
+The map changed in OMSI 2's folder	De kaart is gewijzigd in de OMSI 2-map
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	De kopie van deze kaart in de installatie is gewijzigd nadat openMappers kopie in de inhoudsmap was opgeslagen, bijvoorbeeld door de OMSI 2-editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Overnemen vervangt die bestanden in openMappers kopie; de vervangen bestanden blijven bewaard in een back-up (Bestand > Eerdere versies).
+Bring the changes over	Wijzigingen overnemen
+Keep openMapper's copy	openMappers kopie behouden

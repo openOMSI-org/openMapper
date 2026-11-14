@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Hai đầu đã gặp nhau
 Select the splines whose free ends are to be joined	Chọn các spline có đầu tự do cần nối
 No piece of spline can join these two ends	Không đoạn spline nào nối được hai đầu này
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Đã mở bản sao của openMapper cho bản đồ này trong thư mục nội dung (bản trong thư mục OMSI 2 không bao giờ bị ghi)
+Read in again, changed on disk by another program:	Đã đọc lại, bị chương trình khác thay đổi trên đĩa:
+Could not bring the changes over	Không thể đưa các thay đổi sang
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Các tệp của bản đồ đã bị thay đổi sau lần tự lưu này (bởi chương trình khác, ví dụ trình soạn thảo OMSI 2). Khôi phục sẽ đặt các ô cũ hơn của bản tự lưu lên trên những thay đổi đó.
+tile(s)	ô
+the global settings	cài đặt chung
+the timetable	thời gian biểu
+the traffic	giao thông
+the descriptions	mô tả
+Reload from disk	Tải lại từ đĩa
+The map changed on disk	Bản đồ đã thay đổi trên đĩa
+Another program changed the map's files where it has changes here not saved yet:	Một chương trình khác đã thay đổi tệp của bản đồ ở chỗ tại đây có thay đổi chưa lưu:
+The other changes made on disk were read in already.	Các thay đổi khác trên đĩa đã được đọc.
+Keep mine	Giữ của tôi
+The map changed in OMSI 2's folder	Bản đồ đã thay đổi trong thư mục OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Bản sao của bản đồ này trong bản cài đặt đã bị thay đổi sau khi bản sao của openMapper trong thư mục nội dung được lưu, ví dụ bởi trình soạn thảo OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Đưa thay đổi sang sẽ thay các tệp đó trong bản sao của openMapper; các tệp bị thay được giữ trong bản sao lưu (Tệp > Phiên bản cũ hơn).
+Bring the changes over	Đưa thay đổi sang
+Keep openMapper's copy	Giữ bản sao của openMapper

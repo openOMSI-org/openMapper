@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Kedua-dua hujung sudah bertemu
 Select the splines whose free ends are to be joined	Pilih spline yang hujung bebasnya hendak dicantum
 No piece of spline can join these two ends	Tiada keping spline yang dapat mencantum kedua-dua hujung ini
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Salinan openMapper peta ini dalam folder kandungan dibuka (yang dalam folder OMSI 2 tidak pernah ditulis)
+Read in again, changed on disk by another program:	Dibaca semula, diubah pada cakera oleh program lain:
+Could not bring the changes over	Tidak dapat membawa perubahan
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Fail peta diubah selepas simpan automatik ini (oleh program lain, contohnya editor OMSI 2). Memulihkan meletakkan jubin lama simpanan di atas perubahan itu.
+tile(s)	jubin
+the global settings	tetapan global
+the timetable	jadual waktu
+the traffic	trafik
+the descriptions	keterangan
+Reload from disk	Muat semula dari cakera
+The map changed on disk	Peta berubah pada cakera
+Another program changed the map's files where it has changes here not saved yet:	Program lain mengubah fail peta di bahagian yang di sini ada perubahan belum disimpan:
+The other changes made on disk were read in already.	Perubahan lain pada cakera sudah dibaca.
+Keep mine	Kekalkan milik saya
+The map changed in OMSI 2's folder	Peta berubah dalam folder OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Salinan peta ini dalam pemasangan diubah selepas salinan openMapper dalam folder kandungan disimpan, contohnya oleh editor OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Membawa perubahan menggantikan fail itu dalam salinan openMapper; fail yang diganti disimpan dalam sandaran (Fail > Versi terdahulu).
+Bring the changes over	Bawa perubahan
+Keep openMapper's copy	Kekalkan salinan openMapper

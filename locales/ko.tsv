@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	두 끝이 이미 만납니다
 Select the splines whose free ends are to be joined	빈 끝을 이을 스플라인을 선택하세요
 No piece of spline can join these two ends	이 두 끝을 이을 수 있는 스플라인 조각이 없습니다
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	이 맵의 openMapper 사본을 콘텐츠 폴더에서 열었습니다(OMSI 2 폴더의 맵은 절대 기록하지 않음)
+Read in again, changed on disk by another program:	다시 읽음, 다른 프로그램이 디스크에서 변경:
+Could not bring the changes over	변경 사항을 가져오지 못했습니다
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	이 자동 저장 이후 맵 파일이 변경되었습니다(다른 프로그램, 예: OMSI 2 편집기). 복원하면 자동 저장의 오래된 타일이 그 변경 위에 놓입니다.
+tile(s)	타일
+the global settings	전역 설정
+the timetable	시간표
+the traffic	교통
+the descriptions	설명
+Reload from disk	디스크에서 다시 불러오기
+The map changed on disk	디스크에서 맵이 변경됨
+Another program changed the map's files where it has changes here not saved yet:	여기에 저장하지 않은 변경이 있는 부분의 맵 파일을 다른 프로그램이 변경했습니다:
+The other changes made on disk were read in already.	디스크의 나머지 변경 사항은 이미 읽었습니다.
+Keep mine	내 것 유지
+The map changed in OMSI 2's folder	OMSI 2 폴더에서 맵이 변경됨
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	콘텐츠 폴더의 openMapper 사본을 저장한 뒤 설치 폴더의 이 맵이 변경되었습니다(예: OMSI 2 편집기)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	가져오면 openMapper 사본의 해당 파일이 바뀝니다. 바뀐 파일은 백업에 보관됩니다(파일 > 이전 버전).
+Bring the changes over	변경 사항 가져오기
+Keep openMapper's copy	openMapper 사본 유지

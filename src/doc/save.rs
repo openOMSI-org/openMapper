@@ -284,7 +284,7 @@ pub fn tile_file(k: TileKey) -> String {
 
 /// The file a tile is kept in: the one global.cfg named when the map was read (a tile not
 /// edited is not written again, and chrono folders name it so), else `tile_x_y.map`.
-fn file_of(doc: &Document, k: TileKey) -> String {
+pub(crate) fn file_of(doc: &Document, k: TileKey) -> String {
     doc.global.tiles.iter().find(|t| (t.x, t.y) == k).map(|t| t.file.clone()).unwrap_or_else(|| tile_file(k))
 }
 

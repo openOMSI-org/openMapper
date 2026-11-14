@@ -2822,3 +2822,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Die beiden Enden treffen sich schon
 Select the splines whose free ends are to be joined	Die Splines auswählen, deren freie Enden verbunden werden sollen
 No piece of spline can join these two ends	Kein Splinestück kann diese beiden Enden verbinden
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	openMappers Kopie dieser Karte im Inhaltsordner geöffnet (die im OMSI-2-Ordner wird nie geschrieben)
+Read in again, changed on disk by another program:	Neu eingelesen, auf der Festplatte von einem anderen Programm geändert:
+Could not bring the changes over	Die Änderungen konnten nicht übernommen werden
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Die Dateien der Karte wurden nach dieser automatischen Sicherung geändert (von einem anderen Programm, etwa dem OMSI-2-Editor). Die Wiederherstellung legt die älteren Kacheln der Sicherung über diese Änderungen.
+tile(s)	Kachel(n)
+the global settings	die globalen Einstellungen
+the timetable	den Fahrplan
+the traffic	den Verkehr
+the descriptions	die Beschreibungen
+Reload from disk	Von der Festplatte neu laden
+The map changed on disk	Die Karte wurde auf der Festplatte geändert
+Another program changed the map's files where it has changes here not saved yet:	Ein anderes Programm hat Dateien der Karte geändert, wo hier ungespeicherte Änderungen sind:
+The other changes made on disk were read in already.	Die übrigen Änderungen von der Festplatte wurden bereits eingelesen.
+Keep mine	Meine behalten
+The map changed in OMSI 2's folder	Die Karte wurde im OMSI-2-Ordner geändert
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Die Kopie dieser Karte in der Installation wurde geändert, nachdem openMappers Kopie im Inhaltsordner gespeichert wurde, etwa vom OMSI-2-Editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Die Übernahme ersetzt diese Dateien in openMappers Kopie; die ersetzten Dateien bleiben in einer Sicherung (Datei > Frühere Versionen).
+Bring the changes over	Änderungen übernehmen
+Keep openMapper's copy	openMappers Kopie behalten

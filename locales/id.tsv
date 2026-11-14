@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Kedua ujung sudah bertemu
 Select the splines whose free ends are to be joined	Pilih spline yang ujung bebasnya akan disambung
 No piece of spline can join these two ends	Tidak ada bagian spline yang dapat menyambung kedua ujung ini
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Salinan openMapper dari peta ini di folder konten dibuka (yang ada di folder OMSI 2 tidak pernah ditulis)
+Read in again, changed on disk by another program:	Dibaca ulang, diubah di disk oleh program lain:
+Could not bring the changes over	Tidak dapat membawa perubahan
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	File peta diubah setelah simpan otomatis ini (oleh program lain, misalnya editor OMSI 2). Memulihkan menaruh tile lama dari simpanan di atas perubahan itu.
+tile(s)	tile
+the global settings	pengaturan global
+the timetable	jadwal
+the traffic	lalu lintas
+the descriptions	deskripsi
+Reload from disk	Muat ulang dari disk
+The map changed on disk	Peta berubah di disk
+Another program changed the map's files where it has changes here not saved yet:	Program lain mengubah file peta di bagian yang di sini punya perubahan belum disimpan:
+The other changes made on disk were read in already.	Perubahan lain di disk sudah dibaca.
+Keep mine	Simpan milik saya
+The map changed in OMSI 2's folder	Peta berubah di folder OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Salinan peta ini di instalasi diubah setelah salinan openMapper di folder konten disimpan, misalnya oleh editor OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Membawa perubahan mengganti file itu di salinan openMapper; file yang diganti disimpan dalam cadangan (File > Versi sebelumnya).
+Bring the changes over	Bawa perubahan
+Keep openMapper's copy	Simpan salinan openMapper

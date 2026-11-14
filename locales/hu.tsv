@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	A két vég már találkozik
 Select the splines whose free ends are to be joined	Jelölje ki azokat a spline-okat, amelyek szabad végeit össze kell kötni
 No piece of spline can join these two ends	Egyetlen spline-darab sem kötheti össze ezt a két véget
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Megnyitva az openMapper másolata erről a térképről a tartalommappában (az OMSI 2 mappájában lévőt sosem írja)
+Read in again, changed on disk by another program:	Újra beolvasva, egy másik program módosította a lemezen:
+Could not bring the changes over	Nem sikerült átvenni a módosításokat
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	A térkép fájljai ezen automatikus mentés után módosultak (egy másik programmal, pl. az OMSI 2 szerkesztőjével). A visszaállítás a mentés régebbi csempéit teszi e módosítások fölé.
+tile(s)	csempe
+the global settings	a globális beállítások
+the timetable	a menetrend
+the traffic	a forgalom
+the descriptions	a leírások
+Reload from disk	Újratöltés lemezről
+The map changed on disk	A térkép megváltozott a lemezen
+Another program changed the map's files where it has changes here not saved yet:	Egy másik program módosította a térkép fájljait ott, ahol itt nem mentett módosítások vannak:
+The other changes made on disk were read in already.	A lemez többi módosítása már be lett olvasva.
+Keep mine	Az enyém marad
+The map changed in OMSI 2's folder	A térkép megváltozott az OMSI 2 mappájában
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	A térkép telepítésbeli másolata módosult, miután az openMapper másolata a tartalommappában el lett mentve, pl. az OMSI 2 szerkesztőjével
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Az átvétel lecseréli ezeket a fájlokat az openMapper másolatában; a lecserélt fájlok biztonsági mentésbe kerülnek (Fájl > Korábbi verziók).
+Bring the changes over	Módosítások átvétele
+Keep openMapper's copy	Az openMapper másolata marad

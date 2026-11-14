@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Гэтыя два канцы ўжо сыходзяцца
 Select the splines whose free ends are to be joined	Выберыце сплайны, свабодныя канцы якіх трэба злучыць
 No piece of spline can join these two ends	Ніякі кавалак сплайна не злучыць гэтыя два канцы
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Адкрыта копія гэтай карты openMapper у тэчцы змесціва (карта ў тэчцы OMSI 2 не змяняецца)
+Read in again, changed on disk by another program:	Загружана нанова, зменена на дыску іншай праграмай:
+Could not bring the changes over	Не ўдалося перанесці змены
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Файлы карты зменены пасля гэтага аўтазахавання (іншай праграмай, напрыклад рэдактарам OMSI 2). Аднаўленне пакладзе старыя тайлы з аўтазахавання па-над гэтымі зменамі.
+tile(s)	тайл(аў)
+the global settings	агульныя налады
+the timetable	расклад
+the traffic	рух
+the descriptions	апісанні
+Reload from disk	Загрузіць з дыска
+The map changed on disk	Карта змянілася на дыску
+Another program changed the map's files where it has changes here not saved yet:	Іншая праграма змяніла файлы карты там, дзе тут ёсць незахаваныя змены:
+The other changes made on disk were read in already.	Астатнія змены з дыска ўжо загружаны.
+Keep mine	Пакінуць мае
+The map changed in OMSI 2's folder	Карта змянілася ў тэчцы OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Копія гэтай карты ва ўсталёўцы OMSI 2 зменена пасля захавання копіі openMapper у тэчцы змесціва, напрыклад рэдактарам OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Перанос заменіць гэтыя файлы ў копіі openMapper; замененыя файлы захоўваюцца ў рэзервовай копіі (Файл > Ранейшыя версіі).
+Bring the changes over	Перанесці змены
+Keep openMapper's copy	Пакінуць копію openMapper

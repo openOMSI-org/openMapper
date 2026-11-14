@@ -123,6 +123,7 @@ mod ui_roads;
 mod ui_tex;
 mod ui_script;
 mod ui_stops;
+mod ui_sync;
 mod ui_newmap;
 mod trace;
 mod translit;

@@ -180,6 +180,8 @@ pub enum Action {
     /// Put the map's folder back as it was before the save kept in this backup (and the
     /// later ones), then open it again.
     RestoreBackup(PathBuf),
+    /// File > Reload from disk: the map read again from its files.
+    ReloadFromDisk,
     /// Open or close the Traffic and AI window.
     Traffic,
     /// Open or close the Satellite and terrain window.
@@ -904,6 +906,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 ui.separator();
                 if menu_item(ui, Some(Icon::Save), tr("Save", "Сохранить"), "Ctrl+S", true) {
                     actions.push(Action::Save);
+                }
+                if menu_item(ui, None, tr("Reload from disk", "Загрузить с диска"), "", ed.doc.as_ref().map(|d| !d.fresh).unwrap_or(false)) {
+                    actions.push(Action::ReloadFromDisk);
                 }
                 if menu_item(ui, Some(Icon::Copy), tr("Export map for sharing…", "Экспорт карты для обмена…"), "", true) {
                     actions.push(Action::Export);

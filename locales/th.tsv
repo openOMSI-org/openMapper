@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	ปลายทั้งสองบรรจบกันอยู่แล้ว
 Select the splines whose free ends are to be joined	เลือกสไปลน์ที่ต้องการต่อปลายว่าง
 No piece of spline can join these two ends	ไม่มีชิ้นสไปลน์ใดต่อปลายทั้งสองนี้ได้
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	เปิดสำเนาของ openMapper สำหรับแผนที่นี้ในโฟลเดอร์เนื้อหาแล้ว (แผนที่ในโฟลเดอร์ OMSI 2 จะไม่ถูกเขียนทับ)
+Read in again, changed on disk by another program:	อ่านใหม่แล้ว โปรแกรมอื่นเปลี่ยนบนดิสก์:
+Could not bring the changes over	ไม่สามารถนำการเปลี่ยนแปลงมาได้
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	ไฟล์ของแผนที่ถูกเปลี่ยนหลังการบันทึกอัตโนมัตินี้ (โดยโปรแกรมอื่น เช่น ตัวแก้ไขของ OMSI 2) การกู้คืนจะวางไทล์ที่เก่ากว่าจากการบันทึกทับการเปลี่ยนแปลงเหล่านั้น
+tile(s)	ไทล์
+the global settings	การตั้งค่าทั่วไป
+the timetable	ตารางเวลา
+the traffic	การจราจร
+the descriptions	คำอธิบาย
+Reload from disk	โหลดใหม่จากดิสก์
+The map changed on disk	แผนที่เปลี่ยนบนดิสก์
+Another program changed the map's files where it has changes here not saved yet:	โปรแกรมอื่นเปลี่ยนไฟล์ของแผนที่ในส่วนที่ที่นี่มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก:
+The other changes made on disk were read in already.	อ่านการเปลี่ยนแปลงอื่นบนดิสก์แล้ว
+Keep mine	เก็บของฉันไว้
+The map changed in OMSI 2's folder	แผนที่เปลี่ยนในโฟลเดอร์ OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	สำเนาของแผนที่นี้ในการติดตั้งถูกเปลี่ยนหลังจากบันทึกสำเนาของ openMapper ในโฟลเดอร์เนื้อหาแล้ว เช่น โดยตัวแก้ไขของ OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	การนำการเปลี่ยนแปลงมาจะแทนที่ไฟล์เหล่านั้นในสำเนาของ openMapper ไฟล์ที่ถูกแทนที่จะเก็บไว้ในข้อมูลสำรอง (ไฟล์ > เวอร์ชันก่อนหน้า)
+Bring the changes over	นำการเปลี่ยนแปลงมา
+Keep openMapper's copy	เก็บสำเนาของ openMapper

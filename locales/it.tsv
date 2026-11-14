@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Le due estremità si incontrano già
 Select the splines whose free ends are to be joined	Seleziona le spline di cui unire le estremità libere
 No piece of spline can join these two ends	Nessun pezzo di spline può unire queste due estremità
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Aperta la copia di openMapper di questa mappa nella cartella dei contenuti (quella nella cartella di OMSI 2 non viene mai scritta)
+Read in again, changed on disk by another program:	Riletto, modificato su disco da un altro programma:
+Could not bring the changes over	Impossibile portare le modifiche
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	I file della mappa sono stati modificati dopo questo salvataggio automatico (da un altro programma, ad esempio l'editor di OMSI 2). Il ripristino mette le tile più vecchie del salvataggio sopra quelle modifiche.
+tile(s)	tile
+the global settings	le impostazioni globali
+the timetable	l'orario
+the traffic	il traffico
+the descriptions	le descrizioni
+Reload from disk	Ricarica dal disco
+The map changed on disk	La mappa è cambiata su disco
+Another program changed the map's files where it has changes here not saved yet:	Un altro programma ha modificato file della mappa dove qui ci sono modifiche non salvate:
+The other changes made on disk were read in already.	Le altre modifiche su disco sono già state rilette.
+Keep mine	Tieni le mie
+The map changed in OMSI 2's folder	La mappa è cambiata nella cartella di OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	La copia di questa mappa nell'installazione è stata modificata dopo il salvataggio della copia di openMapper nella cartella dei contenuti, ad esempio dall'editor di OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Portare le modifiche sostituisce quei file della copia di openMapper; i file sostituiti restano in un backup (File > Versioni precedenti).
+Bring the changes over	Porta le modifiche
+Keep openMapper's copy	Tieni la copia di openMapper

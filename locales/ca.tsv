@@ -2824,3 +2824,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	Els dos extrems ja es troben
 Select the splines whose free ends are to be joined	Selecciona les splines els extrems lliures de les quals s'han d'unir
 No piece of spline can join these two ends	Cap tram de spline no pot unir aquests dos extrems
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	S'ha obert la còpia d'openMapper d'aquest mapa a la carpeta de contingut (la de la carpeta d'OMSI 2 no s'escriu mai)
+Read in again, changed on disk by another program:	Llegit de nou, canviat al disc per un altre programa:
+Could not bring the changes over	No s'han pogut portar els canvis
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Els fitxers del mapa es van canviar després d'aquest desament automàtic (per un altre programa, com l'editor d'OMSI 2). Restaurar posa les caselles antigues del desament sobre aquests canvis.
+tile(s)	casella(es)
+the global settings	la configuració global
+the timetable	l'horari
+the traffic	el trànsit
+the descriptions	les descripcions
+Reload from disk	Torna a carregar des del disc
+The map changed on disk	El mapa ha canviat al disc
+Another program changed the map's files where it has changes here not saved yet:	Un altre programa ha canviat fitxers del mapa on aquí hi ha canvis sense desar:
+The other changes made on disk were read in already.	La resta de canvis del disc ja s'han llegit.
+Keep mine	Conserva els meus
+The map changed in OMSI 2's folder	El mapa ha canviat a la carpeta d'OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	La còpia d'aquest mapa a la instal·lació es va canviar després de desar la còpia d'openMapper a la carpeta de contingut, per exemple amb l'editor d'OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Portar els canvis substitueix aquests fitxers de la còpia d'openMapper; els fitxers substituïts es guarden en una còpia de seguretat (Fitxer > Versions anteriors).
+Bring the changes over	Porta els canvis
+Keep openMapper's copy	Conserva la còpia d'openMapper

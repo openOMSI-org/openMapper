@@ -2820,3 +2820,22 @@ A new piece of the first selected spline's type between two free ends of the sel
 The two ends already meet	這兩端已經相接
 Select the splines whose free ends are to be joined	請選擇要接合空端的Spline
 No piece of spline can join these two ends	沒有任何Spline段能接合這兩端
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	已在內容資料夾中開啟此地圖的 openMapper 副本(OMSI 2 資料夾中的地圖從不寫入)
+Read in again, changed on disk by another program:	已重新讀取,磁碟上被其他程式變更:
+Could not bring the changes over	無法匯入變更
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	此自動儲存之後,地圖檔案已被變更(由其他程式,例如 OMSI 2 編輯器)。還原會把自動儲存中較舊的地塊覆蓋到這些變更之上。
+tile(s)	地塊
+the global settings	全域設定
+the timetable	時刻表
+the traffic	交通
+the descriptions	描述
+Reload from disk	從磁碟重新載入
+The map changed on disk	地圖在磁碟上已變更
+Another program changed the map's files where it has changes here not saved yet:	其他程式變更了地圖檔案,而此處這些部分有未儲存的變更:
+The other changes made on disk were read in already.	磁碟上的其他變更已讀取。
+Keep mine	保留我的
+The map changed in OMSI 2's folder	地圖在 OMSI 2 資料夾中已變更
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	在內容資料夾中儲存 openMapper 副本之後,安裝目錄中的此地圖被變更了(例如由 OMSI 2 編輯器)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	匯入變更會取代 openMapper 副本中的這些檔案;被取代的檔案保存在備份中(檔案 > 先前的版本)。
+Bring the changes over	匯入變更
+Keep openMapper's copy	保留 openMapper 副本
