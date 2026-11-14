@@ -401,7 +401,7 @@ pub fn bay_type(assets: &mut crate::assets::Assets, content: &std::path::Path, m
     let side = bay_side(&main, mirrored, left_hand);
     let text = omsi_cfg::vfs::read_text(&assets.resolve(main_rel)).map_err(|e| e.to_string())?;
     let sli = bay_sli(&text, side, width).ok_or_else(|| "the road type has no roadway to widen".to_string())?;
-    let stem: String = std::path::Path::new(&main_rel.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let stem: String = std::path::Path::new(&main_rel.replace('\\', "/")).file_stem().map(|s| crate::translit::file_name(&s.to_string_lossy())).unwrap_or_default();
     let name = format!("{stem}_bay_{}_{:.1}m", side.name(), width);
     let dir = content.join("Splines").join("openMapper");
     let tex_dir = dir.join("texture");

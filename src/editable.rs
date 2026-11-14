@@ -179,9 +179,9 @@ pub fn load(roots: &Roots, rel: &str) -> Option<Source> {
     serde_json::from_str(&text).map_err(|e| log::warn!("{rel}: {e}")).ok()
 }
 
-/// A file name of letters, digits, `_` and `-`.
+/// A file name of ASCII letters, digits, `_` and `-`.
 pub fn safe_name(name: &str) -> String {
-    let s: String = name.trim().chars().map(|c| if c.is_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect();
+    let s = crate::translit::file_name(name);
     if s.is_empty() {
         "Object".into()
     } else {
