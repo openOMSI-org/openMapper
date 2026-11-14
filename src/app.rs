@@ -3882,6 +3882,28 @@ impl ApplicationHandler for App {
                 }
                 self.keys.alt = alt;
             }
+            WindowEvent::Focused(_) => {
+                // (keys and buttons let go of in another window, after Alt + Tab, never come
+                // up here: the camera would fly on by itself. Whatever was held is let go of)
+                self.keys = Keys::default();
+                self.ed.ctrl_held = false;
+                self.ed.shift_held = false;
+                self.ed.straight_lock = false;
+                self.mouse.right = false;
+                self.mouse.middle = false;
+                self.mouse.grab = false;
+                self.mouse.alt_orbit = false;
+                self.mouse.grab_anchor = None;
+                self.mouse.look_acc = (0.0, 0.0);
+                if self.mouse.look_raw {
+                    self.mouse.look_raw = false;
+                    let _ = g.window.set_cursor_grab(winit::window::CursorGrabMode::None);
+                    g.window.set_cursor_visible(true);
+                }
+            }
+            // (a key the system says is down as the window gets the focus: not one pressed
+            // here, and one stuck down in Windows would fly the camera at every start)
+            WindowEvent::KeyboardInput { event, is_synthetic: true, .. } if event.state == ElementState::Pressed => {}
             WindowEvent::KeyboardInput { event, .. } => {
                 let pressed = event.state == ElementState::Pressed;
                 let code = match event.physical_key {
