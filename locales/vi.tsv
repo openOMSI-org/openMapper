@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Đưa thay đổi sang sẽ thay các tệp đó trong bản sao của openMapper; các tệp bị thay được giữ trong bản sao lưu (Tệp > Phiên bản cũ hơn).
 Bring the changes over	Đưa thay đổi sang
 Keep openMapper's copy	Giữ bản sao của openMapper
+its way has a gap after path	đường đi của nó bị hở sau làn
+its way does not pass	đường đi của nó không qua
+On demand	Theo yêu cầu
+Not served (checkpoint)	Không phục vụ (điểm kiểm tra)
+Wait for departure time	Chờ giờ xuất bến
+Always + wait for departure time	Luôn luôn + chờ giờ xuất bến
+The bus stops only when somebody waits or wants to get off (the game's default)	Xe buýt chỉ dừng khi có người chờ hoặc muốn xuống (mặc định của game)
+The bus always stops here	Xe buýt luôn dừng ở đây
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Xe buýt chạy qua không dừng: điểm dừng chỉ đánh dấu đường đi (điểm kiểm tra)
+The bus stops only when it is early, and waits there for its departure time	Xe buýt chỉ dừng khi đến sớm, và chờ ở đó đến giờ xuất bến
+The bus always stops here, and when it is early it waits for its departure time	Xe buýt luôn dừng ở đây, và khi đến sớm thì chờ đến giờ xuất bến
+All trips	Tất cả chuyến
+Every trip of the map, those no tour drives too	Mọi chuyến của bản đồ, cả những chuyến không lượt nào chạy
+The line number the trip shows; the line of this number lists it among its trips	Số tuyến mà chuyến hiển thị; tuyến mang số này liệt kê nó trong các chuyến của mình
+Way picked by hand:	Đường đi chọn bằng tay:
+the paths picked do not pass this stop	các làn đã chọn không qua điểm dừng này
+Other trips	Chuyến khác
+The time profile this departure runs to	Hồ sơ thời gian mà giờ xuất bến này chạy theo
+Time profile	Hồ sơ thời gian
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Một chuyến có thể có nhiều hồ sơ (giờ cao điểm, ban đêm…): mỗi giờ xuất bến của lượt cho biết nó chạy theo hồ sơ nào
+The profile's name	Tên hồ sơ
+A new profile, a copy of this one	Hồ sơ mới, bản sao của hồ sơ này
+Delete this profile (its departures run to the first)	Xóa hồ sơ này (các giờ xuất bến của nó chạy theo hồ sơ đầu tiên)
+Times from stop to stop	Thời gian từ điểm dừng đến điểm dừng
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Có thể đặt thời gian từ điểm dừng trước ở mỗi điểm dừng: các thời gian sau đó dịch theo, và thời gian chuyến cũng vậy. Thời gian chưa đặt theo khoảng cách giữa các điểm cố định; ở điểm dừng cố định, xe buýt đến sớm sẽ chờ.
+From the stop before	Từ điểm dừng trước
+After departure	Sau khi xuất bến
+Minutes from the stop before to this one	Số phút từ điểm dừng trước đến điểm này
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Như trong trình soạn thảo của OMSI 2. Di chuột lên một lựa chọn để xem xe buýt làm gì.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Mọi chuyến của bản đồ, bất kể tuyến nào hiển thị hay lượt nào chạy. Chuyến không lượt nào chạy vẫn được giữ, và có thể sửa, giao cho một lượt hoặc xóa ở đây.
+trips	chuyến
+driven by no tour	không lượt nào chạy
+no tour	không có lượt
+departures	giờ xuất bến
+No path there: click a lane of a road (View > AI lanes shows them)	Không có làn ở đó: hãy bấm vào một làn của đường (Xem > Làn AI hiện chúng)
+Done picking paths	Xong chọn
+Pick the paths on the map	Chọn các làn trên bản đồ
+Choose the way yourself, path by path, as in OMSI 2's editor	Tự chọn đường đi, từng làn một, như trong trình soạn thảo của OMSI 2
+Find the way automatically	Tự động tìm đường đi
+Forget the paths picked: the way is found along the roads again	Quên các làn đã chọn: đường đi lại được tìm theo các con đường
+The paths were picked by hand: they are kept when the stops change.	Các làn đã được chọn bằng tay: chúng được giữ khi điểm dừng thay đổi.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Bấm vào các làn trong khung nhìn. Làn sau điểm cuối hoặc trước điểm đầu được thêm vào, cùng các làn dẫn tới nó; làn bên cạnh đường đi thay cho đoạn mà nó đi vòng (nhánh khác ở giao lộ); làn thuộc đường đi bị bỏ ra. Đường đi có thể bắt đầu trước điểm dừng đầu tiên và tiếp tục sau điểm cuối cùng.
+The way breaks after path	Đường đi bị đứt sau làn
+the paths do not join, the bus's GPS loses its way here in the game	các làn không nối nhau, GPS của xe buýt trong game bị lạc ở đây
+Paths of the way	Các làn của đường đi
+Cut before the first stop	Cắt trước điểm dừng đầu tiên
+Cut after the last stop	Cắt sau điểm dừng cuối cùng
+path	làn

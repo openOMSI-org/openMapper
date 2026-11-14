@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Trazer as alterações substitui esses arquivos da cópia do openMapper; os substituídos ficam num backup (Arquivo > Versões anteriores).
 Bring the changes over	Trazer as alterações
 Keep openMapper's copy	Manter a cópia do openMapper
+its way has a gap after path	seu caminho tem uma falha após o caminho
+its way does not pass	seu caminho não passa por
+On demand	Sob demanda
+Not served (checkpoint)	Não atendido (ponto de controle)
+Wait for departure time	Esperar a hora de partida
+Always + wait for departure time	Sempre + esperar a hora de partida
+The bus stops only when somebody waits or wants to get off (the game's default)	O ônibus só para se alguém espera ou quer descer (o padrão do jogo)
+The bus always stops here	O ônibus sempre para aqui
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	O ônibus passa sem parar: o ponto só marca o caminho (um ponto de controle)
+The bus stops only when it is early, and waits there for its departure time	O ônibus só para quando está adiantado, e espera ali a sua hora de partida
+The bus always stops here, and when it is early it waits for its departure time	O ônibus sempre para aqui, e quando está adiantado espera a sua hora de partida
+All trips	Todas as viagens
+Every trip of the map, those no tour drives too	Todas as viagens do mapa, também as que nenhuma escala faz
+The line number the trip shows; the line of this number lists it among its trips	O número de linha que a viagem mostra; a linha com esse número a lista entre suas viagens
+Way picked by hand:	Caminho escolhido à mão:
+the paths picked do not pass this stop	os caminhos escolhidos não passam por este ponto
+Other trips	Outras viagens
+The time profile this departure runs to	O perfil de tempos que esta partida segue
+Time profile	Perfil de tempos
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Uma viagem pode ter vários perfis (hora do rush, noite…): cada partida de uma escala diz qual segue
+The profile's name	O nome do perfil
+A new profile, a copy of this one	Um perfil novo, cópia deste
+Delete this profile (its departures run to the first)	Excluir este perfil (suas partidas seguem o primeiro)
+Times from stop to stop	Tempos de ponto a ponto
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	O tempo desde o ponto anterior pode ser definido em cada ponto: os tempos seguintes se deslocam, e o tempo da viagem com eles. Tempos não definidos seguem a distância entre os fixos; num ponto fixo, um ônibus adiantado espera.
+From the stop before	Desde o ponto anterior
+After departure	Após a partida
+Minutes from the stop before to this one	Minutos do ponto anterior até este
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Como no editor do OMSI 2. Passe o mouse sobre uma opção para ver o que o ônibus faz.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Todas as viagens do mapa, qualquer que seja a linha que as mostra ou a escala que as faz. Uma viagem que nenhuma escala faz é mantida, e pode ser editada, dada a uma escala ou excluída aqui.
+trips	viagens
+driven by no tour	sem nenhuma escala
+no tour	sem escala
+departures	partidas
+No path there: click a lane of a road (View > AI lanes shows them)	Nenhum caminho aí: clique numa faixa de uma estrada (Exibir > Faixas de IA as mostra)
+Done picking paths	Escolha concluída
+Pick the paths on the map	Escolher os caminhos no mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Escolha o percurso você mesmo, caminho a caminho, como no editor do OMSI 2
+Find the way automatically	Achar o caminho automaticamente
+Forget the paths picked: the way is found along the roads again	Esquecer os caminhos escolhidos: o percurso volta a ser achado pelas estradas
+The paths were picked by hand: they are kept when the stops change.	Os caminhos foram escolhidos à mão: são mantidos quando os pontos mudam.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Clique em caminhos na vista. Um após o fim ou antes do início é adicionado, com os caminhos até ele; um ao lado do percurso toma o lugar do trecho que contorna (outro ramo num cruzamento); um caminho do percurso é retirado. O percurso pode começar antes do primeiro ponto e seguir após o último.
+The way breaks after path	O percurso se interrompe após o caminho
+the paths do not join, the bus's GPS loses its way here in the game	os caminhos não se ligam, o GPS do ônibus se perde aqui no jogo
+Paths of the way	Caminhos do percurso
+Cut before the first stop	Cortar antes do primeiro ponto
+Cut after the last stop	Cortar após o último ponto
+path	caminho

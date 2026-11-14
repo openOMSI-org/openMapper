@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Membawa perubahan mengganti file itu di salinan openMapper; file yang diganti disimpan dalam cadangan (File > Versi sebelumnya).
 Bring the changes over	Bawa perubahan
 Keep openMapper's copy	Simpan salinan openMapper
+its way has a gap after path	rutenya terputus setelah jalur
+its way does not pass	rutenya tidak melewati
+On demand	Sesuai permintaan
+Not served (checkpoint)	Tidak dilayani (titik periksa)
+Wait for departure time	Tunggu waktu berangkat
+Always + wait for departure time	Selalu + tunggu waktu berangkat
+The bus stops only when somebody waits or wants to get off (the game's default)	Bus berhenti hanya jika ada yang menunggu atau ingin turun (bawaan game)
+The bus always stops here	Bus selalu berhenti di sini
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Bus lewat tanpa berhenti: halte hanya menandai rute (titik periksa)
+The bus stops only when it is early, and waits there for its departure time	Bus berhenti hanya jika datang lebih awal, dan menunggu di sana sampai waktu berangkatnya
+The bus always stops here, and when it is early it waits for its departure time	Bus selalu berhenti di sini, dan jika datang lebih awal ia menunggu waktu berangkatnya
+All trips	Semua perjalanan
+Every trip of the map, those no tour drives too	Setiap perjalanan di peta, juga yang tidak dijalani dinas mana pun
+The line number the trip shows; the line of this number lists it among its trips	Nomor jalur yang ditampilkan perjalanan; jalur dengan nomor ini mencantumkannya di antara perjalanannya
+Way picked by hand:	Rute dipilih manual:
+the paths picked do not pass this stop	jalur yang dipilih tidak melewati halte ini
+Other trips	Perjalanan lain
+The time profile this departure runs to	Profil waktu yang diikuti keberangkatan ini
+Time profile	Profil waktu
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Satu perjalanan bisa punya beberapa profil (jam sibuk, malam…): setiap keberangkatan dinas menyebut profil mana yang diikutinya
+The profile's name	Nama profil
+A new profile, a copy of this one	Profil baru, salinan profil ini
+Delete this profile (its departures run to the first)	Hapus profil ini (keberangkatannya mengikuti yang pertama)
+Times from stop to stop	Waktu dari halte ke halte
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Waktu dari halte sebelumnya bisa diatur di setiap halte: waktu sesudahnya ikut bergeser, begitu juga waktu perjalanan. Waktu yang tidak diatur mengikuti jarak antara yang tetap; di halte tetap, bus yang datang lebih awal menunggu.
+From the stop before	Dari halte sebelumnya
+After departure	Setelah berangkat
+Minutes from the stop before to this one	Menit dari halte sebelumnya ke halte ini
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Seperti di editor OMSI 2. Arahkan kursor ke pilihan untuk melihat apa yang dilakukan bus.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Setiap perjalanan di peta, jalur mana pun yang menampilkannya atau dinas mana pun yang menjalaninya. Perjalanan yang tidak dijalani dinas mana pun tetap disimpan, dan di sini bisa diedit, diberikan ke dinas, atau dihapus.
+trips	perjalanan
+driven by no tour	tanpa dinas
+no tour	tanpa dinas
+departures	keberangkatan
+No path there: click a lane of a road (View > AI lanes shows them)	Tidak ada jalur di situ: klik lajur sebuah jalan (Tampilan > Lajur AI menampilkannya)
+Done picking paths	Selesai memilih
+Pick the paths on the map	Pilih jalur di peta
+Choose the way yourself, path by path, as in OMSI 2's editor	Pilih rute sendiri, jalur demi jalur, seperti di editor OMSI 2
+Find the way automatically	Cari rute otomatis
+Forget the paths picked: the way is found along the roads again	Lupakan jalur yang dipilih: rute dicari lagi menyusuri jalan
+The paths were picked by hand: they are kept when the stops change.	Jalur dipilih manual: tetap disimpan saat halte berubah.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klik jalur di tampilan. Jalur setelah ujung atau sebelum awal ditambahkan, beserta jalur menuju ke sana; jalur di samping rute menggantikan bagian yang dikelilinginya (cabang lain di persimpangan); jalur dari rute dikeluarkan. Rute boleh dimulai sebelum halte pertama dan berlanjut setelah halte terakhir.
+The way breaks after path	Rute terputus setelah jalur
+the paths do not join, the bus's GPS loses its way here in the game	jalur tidak tersambung, GPS bus kehilangan arah di sini dalam game
+Paths of the way	Jalur dari rute
+Cut before the first stop	Potong sebelum halte pertama
+Cut after the last stop	Potong setelah halte terakhir
+path	jalur

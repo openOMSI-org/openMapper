@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Az átvétel lecseréli ezeket a fájlokat az openMapper másolatában; a lecserélt fájlok biztonsági mentésbe kerülnek (Fájl > Korábbi verziók).
 Bring the changes over	Módosítások átvétele
 Keep openMapper's copy	Az openMapper másolata marad
+its way has a gap after path	az útjában hézag van ez után az útvonal után:
+its way does not pass	az útja nem halad el emellett:
+On demand	Igény szerint
+Not served (checkpoint)	Nem szolgált ki (ellenőrzőpont)
+Wait for departure time	Várakozás az indulási időre
+Always + wait for departure time	Mindig + várakozás az indulási időre
+The bus stops only when somebody waits or wants to get off (the game's default)	A busz csak akkor áll meg, ha valaki vár vagy le akar szállni (a játék alapértéke)
+The bus always stops here	A busz itt mindig megáll
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	A busz megállás nélkül elhalad: a megálló csak az utat jelöli (ellenőrzőpont)
+The bus stops only when it is early, and waits there for its departure time	A busz csak akkor áll meg, ha korán jár, és ott megvárja az indulási idejét
+The bus always stops here, and when it is early it waits for its departure time	A busz itt mindig megáll, és ha korán jár, megvárja az indulási idejét
+All trips	Minden menet
+Every trip of the map, those no tour drives too	A térkép minden menete, azok is, amelyeket egy forda sem vezet
+The line number the trip shows; the line of this number lists it among its trips	A menet által mutatott vonalszám; az ilyen számú járat a menetei között sorolja fel
+Way picked by hand:	Kézzel választott út:
+the paths picked do not pass this stop	a választott útvonalak nem haladnak el e megálló mellett
+Other trips	Más menetek
+The time profile this departure runs to	Az időprofil, amely szerint ez az indulás megy
+Time profile	Időprofil
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Egy menetnek több profilja lehet (csúcsidő, éjszaka…): a forda minden indulása megmondja, melyik szerint megy
+The profile's name	A profil neve
+A new profile, a copy of this one	Új profil, ennek másolata
+Delete this profile (its departures run to the first)	Profil törlése (az indulásai az első szerint mennek)
+Times from stop to stop	Idők megállótól megállóig
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Minden megállónál megadható az előző megállótól mért idő: az utána következő idők vele tolódnak, és velük a menet ideje. A meg nem adott idők a rögzítettek közötti távolságot követik; rögzített megállóban a korán érkező busz vár.
+From the stop before	Az előző megállótól
+After departure	Indulás után
+Minutes from the stop before to this one	Percek az előző megállótól eddig
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Mint az OMSI 2 szerkesztőjében. Vidd az egeret egy lehetőség fölé, hogy lásd, mit tesz a busz.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	A térkép minden menete, bármelyik járat mutatja vagy bármelyik forda vezeti. Az a menet, amelyet egy forda sem vezet, megmarad, és itt szerkeszthető, fordához adható vagy törölhető.
+trips	menet
+driven by no tour	forda nélkül
+no tour	nincs forda
+departures	indulás
+No path there: click a lane of a road (View > AI lanes shows them)	Itt nincs útvonal: kattints egy út sávjára (Nézet > MI-sávok mutatja őket)
+Done picking paths	Kész a választással
+Pick the paths on the map	Útvonalak kiválasztása a térképen
+Choose the way yourself, path by path, as in OMSI 2's editor	Válaszd ki magad az utat, útvonalról útvonalra, mint az OMSI 2 szerkesztőjében
+Find the way automatically	Út automatikus keresése
+Forget the paths picked: the way is found along the roads again	A választott útvonalak elfelejtése: az út újra az utak mentén keresődik
+The paths were picked by hand: they are kept when the stops change.	Az útvonalakat kézzel választották: a megállók változásakor megmaradnak.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Kattints útvonalakra a nézetben. A vég után vagy a kezdet előtt lévő hozzáadódik, a hozzá vezető útvonalakkal együtt; az út melletti átveszi annak a szakasznak a helyét, amelyet megkerül (másik ág egy csomópontban); az út egy útvonala kikerül. Az út kezdődhet az első megálló előtt és folytatódhat az utolsó után.
+The way breaks after path	Az út megszakad ez után az útvonal után:
+the paths do not join, the bus's GPS loses its way here in the game	az útvonalak nem csatlakoznak, a busz GPS-e itt a játékban elveszti az utat
+Paths of the way	Az út útvonalai
+Cut before the first stop	Levágás az első megálló előtt
+Cut after the last stop	Levágás az utolsó megálló után
+path	útvonal

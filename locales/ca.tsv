@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Portar els canvis substitueix aquests fitxers de la còpia d'openMapper; els fitxers substituïts es guarden en una còpia de seguretat (Fitxer > Versions anteriors).
 Bring the changes over	Porta els canvis
 Keep openMapper's copy	Conserva la còpia d'openMapper
+its way has a gap after path	el seu camí té un buit després del camí
+its way does not pass	el seu camí no passa per
+On demand	A demanda
+Not served (checkpoint)	Sense servei (punt de control)
+Wait for departure time	Esperar l'hora de sortida
+Always + wait for departure time	Sempre + esperar l'hora de sortida
+The bus stops only when somebody waits or wants to get off (the game's default)	L'autobús només para si algú espera o vol baixar (el predeterminat del joc)
+The bus always stops here	L'autobús sempre para aquí
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	L'autobús passa sense parar: la parada només marca el camí (un punt de control)
+The bus stops only when it is early, and waits there for its departure time	L'autobús només para si va avançat, i hi espera la seva hora de sortida
+The bus always stops here, and when it is early it waits for its departure time	L'autobús sempre para aquí, i si va avançat espera la seva hora de sortida
+All trips	Tots els viatges
+Every trip of the map, those no tour drives too	Tots els viatges del mapa, també els que no fa cap torn
+The line number the trip shows; the line of this number lists it among its trips	El número de línia que mostra el viatge; la línia amb aquest número el mostra entre els seus viatges
+Way picked by hand:	Camí triat a mà:
+the paths picked do not pass this stop	els camins triats no passen per aquesta parada
+Other trips	Altres viatges
+The time profile this departure runs to	El perfil de temps que segueix aquesta sortida
+Time profile	Perfil de temps
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Un viatge pot tenir diversos perfils (hora punta, nit…): cada sortida d'un torn diu quin segueix
+The profile's name	El nom del perfil
+A new profile, a copy of this one	Un perfil nou, còpia d'aquest
+Delete this profile (its departures run to the first)	Elimina aquest perfil (les seves sortides segueixen el primer)
+Times from stop to stop	Temps de parada a parada
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	El temps des de la parada anterior es pot fixar a cada parada: els temps següents es desplacen, i amb ells el temps del viatge. Els temps no fixats segueixen la distància entre els fixats; en una parada fixada, un autobús avançat espera.
+From the stop before	Des de la parada anterior
+After departure	Després de la sortida
+Minutes from the stop before to this one	Minuts des de la parada anterior fins a aquesta
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Com a l'editor d'OMSI 2. Passeu el ratolí per una opció per veure què fa l'autobús.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Tots els viatges del mapa, sigui quina sigui la línia que els mostra o el torn que els fa. Un viatge que no fa cap torn es conserva, i aquí es pot editar, donar a un torn o eliminar.
+trips	viatges
+driven by no tour	sense cap torn
+no tour	sense torn
+departures	sortides
+No path there: click a lane of a road (View > AI lanes shows them)	Aquí no hi ha cap camí: feu clic a un carril d'una carretera (Visualitza > Carrils d'IA els mostra)
+Done picking paths	Fet
+Pick the paths on the map	Tria els camins al mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Trieu el camí vosaltres, camí a camí, com a l'editor d'OMSI 2
+Find the way automatically	Troba el camí automàticament
+Forget the paths picked: the way is found along the roads again	Oblida els camins triats: el camí es torna a trobar per les carreteres
+The paths were picked by hand: they are kept when the stops change.	Els camins s'han triat a mà: es conserven quan canvien les parades.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Feu clic a camins a la vista. Un després del final o abans de l'inici s'afegeix, amb els camins fins a ell; un al costat del recorregut ocupa el lloc del tram que envolta (una altra branca en una cruïlla); un camí del recorregut es treu. El recorregut pot començar abans de la primera parada i continuar després de l'última.
+The way breaks after path	El camí s'interromp després del camí
+the paths do not join, the bus's GPS loses its way here in the game	els camins no s'uneixen, el GPS de l'autobús s'hi perd en el joc
+Paths of the way	Camins del recorregut
+Cut before the first stop	Retalla abans de la primera parada
+Cut after the last stop	Retalla després de l'última parada
+path	camí

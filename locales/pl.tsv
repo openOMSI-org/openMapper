@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Przeniesienie zmian zastąpi te pliki w kopii openMappera; zastąpione pliki zostają w kopii zapasowej (Plik > Wcześniejsze wersje).
 Bring the changes over	Przenieś zmiany
 Keep openMapper's copy	Zachowaj kopię openMappera
+its way has a gap after path	jego trasa ma przerwę po ścieżce
+its way does not pass	jego trasa nie przechodzi przy
+On demand	Na żądanie
+Not served (checkpoint)	Nieobsługiwany (punkt kontrolny)
+Wait for departure time	Czekaj na godzinę odjazdu
+Always + wait for departure time	Zawsze + czekaj na godzinę odjazdu
+The bus stops only when somebody waits or wants to get off (the game's default)	Autobus zatrzymuje się tylko, gdy ktoś czeka lub chce wysiąść (domyślnie w grze)
+The bus always stops here	Autobus zawsze się tu zatrzymuje
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Autobus przejeżdża bez zatrzymania: przystanek tylko wyznacza trasę (punkt kontrolny)
+The bus stops only when it is early, and waits there for its departure time	Autobus zatrzymuje się tylko, gdy jest przed czasem, i czeka tam na godzinę odjazdu
+The bus always stops here, and when it is early it waits for its departure time	Autobus zawsze się tu zatrzymuje, a gdy jest przed czasem, czeka na godzinę odjazdu
+All trips	Wszystkie kursy
+Every trip of the map, those no tour drives too	Każdy kurs mapy, także te, których nie jeździ żadna brygada
+The line number the trip shows; the line of this number lists it among its trips	Numer linii, który pokazuje kurs; linia o tym numerze pokazuje go wśród swoich kursów
+Way picked by hand:	Trasa wybrana ręcznie:
+the paths picked do not pass this stop	wybrane ścieżki nie przechodzą przy tym przystanku
+Other trips	Inne kursy
+The time profile this departure runs to	Profil czasowy, według którego jedzie ten odjazd
+Time profile	Profil czasowy
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Kurs może mieć kilka profili (szczyt, noc…): każdy odjazd brygady mówi, według którego jedzie
+The profile's name	Nazwa profilu
+A new profile, a copy of this one	Nowy profil, kopia tego
+Delete this profile (its departures run to the first)	Usuń ten profil (jego odjazdy pojadą według pierwszego)
+Times from stop to stop	Czasy od przystanku do przystanku
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Przy każdym przystanku można ustawić czas od poprzedniego: kolejne czasy przesuwają się, a z nimi czas kursu. Nieustawione czasy wynikają z odległości między ustalonymi; na ustalonym przystanku autobus, który jest przed czasem, czeka.
+From the stop before	Od poprzedniego przystanku
+After departure	Po odjeździe
+Minutes from the stop before to this one	Minuty od poprzedniego przystanku do tego
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Jak w edytorze OMSI 2. Najedź na opcję, aby zobaczyć, co robi autobus.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Każdy kurs mapy, bez względu na to, która linia go pokazuje i która brygada go jeździ. Kurs, którego nie jeździ żadna brygada, zostaje zachowany: można go tu edytować, dać brygadzie lub usunąć.
+trips	kursów
+driven by no tour	bez brygady
+no tour	brak brygady
+departures	odjazdów
+No path there: click a lane of a road (View > AI lanes shows them)	Brak tu ścieżki: kliknij pas drogi (Widok > Pasy AI je pokazuje)
+Done picking paths	Gotowe
+Pick the paths on the map	Wybierz ścieżki na mapie
+Choose the way yourself, path by path, as in OMSI 2's editor	Wybierz trasę sam, ścieżka po ścieżce, jak w edytorze OMSI 2
+Find the way automatically	Znajdź trasę automatycznie
+Forget the paths picked: the way is found along the roads again	Zapomnij wybrane ścieżki: trasa znów zostanie znaleziona wzdłuż dróg
+The paths were picked by hand: they are kept when the stops change.	Ścieżki wybrano ręcznie: zostają, gdy zmieniają się przystanki.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klikaj ścieżki w widoku. Ścieżka za końcem lub przed początkiem zostaje dodana wraz ze ścieżkami do niej; ścieżka obok trasy zastępuje odcinek, który omija (inna gałąź na skrzyżowaniu); ścieżka z trasy zostaje usunięta. Trasa może zaczynać się przed pierwszym przystankiem i biec dalej za ostatnim.
+The way breaks after path	Trasa urywa się po ścieżce
+the paths do not join, the bus's GPS loses its way here in the game	ścieżki się nie łączą, GPS autobusu gubi tu drogę w grze
+Paths of the way	Ścieżki trasy
+Cut before the first stop	Obetnij przed pierwszym przystankiem
+Cut after the last stop	Obetnij za ostatnim przystankiem
+path	ścieżka

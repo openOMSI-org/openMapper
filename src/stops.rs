@@ -117,14 +117,30 @@ impl StopKind {
         }
     }
 
-    /// The kind a station's `[profile_otherstopping]` value stands for.
+    /// What a station's `[profile_otherstopping]` value has the bus do, in OMSI 2's words.
     pub fn of_serve(v: i32) -> Option<&'static str> {
         match v {
-            0 => Some(tr("when wanted", "по требованию")),
-            1 | 4 => Some(tr("always", "всегда")),
-            2 => Some(tr("drive through", "проезжает")),
-            3 => Some(tr("when early", "если раньше")),
+            0 => Some(tr("On demand", "По требованию")),
+            1 => Some(tr("Always", "Всегда")),
+            2 => Some(tr("Not served (checkpoint)", "Не обслуживается (контрольная точка)")),
+            3 => Some(tr("Wait for departure time", "Ждать времени отправления")),
+            4 => Some(tr("Always + wait for departure time", "Всегда + ждать времени отправления")),
             _ => None,
+        }
+    }
+
+    /// The `[profile_otherstopping]` values in the order OMSI 2's editor lists them.
+    pub const SERVE: [i32; 5] = [1, 3, 2, 0, 4];
+
+    /// What the value does, said in full.
+    pub fn serve_hint(v: i32) -> &'static str {
+        match v {
+            0 => tr("The bus stops only when somebody waits or wants to get off (the game's default)", "Автобус останавливается, только если кто-то ждёт или хочет выйти (так по умолчанию в игре)"),
+            1 => tr("The bus always stops here", "Автобус всегда здесь останавливается"),
+            2 => tr("The bus drives past without stopping: the stop only marks the way (a checkpoint)", "Автобус проезжает, не останавливаясь: остановка лишь отмечает путь (контрольная точка)"),
+            3 => tr("The bus stops only when it is early, and waits there for its departure time", "Автобус останавливается, только если идёт раньше времени, и ждёт там времени отправления"),
+            4 => tr("The bus always stops here, and when it is early it waits for its departure time", "Автобус всегда здесь останавливается, а если раньше времени: ждёт времени отправления"),
+            _ => "",
         }
     }
 

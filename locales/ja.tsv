@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	取り込むと openMapper のコピーのそれらのファイルが置き換わります。置き換えられたファイルはバックアップに残ります(ファイル > 以前のバージョン)。
 Bring the changes over	変更を取り込む
 Keep openMapper's copy	openMapper のコピーを残す
+its way has a gap after path	経路に途切れがあります。この後のパス：
+its way does not pass	経路が通らない停留所：
+On demand	要求時
+Not served (checkpoint)	通過（チェックポイント）
+Wait for departure time	発車時刻まで待つ
+Always + wait for departure time	常に + 発車時刻まで待つ
+The bus stops only when somebody waits or wants to get off (the game's default)	誰かが待っているか降りたい時だけ停車します（ゲームの既定）
+The bus always stops here	ここでは常に停車します
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	停車せずに通過します：停留所は経路を示すだけです（チェックポイント）
+The bus stops only when it is early, and waits there for its departure time	早着した時だけ停車し、発車時刻まで待ちます
+The bus always stops here, and when it is early it waits for its departure time	ここでは常に停車し、早着した時は発車時刻まで待ちます
+All trips	すべての便
+Every trip of the map, those no tour drives too	マップのすべての便（どの行路も走らない便も含む）
+The line number the trip shows; the line of this number lists it among its trips	便が表示する系統番号。この番号の系統は自分の便の中にこの便を表示します
+Way picked by hand:	手動で選んだ経路：
+the paths picked do not pass this stop	選んだパスがこの停留所を通りません
+Other trips	その他の便
+The time profile this departure runs to	この出発が従う時間プロファイル
+Time profile	時間プロファイル
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	便は複数のプロファイル（ラッシュ時、夜間…）を持てます。行路の各出発がどれに従うかを指定します
+The profile's name	プロファイル名
+A new profile, a copy of this one	新しいプロファイル（これのコピー）
+Delete this profile (its departures run to the first)	このプロファイルを削除（その出発は最初のプロファイルに従います）
+Times from stop to stop	停留所間の時間
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	各停留所で前の停留所からの時間を設定できます。以降の時間はずれ、便の所要時間も一緒に変わります。設定していない時間は固定した停留所間の距離に従います。固定した停留所では、早着したバスが待ちます。
+From the stop before	前の停留所から
+After departure	出発後
+Minutes from the stop before to this one	前の停留所からここまでの分
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2のエディタと同じです。選択肢にマウスを重ねると、バスの動きが表示されます。
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	マップのすべての便（どの系統が表示し、どの行路が走るかを問わず）。どの行路も走らない便も残り、ここで編集したり、行路に割り当てたり、削除したりできます。
+trips	便
+driven by no tour	行路なし
+no tour	行路なし
+departures	出発
+No path there: click a lane of a road (View > AI lanes shows them)	ここにパスはありません：道路の車線をクリックしてください（表示 > AI車線 で表示）
+Done picking paths	選択完了
+Pick the paths on the map	マップでパスを選択
+Choose the way yourself, path by path, as in OMSI 2's editor	OMSI 2のエディタと同じく、パスを一つずつ選んで経路を自分で決めます
+Find the way automatically	経路を自動で探す
+Forget the paths picked: the way is found along the roads again	選んだパスを破棄：経路は再び道路に沿って探されます
+The paths were picked by hand: they are kept when the stops change.	パスは手動で選ばれました：停留所が変わってもそのまま残ります。
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	ビューでパスをクリックします。終点の後や始点の前のパスは、そこまでのパスと一緒に追加されます。経路の脇のパスは、それが迂回する区間と置き換わります（交差点の別の分岐）。経路上のパスは外されます。経路は最初の停留所より前から始まり、最後の停留所より後まで続けられます。
+The way breaks after path	経路が途切れています。この後のパス：
+the paths do not join, the bus's GPS loses its way here in the game	パスがつながっていないため、ゲーム内でバスのGPSがここで経路を見失います
+Paths of the way	経路のパス
+Cut before the first stop	最初の停留所より前を切る
+Cut after the last stop	最後の停留所より後を切る
+path	パス

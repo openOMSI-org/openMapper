@@ -17,7 +17,7 @@ const WRONG_SIDE: f64 = 25.0;
 /// Lanes a stop is tried on.
 const CANDIDATES: usize = 4;
 /// What changing to the lane beside costs (m).
-const LANE_CHANGE: f64 = 15.0;
+pub(crate) const LANE_CHANGE: f64 = 15.0;
 /// What driving a path against its direction costs: so many times its length and more.
 const AGAINST_FACTOR: f64 = 4.0;
 const AGAINST: f64 = 150.0;
@@ -59,6 +59,9 @@ pub struct Route {
     pub against: Vec<usize>,
     /// What it drives on.
     pub ways: Option<Ways>,
+    /// Its paths were picked by hand: the way runs on all of them, before the first stop
+    /// and after the last as well.
+    pub by_hand: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -69,6 +72,8 @@ pub enum Problem {
     NoRoad(usize),
     /// No way from this stop to the next.
     NoWay(usize),
+    /// The way picked by hand does not pass the stop (after the one before).
+    OffWay(usize),
 }
 
 impl Route {
@@ -83,6 +88,12 @@ impl Route {
     /// The route's line in the world, from the first stop to the last (for the view).
     pub fn polyline(&self, net: &Network) -> Vec<DVec3> {
         let mut out = Vec::new();
+        if self.by_hand {
+            for &l in &self.lanes {
+                out.extend(net.lanes[l].pts.iter().copied());
+            }
+            return out;
+        }
         let (first, last) = match (self.stops.first(), self.stops.last()) {
             (Some(a), Some(b)) => (*a, *b),
             _ => return out,

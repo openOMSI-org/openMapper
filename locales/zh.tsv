@@ -2839,3 +2839,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	导入更改会替换 openMapper 副本中的这些文件;被替换的文件保存在备份中(文件 > 早期版本)。
 Bring the changes over	导入更改
 Keep openMapper's copy	保留 openMapper 副本
+its way has a gap after path	其路线有断口，在路径之后：
+its way does not pass	其路线不经过
+On demand	按需停靠
+Not served (checkpoint)	不停靠（检查点）
+Wait for departure time	等待发车时间
+Always + wait for departure time	始终 + 等待发车时间
+The bus stops only when somebody waits or wants to get off (the game's default)	仅当有人等车或要下车时停靠（游戏默认）
+The bus always stops here	巴士总在此停靠
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	巴士不停驶过：该站只标记路线（检查点）
+The bus stops only when it is early, and waits there for its departure time	仅当巴士早到时停靠，并在此等到发车时间
+The bus always stops here, and when it is early it waits for its departure time	巴士总在此停靠，早到时等到发车时间
+All trips	所有班次
+Every trip of the map, those no tour drives too	地图上的所有班次，包括没有车次跑的
+The line number the trip shows; the line of this number lists it among its trips	班次显示的线路号；该号码的线路在其班次中列出它
+Way picked by hand:	手动选取的路线：
+the paths picked do not pass this stop	选取的路径不经过此站
+Other trips	其他班次
+The time profile this departure runs to	此发车所依照的时间配置
+Time profile	时间配置
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	一个班次可有多个配置（高峰、夜间…）：车次的每次发车注明依照哪一个
+The profile's name	配置名称
+A new profile, a copy of this one	新配置，复制此配置
+Delete this profile (its departures run to the first)	删除此配置（其发车改依第一个配置）
+Times from stop to stop	站间时间
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	可在每个站设置距上一站的时间：其后的时间随之移动，班次时长也一样。未设置的时间按固定站之间的距离分配；在固定站，早到的巴士会等待。
+From the stop before	距上一站
+After departure	发车后
+Minutes from the stop before to this one	从上一站到本站的分钟数
+As in OMSI 2's editor. Hover a choice to see what the bus does.	与 OMSI 2 编辑器相同。将鼠标悬停在选项上可查看巴士的行为。
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	地图上的所有班次，无论由哪条线路显示或哪个车次跑。没有车次跑的班次也会保留，可在此编辑、分配给车次或删除。
+trips	个班次
+driven by no tour	无车次
+no tour	无车次
+departures	次发车
+No path there: click a lane of a road (View > AI lanes shows them)	此处没有路径：请点击道路的车道（视图 > AI 车道 可显示车道）
+Done picking paths	选取完成
+Pick the paths on the map	在地图上选取路径
+Choose the way yourself, path by path, as in OMSI 2's editor	像 OMSI 2 编辑器那样，逐条选取路径来自己决定路线
+Find the way automatically	自动查找路线
+Forget the paths picked: the way is found along the roads again	忘掉选取的路径：重新沿道路查找路线
+The paths were picked by hand: they are kept when the stops change.	路径是手动选取的：站点改变时会保留。
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	在视图中点击路径。终点之后或起点之前的路径会连同通向它的路径一起添加；路线旁边的路径会取代它绕过的那一段（路口的另一分支）；路线上的路径会被移除。路线可以在第一站之前开始，并在最后一站之后继续。
+The way breaks after path	路线中断，在路径之后：
+the paths do not join, the bus's GPS loses its way here in the game	路径没有相连，游戏中巴士的 GPS 在此会迷路
+Paths of the way	路线的路径
+Cut before the first stop	剪掉第一站之前
+Cut after the last stop	剪掉最后一站之后
+path	路径

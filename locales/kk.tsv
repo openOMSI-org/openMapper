@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Көшіру openMapper көшірмесіндегі осы файлдарды ауыстырады; ауыстырылған файлдар сақтық көшірмеде қалады (Файл > Алдыңғы нұсқалар).
 Bring the changes over	Өзгерістерді көшіру
 Keep openMapper's copy	openMapper көшірмесін қалдыру
+its way has a gap after path	оның жолында мына жолдан кейін үзіліс бар:
+its way does not pass	оның жолы мына аялдаманың жанынан өтпейді:
+On demand	Сұраныс бойынша
+Not served (checkpoint)	Қызмет көрсетілмейді (бақылау нүктесі)
+Wait for departure time	Жөнелту уақытын күту
+Always + wait for departure time	Әрқашан + жөнелту уақытын күту
+The bus stops only when somebody waits or wants to get off (the game's default)	Автобус біреу күтсе немесе түскісі келсе ғана тоқтайды (ойындағы әдепкі)
+The bus always stops here	Автобус мұнда әрқашан тоқтайды
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Автобус тоқтамай өтеді: аялдама тек жолды белгілейді (бақылау нүктесі)
+The bus stops only when it is early, and waits there for its departure time	Автобус уақытынан ерте келсе ғана тоқтайды және сонда жөнелту уақытын күтеді
+The bus always stops here, and when it is early it waits for its departure time	Автобус мұнда әрқашан тоқтайды, ал ерте келсе жөнелту уақытын күтеді
+All trips	Барлық рейстер
+Every trip of the map, those no tour drives too	Картаның барлық рейстері, ешбір шығу жүрмейтіндері де
+The line number the trip shows; the line of this number lists it among its trips	Рейс көрсететін желі нөмірі; осы нөмірлі желі оны өз рейстерінің арасында көрсетеді
+Way picked by hand:	Жол қолмен таңдалған:
+the paths picked do not pass this stop	таңдалған жолдар бұл аялдаманың жанынан өтпейді
+Other trips	Басқа рейстер
+The time profile this departure runs to	Бұл жөнелтудің уақыт профилі
+Time profile	Уақыт профилі
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Рейстің бірнеше профилі болуы мүмкін (қарбалас уақыт, түн…): шығудың әр жөнелтуі қайсысымен жүретінін көрсетеді
+The profile's name	Профиль аты
+A new profile, a copy of this one	Жаңа профиль, осының көшірмесі
+Delete this profile (its departures run to the first)	Бұл профильді жою (оның жөнелтулері біріншісімен жүреді)
+Times from stop to stop	Аялдамадан аялдамаға дейінгі уақыт
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Әр аялдамада алдыңғысынан бергі уақытты беруге болады: кейінгі уақыттар жылжиды, олармен бірге рейс уақыты да. Берілмеген уақыттар бекітілгендердің арасындағы қашықтыққа сай болады; бекітілген аялдамада ерте келген автобус күтеді.
+From the stop before	Алдыңғы аялдамадан
+After departure	Жөнелтуден кейін
+Minutes from the stop before to this one	Алдыңғы аялдамадан осыған дейінгі минуттар
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 редакторындағыдай. Автобустың не істейтінін көру үшін нұсқаға меңзерді апарыңыз.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Картаның барлық рейстері, оларды қай желі көрсетсе де, қай шығу жүрсе де. Ешбір шығу жүрмейтін рейс сақталады: оны осы жерде өңдеуге, шығуға беруге немесе жоюға болады.
+trips	рейс
+driven by no tour	шығусыз
+no tour	шығу жоқ
+departures	жөнелту
+No path there: click a lane of a road (View > AI lanes shows them)	Мұнда жол жоқ: жолдың жолағын басыңыз (Көрініс > ЖИ жолақтары оларды көрсетеді)
+Done picking paths	Дайын
+Pick the paths on the map	Жолдарды картадан таңдау
+Choose the way yourself, path by path, as in OMSI 2's editor	Жолды өзіңіз таңдаңыз, жолма-жол, OMSI 2 редакторындағыдай
+Find the way automatically	Жолды автоматты түрде табу
+Forget the paths picked: the way is found along the roads again	Таңдалған жолдарды ұмыту: жол қайтадан көшелер бойымен табылады
+The paths were picked by hand: they are kept when the stops change.	Жолдар қолмен таңдалған: аялдамалар өзгергенде олар сақталады.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Көріністегі жолдарды басыңыз. Соңынан кейінгі немесе басынан алдыңғы жол оған дейінгі жолдармен бірге қосылады; маршрут жанындағы жол өзі айналып өтетін бөліктің орнын басады (қиылыстағы басқа тармақ); маршруттағы жол алынып тасталады. Маршрут бірінші аялдамаға дейін де, соңғысынан кейін де жүре алады.
+The way breaks after path	Жол мына жолдан кейін үзіледі:
+the paths do not join, the bus's GPS loses its way here in the game	жолдар жалғанбаған, ойында автобустың GPS-і мұнда бағытын жоғалтады
+Paths of the way	Маршрут жолдары
+Cut before the first stop	Бірінші аялдамаға дейін кесу
+Cut after the last stop	Соңғы аялдамадан кейін кесу
+path	жол

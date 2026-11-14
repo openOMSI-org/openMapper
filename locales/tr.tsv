@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Değişiklikleri aktarmak openMapper kopyasındaki bu dosyaları değiştirir; değiştirilen dosyalar bir yedekte tutulur (Dosya > Önceki sürümler).
 Bring the changes over	Değişiklikleri aktar
 Keep openMapper's copy	openMapper kopyasını tut
+its way has a gap after path	güzergâhında şu yoldan sonra boşluk var:
+its way does not pass	güzergâhı şuradan geçmiyor:
+On demand	İsteğe bağlı
+Not served (checkpoint)	Hizmet yok (kontrol noktası)
+Wait for departure time	Kalkış saatini bekle
+Always + wait for departure time	Her zaman + kalkış saatini bekle
+The bus stops only when somebody waits or wants to get off (the game's default)	Otobüs yalnızca biri bekliyorsa ya da inmek istiyorsa durur (oyunun varsayılanı)
+The bus always stops here	Otobüs burada her zaman durur
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Otobüs durmadan geçer: durak yalnızca güzergâhı işaretler (kontrol noktası)
+The bus stops only when it is early, and waits there for its departure time	Otobüs yalnızca erkense durur ve orada kalkış saatini bekler
+The bus always stops here, and when it is early it waits for its departure time	Otobüs burada her zaman durur ve erkense kalkış saatini bekler
+All trips	Tüm seferler
+Every trip of the map, those no tour drives too	Haritanın her seferi, hiçbir sefer turunun yapmadıkları da
+The line number the trip shows; the line of this number lists it among its trips	Seferin gösterdiği hat numarası; bu numaralı hat onu kendi seferleri arasında listeler
+Way picked by hand:	Güzergâh elle seçildi:
+the paths picked do not pass this stop	seçilen yollar bu duraktan geçmiyor
+Other trips	Diğer seferler
+The time profile this departure runs to	Bu kalkışın izlediği zaman profili
+Time profile	Zaman profili
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Bir seferin birkaç profili olabilir (yoğun saat, gece…): sefer turunun her kalkışı hangisini izlediğini söyler
+The profile's name	Profilin adı
+A new profile, a copy of this one	Yeni bir profil, bunun kopyası
+Delete this profile (its departures run to the first)	Bu profili sil (kalkışları ilkini izler)
+Times from stop to stop	Duraktan durağa süreler
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Her durakta önceki duraktan süre ayarlanabilir: sonraki süreler kayar, onlarla birlikte seferin süresi de. Ayarlanmamış süreler sabit olanlar arasındaki mesafeyi izler; sabit bir durakta erken gelen otobüs bekler.
+From the stop before	Önceki duraktan
+After departure	Kalkıştan sonra
+Minutes from the stop before to this one	Önceki duraktan buna kadar dakika
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2'nin editöründeki gibi. Otobüsün ne yaptığını görmek için bir seçeneğin üzerine gelin.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Haritanın her seferi, hangi hat gösterirse ya da hangi sefer turu yaparsa yapsın. Hiçbir sefer turunun yapmadığı sefer saklanır; burada düzenlenebilir, bir sefer turuna verilebilir ya da silinebilir.
+trips	sefer
+driven by no tour	hiçbir sefer turu yapmıyor
+no tour	sefer turu yok
+departures	kalkış
+No path there: click a lane of a road (View > AI lanes shows them)	Orada yol yok: bir yolun şeridine tıklayın (Görünüm > YZ şeritleri onları gösterir)
+Done picking paths	Seçim bitti
+Pick the paths on the map	Yolları haritada seç
+Choose the way yourself, path by path, as in OMSI 2's editor	Güzergâhı kendiniz seçin, yol yol, OMSI 2'nin editöründeki gibi
+Find the way automatically	Güzergâhı otomatik bul
+Forget the paths picked: the way is found along the roads again	Seçilen yolları unut: güzergâh yeniden yollar boyunca bulunur
+The paths were picked by hand: they are kept when the stops change.	Yollar elle seçildi: duraklar değişince korunur.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Görünümde yollara tıklayın. Sondan sonraki ya da baştan önceki yol, ona giden yollarla birlikte eklenir; güzergâhın yanındaki yol, dolandığı parçanın yerini alır (kavşakta başka bir kol); güzergâhtaki yol çıkarılır. Güzergâh ilk duraktan önce başlayıp son duraktan sonra sürebilir.
+The way breaks after path	Güzergâh şu yoldan sonra kopuyor:
+the paths do not join, the bus's GPS loses its way here in the game	yollar birleşmiyor, otobüsün GPS'i oyunda burada yolunu kaybediyor
+Paths of the way	Güzergâhın yolları
+Cut before the first stop	İlk duraktan öncesini kes
+Cut after the last stop	Son duraktan sonrasını kes
+path	yol

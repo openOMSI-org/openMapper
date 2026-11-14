@@ -6,7 +6,9 @@
 
 pub mod caruse;
 pub mod network;
+pub mod profile;
 pub mod route;
+pub mod way;
 
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -49,7 +51,15 @@ pub struct Timetable {
     pub car_use: Vec<caruse::CarUseFile>,
     car_changed: BTreeSet<String>,
     car_removed: BTreeSet<String>,
+    /// Trips whose paths were picked by hand (lower-case names): their way is kept as it is
+    /// when their stops change, not found again. Their `.ttr` says so in a line the game
+    /// passes over ([`BY_HAND`]).
+    hand: BTreeSet<String>,
 }
+
+/// The line a track picked by hand carries in its header (text outside a `[keyword]` block,
+/// which OMSI 2 and openOMSI pass over).
+pub const BY_HAND: &str = "Paths picked by hand in openMapper";
 
 fn key(name: &str) -> String {
     name.to_lowercase()
@@ -70,7 +80,28 @@ impl Timetable {
         // (in the order of the days, as the Lines window lists them)
         calendar.holidays.sort_by_key(|h| h.date);
         calendar.ranges.sort_by_key(|r| r.start);
-        Timetable { stops: d.bus_stops, links: d.stn_links, trips: d.trips, tracks: d.tracks, lines: d.lines, order: order.to_vec(), calendar, car_use: caruse::load_dir(dir), ..Default::default() }
+        let hand = d.tracks.iter().filter(|t| marked_by_hand(&t.path)).map(|t| key(&track_name(t))).collect();
+        Timetable { stops: d.bus_stops, links: d.stn_links, trips: d.trips, tracks: d.tracks, lines: d.lines, order: order.to_vec(), calendar, car_use: caruse::load_dir(dir), hand, ..Default::default() }
+    }
+
+    /// The trip's paths were picked by hand.
+    pub fn by_hand(&self, trip: &str) -> bool {
+        self.hand.contains(&key(trip))
+    }
+
+    /// The trip's way as picked by hand (`track`, and the station links between its stops
+    /// along it), or (None) found along the roads again from now on.
+    pub fn set_by_hand(&mut self, trip: &str, way: Option<(Vec<TrackEntry>, Vec<StnLink>)>) {
+        match way {
+            Some((track, links)) => {
+                self.hand.insert(key(trip));
+                self.set_route(trip, track, links);
+            }
+            None => {
+                self.hand.remove(&key(trip));
+                self.touch_route(trip);
+            }
+        }
     }
 
     pub fn trip(&self, name: &str) -> Option<&Trip> {
@@ -140,7 +171,8 @@ impl Timetable {
     /// The same lines, trips, tours and stops (what the Lines window edits; not the routes
     /// found for them or what is still to be saved).
     pub fn same_content(&self, o: &Timetable) -> bool {
-        self.lines == o.lines && self.trips == o.trips && self.stops == o.stops && self.calendar == o.calendar && self.car_use == o.car_use
+        let hand_tracks = |t: &Timetable| -> Vec<Track> { t.tracks.iter().filter(|x| t.hand.contains(&key(&track_name(x)))).cloned().collect() };
+        self.lines == o.lines && self.trips == o.trips && self.stops == o.stops && self.calendar == o.calendar && self.car_use == o.car_use && self.hand == o.hand && hand_tracks(self) == hand_tracks(o)
     }
 
     /// A new line (its name made unique).
@@ -198,6 +230,9 @@ impl Timetable {
             if let Some(track) = self.track(&t).map(|x| x.entries.clone()) {
                 self.tracks.push(Track { path: format!("{copy}.ttr").into(), entries: track });
                 self.changed.insert(key(&format!("{copy}.ttr")));
+                if self.by_hand(&t) {
+                    self.hand.insert(key(&copy));
+                }
             } else {
                 self.reroute.insert(key(&copy));
             }
@@ -266,6 +301,9 @@ impl Timetable {
             t.path = format!("{new}.ttr").into();
             self.changed.insert(key(&format!("{new}.ttr")));
         }
+        if self.hand.remove(&key(old)) {
+            self.hand.insert(key(new));
+        }
         for l in &mut self.lines {
             let mut hit = false;
             for t in l.tours.iter_mut().flat_map(|t| t.trips.iter_mut()) {
@@ -304,6 +342,7 @@ impl Timetable {
             self.touch_line(&l);
         }
         self.reroute.remove(&key(name));
+        self.hand.remove(&key(name));
         self.mark();
     }
 
@@ -482,7 +521,7 @@ pub fn plan(tt: &mut Timetable, map_dir: &Path, order: &[TileKey]) -> Vec<Op> {
         let text = match ext {
             "ttl" => tt.lines.iter().find(|l| key(&l.name) == stem).map(|l| (l.name.clone(), line_text(l))),
             "ttp" => tt.trips.iter().find(|t| key(&t.name) == stem).map(|t| (t.name.clone(), trip_text(t))),
-            "ttr" => tt.tracks.iter().find(|t| key(&track_name(t)) == stem).map(|t| (track_name(t), track_text(t))),
+            "ttr" => tt.tracks.iter().find(|t| key(&track_name(t)) == stem).map(|t| (track_name(t), track_text_of(t, tt.hand.contains(stem)))),
             _ => None,
         };
         if let Some((name, text)) = text {
@@ -541,6 +580,18 @@ pub fn save_to(tt: &mut Timetable, map_dir: &Path, order: &[TileKey]) -> anyhow:
     crate::doc::safe::commit(&ops)?;
     saved(tt);
     Ok(())
+}
+
+/// The track file says its paths were picked by hand ([`BY_HAND`]).
+fn marked_by_hand(path: &Path) -> bool {
+    let Ok(b) = std::fs::read(path) else { return false };
+    let text = if b.starts_with(&[0xFF, 0xFE]) {
+        String::from_utf16_lossy(&b[2..].chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect::<Vec<_>>())
+    } else {
+        String::from_utf8_lossy(&b).into_owned()
+    };
+    // (in the header, before the first entry)
+    text.split("[track_entry]").next().unwrap_or_default().contains(BY_HAND)
 }
 
 /// A file of the folder by its lower-case name.
@@ -645,7 +696,16 @@ pub fn trip_text(t: &Trip) -> String {
 }
 
 pub fn track_text(t: &Track) -> String {
+    track_text_of(t, false)
+}
+
+/// The track's text; picked by hand, it says so in its header.
+pub fn track_text_of(t: &Track, by_hand: bool) -> String {
     let mut o = header("Time Table Track File");
+    if by_hand {
+        o.push_str(BY_HAND);
+        o.push_str("\n\n");
+    }
     for (i, e) in t.entries.iter().enumerate() {
         o.push_str(&format!("   {i}:\n[track_entry]\n"));
         for (k, v) in e.values.iter().enumerate() {

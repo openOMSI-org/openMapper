@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Перанос заменіць гэтыя файлы ў копіі openMapper; замененыя файлы захоўваюцца ў рэзервовай копіі (Файл > Ранейшыя версіі).
 Bring the changes over	Перанесці змены
 Keep openMapper's copy	Пакінуць копію openMapper
+its way has a gap after path	у яго шляху разрыў пасля шляху
+its way does not pass	яго шлях не праходзіць ля
+On demand	Па патрабаванні
+Not served (checkpoint)	Не абслугоўваецца (кантрольны пункт)
+Wait for departure time	Чакаць часу адпраўлення
+Always + wait for departure time	Заўсёды + чакаць часу адпраўлення
+The bus stops only when somebody waits or wants to get off (the game's default)	Аўтобус спыняецца, толькі калі хтосьці чакае або хоча выйсці (так па змаўчанні ў гульні)
+The bus always stops here	Аўтобус заўсёды тут спыняецца
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Аўтобус праязджае, не спыняючыся: прыпынак толькі пазначае шлях (кантрольны пункт)
+The bus stops only when it is early, and waits there for its departure time	Аўтобус спыняецца, толькі калі ідзе раней часу, і чакае там часу адпраўлення
+The bus always stops here, and when it is early it waits for its departure time	Аўтобус заўсёды тут спыняецца, а калі ідзе раней часу, чакае часу адпраўлення
+All trips	Усе рэйсы
+Every trip of the map, those no tour drives too	Усе рэйсы карты, і тыя, па якіх не ездзіць ніводзін абарот
+The line number the trip shows; the line of this number lists it among its trips	Нумар лініі, які паказвае рэйс; лінія з гэтым нумарам паказвае яго сярод сваіх рэйсаў
+Way picked by hand:	Шлях абраны ўручную:
+the paths picked do not pass this stop	абраныя шляхі не праходзяць ля гэтага прыпынку
+Other trips	Іншыя рэйсы
+The time profile this departure runs to	Профіль часу гэтага адпраўлення
+Time profile	Профіль часу
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	У рэйса можа быць некалькі профіляў (час пік, ноч…): кожнае адпраўленне абарота паказвае, па якім яно ідзе
+The profile's name	Імя профілю
+A new profile, a copy of this one	Новы профіль, копія гэтага
+Delete this profile (its departures run to the first)	Выдаліць гэты профіль (яго адпраўленні пойдуць па першым)
+Times from stop to stop	Час ад прыпынку да прыпынку
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	У кожнага прыпынку можна задаць час ад папярэдняга: наступныя часы зрушваюцца, а з імі і час рэйса. Незададзеныя часы ідуць за адлегласцю паміж замацаванымі; на замацаваным прыпынку аўтобус, які прыйшоў раней, чакае.
+From the stop before	Ад папярэдняга
+After departure	Пасля адпраўлення
+Minutes from the stop before to this one	Хвіліны ад папярэдняга прыпынку да гэтага
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Як у рэдактары OMSI 2. Навядзіце на варыянт, каб убачыць, што робіць аўтобус.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Усе рэйсы карты, якая б лінія іх ні паказвала і які б абарот ні ездзіў. Рэйс, па якім не ездзіць ніводзін абарот, захоўваецца: яго можна правіць, даць абароту або выдаліць тут.
+trips	рэйсаў
+driven by no tour	без абаротаў
+no tour	няма абаротаў
+departures	адпр.
+No path there: click a lane of a road (View > AI lanes shows them)	Тут няма шляху: пстрыкніце па паласе дарогі (Выгляд > Паласы ШІ паказвае іх)
+Done picking paths	Гатова
+Pick the paths on the map	Абраць шляхі на карце
+Choose the way yourself, path by path, as in OMSI 2's editor	Абярыце шлях самі, шлях за шляхам, як у рэдактары OMSI 2
+Find the way automatically	Знайсці шлях аўтаматычна
+Forget the paths picked: the way is found along the roads again	Забыць абраныя шляхі: шлях зноў знойдзецца па дарогах
+The paths were picked by hand: they are kept when the stops change.	Шляхі абраны ўручную: яны захоўваюцца пры змене прыпынкаў.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Пстрыкайце шляхі на карце. Шлях пасля канца або перад пачаткам дадаецца разам са шляхамі да яго; шлях збоку замяняе ўчастак, які ён аб'язджае (іншая галіна на скрыжаванні); шлях з маршруту прыбіраецца. Шлях можа ісці і да першага прыпынку, і пасля апошняга.
+The way breaks after path	Шлях перарываецца пасля шляху
+the paths do not join, the bus's GPS loses its way here in the game	шляхі не злучаны, GPS аўтобуса ў гульні тут губляе маршрут
+Paths of the way	Шляхі маршруту
+Cut before the first stop	Прыбраць да першага прыпынку
+Cut after the last stop	Прыбраць пасля апошняга прыпынку
+path	шлях

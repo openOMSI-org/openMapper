@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Membawa perubahan menggantikan fail itu dalam salinan openMapper; fail yang diganti disimpan dalam sandaran (Fail > Versi terdahulu).
 Bring the changes over	Bawa perubahan
 Keep openMapper's copy	Kekalkan salinan openMapper
+its way has a gap after path	lorongnya terputus selepas laluan
+its way does not pass	lorongnya tidak melalui
+On demand	Atas permintaan
+Not served (checkpoint)	Tidak dilayan (titik semak)
+Wait for departure time	Tunggu masa bertolak
+Always + wait for departure time	Sentiasa + tunggu masa bertolak
+The bus stops only when somebody waits or wants to get off (the game's default)	Bas berhenti hanya jika ada yang menunggu atau mahu turun (lalai permainan)
+The bus always stops here	Bas sentiasa berhenti di sini
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Bas melintas tanpa berhenti: perhentian hanya menandakan lorong (titik semak)
+The bus stops only when it is early, and waits there for its departure time	Bas berhenti hanya jika ia awal, dan menunggu di situ hingga masa bertolaknya
+The bus always stops here, and when it is early it waits for its departure time	Bas sentiasa berhenti di sini, dan jika ia awal ia menunggu masa bertolaknya
+All trips	Semua perjalanan
+Every trip of the map, those no tour drives too	Setiap perjalanan peta, termasuk yang tidak dipandu oleh mana-mana giliran
+The line number the trip shows; the line of this number lists it among its trips	Nombor laluan yang ditunjukkan perjalanan; laluan dengan nombor ini menyenaraikannya antara perjalanannya
+Way picked by hand:	Lorong dipilih dengan tangan:
+the paths picked do not pass this stop	laluan yang dipilih tidak melalui perhentian ini
+Other trips	Perjalanan lain
+The time profile this departure runs to	Profil masa yang diikuti perlepasan ini
+Time profile	Profil masa
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Satu perjalanan boleh ada beberapa profil (waktu puncak, malam…): setiap perlepasan giliran menyatakan profil mana yang diikutinya
+The profile's name	Nama profil
+A new profile, a copy of this one	Profil baharu, salinan profil ini
+Delete this profile (its departures run to the first)	Padam profil ini (perlepasannya mengikut yang pertama)
+Times from stop to stop	Masa dari perhentian ke perhentian
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Masa dari perhentian sebelumnya boleh ditetapkan di setiap perhentian: masa selepasnya turut beralih, begitu juga masa perjalanan. Masa yang tidak ditetapkan mengikut jarak antara yang tetap; di perhentian tetap, bas yang awal akan menunggu.
+From the stop before	Dari perhentian sebelumnya
+After departure	Selepas bertolak
+Minutes from the stop before to this one	Minit dari perhentian sebelumnya ke perhentian ini
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Seperti dalam editor OMSI 2. Tuding pada pilihan untuk melihat apa yang dilakukan bas.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Setiap perjalanan peta, tidak kira laluan mana yang menunjukkannya atau giliran mana yang memandunya. Perjalanan yang tidak dipandu oleh mana-mana giliran disimpan, dan boleh diedit, diberi kepada giliran atau dipadam di sini.
+trips	perjalanan
+driven by no tour	tanpa giliran
+no tour	tiada giliran
+departures	perlepasan
+No path there: click a lane of a road (View > AI lanes shows them)	Tiada laluan di situ: klik lorong jalan (Paparan > Lorong AI menunjukkannya)
+Done picking paths	Selesai memilih
+Pick the paths on the map	Pilih laluan pada peta
+Choose the way yourself, path by path, as in OMSI 2's editor	Pilih lorong sendiri, laluan demi laluan, seperti dalam editor OMSI 2
+Find the way automatically	Cari lorong secara automatik
+Forget the paths picked: the way is found along the roads again	Lupakan laluan yang dipilih: lorong dicari semula di sepanjang jalan
+The paths were picked by hand: they are kept when the stops change.	Laluan dipilih dengan tangan: ia kekal apabila perhentian berubah.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klik laluan dalam paparan. Laluan selepas hujung atau sebelum permulaan ditambah, bersama laluan ke sana; laluan di sebelah lorong mengambil tempat bahagian yang dikelilinginya (cabang lain di simpang); laluan dalam lorong dikeluarkan. Lorong boleh bermula sebelum perhentian pertama dan diteruskan selepas yang terakhir.
+The way breaks after path	Lorong terputus selepas laluan
+the paths do not join, the bus's GPS loses its way here in the game	laluan tidak bercantum, GPS bas sesat di sini dalam permainan
+Paths of the way	Laluan lorong
+Cut before the first stop	Potong sebelum perhentian pertama
+Cut after the last stop	Potong selepas perhentian terakhir
+path	laluan

@@ -2843,3 +2843,51 @@ The installation's own copy of this map was changed after openMapper's copy in t
 Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Portare le modifiche sostituisce quei file della copia di openMapper; i file sostituiti restano in un backup (File > Versioni precedenti).
 Bring the changes over	Porta le modifiche
 Keep openMapper's copy	Tieni la copia di openMapper
+its way has a gap after path	il suo percorso ha un'interruzione dopo il tracciato
+its way does not pass	il suo percorso non passa per
+On demand	A richiesta
+Not served (checkpoint)	Non servita (punto di controllo)
+Wait for departure time	Attendere l'orario di partenza
+Always + wait for departure time	Sempre + attendere l'orario di partenza
+The bus stops only when somebody waits or wants to get off (the game's default)	Il bus si ferma solo se qualcuno aspetta o vuole scendere (il predefinito del gioco)
+The bus always stops here	Il bus si ferma sempre qui
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Il bus passa senza fermarsi: la fermata segna solo il percorso (un punto di controllo)
+The bus stops only when it is early, and waits there for its departure time	Il bus si ferma solo se è in anticipo, e lì attende il suo orario di partenza
+The bus always stops here, and when it is early it waits for its departure time	Il bus si ferma sempre qui, e se è in anticipo attende il suo orario di partenza
+All trips	Tutte le corse
+Every trip of the map, those no tour drives too	Ogni corsa della mappa, anche quelle che nessun turno fa
+The line number the trip shows; the line of this number lists it among its trips	Il numero di linea che la corsa mostra; la linea con questo numero la elenca tra le sue corse
+Way picked by hand:	Percorso scelto a mano:
+the paths picked do not pass this stop	i tracciati scelti non passano per questa fermata
+Other trips	Altre corse
+The time profile this departure runs to	Il profilo orario che segue questa partenza
+Time profile	Profilo orario
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Una corsa può avere più profili (ora di punta, notte…): ogni partenza di un turno dice quale segue
+The profile's name	Il nome del profilo
+A new profile, a copy of this one	Un nuovo profilo, copia di questo
+Delete this profile (its departures run to the first)	Elimina questo profilo (le sue partenze seguono il primo)
+Times from stop to stop	Tempi da fermata a fermata
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Il tempo dalla fermata precedente si può fissare a ogni fermata: i tempi successivi si spostano, e con loro il tempo della corsa. I tempi non fissati seguono la distanza tra quelli fissati; a una fermata fissata un bus in anticipo attende.
+From the stop before	Dalla fermata precedente
+After departure	Dopo la partenza
+Minutes from the stop before to this one	Minuti dalla fermata precedente a questa
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Come nell'editor di OMSI 2. Passa il mouse su una scelta per vedere cosa fa il bus.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Ogni corsa della mappa, qualunque linea la mostri o qualunque turno la faccia. Una corsa che nessun turno fa viene conservata, e qui si può modificare, dare a un turno o eliminare.
+trips	corse
+driven by no tour	fatte da nessun turno
+no tour	nessun turno
+departures	partenze
+No path there: click a lane of a road (View > AI lanes shows them)	Nessun tracciato qui: clicca su una corsia di una strada (Visualizza > Corsie IA le mostra)
+Done picking paths	Fatto
+Pick the paths on the map	Scegli i tracciati sulla mappa
+Choose the way yourself, path by path, as in OMSI 2's editor	Scegli tu il percorso, tracciato per tracciato, come nell'editor di OMSI 2
+Find the way automatically	Trova il percorso automaticamente
+Forget the paths picked: the way is found along the roads again	Dimentica i tracciati scelti: il percorso viene di nuovo trovato lungo le strade
+The paths were picked by hand: they are kept when the stops change.	I tracciati sono stati scelti a mano: restano quando cambiano le fermate.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Clicca i tracciati nella vista. Uno dopo la fine o prima dell'inizio viene aggiunto, con i tracciati fino a esso; uno accanto al percorso prende il posto del tratto che aggira (un altro ramo a un incrocio); un tracciato del percorso viene tolto. Il percorso può iniziare prima della prima fermata e proseguire dopo l'ultima.
+The way breaks after path	Il percorso si interrompe dopo il tracciato
+the paths do not join, the bus's GPS loses its way here in the game	i tracciati non si congiungono, il GPS del bus qui nel gioco perde la strada
+Paths of the way	Tracciati del percorso
+Cut before the first stop	Taglia prima della prima fermata
+Cut after the last stop	Taglia dopo l'ultima fermata
+path	tracciato
