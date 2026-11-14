@@ -29,6 +29,7 @@ mod crossing_edit;
 mod editable;
 mod ed_cjunction;
 mod editor;
+mod end_snap;
 mod gpu;
 mod heightmap;
 mod history;
