@@ -5700,6 +5700,7 @@ impl Editor {
         // (the dots that mark places on the ground are small: they are there to be seen, not to cover)
         let dw = w * 0.4;
         x.show_technical = self.show_technical || self.tool == Tool::Logic;
+        x.lanes_drawn = self.tool == Tool::Logic || self.show_lanes;
         x.hide = self.hide;
         // (the crossing being edited draws its own paths below, not the file's)
         let draft = self.crossing_draft.as_ref().map(|d| (d.0, d.1));
