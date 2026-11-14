@@ -2785,3 +2785,36 @@ no track within 15 m	nenhum trilho a 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	os trilhos não estão unidos ou seguem no outro sentido (veja Exibir > Faixas de IA)
 no track beside	sem trilho junto a
 Drives on	Circula por
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Vértice de origem escolhido. Clique em um vértice de destino para ajustar (Shift: apenas horizontal, Esc: cancelar)
+Aim at a vertex of the selected object	Mire em um vértice do objeto selecionado
+Snapped to vertex! (Ctrl+Z to undo)	Ajustado ao vértice! (Ctrl+Z para desfazer)
+Aim at a target vertex or spline endpoint	Mire em um vértice alvo ou ponto final do spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Borda de origem escolhida. Clique em uma borda ou estrada alvo para alinhar (Shift: apenas horizontal, Esc: cancelar)
+Aim at an edge of the selected object	Mire em uma borda do objeto selecionado
+Aligned edge to edge! (Ctrl+Z to undo)	Alinhado de ponta a ponta! (Ctrl+Z para desfazer)
+Aim at a target edge or road	Mire em uma borda ou estrada alvo
+Target cancelled. Pick a source vertex again	Meta cancelada. Escolha um vértice de origem novamente
+Vertex snap cancelled	Snap de vértice cancelado
+Target cancelled. Pick a source edge again	Meta cancelada. Escolha uma borda de origem novamente
+Edge snap cancelled	Snap de borda cancelado
+Select an object first to snap its vertex	Selecione um objeto primeiro para ajustar seu vértice
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Snap de vértice: clique em um vértice de origem no objeto selecionado (Esc para cancelar)
+Snap vertex to vertex	Ajustar vértice a vértice
+Select an object first to align its edge	Selecione um objeto primeiro para alinhar sua borda
+Edge snap: click a source edge on the selected object (Esc to cancel)	Ajuste de borda: clique em uma borda de origem no objeto selecionado (Esc para cancelar)
+Snap edge to edge	Encaixe de ponta a ponta
+Snap vertex to vertex (V)	Ajustar vértice a vértice (V)
+Snap edge to edge (L)	Encaixar borda a borda (L)
+Snap vertex (V)	Snap vértice (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Encaixe um vértice deste objeto em outro vértice (atalho: V)
+Snap edge (L)	Borda de encaixe (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Encaixe uma aresta deste objeto em outra aresta ou estrada (Atalho: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajustar um vértice do objeto selecionado a um vértice de outro objeto (V)\nShift: Somente horizontal, Esc/Clique com o botão direito: Cancelar
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinha uma aresta do objeto selecionado a uma aresta ou estrada (L)\nGira e ajusta colinearmente\nShift: Somente horizontal, Esc/Clique com o botão direito: Cancelar
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Ponto 1 alinhado! Clique num 2º ponto no objeto para rodar, ou Esc para terminar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Ângulo de referência definido. Clique num ponto alvo ou estrada para alinhar (Esc: terminar)
+Pick a different vertex on the object	Escolha um vértice diferente no objeto
+Click a 2nd reference point on the object, or Esc to finish	Clique num 2º ponto de referência no objeto, ou Esc para terminar
+Aligned angle! (Ctrl+Z to undo)	Ângulo alinhado! (Ctrl+Z para anular)
+Vertex snap complete	Encaixe de vértice concluído
+Align vertex angle	Alinhar ângulo de vértice

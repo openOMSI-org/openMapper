@@ -254,6 +254,11 @@ pub struct Assets {
 /// The largest texture side kept (the editor need not hold 4K pictures).
 const MAX_SIDE: u32 = 1024;
 
+#[inline]
+pub(crate) fn norm_asset_key(rel: &str) -> String {
+    rel.replace('\\', "/").to_lowercase()
+}
+
 impl Assets {
     pub fn new(omsi: PathBuf, content: PathBuf) -> Assets {
         let (tx, wrx) = mpsc::channel::<Req>();
@@ -293,8 +298,10 @@ impl Assets {
     }
 
     pub fn object(&mut self, rel: &str) -> Option<Arc<ObjectModel>> {
-        let key = rel.to_lowercase();
-        match self.objects.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -310,12 +317,14 @@ impl Assets {
     /// [`Assets::object`], waiting for the model when it has to be read first (for what is done
     /// once, on a click, not every frame): None if it cannot be read in `ms` milliseconds.
     pub fn object_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<ObjectModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.object(rel) {
                 return Some(m);
             }
-            if matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
             }
             self.poll();
@@ -325,12 +334,14 @@ impl Assets {
 
     /// [`Assets::spline`], waiting for the model (see [`Assets::object_wait`]).
     pub fn spline_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<SplineModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.spline(rel) {
                 return Some(m);
             }
-            if matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
             }
             self.poll();
@@ -339,8 +350,10 @@ impl Assets {
     }
 
     pub fn spline(&mut self, rel: &str) -> Option<Arc<SplineModel>> {
-        let key = rel.to_lowercase();
-        match self.splines.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -432,17 +445,21 @@ impl Assets {
     }
 
     pub fn spline_failed(&self, rel: &str) -> bool {
-        matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.splines.get(&norm_asset_key(rel)).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed))
     }
 
     pub fn object_failed(&self, rel: &str) -> bool {
-        matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.objects.get(&norm_asset_key(rel)).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed))
     }
 
     /// Forget one object's model, and the pictures in its folder, so they are read again
     /// (its files were written anew).
     pub fn forget_object(&mut self, rel: &str, dir: &Path) {
+        self.objects.remove(&norm_asset_key(rel));
         self.objects.remove(&rel.to_lowercase());
+        self.objects.remove(rel);
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
     }
 

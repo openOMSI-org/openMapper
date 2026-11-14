@@ -2785,3 +2785,36 @@ no track within 15 m	15 m içinde ray yok
 the tracks are not joined, or run the other way (see View > AI lanes)	raylar bağlı değil ya da ters yöne gidiyor (Görünüm > YZ şeritleri)
 no track beside	yanında ray yok:
 Drives on	Gittiği yol
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Kaynak köşesi seçildi. Yakalamak için hedef köşeyi tıklayın (Shift: yalnızca yatay, Esc: cancel)
+Aim at a vertex of the selected object	Seçilen nesnenin bir tepe noktasına nişan alın
+Snapped to vertex! (Ctrl+Z to undo)	Köşeye sıkıştı! (Geri almak için Ctrl+Z)
+Aim at a target vertex or spline endpoint	Hedef köşeyi veya spline uç noktasını hedefleyin
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Kaynak kenarı seçildi. Hizalamak için bir hedef kenarı veya yolu tıklayın (Shift: yalnızca yatay, Esc: iptal)
+Aim at an edge of the selected object	Seçilen nesnenin bir kenarına nişan alın
+Aligned edge to edge! (Ctrl+Z to undo)	Kenardan kenara hizalanmış! (Geri almak için Ctrl+Z)
+Aim at a target edge or road	Hedef kenarı veya yolu hedefleyin
+Target cancelled. Pick a source vertex again	Hedef iptal edildi. Tekrar bir kaynak tepe noktası seçin
+Vertex snap cancelled	Tepe noktası yakalaması iptal edildi
+Target cancelled. Pick a source edge again	Hedef iptal edildi. Tekrar bir kaynak kenarı seçin
+Edge snap cancelled	Kenar yapıştırma iptal edildi
+Select an object first to snap its vertex	Tepe noktasını yakalamak için önce bir nesne seçin
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Köşe yakalama: seçilen nesnedeki bir kaynak köşe noktasına tıklayın (iptal etmek için Esc)
+Snap vertex to vertex	Tepe noktasını tepe noktasına yasla
+Select an object first to align its edge	Kenarını hizalamak için önce bir nesne seçin
+Edge snap: click a source edge on the selected object (Esc to cancel)	Kenar yakalama: seçili nesnede bir kaynak kenara tıklayın (iptal etmek için Esc)
+Snap edge to edge	Kenardan kenara yasla
+Snap vertex to vertex (V)	Tepe noktasını tepe noktasına yasla (V)
+Snap edge to edge (L)	Kenardan kenara yasla (L)
+Snap vertex (V)	Köşeyi yasla (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Bu nesnenin bir köşesini başka bir köşeye tuttur (Kısayol: V)
+Snap edge (L)	Geçme kenarı (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Bu nesnenin bir kenarını başka bir kenara veya yola yaslayın (Kısayol: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Seçilen nesnenin tepe noktasını başka bir nesnenin tepe noktasına yasla (V)\nShift: Yalnızca yatay, Esc/Sağ tıklama: İptal
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Seçilen nesnenin bir kenarını bir kenara veya yola hizalayın (L)\nDöndürür ve eşdoğrusal\nyakalar Shift: Yalnızca yatay, Esc/Sağ tıklama: İptal
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1. nokta hizalandı! Döndürmek için nesne üzerindeki 2. noktaya tıklayın veya tamamlamak için Esc tuşuna basın
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referans açısı ayarlandı. Hizalamak için bir hedef noktaya veya yola tıklayın (Esc: bitir)
+Pick a different vertex on the object	Nesne üzerinde farklı bir tepe noktası seçin
+Click a 2nd reference point on the object, or Esc to finish	Nesne üzerinde 2. referans noktasına tıklayın veya bitirmek için Esc tuşuna basın
+Aligned angle! (Ctrl+Z to undo)	Açı hizalandı! (Geri almak için Ctrl+Z)
+Vertex snap complete	Köşe yakalama tamamlandı
+Align vertex angle	Köşe açısını hizala

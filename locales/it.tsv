@@ -2785,3 +2785,36 @@ no track within 15 m	nessun binario entro 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	i binari non sono collegati, o vanno nell'altro verso (vedi Vista > Corsie IA)
 no track beside	nessun binario accanto a
 Drives on	Corre su
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Vertice sorgente scelto. Fare clic su un vertice di destinazione per eseguire lo snap (Shift: solo orizzontale, Esc: annulla)
+Aim at a vertex of the selected object	Puntare su un vertice dell'oggetto selezionato
+Snapped to vertex! (Ctrl+Z to undo)	Scattato al vertice! (Ctrl+Z per annullare)
+Aim at a target vertex or spline endpoint	Mirare a un vertice di destinazione o al punto finale della spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Bordo di origine scelto. Fare clic su un bordo o una strada target da allineare (Maiusc: solo orizzontale, Esc: annulla)
+Aim at an edge of the selected object	Puntare su un bordo dell'oggetto selezionato
+Aligned edge to edge! (Ctrl+Z to undo)	Allineato bordo a bordo! (Ctrl+Z per annullare)
+Aim at a target edge or road	Mirare al bordo o alla strada di un bersaglio
+Target cancelled. Pick a source vertex again	Obiettivo annullato. Scegli di nuovo un vertice di origine
+Vertex snap cancelled	Snap al vertice annullato
+Target cancelled. Pick a source edge again	Obiettivo annullato. Scegli di nuovo un bordo di origine
+Edge snap cancelled	Snap al bordo annullato
+Select an object first to snap its vertex	Selezionare prima un oggetto per agganciarne il vertice
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Snap al vertice: fare clic su un vertice di origine sull'oggetto selezionato (Esc per annullare)
+Snap vertex to vertex	Aggancia vertice a vertice
+Select an object first to align its edge	Selezionare prima un oggetto per allinearne il bordo
+Edge snap: click a source edge on the selected object (Esc to cancel)	Snap al bordo: fare clic su un bordo di origine sull'oggetto selezionato (Esc per annullare)
+Snap edge to edge	Aggancia bordo a bordo
+Snap vertex to vertex (V)	Aggancia vertice a vertice (V)
+Snap edge to edge (L)	Aggancia bordo a bordo (L)
+Snap vertex (V)	Snap vertice (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Aggancia un vertice di questo oggetto a un altro vertice (scorciatoia: V)
+Snap edge (L)	Bordo a scatto (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Aggancia un bordo di questo oggetto a un altro bordo o strada (scorciatoia: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Aggancia un vertice dell'oggetto selezionato al vertice di un altro oggetto (V)\nMaiusc: solo orizzontale, Esc/clic destro: Annulla
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Allinea un bordo dell'oggetto selezionato a un bordo o una strada (L)\nRuota e aggancia collinearmente\nMaiusc: solo orizzontale, Esc/clic destro: Annulla
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punto 1 allineato! Fai clic su un 2° punto dell'oggetto per ruotare, o Esc per terminare
+Reference angle set. Click a target point or spline to align (Esc: finish)	Angolo di riferimento impostato. Fai clic su un punto di destinazione o strada per allineare (Esc: termina)
+Pick a different vertex on the object	Scegli un vertice diverso sull'oggetto
+Click a 2nd reference point on the object, or Esc to finish	Fai clic su un 2° punto di riferimento sull'oggetto, o Esc per terminare
+Aligned angle! (Ctrl+Z to undo)	Angolo allineato! (Ctrl+Z per annullare)
+Vertex snap complete	Allineamento vertice completato
+Align vertex angle	Allinea angolo vertice

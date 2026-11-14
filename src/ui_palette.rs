@@ -73,6 +73,20 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Junction, "Complex junction editor…", "Редактор сложных перекрёстков…", "custom junction top view splines markings кастомный перекрёсток вид сверху разметка", "", |_, _, a| a.push(Action::ComplexJunctions)),
         cmd!(Icon::Layers, "PBR maps for a picture…", "PBR-карты для картинки…", "normal roughness нормали", "", |_, _, a| a.push(Action::PbrMaker)),
         cmd!(Icon::Road, "Knife: cut roads", "Нож: разрезать дороги", "cut split knife road spline разрезать разделить дорогу сплайн", "K", |_, ed, _| ed.toggle_cutting()),
+        cmd!(Icon::Focus, "Snap vertex to vertex", "Привязать вершину к вершине", "snap vertex align object привязка вершина", "V", |_, ed, _| {
+            if ed.vertex_snap.is_some() {
+                ed.cancel_vertex_snap();
+            } else {
+                ed.start_vertex_snap();
+            }
+        }),
+        cmd!(Icon::Line, "Snap edge to edge", "Привязать ребро к ребру", "snap edge align line object привязка ребро линия", "L", |_, ed, _| {
+            if ed.edge_snap.is_some() {
+                ed.cancel_edge_snap();
+            } else {
+                ed.start_edge_snap();
+            }
+        }),
         cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient измерить расстояние уклон", "U", |_, ed, _| ed.toggle_ruler()),
         // Map
         cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),

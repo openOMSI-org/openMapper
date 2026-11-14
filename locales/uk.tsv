@@ -2783,3 +2783,36 @@ no track within 15 m	у 15 м немає рейок
 the tracks are not joined, or run the other way (see View > AI lanes)	рейки не з'єднані або йдуть в інший бік (Вигляд > Смуги ШІ)
 no track beside	немає рейок біля
 Drives on	Їздить по
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Вибрана вихідна вершина. Клацніть цільову вершину, щоб зробити прив’язку (Shift: лише горизонтально, Esc: скасувати)
+Aim at a vertex of the selected object	Наведіть приціл у вершину вибраного об'єкта
+Snapped to vertex! (Ctrl+Z to undo)	Прищеплено до вершини! (Ctrl+Z, щоб скасувати)
+Aim at a target vertex or spline endpoint	Наведіть на цільову вершину або кінцеву точку сплайна
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Вибраний край джерела. Клацніть цільовий край або дорогу, щоб вирівняти (Shift: лише горизонтально, Esc: скасувати)
+Aim at an edge of the selected object	Наведіть на край вибраного об’єкта
+Aligned edge to edge! (Ctrl+Z to undo)	Вирівняно від краю до краю! (Ctrl+Z, щоб скасувати)
+Aim at a target edge or road	Цільтесь у край цілі або дорогу
+Target cancelled. Pick a source vertex again	Ціль скасовано. Знову виберіть вихідну вершину
+Vertex snap cancelled	Прив’язку вершини скасовано
+Target cancelled. Pick a source edge again	Ціль скасовано. Знову виберіть край джерела
+Edge snap cancelled	Прив’язку краю скасовано
+Select an object first to snap its vertex	Спочатку виберіть об’єкт, щоб прив’язати його вершину
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Прив’язка вершин: клацніть вихідну вершину на вибраному об’єкті (Esc для скасування)
+Snap vertex to vertex	Прив’язка вершини до вершини
+Select an object first to align its edge	Спочатку виберіть об’єкт, щоб вирівняти його край
+Edge snap: click a source edge on the selected object (Esc to cancel)	Прив’язка краю: клацніть вихідний край вибраного об’єкта (Esc для скасування)
+Snap edge to edge	Прив'яжіть край до краю
+Snap vertex to vertex (V)	Прив’язати вершину до вершини (V)
+Snap edge to edge (L)	Прив’язати край до краю (L)
+Snap vertex (V)	Вершина прив'язки (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Прив’язати вершину цього об’єкта до іншої вершини (Ярлик: V)
+Snap edge (L)	Край кріплення (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Прив’язати край цього об’єкта до іншого краю або дороги (комбінація клавіш: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Прив’язати вершину вибраного об’єкта до вершини іншого об’єкта (V)\nShift: лише по горизонталі, Esc/клацання правою кнопкою миші: скасувати
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Вирівняйте край вибраного об’єкта за краєм або дорогою (L)\nОбертає та прив’язує колінеарно\nShift: Лише горизонтально, Esc/клацання правою кнопкою миші: Скасувати
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Точку 1 вирівняно! Клацніть другу точку на об'єкті для обертання або Esc для завершення
+Reference angle set. Click a target point or spline to align (Esc: finish)	Опорний кут задано. Клацніть цільову точку або дорогу для вирівнювання (Esc: завершити)
+Pick a different vertex on the object	Виберіть іншу вершину на об'єкті
+Click a 2nd reference point on the object, or Esc to finish	Клацніть 2-гу опорну точку на об'єкті або натисніть Esc для завершення
+Aligned angle! (Ctrl+Z to undo)	Кут вирівняно! (Ctrl+Z для скасування)
+Vertex snap complete	Прив'язку вершини завершено
+Align vertex angle	Вирівняти кут вершини

@@ -2785,3 +2785,36 @@ no track within 15 m	15 m-en belül nincs sín
 the tracks are not joined, or run the other way (see View > AI lanes)	a sínek nincsenek összekötve, vagy másfelé futnak (lásd Nézet > MI-sávok)
 no track beside	nincs sín mellette:
 Drives on	Közlekedik
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Forráscsúcs kiválasztva. Kattintson egy célcsúcsra a rögzítéshez (Shift: csak vízszintes, Esc: Mégse)
+Aim at a vertex of the selected object	Célozzon a kiválasztott objektum egyik csúcsára
+Snapped to vertex! (Ctrl+Z to undo)	Csúcshoz illesztve! (Ctrl+Z a visszavonáshoz)
+Aim at a target vertex or spline endpoint	Célozzon meg egy célcsúcsot vagy spline végpontot
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Forrás széle kiválasztva. Kattintson egy célélre vagy útra az igazításhoz (Shift: csak vízszintes, Esc: Mégse)
+Aim at an edge of the selected object	Célozzon a kiválasztott objektum egyik szélére
+Aligned edge to edge! (Ctrl+Z to undo)	Éltől élig igazítva! (Ctrl+Z a visszavonáshoz)
+Aim at a target edge or road	Célozzon egy célszegélyre vagy útra
+Target cancelled. Pick a source vertex again	Cél törölve. Válasszon újra egy forráscsúcsot
+Vertex snap cancelled	Vertex snap törölve
+Target cancelled. Pick a source edge again	Cél törölve. Válasszon újra egy forrás élt
+Edge snap cancelled	Élpattanás törölve
+Select an object first to snap its vertex	Először válasszon ki egy objektumot a csúcspontjának rögzítéséhez
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Csúcspont raszter: kattintson egy forráscsúcsra a kiválasztott objektumon (Esc a törléshez)
+Snap vertex to vertex	Csúcs rögzítése csúcsra
+Select an object first to align its edge	Először válasszon ki egy objektumot a szélének igazításához
+Edge snap: click a source edge on the selected object (Esc to cancel)	Élrögzítés: kattintson a forrás élére a kiválasztott objektumon (esc a törléshez)
+Snap edge to edge	Pattintsa éltől szélig
+Snap vertex to vertex (V)	Csúcs rögzítése csúcshoz (V)
+Snap edge to edge (L)	Pattintsa a szélét a szélhez (L)
+Snap vertex (V)	Rasztercsúcs (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Ennek az objektumnak egy csúcsának rögzítése egy másik csúcshoz (Gyorsbillentyű: V)
+Snap edge (L)	Bepattanó él (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Illessze az objektum szélét egy másik szélhez vagy úthoz (Gyorsbillentyű: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	A kiválasztott objektum csúcsának rögzítése egy másik objektum csúcsához (V)\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	A kijelölt objektum élének igazítása egy élhez vagy úthoz (L)\nElforgatja és kollineárisan rögzíti\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1. pont igazítva! Kattintson a 2. pontra a forgatáshoz, vagy nyomjon Esc billentyűt a befejezéshez
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenciaszög beállítva. Kattintson egy célpontra vagy útra az igazításhoz (Esc: kész)
+Pick a different vertex on the object	Válasszon egy másik csúcspontot az objektumon
+Click a 2nd reference point on the object, or Esc to finish	Kattintson egy 2. referenciapontra az objektumon, vagy Esc a befejezéshez
+Aligned angle! (Ctrl+Z to undo)	Szög igazítva! (Ctrl+Z a visszavonáshoz)
+Vertex snap complete	Csúcspont illesztése kész
+Align vertex angle	Csúcspontszög igazítása

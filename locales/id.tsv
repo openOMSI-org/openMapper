@@ -2785,3 +2785,36 @@ no track within 15 m	tidak ada rel dalam 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	rel tidak tersambung, atau berlawanan arah (lihat Tampilan > Lajur AI)
 no track beside	tidak ada rel di samping
 Drives on	Berjalan di
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Titik sumber dipilih. Klik titik sasaran yang akan diambil (Shift: horizontal saja, Esc: batal)
+Aim at a vertex of the selected object	Arahkan ke titik puncak objek yang dipilih
+Snapped to vertex! (Ctrl+Z to undo)	Terjepret ke titik puncak! (Ctrl+Z untuk membatalkan)
+Aim at a target vertex or spline endpoint	Bidik pada titik akhir atau titik akhir spline target
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Tepi sumber dipilih. Klik tepi atau jalan target untuk menyelaraskan (Shift: horizontal saja, Esc: batal)
+Aim at an edge of the selected object	Arahkan ke tepi objek yang dipilih
+Aligned edge to edge! (Ctrl+Z to undo)	Sejajarkan ujung ke ujung! (Ctrl+Z untuk membatalkan)
+Aim at a target edge or road	Bidik ke tepi atau jalan sasaran
+Target cancelled. Pick a source vertex again	Target dibatalkan. Pilih titik sumber lagi
+Vertex snap cancelled	Jepretan simpul dibatalkan
+Target cancelled. Pick a source edge again	Target dibatalkan. Pilih tepi sumber lagi
+Edge snap cancelled	Jepretan tepi dibatalkan
+Select an object first to snap its vertex	Pilih objek terlebih dahulu untuk mengambil titik puncaknya
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: klik titik sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap vertex to vertex	Jepret titik ke titik
+Select an object first to align its edge	Pilih objek terlebih dahulu untuk menyelaraskan tepinya
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: klik tepi sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap edge to edge	Jepret ujung ke ujung
+Snap vertex to vertex (V)	Jepret titik ke titik (V)
+Snap edge to edge (L)	Jepret ujung ke ujung (L)
+Snap vertex (V)	Jepret simpul (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Jepret sebuah titik dari objek ini ke titik lainnya (Pintasan: V)
+Snap edge (L)	Tepi jepret (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Jepret salah satu tepi objek ini ke tepi atau jalan lain (Pintasan: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Jepret titik dari objek yang dipilih ke titik dari objek lain (V)\nShift: Hanya horizontal, Esc/Klik kanan: Batal
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Sejajarkan tepi objek yang dipilih dengan tepi atau jalan (L)\nMemutar dan membuat collinear\nShift: Hanya horizontal, Esc/Klik kanan: Batal
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Titik 1 disejajarkan! Klik titik ke-2 pada objek untuk memutar, atau Esc untuk selesai
+Reference angle set. Click a target point or spline to align (Esc: finish)	Sudut referensi ditentukan. Klik titik target atau jalan untuk menyelaraskan (Esc: selesai)
+Pick a different vertex on the object	Pilih titik sudut lain pada objek
+Click a 2nd reference point on the object, or Esc to finish	Klik titik referensi ke-2 pada objek, atau Esc untuk selesai
+Aligned angle! (Ctrl+Z to undo)	Sudut disejajarkan! (Ctrl+Z untuk membatalkan)
+Vertex snap complete	Tempel titik sudut selesai
+Align vertex angle	Selaraskan sudut titik

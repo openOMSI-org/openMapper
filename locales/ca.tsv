@@ -2785,3 +2785,36 @@ no track within 15 m	cap via a menys de 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	les vies no estan unides o van en sentit contrari (vegeu Vista > Carrils d'IA)
 no track beside	cap via al costat de
 Drives on	Circula per
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Vèrtex font escollit. Feu clic a un vèrtex objectiu per ajustar-lo (Maj: només horitzontal, Esc: cancel·la)
+Aim at a vertex of the selected object	Apunta a un vèrtex de l'objecte seleccionat
+Snapped to vertex! (Ctrl+Z to undo)	Enganxat al vèrtex! (Ctrl+Z per desfer)
+Aim at a target vertex or spline endpoint	Apunteu a un vèrtex objectiu o punt final de spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	S'ha triat la vora de la font. Feu clic a una vora o una carretera objectiu per alinear-la (Maj: només horitzontal, Esc: cancel·la)
+Aim at an edge of the selected object	Apunta a una vora de l'objecte seleccionat
+Aligned edge to edge! (Ctrl+Z to undo)	Alineat vora a vora! (Ctrl+Z per desfer)
+Aim at a target edge or road	Apunta a una vora o carretera objectiu
+Target cancelled. Pick a source vertex again	Objectiu cancel·lat. Torna a triar un vèrtex font
+Vertex snap cancelled	S'ha cancel·lat l'ajust del vèrtex
+Target cancelled. Pick a source edge again	Objectiu cancel·lat. Torna a triar una vora font
+Edge snap cancelled	S'ha cancel·lat la fixació de vora
+Select an object first to snap its vertex	Seleccioneu primer un objecte per ajustar-ne el vèrtex
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Fixació de vèrtex: feu clic a un vèrtex font de l'objecte seleccionat (Esc per cancel·lar)
+Snap vertex to vertex	Ajusta el vèrtex al vèrtex
+Select an object first to align its edge	Seleccioneu primer un objecte per alinear-ne la vora
+Edge snap: click a source edge on the selected object (Esc to cancel)	Fixació de vora: feu clic a una vora font de l'objecte seleccionat (Esc per cancel·lar)
+Snap edge to edge	Enganxa vora a vora
+Snap vertex to vertex (V)	Ajusta el vèrtex al vèrtex (V)
+Snap edge to edge (L)	Enganxa vora a vora (L)
+Snap vertex (V)	Vèrtex de fixació (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Ajusta un vèrtex d'aquest objecte a un altre vèrtex (Drecera: V)
+Snap edge (L)	Vora ajustada (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Fixeu una vora d'aquest objecte a una altra vora o carretera (Drecera: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajusta un vèrtex de l'objecte seleccionat a un vèrtex d'un altre objecte (V)\nMaj: només horitzontal, Esc/Clic dret: Cancel·la
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinea una vora de l'objecte seleccionat a una vora o una carretera (L)\nGira i ajusta colineal\nCanvi: només horitzontal, Esc/Clic dret: Cancel·la
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 alineat! Feu clic a un 2n punt de l'objecte per girar, o Esc per finalitzar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Angle de referència establert. Feu clic a un punt objectiu o carretera per alinear (Esc: finalitzar)
+Pick a different vertex on the object	Trieu un vèrtex diferent de l'objecte
+Click a 2nd reference point on the object, or Esc to finish	Feu clic a un 2n punt de referència a l'objecte, o Esc per finalitzar
+Aligned angle! (Ctrl+Z to undo)	Angle alineat! (Ctrl+Z per desfer)
+Vertex snap complete	Ajust de vèrtex completat
+Align vertex angle	Alinea l'angle del vèrtex

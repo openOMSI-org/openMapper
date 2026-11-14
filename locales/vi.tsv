@@ -2785,3 +2785,36 @@ no track within 15 m	không có đường ray trong 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	các đường ray chưa nối, hoặc chạy ngược chiều (xem Xem > Làn AI)
 no track beside	không có đường ray bên cạnh
 Drives on	Chạy trên
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Đỉnh nguồn được chọn. Bấm vào một đỉnh mục tiêu để chụp (Shift: chỉ theo chiều ngang, Esc: hủy)
+Aim at a vertex of the selected object	Nhắm vào một đỉnh của đối tượng đã chọn
+Snapped to vertex! (Ctrl+Z to undo)	Đã chụp đến đỉnh! (Ctrl + Z để hoàn tác)
+Aim at a target vertex or spline endpoint	Nhắm vào một đỉnh mục tiêu hoặc điểm cuối spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Cạnh nguồn được chọn. Nhấp vào cạnh hoặc đường mục tiêu để căn chỉnh (Shift: chỉ ngang, Esc: hủy)
+Aim at an edge of the selected object	Nhắm vào một cạnh của đối tượng đã chọn
+Aligned edge to edge! (Ctrl+Z to undo)	Căn chỉnh từng cạnh! (Ctrl + Z để hoàn tác)
+Aim at a target edge or road	Nhắm vào mép hoặc đường mục tiêu
+Target cancelled. Pick a source vertex again	Mục tiêu bị hủy bỏ. Chọn lại một đỉnh nguồn
+Vertex snap cancelled	Đã hủy ảnh chụp đỉnh
+Target cancelled. Pick a source edge again	Mục tiêu bị hủy bỏ. Chọn lại cạnh nguồn
+Edge snap cancelled	Đã hủy chụp nhanh cạnh
+Select an object first to snap its vertex	Chọn một đối tượng trước tiên để chụp đỉnh của nó
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Chụp nhanh đỉnh: nhấp vào đỉnh nguồn trên đối tượng đã chọn (Esc để hủy)
+Snap vertex to vertex	Chuyển đỉnh này sang đỉnh khác
+Select an object first to align its edge	Chọn một đối tượng trước tiên để căn chỉnh cạnh của nó
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: nhấp vào cạnh nguồn trên đối tượng đã chọn (Esc để hủy)
+Snap edge to edge	Chụp cạnh này sang cạnh khác
+Snap vertex to vertex (V)	Đưa đỉnh vào đỉnh (V)
+Snap edge to edge (L)	Chụp cạnh này sang cạnh khác (L)
+Snap vertex (V)	Đỉnh chụp (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Đưa một đỉnh của đối tượng này sang một đỉnh khác (Phím tắt: V)
+Snap edge (L)	Cạnh chụp (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Đưa một cạnh của đối tượng này sang một cạnh hoặc đường khác (Phím tắt: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Đưa một đỉnh của đối tượng đã chọn vào một đỉnh của đối tượng khác (V)\nShift: Chỉ theo chiều ngang, Esc/Nhấp chuột phải: Hủy
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Căn chỉnh cạnh của đối tượng đã chọn với một cạnh hoặc đường (L)\nXoay và gắn chặt thẳng hàng\nShift: Chỉ ngang, Esc/Nhấp chuột phải: Hủy
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Điểm 1 đã căn chỉnh! Bấm điểm thứ 2 trên đối tượng để xoay, hoặc Esc để hoàn tất
+Reference angle set. Click a target point or spline to align (Esc: finish)	Góc tham chiếu đã đặt. Bấm điểm đích hoặc đường để căn chỉnh (Esc: hoàn tất)
+Pick a different vertex on the object	Chọn một đỉnh khác trên đối tượng
+Click a 2nd reference point on the object, or Esc to finish	Bấm điểm tham chiếu thứ 2 trên đối tượng, hoặc Esc để hoàn tất
+Aligned angle! (Ctrl+Z to undo)	Đã căn chỉnh góc! (Ctrl+Z để hoàn tác)
+Vertex snap complete	Bắt dính đỉnh hoàn tất
+Align vertex angle	Căn chỉnh góc đỉnh

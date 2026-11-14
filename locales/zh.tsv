@@ -2781,3 +2781,36 @@ no track within 15 m	15 m 内没有轨道
 the tracks are not joined, or run the other way (see View > AI lanes)	轨道未连接，或方向相反（见 视图 > AI 车道）
 no track beside	旁边没有轨道：
 Drives on	行驶于
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	已选择来源顶点。点击目标顶点以吸附（Shift：仅水平，Esc：取消）
+Aim at a vertex of the selected object	对准所选对象的顶点
+Snapped to vertex! (Ctrl+Z to undo)	已吸附至顶点！（Ctrl+Z 撤销）
+Aim at a target vertex or spline endpoint	对准目标顶点或道路端点
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	已选择来源边缘。点击目标边缘或道路以对齐（Shift：仅水平，Esc：取消）
+Aim at an edge of the selected object	对准所选对象的边缘
+Aligned edge to edge! (Ctrl+Z to undo)	已完成边缘对齐！（Ctrl+Z 撤销）
+Aim at a target edge or road	对准目标边缘或道路
+Target cancelled. Pick a source vertex again	目标已取消。请重新选择来源顶点
+Vertex snap cancelled	已取消顶点吸附
+Target cancelled. Pick a source edge again	目标已取消。请重新选择来源边缘
+Edge snap cancelled	已取消边缘吸附
+Select an object first to snap its vertex	请先选择对象以吸附其顶点
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	顶点吸附：点击所选对象上的来源顶点（Esc 取消）
+Snap vertex to vertex	顶点对顶点吸附
+Select an object first to align its edge	请先选择对象以对齐其边缘
+Edge snap: click a source edge on the selected object (Esc to cancel)	边缘吸附：点击所选对象上的来源边缘（Esc 取消）
+Snap edge to edge	边缘对边缘吸附
+Snap vertex to vertex (V)	顶点对顶点吸附 (V)
+Snap edge to edge (L)	边缘对边缘吸附 (L)
+Snap vertex (V)	吸附顶点 (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	将此对象的顶点吸附至另一顶点（快捷键：V）
+Snap edge (L)	吸附边缘 (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	将此对象的边缘吸附至另一边缘或道路（快捷键：L）
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	将所选对象的顶点吸附至另一对象的顶点 (V)\nShift：仅水平，Esc／右键：取消
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	将所选对象的边缘对齐至边缘或道路 (L)\n旋转并同线吸附\nShift：仅水平，Esc／右键：取消
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	第 1 点已对齐！点击物体上的第 2 个点进行旋转，或按 Esc 完成
+Reference angle set. Click a target point or spline to align (Esc: finish)	参考角度已设定。点击目标点或道路以对齐（Esc：完成）
+Pick a different vertex on the object	请选择物体上的其他顶点
+Click a 2nd reference point on the object, or Esc to finish	点击物体上的第 2 个参考点，或按 Esc 完成
+Aligned angle! (Ctrl+Z to undo)	已对齐角度！（Ctrl+Z 撤销）
+Vertex snap complete	顶点吸附完成
+Align vertex angle	对齐顶点角度

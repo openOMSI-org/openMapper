@@ -2783,3 +2783,36 @@ no track within 15 m	kein Gleis im Umkreis von 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	die Gleise sind nicht verbunden oder verlaufen in die andere Richtung (siehe Ansicht > KI-Spuren)
 no track beside	kein Gleis neben
 Drives on	Fährt auf
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Quellscheitelpunkt ausgewählt. Klicken Sie zum Fangen auf einen Zielscheitelpunkt (Umschalttaste: nur horizontal, Esc: Abbrechen).
+Aim at a vertex of the selected object	Zielen Sie auf einen Scheitelpunkt des ausgewählten Objekts
+Snapped to vertex! (Ctrl+Z to undo)	Am Scheitelpunkt eingerastet! (Strg+Z zum Rückgängigmachen)
+Aim at a target vertex or spline endpoint	Zielen Sie auf einen Zielscheitelpunkt oder Spline-Endpunkt
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Quellkante ausgewählt. Klicken Sie zum Ausrichten auf eine Zielkante oder -straße (Umschalttaste: nur horizontal, Esc: Abbrechen).
+Aim at an edge of the selected object	Zielen Sie auf eine Kante des ausgewählten Objekts
+Aligned edge to edge! (Ctrl+Z to undo)	Kante an Kante ausgerichtet! (Strg+Z zum Rückgängigmachen)
+Aim at a target edge or road	Zielen Sie auf eine Zielkante oder Straße
+Target cancelled. Pick a source vertex again	Ziel abgesagt. Wählen Sie erneut einen Quellscheitelpunkt aus
+Vertex snap cancelled	Scheitelpunktfang abgebrochen
+Target cancelled. Pick a source edge again	Ziel abgesagt. Wählen Sie erneut eine Quellkante aus
+Edge snap cancelled	Kantenfang abgebrochen
+Select an object first to snap its vertex	Wählen Sie zunächst ein Objekt aus, um dessen Scheitelpunkt einzurasten
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Scheitelpunktfang: Klicken Sie auf einen Quellscheitelpunkt des ausgewählten Objekts (Esc zum Abbrechen).
+Snap vertex to vertex	Scheitelpunkt an Scheitelpunkt einrasten
+Select an object first to align its edge	Wählen Sie zunächst ein Objekt aus, um dessen Kante auszurichten
+Edge snap: click a source edge on the selected object (Esc to cancel)	Kantenfang: Klicken Sie auf eine Quellkante am ausgewählten Objekt (Esc zum Abbrechen).
+Snap edge to edge	Kante an Kante einrasten
+Snap vertex to vertex (V)	Scheitelpunkt an Scheitelpunkt einrasten (V)
+Snap edge to edge (L)	Kante an Kante einrasten (L)
+Snap vertex (V)	Scheitelpunkt fangen (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Fangen Sie einen Scheitelpunkt dieses Objekts an einem anderen Scheitelpunkt ein (Tastenkürzel: V)
+Snap edge (L)	Schnappkante (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Eine Kante dieses Objekts an einer anderen Kante oder Straße einrasten lassen (Tastenkürzel: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Einen Scheitelpunkt des ausgewählten Objekts an einem Scheitelpunkt eines anderen Objekts einrasten lassen (V)\nVerschiebung: Nur horizontal, Esc/Rechtsklick: Abbrechen
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Richten Sie eine Kante des ausgewählten Objekts an einer Kante oder Straße aus (L).\nDreht und rastet kollinear ein\nUmschalttaste: Nur horizontal, Esc/Rechtsklick: Abbrechen
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punkt 1 ausgerichtet! Klicken Sie auf einen 2. Punkt am Objekt zum Drehen oder Esc zum Beenden
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenzwinkel festgelegt. Klicken Sie auf einen Zielpunkt oder eine Straße zum Ausrichten (Esc: Beenden)
+Pick a different vertex on the object	Wählen Sie einen anderen Scheitelpunkt am Objekt
+Click a 2nd reference point on the object, or Esc to finish	Klicken Sie auf einen 2. Referenzpunkt am Objekt oder Esc zum Beenden
+Aligned angle! (Ctrl+Z to undo)	Winkel ausgerichtet! (Strg+Z zum Rückgängigmachen)
+Vertex snap complete	Scheitelpunkt-Ausrichtung abgeschlossen
+Align vertex angle	Scheitelpunktwinkel ausrichten

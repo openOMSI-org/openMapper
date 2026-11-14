@@ -2785,3 +2785,36 @@ no track within 15 m	15 m के भीतर ट्रैक नहीं
 the tracks are not joined, or run the other way (see View > AI lanes)	ट्रैक जुड़े नहीं हैं, या उल्टी दिशा में हैं (व्यू > AI लेन देखें)
 no track beside	पास में ट्रैक नहीं:
 Drives on	किस पर चलती है
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	स्रोत शीर्ष चुना गया. स्नैप करने के लिए लक्ष्य शीर्ष पर क्लिक करें (शिफ्ट: केवल क्षैतिज, Esc: रद्द करें)
+Aim at a vertex of the selected object	चयनित वस्तु के शीर्ष पर निशाना लगाओ
+Snapped to vertex! (Ctrl+Z to undo)	शीर्ष पर पहुंच गया! (पूर्ववत करने के लिए Ctrl+Z)
+Aim at a target vertex or spline endpoint	लक्ष्य शीर्ष या तख़्ता समापन बिंदु पर निशाना लगाओ
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	स्रोत किनारा चुना गया. संरेखित करने के लिए लक्ष्य किनारे या सड़क पर क्लिक करें (शिफ्ट: केवल क्षैतिज, Esc: रद्द करें)
+Aim at an edge of the selected object	चयनित वस्तु के एक किनारे पर निशाना लगाएँ
+Aligned edge to edge! (Ctrl+Z to undo)	किनारे से किनारे तक संरेखित! (पूर्ववत करने के लिए Ctrl+Z)
+Aim at a target edge or road	लक्ष्य किनारे या सड़क पर निशाना लगाओ
+Target cancelled. Pick a source vertex again	लक्ष्य रद्द कर दिया गया. एक स्रोत शीर्ष फिर से चुनें
+Vertex snap cancelled	वर्टेक्स स्नैप रद्द कर दिया गया
+Target cancelled. Pick a source edge again	लक्ष्य रद्द कर दिया गया. स्रोत किनारा फिर से चुनें
+Edge snap cancelled	एज स्नैप रद्द किया गया
+Select an object first to snap its vertex	किसी ऑब्जेक्ट के शीर्ष को स्नैप करने के लिए पहले उसका चयन करें
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	वर्टेक्स स्नैप: चयनित ऑब्जेक्ट पर स्रोत वर्टेक्स पर क्लिक करें (रद्द करने के लिए Esc)
+Snap vertex to vertex	शीर्ष को शीर्ष पर स्नैप करें
+Select an object first to align its edge	किसी ऑब्जेक्ट के किनारे को संरेखित करने के लिए पहले उसका चयन करें
+Edge snap: click a source edge on the selected object (Esc to cancel)	एज स्नैप: चयनित ऑब्जेक्ट पर सोर्स एज पर क्लिक करें (रद्द करने के लिए Esc)
+Snap edge to edge	किनारे से किनारे तक स्नैप करें
+Snap vertex to vertex (V)	शीर्ष को शीर्ष पर स्नैप करें (V)
+Snap edge to edge (L)	किनारे से किनारे तक स्नैप करें (एल)
+Snap vertex (V)	स्नैप वर्टेक्स (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	इस ऑब्जेक्ट के एक शीर्ष को दूसरे शीर्ष पर स्नैप करें (शॉर्टकट: V)
+Snap edge (L)	स्नैप एज (एल)
+Snap an edge of this object to another edge or road (Shortcut: L)	इस वस्तु के एक किनारे को दूसरे किनारे या सड़क पर स्नैप करें (शॉर्टकट: एल)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	चयनित ऑब्जेक्ट के शीर्ष को किसी अन्य ऑब्जेक्ट के शीर्ष पर स्नैप करें (V)\nशिफ्ट: केवल क्षैतिज, Esc/राइट-क्लिक: रद्द करें
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	चयनित ऑब्जेक्ट के किनारे को किसी किनारे या सड़क पर संरेखित करें (L)\nघुमाता है और संरेख में स्नैप करता है\nशिफ्ट: क्षैतिज केवल, Esc/राइट-क्लिक करें: रद्द करें
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	बिंदु 1 संरेखित! घुमाने के लिए वस्तु पर दूसरे बिंदु पर क्लिक करें, या समाप्त करने के लिए Esc दबाएं
+Reference angle set. Click a target point or spline to align (Esc: finish)	संदर्भ कोण सेट। संरेखित करने के लिए लक्ष्य बिंदु या सड़क पर क्लिक करें (Esc: समाप्त)
+Pick a different vertex on the object	वस्तु पर कोई भिन्न शीर्ष चुनें
+Click a 2nd reference point on the object, or Esc to finish	वस्तु पर दूसरा संदर्भ बिंदु क्लिक करें, या समाप्त करने के लिए Esc दबाएं
+Aligned angle! (Ctrl+Z to undo)	कोण संरेखित! (पूर्ववत करने के लिए Ctrl+Z)
+Vertex snap complete	शीर्ष स्नैप पूर्ण
+Align vertex angle	शीर्ष कोण संरेखित करें

@@ -2785,3 +2785,37 @@ no track within 15 m	geen spoor binnen 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	de sporen zijn niet verbonden, of lopen de andere kant op (zie Beeld > AI-rijstroken)
 no track beside	geen spoor naast
 Drives on	Rijdt over
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Bronpunt gekozen. Klik op een doelhoekpunt om te snappen (Shift: alleen horizontaal, Esc: annuleren)
+Aim at a vertex of the selected object	Richt op een hoekpunt van het geselecteerde object
+Snapped to vertex! (Ctrl+Z to undo)	Geknapt naar het hoekpunt! (Ctrl+Z om ongedaan te maken)
+Aim at a target vertex or spline endpoint	Richt op een doelhoekpunt of spline-eindpunt
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Bronrand gekozen. Klik op een doelrand of weg om uit te lijnen (Shift: alleen horizontaal, Esc: annuleren)
+Aim at an edge of the selected object	Richt op een rand van het geselecteerde object
+Aligned edge to edge! (Ctrl+Z to undo)	Rand tot rand uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Aim at a target edge or road	Richt op een doelrand of weg
+Target cancelled. Pick a source vertex again	Doel geannuleerd. Kies opnieuw een bronpunt
+Vertex snap cancelled	Vertex-snap geannuleerd
+Target cancelled. Pick a source edge again	Doel geannuleerd. Kies opnieuw een bronrand
+Edge snap cancelled	Randsnap geannuleerd
+Select an object first to snap its vertex	Selecteer eerst een object om het hoekpunt ervan te snappen
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex-snap: klik op een bronpunt op het geselecteerde object (Esc om te annuleren)
+Snap vertex to vertex	Snap hoekpunt op hoekpunt
+Select an object first to align its edge	Selecteer eerst een object om de rand uit te lijnen
+Edge snap: click a source edge on the selected object (Esc to cancel)	Rand snappen: klik op een bronrand op het geselecteerde object (Esc om te annuleren)
+Snap edge to edge	Klik van rand tot rand
+Snap vertex to vertex (V)	Hoekpunt op hoekpunt klikken (V)
+Snap edge to edge (L)	Klik van rand tot rand (L)
+Snap vertex (V)	Snaphoekpunt (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Plaats een hoekpunt van dit object op een ander hoekpunt (sneltoets: V)
+Snap edge (L)	Snaprand (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Plaats een rand van dit object op een andere rand of weg (sneltoets: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Plaats een hoekpunt van het geselecteerde object op een hoekpunt van een ander object (V)\nShift: alleen horizontaal, Esc/klik met de rechtermuisknop: annuleren
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Lijn een rand van het geselecteerde object uit op een rand of weg (L)\nRoteert en snapt collineair\nShift: alleen horizontaal, Esc/rechts klikken: annuleren
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 uitgelijnd! Klik op een 2e punt op het object om te draaien, of Esc om te voltooien
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referentiehoek ingesteld. Klik op een doelpunt of weg om uit te lijnen (Esc: voltooien)
+Pick a different vertex on the object	Kies een ander hoekpunt op het object
+Click a 2nd reference point on the object, or Esc to finish	Klik op een 2e referentiepunt op het object, of Esc om te voltooien
+Aligned angle! (Ctrl+Z om ongedaan te maken)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Vertex snap complete	Hoekpunt magnetisch uitlijnen voltooid
+Align vertex angle	Hoekpunt uitlijningshoek aanpassen
+Aligned angle! (Ctrl+Z to undo)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
