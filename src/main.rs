@@ -51,6 +51,7 @@ mod meshops;
 mod library;
 mod logging;
 mod models;
+mod object_paths;
 mod pbr_maker;
 mod onground;
 mod osm;

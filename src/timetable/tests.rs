@@ -528,3 +528,20 @@ fn a_tram_trip_runs_on_its_track() {
     tt.set_route(&trip, r.track(&net, &[tile]), r.links(&net, &[tile], &[10, 11]));
     assert_eq!(route::ways_of(&tt, &trip, &net, &[tile]), Some(route::Ways::Rail));
 }
+
+/// A road object's lane that ends a couple of metres off the road it meets (laid a little
+/// under it, as Städtedreieck's are) still runs on into the road, as openOMSI links them
+/// (#120); a road on a bridge over it, 6 m up, does not.
+#[test]
+fn a_lane_a_little_off_the_road_in_height_runs_on_into_it() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let north = |y0: f64, y1: f64, z: f64| vec![DVec3::new(0.0, y0, z), DVec3::new(0.0, y1, z)];
+    net.add(PathKey { tile, id: 1, path: 0 }, north(0.0, 20.0, -2.5), 20.0, 0, 0, (false, false));
+    net.add(PathKey { tile, id: 2, path: 0 }, north(20.0, 120.0, 0.0), 100.0, 1, 0, (true, false));
+    net.add(PathKey { tile, id: 3, path: 0 }, north(20.0, 120.0, 6.0), 100.0, 2, 0, (true, false));
+    net.link();
+    let first = net.by_key[&PathKey { tile, id: 1, path: 0 }][0];
+    let ids: Vec<i64> = net.lanes[first].next.iter().map(|&l| net.lanes[l].key.id).collect();
+    assert_eq!(ids, vec![2]);
+}

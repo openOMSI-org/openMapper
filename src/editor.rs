@@ -11756,10 +11756,7 @@ fn path_ends_at(doc: &Document, assets: &mut Assets, held: &Origin, pos: DVec2, 
                 if c.length <= 0.05 {
                     return None;
                 }
-                let at = |s: f64| {
-                    let q = c.point_at(s);
-                    pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
-                };
+                let at = |s: f64| crate::object_paths::world_point(&c, s, &pose, model.deform.as_deref());
                 let (a, b) = (at(0.0), at(c.length));
                 let step = (c.length * 0.05).clamp(0.05, 1.0);
                 let ha = roads::heading_of((at(step) - a).truncate());
