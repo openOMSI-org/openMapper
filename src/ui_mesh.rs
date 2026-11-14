@@ -357,7 +357,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
             }
         });
     }
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         let label = if m.editing { tr("Leave the edit mode (Tab)", "Выйти из редактирования (Tab)") } else { tr("Edit the mesh (Tab)", "Редактировать меш (Tab)") };
         if ui.add(egui::Button::new(RichText::new(label).strong()).fill(if m.editing { crate::ui::ACCENT } else { Color32::from_rgb(52, 54, 60) })).clicked() {
             actions.push(Action::Mesh(MeshAction::ToggleEdit));
@@ -369,13 +369,13 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     ui.horizontal(|ui| {
         ui.label(RichText::new(tr("Name", "Имя")).color(DIM));
         let mut n = m.src.name.clone();
-        let r = ui.text_edit_singleline(&mut n);
+        let r = ui.add(egui::TextEdit::singleline(&mut n).desired_width(f32::INFINITY));
         if r.changed() {
             m.src.name = n;
         }
         touched(m, &r);
     });
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         let mut abs = m.src.abs_height;
         let r = ui.checkbox(&mut abs, tr("Height above sea level", "Высота над уровнем моря")).on_hover_text(tr("Off: its height is kept above the ground under it", "Выкл.: высота считается от земли под ним"));
         if r.changed() {
@@ -595,9 +595,10 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                     });
                 }
             });
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(RichText::new(tr("Texture", "Текстура")).color(DIM));
-                ui.label(mat.texture.as_deref().unwrap_or("—"));
+                let tex = mat.texture.as_deref().unwrap_or("—");
+                ui.add(egui::Label::new(tex.rsplit(['\\', '/']).next().unwrap_or(tex)).truncate()).on_hover_text(tex);
                 if ui.small_button(tr("Choose…", "Выбрать…")).clicked() {
                     actions.push(Action::Mesh(MeshAction::PickTexture(i, TexSlot::Color)));
                 }
@@ -613,13 +614,13 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                     }
                 }
             });
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(RichText::new(tr("Transparency", "Прозрачность")).color(DIM));
                 for (v, label) in [(0u8, tr("Opaque", "Нет")), (1, tr("Cut out", "Вырез")), (2, tr("Blended", "Смешивание"))] {
                     join(ui.selectable_value(&mut mat.alpha, v, label));
                 }
             });
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(RichText::new(tr("Glows", "Свечение")).color(DIM));
                 join(ui.color_edit_button_rgb(&mut mat.emissive).on_hover_text(tr("Light of its own: black for none", "Собственный свет: чёрный — без свечения")));
                 ui.label(RichText::new(tr("Shine", "Блеск")).color(DIM));

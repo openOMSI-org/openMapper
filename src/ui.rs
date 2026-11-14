@@ -818,8 +818,9 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
         tool_panel(ui, st, ed, lib, thumbs, wanted, swatches, wanted_swatches, actions);
     });
     egui::Panel::right("properties").resizable(true).default_size(270.0).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
-        // (a road's rows of objects can make it long)
-        egui::ScrollArea::vertical().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
+        // (a road's rows of objects can make it long; a row wider than the panel scrolls
+        // sideways instead of widening it: the map view shrank and slid away under the click)
+        egui::ScrollArea::both().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
             properties(ui, st, ed, lib, actions);
         });
     });
