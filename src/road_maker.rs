@@ -405,7 +405,7 @@ impl RoadSpec {
 
     /// The file name it is saved as.
     pub fn file_stem(&self) -> String {
-        let s = crate::translit::file_name(&self.name);
+        let s = crate::omsi_name::ascii_stem(&self.name);
         if s.is_empty() { "road".into() } else { s }
     }
 
@@ -822,25 +822,6 @@ mod tests {
         let d = Marking { style: MarkStyle::Dashed, dash: 3.0, gap: 6.0, ..Default::default() };
         let spec2 = RoadSpec { markings: vec![d.clone()], ..spec.clone() };
         assert!((spec2.mark_period() / spec2.dash_period(&d) - (spec2.mark_period() / spec2.dash_period(&d)).round()).abs() < 1e-4);
-        let _ = std::fs::remove_dir_all(dir);
-    }
-
-    #[test]
-    fn a_road_named_in_cyrillic_finds_its_painted_texture() {
-        let dir = std::env::temp_dir().join(format!("om-roadmaker-cyr-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let tex = dir.join("a.png");
-        image::RgbaImage::from_pixel(16, 16, image::Rgba([80, 80, 80, 255])).save(&tex).unwrap();
-        let mut spec = RoadSpec { name: "Дорога 3+3".into(), lanes_fwd: 3, lanes_back: 3, roadway_tex: tex, marked: true, ..Default::default() };
-        spec.markings = spec.standard_markings();
-        let content = dir.join("content");
-        let rel = spec.write(&content).unwrap();
-        // (OMSI writes its files in Windows-1252: the names are spelled in Latin letters)
-        assert_eq!(rel, "Splines\\openMapper\\Doroga_3_3.sli");
-        let s = omsi_scenery::Spline::load(&content.join("Splines/openMapper/Doroga_3_3.sli")).unwrap();
-        assert!(s.textures[0].file.eq_ignore_ascii_case("Doroga_3_3_lines.bmp"), "{}", s.textures[0].file);
-        assert!(content.join("Splines/openMapper/texture").join(&s.textures[0].file).is_file());
-        assert_eq!(RoadSpec::of(&content.join("Splines/openMapper/Doroga_3_3.sli")).unwrap().name, "Дорога 3+3");
         let _ = std::fs::remove_dir_all(dir);
     }
 

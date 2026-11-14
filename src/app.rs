@@ -452,8 +452,12 @@ impl App {
         self.prefs.save();
     }
 
-    fn after_open(&mut self, doc: Document) {
+    fn after_open(&mut self, mut doc: Document) {
         self.remember_view();
+        // (scaled copies of a name OMSI 2 does not read, made by an earlier openMapper)
+        if let Some(roots) = &self.roots {
+            crate::scaled::renew_old_copies(roots, &mut doc);
+        }
         // look at the map's middle (or its editor camera)
         let keys: Vec<_> = doc.tiles.keys().copied().collect();
         let mut c = DVec2::ZERO;

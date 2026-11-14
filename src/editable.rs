@@ -179,9 +179,9 @@ pub fn load(roots: &Roots, rel: &str) -> Option<Source> {
     serde_json::from_str(&text).map_err(|e| log::warn!("{rel}: {e}")).ok()
 }
 
-/// A file name of ASCII letters, digits, `_` and `-`.
+/// A file name of ASCII letters, digits, `_` and `-`, as OMSI 2 reads it (see `omsi_name`).
 pub fn safe_name(name: &str) -> String {
-    let s = crate::translit::file_name(name);
+    let s = crate::omsi_name::ascii_stem(name);
     if s.is_empty() {
         "Object".into()
     } else {

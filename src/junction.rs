@@ -926,7 +926,7 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
         }
     }
     let id = doc.new_id();
-    let folder: String = doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()).chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let folder = folder_name(doc);
     let sco_root = std::fs::read_dir(content)?.flatten().map(|e| e.path()).find(|p| p.is_dir() && p.file_name().map(|f| f.to_string_lossy().eq_ignore_ascii_case("sceneryobjects")).unwrap_or(false)).unwrap_or_else(|| content.join("Sceneryobjects"));
     let dir = sco_root.join("openMapper").join(&folder);
     let tex_dir = dir.join("texture");
@@ -1067,7 +1067,7 @@ pub fn object_dir(content: &Path, folder: &str) -> std::io::Result<PathBuf> {
 
 /// The name of a map's folder as its junction objects' folder is named.
 pub fn folder_name(doc: &Document) -> String {
-    doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()).chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect()
+    crate::editable::safe_name(&doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()))
 }
 
 /// A road coming into a drawn junction: its road type, where it ends (in the drawing's frame)

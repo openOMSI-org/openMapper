@@ -56,6 +56,7 @@ mod models;
 mod object_paths;
 mod pbr_maker;
 mod onground;
+mod omsi_name;
 mod osm;
 mod osm_map;
 mod osm_buildings;

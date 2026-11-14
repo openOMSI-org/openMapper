@@ -1,7 +1,9 @@
 //! Objects at another size. OMSI 2's map says only where an object stands and how it is
 //! turned, so an object scaled in the view becomes a copy of its type made bigger or smaller:
-//! `name~s1.5_1.5_2.sco` beside the original (in the content folder, so the original's
-//! textures are found as they are), its meshes, collision mesh, lights and paths scaled.
+//! `name_scaled_1500_1500_2000.sco` (the factors in thousandths) beside the original (in the
+//! content folder, so the original's textures are found as they are), its meshes, collision
+//! mesh, lights and paths scaled. Copies used to be called `name~s1.5_1.5_2.sco`, which
+//! OMSI 2 does not read: a map that has them gets copies of the new name when it is opened.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
@@ -19,22 +21,55 @@ pub fn base_of(rel: &str) -> (String, DVec3) {
         None => ("", rel),
     };
     let stem = file.strip_suffix(".sco").or_else(|| file.strip_suffix(".SCO")).unwrap_or(file);
-    if let Some((base, s)) = stem.rsplit_once("~s") {
-        let f: Vec<f64> = s.split('_').filter_map(|v| v.parse().ok()).collect();
+    if let Some((base, s)) = stem.rsplit_once(SCALED) {
+        let f: Vec<f64> = s.split('_').filter_map(thousandths_of).collect();
         if f.len() == 3 {
             return (format!("{dir}{base}.sco"), DVec3::new(f[0], f[1], f[2]));
         }
     }
+    if let Some((base, s)) = old_scale(stem) {
+        return (format!("{dir}{base}.sco"), s);
+    }
     (rel.to_string(), DVec3::ONE)
 }
 
-fn scaled_name(base_rel: &str, s: DVec3) -> String {
-    let stem = base_rel.strip_suffix(".sco").unwrap_or(base_rel);
+/// What comes between the original's name and the factors.
+const SCALED: &str = "_scaled_";
+
+/// The base and the scale of a copy of the old name (`lamp~s1.5_2_0.25`).
+fn old_scale(stem: &str) -> Option<(&str, DVec3)> {
+    let (base, s) = stem.rsplit_once("~s")?;
+    let f: Vec<f64> = s.split('_').filter_map(|v| v.parse().ok()).collect();
+    (f.len() == 3).then(|| (base, DVec3::new(f[0], f[1], f[2])))
+}
+
+/// A factor as the name writes it: thousandths, `m` for a negative one (a mirrored copy).
+fn thousandths(v: f64) -> String {
+    let n = (v * 1000.0).round() as i64;
+    if n < 0 { format!("m{}", -n) } else { n.to_string() }
+}
+
+fn thousandths_of(s: &str) -> Option<f64> {
+    let (sign, digits) = match s.strip_prefix('m') {
+        Some(d) => (-1.0, d),
+        None => (1.0, s),
+    };
+    (!digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())).then(|| sign * digits.parse::<f64>().ok().unwrap_or(0.0) / 1000.0)
+}
+
+/// The factors as people read them (`1.5×2×0.25`).
+fn shown(s: DVec3) -> String {
     let n = |v: f64| {
         let t = format!("{v:.3}");
         t.trim_end_matches('0').trim_end_matches('.').to_string()
     };
-    format!("{stem}~s{}_{}_{}.sco", n(s.x), n(s.y), n(s.z))
+    format!("{}×{}×{}", n(s.x), n(s.y), n(s.z))
+}
+
+/// The copy's name: one dot, ASCII after the original's own name, as OMSI 2 reads it.
+fn scaled_name(base_rel: &str, s: DVec3) -> String {
+    let stem = base_rel.strip_suffix(".sco").unwrap_or(base_rel);
+    format!("{stem}{SCALED}{}_{}_{}.sco", thousandths(s.x), thousandths(s.y), thousandths(s.z))
 }
 
 /// The type for an object of `rel` scaled by `factor` along its own axes (on top of any
@@ -55,7 +90,7 @@ pub fn variant(roots: &Roots, rel: &str, factor: DVec3) -> anyhow::Result<String
     let out_dir = out_path.parent().map(Path::to_path_buf).unwrap_or_default();
     let text = omsi_cfg::decode_text(&std::fs::read(&src)?);
     let lines = omsi_cfg::split_lines(&text);
-    let suffix = out_rel.rsplit('\\').next().and_then(|f| f.strip_suffix(".sco")).and_then(|f| f.rsplit_once("~s")).map(|(_, s)| s.to_string()).unwrap_or_default();
+    let suffix = out_rel.rsplit('\\').next().and_then(|f| f.strip_suffix(".sco")).and_then(|f| f.rsplit_once(SCALED)).map(|(_, s)| s.to_string()).unwrap_or_default();
     let mut out = String::new();
     let avg_xy = (total.x * total.y).sqrt();
     let avg = (total.x * total.y * total.z).cbrt();
@@ -89,7 +124,7 @@ pub fn variant(roots: &Roots, rel: &str, factor: DVec3) -> anyhow::Result<String
                 Scale::Z => num(total.z),
                 Scale::Avg => num(avg),
                 Scale::AvgXy => num(avg_xy),
-                Scale::Name => format!("{} (×{})", v.trim(), suffix.replace('_', "×")),
+                Scale::Name => format!("{} (×{})", v.trim(), shown(total)),
                 Scale::Mesh => {
                     let file = v.trim();
                     match scale_mesh(&src_dir, &out_dir, file, total, &suffix) {
@@ -108,6 +143,43 @@ pub fn variant(roots: &Roots, rel: &str, factor: DVec3) -> anyhow::Result<String
     std::fs::write(&out_path, omsi_cfg::encode_text(&out.replace('\n', "\r\n")))?;
     crate::hot::own_change();
     Ok(out_rel)
+}
+
+/// The map's scaled copies of the old name (`lamp~s1.5_2_1.sco`, which OMSI 2 does not
+/// read) replaced by copies of the new one, made where they are missing; the tiles that name
+/// them are changed, to be saved. How many objects were given the new name.
+pub fn renew_old_copies(roots: &Roots, doc: &mut crate::doc::Document) -> usize {
+    let mut made: std::collections::HashMap<String, Option<String>> = Default::default();
+    let mut renamed = 0;
+    for t in doc.tiles.values_mut() {
+        let mut changed = false;
+        let files = t.tile.objects.iter_mut().chain(t.tile.attach_objects.iter_mut()).map(|o| &mut o.file).chain(t.tile.spline_attachments.iter_mut().map(|a| &mut a.file));
+        for file in files {
+            let (dir, name) = file.rsplit_once('\\').unwrap_or(("", file.as_str()));
+            let stem = name.strip_suffix(".sco").or_else(|| name.strip_suffix(".SCO")).unwrap_or(name);
+            let Some((base, s)) = old_scale(stem) else { continue };
+            let base = if dir.is_empty() { format!("{base}.sco") } else { format!("{dir}\\{base}.sco") };
+            let new = made.entry(file.clone()).or_insert_with(|| match variant(roots, &base, s) {
+                Ok(n) => Some(n),
+                Err(e) => {
+                    log::warn!("{file}: no copy OMSI 2 reads could be made: {e}");
+                    None
+                }
+            });
+            if let Some(n) = new {
+                *file = n.clone();
+                renamed += 1;
+                changed = true;
+            }
+        }
+        if changed {
+            t.touch_content();
+        }
+    }
+    if renamed > 0 {
+        log::info!("{renamed} scaled objects named as OMSI 2 reads them ({} types)", made.values().flatten().count());
+    }
+    renamed
 }
 
 #[derive(Clone, Copy)]
@@ -138,8 +210,8 @@ fn scale_mesh(src_dir: &Path, out_dir: &Path, file: &str, s: DVec3, suffix: &str
     let in_model = omsi_cfg::resolve_path(&omsi_cfg::resolve_path(src_dir, "model"), file);
     let path: PathBuf = if omsi_cfg::vfs::is_file(&in_model) { in_model } else { omsi_cfg::resolve_path(src_dir, file) };
     let m = omsi_o3d::load_mesh(&path)?;
-    let stem = Path::new(&file.replace('\\', "/")).file_stem().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "mesh".into());
-    let name = format!("{stem}~s{suffix}.x");
+    let stem = crate::editable::safe_name(&Path::new(&file.replace('\\', "/")).file_stem().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "mesh".into()));
+    let name = format!("{stem}{SCALED}{suffix}.x");
     let dir = out_dir.join("model");
     std::fs::create_dir_all(&dir)?;
     // (mesh files are in Direct3D's frame: y is up, z forward)
@@ -212,11 +284,18 @@ mod tests {
     #[test]
     fn a_scaled_name_reads_back_as_its_base_and_scale() {
         let n = scaled_name("Sceneryobjects\\A\\lamp.sco", DVec3::new(1.5, 2.0, 0.25));
-        assert_eq!(n, "Sceneryobjects\\A\\lamp~s1.5_2_0.25.sco");
+        assert_eq!(n, "Sceneryobjects\\A\\lamp_scaled_1500_2000_250.sco");
+        assert!(crate::omsi_name::readable(&n), "OMSI 2 reads it: {n}");
         let (b, s) = base_of(&n);
         assert_eq!(b, "Sceneryobjects\\A\\lamp.sco");
         assert_eq!(s, DVec3::new(1.5, 2.0, 0.25));
         assert_eq!(base_of("Sceneryobjects\\A\\lamp.sco").1, DVec3::ONE);
+        // (a mirrored copy)
+        assert_eq!(base_of(&scaled_name("Sceneryobjects\\A\\lamp.sco", DVec3::new(-1.0, 1.0, 1.0))).1, DVec3::new(-1.0, 1.0, 1.0));
+        // (a copy of the old name, which OMSI 2 did not read, is still known for one)
+        assert_eq!(base_of("Sceneryobjects\\A\\comercio18~s1.876_1.436_1.876.sco"), ("Sceneryobjects\\A\\comercio18.sco".to_string(), DVec3::new(1.876, 1.436, 1.876)));
+        // (an object whose own name says "scaled" is not taken for a copy)
+        assert_eq!(base_of("Sceneryobjects\\A\\tree_scaled_big.sco").1, DVec3::ONE);
     }
 
     #[test]
@@ -234,16 +313,31 @@ mod tests {
         std::fs::write(obj.join("box.sco"), omsi_cfg::encode_text(&sco.replace('\n', "\r\n"))).unwrap();
         let roots = Roots { omsi: omsi.clone(), content: content.clone() };
         let rel = variant(&roots, "Sceneryobjects\\T\\box.sco", DVec3::new(2.0, 2.0, 2.0)).unwrap();
-        assert_eq!(rel, "Sceneryobjects\\T\\box~s2_2_2.sco");
+        assert_eq!(rel, "Sceneryobjects\\T\\box_scaled_2000_2000_2000.sco");
         let path = omsi_cfg::resolve_path(&content, &rel);
         let text = omsi_cfg::decode_text(&std::fs::read(&path).unwrap());
-        assert!(text.contains("box~s2_2_2.x"), "{text}");
+        assert!(text.contains("box_scaled_2000_2000_2000.x"), "{text}");
+        assert!(text.contains("Box (×2×2×2)"), "{text}");
         assert!(text.contains("\r\n2\r\n4\r\n6\r\n"), "{text}");
-        let m = omsi_o3d::load_mesh(&content.join("Sceneryobjects/T/model/box~s2_2_2.x")).unwrap();
+        let m = omsi_o3d::load_mesh(&content.join("Sceneryobjects/T/model/box_scaled_2000_2000_2000.x")).unwrap();
         let hi = m.vertices.iter().map(|v| v.position.y).fold(f32::MIN, f32::max);
         assert!((hi - 2.0).abs() < 1e-4);
         // scaled again by a half: the original back
         assert_eq!(variant(&roots, &rel, DVec3::splat(0.5)).unwrap(), "Sceneryobjects\\T\\box.sco");
+
+        // a map saved by an earlier openMapper names a copy OMSI 2 cannot read: opened, it
+        // names one it can, made beside it
+        let mut doc = crate::selection::tests::flat_map(1);
+        let old = "Sceneryobjects\\T\\box~s1.5_1.5_1.5.sco";
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects.push(omsi_map::MapObject { file: old.into(), id: 1, ..Default::default() });
+        doc.tiles.get_mut(&(0, 0)).unwrap().dirty = false;
+        assert_eq!(renew_old_copies(&roots, &mut doc), 1);
+        let t = &doc.tiles[&(0, 0)];
+        assert_eq!(t.tile.objects[0].file, "Sceneryobjects\\T\\box_scaled_1500_1500_1500.sco");
+        assert!(crate::omsi_name::readable(&t.tile.objects[0].file));
+        assert!(omsi_cfg::resolve_path(&content, &t.tile.objects[0].file).is_file(), "the copy is made");
+        assert!(t.dirty, "the tile is to be saved with the new name");
+        assert_eq!(renew_old_copies(&roots, &mut doc), 0, "once");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
