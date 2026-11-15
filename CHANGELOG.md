@@ -4,6 +4,32 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.1.25 - 2026-11-15
+
+### Added
+- **Pick a trip's paths by hand** (Lines and timetable > a trip > Pick the paths on the map): a click adds a path and the ones leading to it, a path beside the route takes the place of the branch it goes round, a path of the route is taken out; the way may run on before the first stop and after the last. A gap in a trip's way is shown in the trip, on the map and in the map check (#122, #71).
+- **All trips** in one list, those no timetable uses too, to open, edit or delete; a tour's departure can take any trip of the map, and a trip's line can be changed (#71).
+- **Time from stop to stop**: a trip's time profiles are edited one stop at a time, added, renamed and deleted, and each departure picks its own (#116).
+- All five ways OMSI 2 serves a stop, named plainly: Always, Wait for departure time, Not served (checkpoint), On demand, Always + wait for departure time (#71).
+- **Complete to** (`J`): a new piece of spline between two free ends of the selected splines, the two left as they are; pressed again, it closes the loop (#113).
+- **Snap scenery objects** vertex to vertex (`V`) and edge to edge (`L`), also along a road (#123).
+- **The open map follows changes made to it by other programs** (OMSI 2's editor among them), and File > Reload from disk reads it again; changes made to the OMSI 2 folder's map since openMapper's copy was saved can be brought over (#119).
+
+### Changed
+- The ends of kerbs, walls and fences are caught at the middle of their profile, where they are drawn (#55).
+- The invisible AI-path splines are no longer drawn under openMapper's own lane lines (#66).
+- The crossing editor shows the lanes and joints round even the largest junctions (#121).
+
+### Fixed
+- **Maps saved by openMapper open in original OMSI 2 again**: the files it makes have names OMSI 2 reads (a scaled object's copy was `name~s1.8_1.4_1.8.sco`; old ones are renamed when the map is opened), objects hung on others are written after them, and the editor camera stays on a tile the map has (#100, #73, #63).
+- AI paths of road objects follow the object's height field, as its mesh does, and lanes link up to 3 m apart in height (#120).
+- A trip's way drives the short pieces of a junction in place of jumping over them, so the game's GPS keeps to the line (#122).
+- A road type named in Cyrillic keeps its painted markings (#104).
+- The camera no longer moves by itself after Alt + Tab (#115).
+- Picking an object made in openMapper no longer widens the panel and shifts the view (#51).
+- Running out of graphics memory no longer closes the editor (#62).
+- The installer says when it is the package for another processor, in place of Windows' "This app can't run on your PC" (#102).
+
 ## 0.1.24 - 2026-11-09
 
 ### Added
