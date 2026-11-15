@@ -132,6 +132,8 @@ pub struct App {
     save_flight: Option<std::sync::mpsc::Receiver<anyhow::Result<crate::doc::save::SaveStamp>>>,
     /// An autosave left by a session that did not end normally, offered back.
     recover: Option<crate::doc::autosave::Meta>,
+    /// The open map kept in step with its files on disk.
+    sync: crate::ui_sync::MapSync,
     /// The Lines window.
     tt: crate::ui_timetable::TimetableUi,
     /// The Traffic and AI window.
@@ -283,6 +285,7 @@ impl App {
             autosave: Default::default(),
             save_flight: None,
             recover: None,
+            sync: Default::default(),
         };
         crate::logging::stage("looking for OMSI 2 and the content");
         app.setup_roots();
@@ -402,6 +405,15 @@ impl App {
         // (a big map is read and its tiles made ready for the view here, the window waiting:
         // the log says so if that wait is long enough for the watchdog to write)
         crate::logging::busy("opening the map");
+        // (what other programs wrote since is read: openOMSI's listings of folders start afresh)
+        omsi_cfg::content_changed();
+        // an installation's map that openMapper saved is edited as its copy in the content
+        // folder; what OMSI 2's editor changed in the installation's since is offered then
+        let copy = crate::doc::sync::copy_of(roots, cfg);
+        if copy.is_some() {
+            self.ed.toast(tr("Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)", "Открыта копия этой карты openMapper в папке контента (карта в папке OMSI 2 не изменяется)"));
+        }
+        let cfg = copy.as_deref().unwrap_or(cfg);
         let loaded = Document::load(roots, cfg, |_| {});
         match loaded {
             Ok(doc) => {
@@ -440,8 +452,12 @@ impl App {
         self.prefs.save();
     }
 
-    fn after_open(&mut self, doc: Document) {
+    fn after_open(&mut self, mut doc: Document) {
         self.remember_view();
+        // (scaled copies of a name OMSI 2 does not read, made by an earlier openMapper)
+        if let Some(roots) = &self.roots {
+            crate::scaled::renew_old_copies(roots, &mut doc);
+        }
         // look at the map's middle (or its editor camera)
         let keys: Vec<_> = doc.tiles.keys().copied().collect();
         let mut c = DVec2::ZERO;
@@ -481,6 +497,7 @@ impl App {
             g.renderer.reset_map();
         }
         self.ed.open(doc);
+        self.sync.rebase(self.ed.doc.as_ref());
         self.ed.set_tool(Tool::Select);
         // (the loaded window of tiles starts round where the map opened)
         self.stream_at = None;
@@ -1218,6 +1235,8 @@ impl App {
             crate::doc::autosave::clear(&r.content);
         }
         self.autosave.reset();
+        // (the files written now are the map's own, not a change from outside)
+        self.sync.rebase(Some(doc));
         let cfg = doc.dir.join("global.cfg");
         let dir = doc.dir.display().to_string();
         let has_start = !doc.global.entry_points.is_empty();
@@ -1233,6 +1252,15 @@ impl App {
         if !has_start {
             self.ed.toast(tr("Tip: place a start point (Game logic > Start points) so the bus has somewhere to appear", "Совет: поставьте точку старта (Служебное > Точки старта), чтобы автобусу было где появиться"));
         }
+    }
+
+    /// Parts of the map were read from disk again: what the editor kept of the old ones (the
+    /// selection, the undo steps) goes, the view follows the revisions.
+    fn read_in_again(&mut self, done: &crate::doc::sync::Changes) {
+        if let Some(doc) = self.ed.doc.take() {
+            self.ed.open(doc);
+        }
+        self.ed.toast(format!("{} {}", tr("Read in again, changed on disk by another program:", "Загружено заново, изменено на диске другой программой:"), done.describe()));
     }
 
     /// Bring an autosave's changes back (or drop them).
@@ -1468,7 +1496,7 @@ impl App {
     }
 
     fn do_action(&mut self, a: Action, el: &ActiveEventLoop) {
-        let guarded = matches!(a, Action::Close | Action::Open(_) | Action::OpenDialog | Action::NewMap { .. } | Action::Quit | Action::RestoreBackup(_));
+        let guarded = matches!(a, Action::Close | Action::Open(_) | Action::OpenDialog | Action::NewMap { .. } | Action::Quit | Action::RestoreBackup(_) | Action::ReloadFromDisk);
         // (the map is about to be left or its files replaced: a save still writing lands first,
         // so it is not cut short, nor counted as changes to lose)
         if guarded {
@@ -1510,6 +1538,11 @@ impl App {
             }
             Action::Save => {
                 self.save_smooth();
+            }
+            Action::ReloadFromDisk => {
+                if let Some(dir) = self.ed.doc.as_ref().and_then(crate::doc::sync::read_dir) {
+                    self.open_map(&dir.join("global.cfg"));
+                }
             }
             Action::RestoreBackup(b) => {
                 let Some(dir) = self.ed.doc.as_ref().map(|d| d.dir.clone()) else { return };
@@ -2347,6 +2380,7 @@ impl App {
             }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
+            Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
                 let splines = self.ed.selection().iter().any(|s| matches!(s, Sel::Spline(..)));
@@ -2892,6 +2926,7 @@ impl App {
         let mut view: Option<(egui::Rect, bool)> = None;
         let gpu_name = g.gpu.adapter_name.clone();
         let mut recover_answer = None;
+        let mut sync_answer = None;
         let mut restart_now = false;
         // (the selected object's PBR state for its properties: looked up when it changes)
         let sel_file = match (self.ed.selected, &self.ed.doc) {
@@ -3065,6 +3100,7 @@ impl App {
             if let Some(m) = &self.recover {
                 recover_answer = crate::doc::autosave::offer(&ctx, m);
             }
+            sync_answer = crate::ui_sync::window(&ctx, &self.sync);
             let unsaved = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
             restart_now = self.updater.frame(&ctx, &mut self.prefs, unsaved) && self.recover.is_none();
         });
@@ -3434,6 +3470,20 @@ impl App {
         // earlier session's autosave is still offered: there is one, it would be written over)
         let editing = self.mouse.left || self.ed.history.is_open() || self.recover.is_some() || self.chrono.in_session();
         self.autosave.tick(self.ed.doc.as_ref(), self.roots.as_ref().map(|r| r.content.as_path()), editing);
+        // what other programs changed in the map's files read in (not in multiplayer as a
+        // guest: that map is the host's)
+        let busy = editing || self.save_flight.is_some() || self.collab.is_guest() || self.shot.is_some();
+        if let Some(done) = self.sync.tick(self.ed.doc.as_mut(), self.roots.as_ref(), busy) {
+            self.read_in_again(&done);
+        }
+        if let Some(yes) = sync_answer {
+            match self.sync.answer(self.ed.doc.as_mut(), yes) {
+                crate::ui_sync::Answered::Reloaded(done) => self.read_in_again(&done),
+                crate::ui_sync::Answered::Took(n) => log::info!("{n} file(s) taken from the installation's map"),
+                crate::ui_sync::Answered::Failed(e) => self.ed.error(format!("{}: {e}", tr("Could not bring the changes over", "Не удалось перенести изменения"))),
+                crate::ui_sync::Answered::Nothing => {}
+            }
+        }
     }
 
     /// A scripted session (`OPENMAPPER_DEMO=<map name>`): a new map with roads, objects and
@@ -3882,6 +3932,28 @@ impl ApplicationHandler for App {
                 }
                 self.keys.alt = alt;
             }
+            WindowEvent::Focused(_) => {
+                // (keys and buttons let go of in another window, after Alt + Tab, never come
+                // up here: the camera would fly on by itself. Whatever was held is let go of)
+                self.keys = Keys::default();
+                self.ed.ctrl_held = false;
+                self.ed.shift_held = false;
+                self.ed.straight_lock = false;
+                self.mouse.right = false;
+                self.mouse.middle = false;
+                self.mouse.grab = false;
+                self.mouse.alt_orbit = false;
+                self.mouse.grab_anchor = None;
+                self.mouse.look_acc = (0.0, 0.0);
+                if self.mouse.look_raw {
+                    self.mouse.look_raw = false;
+                    let _ = g.window.set_cursor_grab(winit::window::CursorGrabMode::None);
+                    g.window.set_cursor_visible(true);
+                }
+            }
+            // (a key the system says is down as the window gets the focus: not one pressed
+            // here, and one stuck down in Windows would fly the camera at every start)
+            WindowEvent::KeyboardInput { event, is_synthetic: true, .. } if event.state == ElementState::Pressed => {}
             WindowEvent::KeyboardInput { event, .. } => {
                 let pressed = event.state == ElementState::Pressed;
                 let code = match event.physical_key {

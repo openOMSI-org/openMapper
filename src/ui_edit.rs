@@ -468,6 +468,9 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
             if ui.button(tr("Reverse their direction", "Развернуть их направление")).on_hover_text(reverse_help()).clicked() {
                 ed.reverse_selected();
             }
+            if ui.button(icons::labelled(Icon::Route, tr("Complete to", "Достроить до"))).on_hover_text(crate::complete::help()).clicked() {
+                ed.complete_to();
+            }
         }
         if splines > 1 {
             ui.add_space(4.0);

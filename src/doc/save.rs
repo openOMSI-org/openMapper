@@ -284,7 +284,7 @@ pub fn tile_file(k: TileKey) -> String {
 
 /// The file a tile is kept in: the one global.cfg named when the map was read (a tile not
 /// edited is not written again, and chrono folders name it so), else `tile_x_y.map`.
-fn file_of(doc: &Document, k: TileKey) -> String {
+pub(crate) fn file_of(doc: &Document, k: TileKey) -> String {
     doc.global.tiles.iter().find(|t| (t.x, t.y) == k).map(|t| t.file.clone()).unwrap_or_else(|| tile_file(k))
 }
 
@@ -348,7 +348,7 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
         kw(&mut s, "backgroundimage", &lines);
     }
     if g.map_cam.len() == 8 {
-        kw(&mut s, "mapcam", &g.map_cam.iter().map(|v| num(*v)).collect::<Vec<_>>());
+        kw(&mut s, "mapcam", &map_cam(doc, has_tile).iter().map(|v| num(*v)).collect::<Vec<_>>());
     }
     if !g.money_system.is_empty() {
         kw(&mut s, "moneysystem", &[g.money_system.clone()]);
@@ -415,6 +415,26 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
     s
 }
 
+/// The editor camera (`[mapcam]`: tile x, tile y, x, height, y, heading, pitch, distance) on a
+/// tile the map has: OMSI 2's editor opens the map there, and on a tile taken away it shows
+/// nothing but the sky. Such a camera is moved to the middle of the map's first tile.
+fn map_cam(doc: &Document, has_tile: &dyn Fn(&TileKey) -> bool) -> Vec<f64> {
+    let mut mc = doc.global.map_cam.clone();
+    let on = (mc[0].round() as i32, mc[1].round() as i32);
+    if has_tile(&on) {
+        return mc;
+    }
+    if let Some(k) = doc.order.iter().find(|k| has_tile(k)) {
+        let half = omsi_map::tile_size() / 2.0;
+        mc[0] = k.0 as f64;
+        mc[1] = k.1 as f64;
+        mc[2] = half;
+        mc[3] = doc.tiles.get(k).map(|t| t.height_at(half, half) as f64).unwrap_or(0.0);
+        mc[4] = half;
+    }
+    mc
+}
+
 pub(crate) fn tile_text(t: &Tile) -> String {
     let mut s = header();
     // ([terrain] and [water] carry a line of their own, empty, then the blank line that
@@ -449,19 +469,42 @@ pub(crate) fn tile_text(t: &Tile) -> String {
         let _ = writeln!(s, "Object Nr. {n}");
         n += 1;
     };
+    // (the records an [attachObj] may hang on, as they are written)
+    let mut written: HashSet<i64> = HashSet::new();
     for o in &t.objects {
         numbered(&mut s);
         object(&mut s, o, false);
+        written.insert(o.id);
     }
     for a in &t.spline_attachments {
         // (its distance stays as it is: it counts from the start of the chain, as the spline's
         // last number does - a repeater's from a chain begun tiles before. A row whose spline is
-        // not written keeps the index it had, so the numbers of the records after it hold)
-        let index = usize::try_from(a.spline_index).ok().and_then(|i| place.get(i).copied().flatten()).unwrap_or(a.spline_index);
+        // not written names none, -1, as the stock maps write such a row (Berlin-Spandau has
+        // one): its old index would put it on whichever spline came to have that place)
+        let index = usize::try_from(a.spline_index).ok().and_then(|i| place.get(i).copied().flatten()).unwrap_or(-1);
         numbered(&mut s);
         attachment_at(&mut s, a, index, a.offset[2]);
+        written.insert(a.id);
     }
-    for o in &t.attach_objects {
+    // (each after what it hangs on, as OMSI 2 reads them: an [attachObj] written before its
+    // parent is dropped by Omsi.exe. One whose parent is not in the tile goes last, as it was)
+    let mut left: Vec<&MapObject> = t.attach_objects.iter().collect();
+    loop {
+        let before = left.len();
+        left.retain(|o| {
+            if !o.parent_id.is_some_and(|p| written.contains(&p)) {
+                return true;
+            }
+            numbered(&mut s);
+            object(&mut s, o, true);
+            written.insert(o.id);
+            false
+        });
+        if left.is_empty() || left.len() == before {
+            break;
+        }
+    }
+    for o in left {
         numbered(&mut s);
         object(&mut s, o, true);
     }
@@ -757,6 +800,54 @@ mod tests {
         assert_eq!(a.spline_index, 1, "the place of spline 7 in the file");
         assert_eq!(back.splines[a.spline_index as usize].id, 7, "and it is the same spline");
         assert!(!refused(&back.splines, a));
+    }
+
+    /// An object hung on another one that comes later in the tile's list (hung on a sign put
+    /// up after it, or brought back by undo) is written after it: Omsi.exe and openOMSI drop
+    /// an `[attachObj]` written before the record it hangs on, so the editor showed it and the
+    /// game did not. A row on a spline the tile does not have (one taken away, or an index an
+    /// earlier save left past the end of the list) names no spline (-1, as the stock maps
+    /// write such a row) instead of whichever spline came to have its place.
+    #[test]
+    fn hung_objects_follow_their_parents_and_a_row_on_no_spline_names_none() {
+        let mut t = Tile { version: 14, ..Default::default() };
+        t.splines.push(MapSpline { file: "Splines\\road.sli".into(), id: 5, length: 20.0, map_chain_offset: Some(0.0), ..Default::default() });
+        t.splines.push(MapSpline { file: "Splines\\road.sli".into(), id: 6, length: 20.0, map_chain_offset: Some(0.0), deleted: true, ..Default::default() });
+        t.splines.push(MapSpline { file: "Splines\\road.sli".into(), id: 7, length: 20.0, map_chain_offset: Some(0.0), ..Default::default() });
+        let row = |id: i64, spline_index: i32| SplineAttachment { file: "Sceneryobjects\\stop.sco".into(), id, spline_index, offset: [3.0, 0.0, 5.0], ..Default::default() };
+        // (on a spline that is there, on the deleted one, past the end, and on none)
+        t.spline_attachments = vec![row(10, 0), row(11, 1), row(12, 7), row(13, -1)];
+        t.objects.push(MapObject { file: "Sceneryobjects\\pole.sco".into(), id: 20, ..Default::default() });
+        let hang = |id: i64, parent: i64| MapObject { file: "Sceneryobjects\\sign.sco".into(), id, parent_id: Some(parent), ..Default::default() };
+        // (a sign on a sign that comes later in the list, signs on a row and an object, one on
+        // nothing in this tile)
+        t.attach_objects = vec![hang(30, 31), hang(31, 10), hang(32, 11), hang(33, 20), hang(34, 999)];
+        let text = tile_text(&t);
+        let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
+        assert_eq!(back.splines.len(), 2);
+        let rows: Vec<(i64, i32)> = back.spline_attachments.iter().map(|a| (a.id, a.spline_index)).collect();
+        assert_eq!(rows, vec![(10, 0), (11, -1), (12, -1), (13, -1)], "no row lands on spline 7:\n{text}");
+        let mut hung: Vec<i64> = back.attach_objects.iter().map(|o| o.id).collect();
+        hung.sort();
+        assert_eq!(hung, vec![30, 31, 32, 33, 34], "every hung object read back, the sign on the later sign too");
+        // (in the file, every [attachObj] comes after the record it hangs on)
+        let at = |id: i64| text.find(&format!("\n{id}\n")).unwrap();
+        assert!(at(10) < at(31) && at(31) < at(30));
+    }
+
+    /// The editor camera on a tile the map no longer has is put on one it has: OMSI 2's editor
+    /// opens the map there.
+    #[test]
+    fn the_map_camera_stays_on_a_tile_of_the_map() {
+        let mut doc = crate::selection::tests::flat_map(2);
+        doc.global.map_cam = vec![7.0, 7.0, 10.0, 0.0, 20.0, 45.0, 30.0, 80.0];
+        let text = global_text(&doc);
+        let back = omsi_map::GlobalCfg::parse(&omsi_cfg::CfgFile::from_str("global.cfg", &text));
+        assert_eq!(&back.map_cam[..2], &[0.0, 0.0], "on the first tile: {:?}", back.map_cam);
+        assert_eq!(&back.map_cam[5..], &[45.0, 30.0, 80.0], "looking as it did");
+        doc.global.map_cam = vec![1.0, 0.0, 10.0, 0.0, 20.0, 45.0, 30.0, 80.0];
+        let back = omsi_map::GlobalCfg::parse(&omsi_cfg::CfgFile::from_str("global.cfg", &global_text(&doc)));
+        assert_eq!(back.map_cam, doc.global.map_cam, "one on a tile of the map is kept");
     }
 
     /// `OMSI_ROUNDTRIP_IN=<folder of .map files> OMSI_ROUNDTRIP_OUT=<folder>`: every tile of the

@@ -180,6 +180,8 @@ pub enum Action {
     /// Put the map's folder back as it was before the save kept in this backup (and the
     /// later ones), then open it again.
     RestoreBackup(PathBuf),
+    /// File > Reload from disk: the map read again from its files.
+    ReloadFromDisk,
     /// Open or close the Traffic and AI window.
     Traffic,
     /// Open or close the Satellite and terrain window.
@@ -818,8 +820,9 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
         tool_panel(ui, st, ed, lib, thumbs, wanted, swatches, wanted_swatches, actions);
     });
     egui::Panel::right("properties").resizable(true).default_size(270.0).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
-        // (a road's rows of objects can make it long)
-        egui::ScrollArea::vertical().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
+        // (a road's rows of objects can make it long; a row wider than the panel scrolls
+        // sideways instead of widening it: the map view shrank and slid away under the click)
+        egui::ScrollArea::both().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
             properties(ui, st, ed, lib, actions);
         });
     });
@@ -903,6 +906,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 ui.separator();
                 if menu_item(ui, Some(Icon::Save), tr("Save", "Сохранить"), "Ctrl+S", true) {
                     actions.push(Action::Save);
+                }
+                if menu_item(ui, None, tr("Reload from disk", "Загрузить с диска"), "", ed.doc.as_ref().map(|d| !d.fresh).unwrap_or(false)) {
+                    actions.push(Action::ReloadFromDisk);
                 }
                 if menu_item(ui, Some(Icon::Copy), tr("Export map for sharing…", "Экспорт карты для обмена…"), "", true) {
                     actions.push(Action::Export);

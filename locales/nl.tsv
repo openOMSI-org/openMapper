@@ -2819,3 +2819,76 @@ Aligned angle! (Ctrl+Z om ongedaan te maken)	Hoek uitgelijnd! (Ctrl+Z om ongedaa
 Vertex snap complete	Hoekpunt magnetisch uitlijnen voltooid
 Align vertex angle	Hoekpunt uitlijningshoek aanpassen
 Aligned angle! (Ctrl+Z to undo)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Complete to	Aanvullen tot
+Complete to: a new piece between the free ends of the selected splines	Aanvullen tot: een nieuw stuk tussen de vrije uiteinden van de geselecteerde splines
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Een nieuw stuk van het type van de eerst geselecteerde spline tussen twee vrije uiteinden van de geselecteerde splines, dat op beide aansluit in plaats, richting en hoogte; die zelf veranderen niet. Nog eens: de twee overgebleven uiteinden worden verbonden en de ring sluit.
+The two ends already meet	De twee uiteinden raken elkaar al
+Select the splines whose free ends are to be joined	Selecteer de splines waarvan de vrije uiteinden verbonden moeten worden
+No piece of spline can join these two ends	Geen stuk spline kan deze twee uiteinden verbinden
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	openMappers kopie van deze kaart in de inhoudsmap geopend (die in de OMSI 2-map wordt nooit beschreven)
+Read in again, changed on disk by another program:	Opnieuw ingelezen, op schijf gewijzigd door een ander programma:
+Could not bring the changes over	De wijzigingen konden niet worden overgenomen
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	De bestanden van de kaart zijn na deze automatische opslag gewijzigd (door een ander programma, zoals de OMSI 2-editor). Herstellen legt de oudere tegels uit de opslag over die wijzigingen.
+tile(s)	tegel(s)
+the global settings	de algemene instellingen
+the timetable	de dienstregeling
+the traffic	het verkeer
+the descriptions	de beschrijvingen
+Reload from disk	Opnieuw laden van schijf
+The map changed on disk	De kaart is op schijf gewijzigd
+Another program changed the map's files where it has changes here not saved yet:	Een ander programma heeft bestanden van de kaart gewijzigd waar hier niet-opgeslagen wijzigingen zijn:
+The other changes made on disk were read in already.	De overige wijzigingen op schijf zijn al ingelezen.
+Keep mine	Mijne behouden
+The map changed in OMSI 2's folder	De kaart is gewijzigd in de OMSI 2-map
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	De kopie van deze kaart in de installatie is gewijzigd nadat openMappers kopie in de inhoudsmap was opgeslagen, bijvoorbeeld door de OMSI 2-editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Overnemen vervangt die bestanden in openMappers kopie; de vervangen bestanden blijven bewaard in een back-up (Bestand > Eerdere versies).
+Bring the changes over	Wijzigingen overnemen
+Keep openMapper's copy	openMappers kopie behouden
+its way has a gap after path	zijn route heeft een gat na pad
+its way does not pass	zijn route komt niet langs
+On demand	Op verzoek
+Not served (checkpoint)	Niet bediend (controlepunt)
+Wait for departure time	Wachten op vertrektijd
+Always + wait for departure time	Altijd + wachten op vertrektijd
+The bus stops only when somebody waits or wants to get off (the game's default)	De bus stopt alleen als iemand wacht of wil uitstappen (de standaard van het spel)
+The bus always stops here	De bus stopt hier altijd
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	De bus rijdt door zonder te stoppen: de halte markeert alleen de route (een controlepunt)
+The bus stops only when it is early, and waits there for its departure time	De bus stopt alleen als hij te vroeg is, en wacht daar op zijn vertrektijd
+The bus always stops here, and when it is early it waits for its departure time	De bus stopt hier altijd, en als hij te vroeg is wacht hij op zijn vertrektijd
+All trips	Alle ritten
+Every trip of the map, those no tour drives too	Elke rit van de kaart, ook die geen omloop rijdt
+The line number the trip shows; the line of this number lists it among its trips	Het lijnnummer dat de rit toont; de lijn met dit nummer toont hem bij zijn ritten
+Way picked by hand:	Route met de hand gekozen:
+the paths picked do not pass this stop	de gekozen paden komen niet langs deze halte
+Other trips	Andere ritten
+The time profile this departure runs to	Het tijdprofiel waarnaar dit vertrek rijdt
+Time profile	Tijdprofiel
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Een rit kan meerdere profielen hebben (spits, nacht…): elk vertrek van een omloop zegt naar welk het rijdt
+The profile's name	De naam van het profiel
+A new profile, a copy of this one	Een nieuw profiel, een kopie van dit
+Delete this profile (its departures run to the first)	Dit profiel verwijderen (zijn vertrekken rijden naar het eerste)
+Times from stop to stop	Tijden van halte tot halte
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Bij elke halte kan de tijd vanaf de halte ervoor worden ingesteld: de tijden erna schuiven mee, en de rittijd met ze. Niet ingestelde tijden volgen de afstand tussen de vaste; bij een vaste halte wacht een bus die te vroeg is.
+From the stop before	Vanaf de halte ervoor
+After departure	Na vertrek
+Minutes from the stop before to this one	Minuten van de halte ervoor tot deze
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Zoals in de editor van OMSI 2. Wijs een keuze aan om te zien wat de bus doet.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Elke rit van de kaart, welke lijn hem ook toont of welke omloop hem ook rijdt. Een rit die geen omloop rijdt blijft bewaard, en kan hier worden bewerkt, aan een omloop gegeven of verwijderd.
+trips	ritten
+driven by no tour	door geen omloop gereden
+no tour	geen omloop
+departures	vertrekken
+No path there: click a lane of a road (View > AI lanes shows them)	Geen pad hier: klik op een rijstrook van een weg (Beeld > AI-rijstroken toont ze)
+Done picking paths	Klaar met kiezen
+Pick the paths on the map	De paden op de kaart kiezen
+Choose the way yourself, path by path, as in OMSI 2's editor	Kies de route zelf, pad voor pad, zoals in de editor van OMSI 2
+Find the way automatically	De route automatisch vinden
+Forget the paths picked: the way is found along the roads again	De gekozen paden vergeten: de route wordt weer langs de wegen gevonden
+The paths were picked by hand: they are kept when the stops change.	De paden zijn met de hand gekozen: ze blijven als de haltes veranderen.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klik paden aan in het beeld. Een na het einde of voor het begin wordt toegevoegd, met de paden ernaartoe; een naast de route neemt de plaats in van het stuk waar het omheen gaat (een andere tak op een kruising); een pad van de route wordt weggehaald. De route mag al voor de eerste halte beginnen en na de laatste doorlopen.
+The way breaks after path	De route breekt af na pad
+the paths do not join, the bus's GPS loses its way here in the game	de paden sluiten niet op elkaar aan, de gps van de bus raakt hier in het spel de weg kwijt
+Paths of the way	Paden van de route
+Cut before the first stop	Afknippen voor de eerste halte
+Cut after the last stop	Afknippen na de laatste halte
+path	pad

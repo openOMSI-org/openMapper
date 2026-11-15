@@ -2818,3 +2818,76 @@ Click a 2nd reference point on the object, or Esc to finish	Klicka på en andra 
 Aligned angle! (Ctrl+Z to undo)	Vinkel justerad! (Ctrl+Z för att ångra)
 Vertex snap complete	Hörnfästning slutförd
 Align vertex angle	Justera hörnvinkel
+Complete to	Komplettera till
+Complete to: a new piece between the free ends of the selected splines	Komplettera till: en ny del mellan de valda splinernas fria ändar
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	En ny del av den först valda splinens typ mellan två fria ändar på de valda splinerna, som möter båda i läge, riktning och höjd; de själva ändras inte. Igen: de två ändar som är kvar sammanfogas och ringen sluts.
+The two ends already meet	De två ändarna möts redan
+Select the splines whose free ends are to be joined	Välj de spliner vars fria ändar ska sammanfogas
+No piece of spline can join these two ends	Ingen splinedel kan sammanfoga dessa två ändar
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Öppnade openMappers kopia av kartan i innehållsmappen (den i OMSI 2-mappen skrivs aldrig)
+Read in again, changed on disk by another program:	Inläst igen, ändrad på disken av ett annat program:
+Could not bring the changes over	Kunde inte föra över ändringarna
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Kartans filer ändrades efter denna autosparning (av ett annat program, t.ex. OMSI 2:s editor). Att återställa lägger autosparningens äldre rutor över de ändringarna.
+tile(s)	ruta/rutor
+the global settings	de globala inställningarna
+the timetable	tidtabellen
+the traffic	trafiken
+the descriptions	beskrivningarna
+Reload from disk	Läs in från disken igen
+The map changed on disk	Kartan ändrades på disken
+Another program changed the map's files where it has changes here not saved yet:	Ett annat program ändrade kartans filer där den har osparade ändringar här:
+The other changes made on disk were read in already.	Övriga ändringar på disken är redan inlästa.
+Keep mine	Behåll mina
+The map changed in OMSI 2's folder	Kartan ändrades i OMSI 2-mappen
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopian av kartan i installationen ändrades efter att openMappers kopia i innehållsmappen sparades, t.ex. av OMSI 2:s editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Att föra över ändringarna ersätter de filerna i openMappers kopia; de ersatta filerna sparas i en säkerhetskopia (Arkiv > Tidigare versioner).
+Bring the changes over	För över ändringarna
+Keep openMapper's copy	Behåll openMappers kopia
+its way has a gap after path	dess väg har ett glapp efter körfält
+its way does not pass	dess väg passerar inte
+On demand	Vid behov
+Not served (checkpoint)	Betjänas inte (kontrollpunkt)
+Wait for departure time	Vänta på avgångstid
+Always + wait for departure time	Alltid + vänta på avgångstid
+The bus stops only when somebody waits or wants to get off (the game's default)	Bussen stannar bara om någon väntar eller vill gå av (spelets standard)
+The bus always stops here	Bussen stannar alltid här
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Bussen kör förbi utan att stanna: hållplatsen markerar bara vägen (en kontrollpunkt)
+The bus stops only when it is early, and waits there for its departure time	Bussen stannar bara när den är tidig, och väntar där på sin avgångstid
+The bus always stops here, and when it is early it waits for its departure time	Bussen stannar alltid här, och när den är tidig väntar den på sin avgångstid
+All trips	Alla turer
+Every trip of the map, those no tour drives too	Varje tur på kartan, även de som inget omlopp kör
+The line number the trip shows; the line of this number lists it among its trips	Linjenumret som turen visar; linjen med det numret listar den bland sina turer
+Way picked by hand:	Väg vald för hand:
+the paths picked do not pass this stop	de valda körfälten passerar inte den här hållplatsen
+Other trips	Andra turer
+The time profile this departure runs to	Tidsprofilen som avgången går efter
+Time profile	Tidsprofil
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	En tur kan ha flera profiler (rusningstid, natt…): varje avgång i ett omlopp säger vilken den går efter
+The profile's name	Profilens namn
+A new profile, a copy of this one	En ny profil, en kopia av den här
+Delete this profile (its departures run to the first)	Ta bort den här profilen (dess avgångar går efter den första)
+Times from stop to stop	Tider från hållplats till hållplats
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Tiden från hållplatsen innan kan anges vid varje hållplats: tiderna efter flyttas med, och turens tid med dem. Tider som inte är angivna följer avståndet mellan de fasta; vid en fast hållplats väntar en buss som är tidig.
+From the stop before	Från hållplatsen innan
+After departure	Efter avgång
+Minutes from the stop before to this one	Minuter från hållplatsen innan till den här
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Som i OMSI 2:s redigerare. Håll muspekaren över ett val för att se vad bussen gör.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Varje tur på kartan, vilken linje som än visar den eller vilket omlopp som än kör den. En tur som inget omlopp kör sparas, och kan redigeras, ges till ett omlopp eller tas bort här.
+trips	turer
+driven by no tour	körs av inget omlopp
+no tour	inget omlopp
+departures	avgångar
+No path there: click a lane of a road (View > AI lanes shows them)	Inget körfält där: klicka på ett körfält på en väg (Visa > AI-körfält visar dem)
+Done picking paths	Klart med valet
+Pick the paths on the map	Välj körfälten på kartan
+Choose the way yourself, path by path, as in OMSI 2's editor	Välj vägen själv, körfält för körfält, som i OMSI 2:s redigerare
+Find the way automatically	Hitta vägen automatiskt
+Forget the paths picked: the way is found along the roads again	Glöm de valda körfälten: vägen hittas längs vägarna igen
+The paths were picked by hand: they are kept when the stops change.	Körfälten valdes för hand: de behålls när hållplatserna ändras.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klicka på körfält i vyn. Ett efter slutet eller före början läggs till, med körfälten dit; ett bredvid vägen ersätter den del det går runt (en annan gren i en korsning); ett körfält i vägen tas ut. Vägen får börja före den första hållplatsen och fortsätta efter den sista.
+The way breaks after path	Vägen bryts efter körfält
+the paths do not join, the bus's GPS loses its way here in the game	körfälten hänger inte ihop, bussens GPS tappar vägen här i spelet
+Paths of the way	Vägens körfält
+Cut before the first stop	Klipp före den första hållplatsen
+Cut after the last stop	Klipp efter den sista hållplatsen
+path	körfält

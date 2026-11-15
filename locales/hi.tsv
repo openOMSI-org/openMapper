@@ -2818,3 +2818,76 @@ Click a 2nd reference point on the object, or Esc to finish	वस्तु प�
 Aligned angle! (Ctrl+Z to undo)	कोण संरेखित! (पूर्ववत करने के लिए Ctrl+Z)
 Vertex snap complete	शीर्ष स्नैप पूर्ण
 Align vertex angle	शीर्ष कोण संरेखित करें
+Complete to	तक पूरा करें
+Complete to: a new piece between the free ends of the selected splines	तक पूरा करें: चुनी हुई स्प्लाइनों के खुले सिरों के बीच नया टुकड़ा
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	पहली चुनी हुई स्प्लाइन के प्रकार का नया टुकड़ा, चुनी हुई स्प्लाइनों के दो खुले सिरों के बीच, जो दोनों से जगह, दिशा और ऊँचाई में मिलता है; वे दोनों नहीं बदलतीं। फिर से: बचे हुए दो सिरे जुड़ते हैं और घेरा बंद होता है।
+The two ends already meet	ये दोनों सिरे पहले से मिलते हैं
+Select the splines whose free ends are to be joined	वे स्प्लाइनें चुनें जिनके खुले सिरे जोड़ने हैं
+No piece of spline can join these two ends	स्प्लाइन का कोई टुकड़ा इन दो सिरों को नहीं जोड़ सकता
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	इस मैप की openMapper प्रति कंटेंट फ़ोल्डर में खोली गई (OMSI 2 फ़ोल्डर वाली कभी नहीं लिखी जाती)
+Read in again, changed on disk by another program:	फिर से पढ़ा गया, डिस्क पर किसी दूसरे प्रोग्राम ने बदला:
+Could not bring the changes over	बदलाव नहीं लाए जा सके
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	इस ऑटोसेव के बाद मैप की फ़ाइलें बदली गईं (किसी दूसरे प्रोग्राम से, जैसे OMSI 2 का एडिटर)। पुनर्स्थापित करने से ऑटोसेव की पुरानी टाइलें उन बदलावों के ऊपर आ जाएँगी।
+tile(s)	टाइल
+the global settings	वैश्विक सेटिंग्स
+the timetable	समय-सारणी
+the traffic	ट्रैफ़िक
+the descriptions	विवरण
+Reload from disk	डिस्क से फिर लोड करें
+The map changed on disk	मैप डिस्क पर बदल गया
+Another program changed the map's files where it has changes here not saved yet:	किसी दूसरे प्रोग्राम ने मैप की फ़ाइलें वहाँ बदलीं जहाँ यहाँ बिना सहेजे बदलाव हैं:
+The other changes made on disk were read in already.	डिस्क के बाकी बदलाव पहले ही पढ़ लिए गए।
+Keep mine	मेरे रखें
+The map changed in OMSI 2's folder	मैप OMSI 2 फ़ोल्डर में बदल गया
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	इंस्टॉलेशन में इस मैप की प्रति, कंटेंट फ़ोल्डर में openMapper की प्रति सहेजे जाने के बाद बदली गई, जैसे OMSI 2 के एडिटर से
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	बदलाव लाने से openMapper की प्रति की वे फ़ाइलें बदल जाएँगी; बदली गई फ़ाइलें बैकअप में रहती हैं (फ़ाइल > पिछले संस्करण)।
+Bring the changes over	बदलाव लाएँ
+Keep openMapper's copy	openMapper की प्रति रखें
+its way has a gap after path	इसके रास्ते में इस पाथ के बाद अंतर है:
+its way does not pass	इसका रास्ता इसके पास से नहीं जाता:
+On demand	माँग पर
+Not served (checkpoint)	सेवा नहीं (चेकपॉइंट)
+Wait for departure time	डिपार्चर समय का इंतज़ार करें
+Always + wait for departure time	हमेशा + डिपार्चर समय का इंतज़ार करें
+The bus stops only when somebody waits or wants to get off (the game's default)	बस तभी रुकती है जब कोई इंतज़ार कर रहा हो या उतरना चाहे (गेम का डिफ़ॉल्ट)
+The bus always stops here	बस यहाँ हमेशा रुकती है
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	बस बिना रुके निकल जाती है: स्टॉप केवल रास्ता चिह्नित करता है (चेकपॉइंट)
+The bus stops only when it is early, and waits there for its departure time	बस तभी रुकती है जब वह जल्दी हो, और वहाँ अपने डिपार्चर समय का इंतज़ार करती है
+The bus always stops here, and when it is early it waits for its departure time	बस यहाँ हमेशा रुकती है, और जल्दी होने पर अपने डिपार्चर समय का इंतज़ार करती है
+All trips	सभी ट्रिप
+Every trip of the map, those no tour drives too	मैप का हर ट्रिप, वे भी जिन्हें कोई टूर नहीं चलाता
+The line number the trip shows; the line of this number lists it among its trips	ट्रिप जो लाइन नंबर दिखाता है; इस नंबर की लाइन इसे अपने ट्रिप में गिनती है
+Way picked by hand:	रास्ता हाथ से चुना गया:
+the paths picked do not pass this stop	चुने गए पाथ इस स्टॉप के पास से नहीं जाते
+Other trips	दूसरे ट्रिप
+The time profile this departure runs to	वह टाइम प्रोफ़ाइल जिससे यह डिपार्चर चलता है
+Time profile	टाइम प्रोफ़ाइल
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	एक ट्रिप की कई प्रोफ़ाइल हो सकती हैं (भीड़ का समय, रात…): टूर का हर डिपार्चर बताता है कि वह किससे चलता है
+The profile's name	प्रोफ़ाइल का नाम
+A new profile, a copy of this one	नई प्रोफ़ाइल, इसकी कॉपी
+Delete this profile (its departures run to the first)	यह प्रोफ़ाइल हटाएँ (इसके डिपार्चर पहली से चलेंगे)
+Times from stop to stop	स्टॉप से स्टॉप तक का समय
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	हर स्टॉप पर पिछले स्टॉप से समय तय किया जा सकता है: उसके बाद के समय साथ खिसकते हैं, और उनके साथ ट्रिप का समय भी। जो समय तय नहीं हैं वे तय समयों के बीच की दूरी के हिसाब से चलते हैं; तय स्टॉप पर जल्दी पहुँची बस इंतज़ार करती है।
+From the stop before	पिछले स्टॉप से
+After departure	डिपार्चर के बाद
+Minutes from the stop before to this one	पिछले स्टॉप से इस तक मिनट
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 के एडिटर की तरह। बस क्या करती है यह देखने के लिए किसी विकल्प पर माउस ले जाएँ।
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	मैप का हर ट्रिप, चाहे कोई भी लाइन उसे दिखाए या कोई भी टूर उसे चलाए। जिस ट्रिप को कोई टूर नहीं चलाता वह रखा जाता है, और यहाँ बदला, किसी टूर को दिया या हटाया जा सकता है।
+trips	ट्रिप
+driven by no tour	किसी टूर से नहीं
+no tour	कोई टूर नहीं
+departures	डिपार्चर
+No path there: click a lane of a road (View > AI lanes shows them)	वहाँ कोई पाथ नहीं: किसी सड़क की लेन पर क्लिक करें (दृश्य > AI लेन उन्हें दिखाता है)
+Done picking paths	चुनना पूरा
+Pick the paths on the map	मैप पर पाथ चुनें
+Choose the way yourself, path by path, as in OMSI 2's editor	रास्ता खुद चुनें, पाथ दर पाथ, OMSI 2 के एडिटर की तरह
+Find the way automatically	रास्ता अपने-आप ढूँढें
+Forget the paths picked: the way is found along the roads again	चुने गए पाथ भूल जाएँ: रास्ता फिर से सड़कों के साथ ढूँढा जाता है
+The paths were picked by hand: they are kept when the stops change.	पाथ हाथ से चुने गए थे: स्टॉप बदलने पर वे बने रहते हैं।
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	व्यू में पाथ पर क्लिक करें। अंत के बाद या शुरुआत से पहले वाला पाथ, उस तक के पाथों के साथ, जुड़ जाता है; रास्ते के बगल वाला पाथ उस हिस्से की जगह लेता है जिसके चारों ओर वह जाता है (जंक्शन पर दूसरी शाखा); रास्ते का पाथ निकाल दिया जाता है। रास्ता पहले स्टॉप से पहले शुरू हो सकता है और आखिरी के बाद आगे जा सकता है।
+The way breaks after path	रास्ता इस पाथ के बाद टूटता है:
+the paths do not join, the bus's GPS loses its way here in the game	पाथ आपस में नहीं जुड़ते, गेम में बस का GPS यहाँ रास्ता खो देता है
+Paths of the way	रास्ते के पाथ
+Cut before the first stop	पहले स्टॉप से पहले काटें
+Cut after the last stop	आखिरी स्टॉप के बाद काटें
+path	पाथ

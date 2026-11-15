@@ -4,7 +4,7 @@
 //! end on it is where traffic stops dead: the Logic tool shows those, and AI paths are drawn
 //! snapping to the ends.
 
-use glam::{DVec2, DVec3, Vec3};
+use glam::{DVec2, DVec3};
 use omsi_geometry::SplineCurve;
 
 use crate::assets::Assets;
@@ -261,17 +261,18 @@ pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                 continue;
             }
             let pose = Pose::of_object(world, o.rot);
-            let to_world = |q: DVec3| pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3();
+            let field = model.deform.as_deref();
             for p in &model.paths {
                 let c = object_path_curve(p);
                 if !(c.length > 0.05) {
                     continue;
                 }
                 let d = 1.5_f64.min(c.length * 0.5).max(0.05);
-                let a0 = to_world(c.point_at(0.0));
-                let a1 = to_world(c.point_at(d));
-                let b1 = to_world(c.point_at(c.length - d));
-                let b0 = to_world(c.point_at(c.length));
+                let at = |s: f64| crate::object_paths::world_point(&c, s, &pose, field);
+                let a0 = at(0.0);
+                let a1 = at(d);
+                let b1 = at(c.length - d);
+                let b0 = at(c.length);
                 push(&mut tips, a0, a1 - a0, false, p.direction, p.kind);
                 push(&mut tips, b0, b0 - b1, true, p.direction, p.kind);
             }
@@ -349,12 +350,8 @@ pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                     continue;
                 }
                 let n = ((c.length / step).ceil().max(1.0) as usize).min(400);
-                let pts = (0..=n)
-                    .map(|i| {
-                        let q = c.point_at(c.length * i as f64 / n as f64);
-                        pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
-                    })
-                    .collect();
+                // (draped by the object's height field, as its mesh is)
+                let pts = (0..=n).map(|i| crate::object_paths::world_point(&c, c.length * i as f64 / n as f64, &pose, model.deform.as_deref())).collect();
                 lanes.push(Lane { pts, kind: p.kind, direction: p.direction, spline: None, object: Some((*k, o.id)), index });
             }
         }
@@ -373,7 +370,7 @@ pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
             for dx in -1..=1 {
                 for &j in grid.get(&(cx + dx, cy + dy)).map(|v| v.as_slice()).unwrap_or(&[]) {
                     let (a, b) = (&ends[i], &ends[j]);
-                    if i != j && a.kind == b.kind && (a.pos.truncate() - b.pos.truncate()).length() < LINK && (a.pos.z - b.pos.z).abs() < 1.5 {
+                    if i != j && a.kind == b.kind && (a.pos.truncate() - b.pos.truncate()).length() < LINK && (a.pos.z - b.pos.z).abs() < crate::timetable::network::LINK_RISE {
                         hit = true;
                     }
                 }

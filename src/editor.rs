@@ -3782,29 +3782,39 @@ impl Editor {
     fn snap_end_point(&self, assets: &mut Assets, p: DVec2, within: f64) -> Option<(Anchor, Option<String>)> {
         let doc = self.doc.as_ref()?;
         let mut best: Option<(f64, Anchor, String)> = None;
+        // (the end of a spline without AI paths is caught where it is drawn: `end_snap`)
+        let new_mid = self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| crate::end_snap::profile_middle(&m, false)).unwrap_or(0.0);
+        let starting = self.road_start.is_none();
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-                if !roads::can_reach(start, s.length, p, within) {
+                // (a kerb is seen up to some metres beside its line)
+                if !roads::can_reach(start, s.length, p, within + 10.0) {
                     continue;
                 }
-                if assets.spline(&s.file).map(|m| m.def.only_editor).unwrap_or(false) {
+                let m = assets.spline(&s.file);
+                if m.as_ref().map(|m| m.def.only_editor).unwrap_or(false) {
                     continue;
                 }
-                let link = assets.spline(&s.file).map(|m| !m.joinable()).unwrap_or(false);
+                let end_mid = m.as_ref().map(|m| crate::end_snap::profile_middle(m, s.mirror)).unwrap_or(0.0);
+                let link = m.as_ref().map(|m| !m.joinable()).unwrap_or(false);
+                let same = self.road_type.as_deref().is_some_and(|r| r.eq_ignore_ascii_case(&s.file));
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                for (free, at_end, q, heading) in [
-                    (s.prev_id == 0, false, c.point_at(0.0), roads::norm_deg(s.heading + 180.0)),
-                    (s.next_id == 0, true, c.end_point(), roads::norm_deg(c.heading_at(s.length))),
+                for (free, at_end, q, heading, along) in [
+                    (s.prev_id == 0, false, c.point_at(0.0), roads::norm_deg(s.heading + 180.0), s.heading),
+                    (s.next_id == 0, true, c.end_point(), roads::norm_deg(c.heading_at(s.length)), c.heading_at(s.length)),
                 ] {
                     if !free {
                         continue;
                     }
-                    let d = (q.truncate() - p).length();
+                    let (seen, pos) = crate::end_snap::catch(q, along, heading, end_mid, new_mid, starting, same);
+                    let d = (seen.truncate() - p).length();
                     if d < within && best.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        let spline = link.then_some((*k, s.id, at_end));
-                        best = Some((d, Anchor { pos: q, heading, spline, ..Default::default() }, s.file.clone()));
+                        // (linked only where the two lines meet: another kerb put beside the
+                        // line keeps the end's way, not its link)
+                        let spline = (link && (pos - q).length() < 0.01).then_some((*k, s.id, at_end));
+                        best = Some((d, Anchor { pos, heading, spline, ..Default::default() }, s.file.clone()));
                     }
                 }
             }
@@ -3933,22 +3943,28 @@ impl Editor {
         // nothing a road joins: the ends of the other splines one sees (a kerb, a wall, a
         // footpath) are still places to start from, the point only, nothing joined to it
         let mut end: Option<(f64, Anchor, String)> = None;
+        // (a kerb's end is caught where it is drawn, the middle of its profile: `end_snap`)
+        let new_mid = self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| crate::end_snap::profile_middle(&m, false)).unwrap_or(0.0);
+        let starting = self.road_start.is_none();
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-                if (start - p).length() > s.length + within {
+                // (a kerb is seen up to some metres beside its line)
+                if (start - p).length() > s.length + within + 10.0 {
                     continue;
                 }
                 let Some(m) = assets.spline(&s.file) else { continue };
+                let end_mid = crate::end_snap::profile_middle(&m, s.mirror);
                 if m.joinable() || m.def.only_editor || m.is_track() != track {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                for (q, heading) in [(c.point_at(0.0), roads::norm_deg(s.heading + 180.0)), (c.end_point(), roads::norm_deg(c.heading_at(s.length)))] {
-                    let d = (q.truncate() - p).length();
+                for (q, heading, along) in [(c.point_at(0.0), roads::norm_deg(s.heading + 180.0), s.heading), (c.end_point(), roads::norm_deg(c.heading_at(s.length)), c.heading_at(s.length))] {
+                    let (seen, pos) = crate::end_snap::catch(q, along, heading, end_mid, new_mid, starting, false);
+                    let d = (seen.truncate() - p).length();
                     if d < within && end.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        end = Some((d, Anchor { pos: q, heading, spline: None, mid: None }, s.file.clone()));
+                        end = Some((d, Anchor { pos, heading, spline: None, mid: None }, s.file.clone()));
                     }
                 }
             }
@@ -4177,7 +4193,9 @@ impl Editor {
         // (not joined into the road: the end is the place the new one is drawn to. One of its
         // own kind keeps that end's direction and is linked; a road's end does not, so the new
         // one is not bent round onto the road and does not take the road's link)
-        let laid_on = snap.filter(|_| !joins && !self.drawing_paths() && snap.is_some_and(|a| a.spline.is_none()));
+        // (a kerb's end that is not linked, the new one put beside its line, keeps its way)
+        let onto_road = self.road_snap_file.as_deref().and_then(|f| assets.spline(f)).map(|m| m.joinable()).unwrap_or(true);
+        let laid_on = snap.filter(|_| !joins && !self.drawing_paths() && onto_road && snap.is_some_and(|a| a.spline.is_none()));
         let mut target = if let Some(a) = laid_on {
             a.pos.truncate()
         } else {
@@ -5700,6 +5718,7 @@ impl Editor {
         // (the dots that mark places on the ground are small: they are there to be seen, not to cover)
         let dw = w * 0.4;
         x.show_technical = self.show_technical || self.tool == Tool::Logic;
+        x.lanes_drawn = self.tool == Tool::Logic || self.show_lanes;
         x.hide = self.hide;
         // (the crossing being edited draws its own paths below, not the file's)
         let draft = self.crossing_draft.as_ref().map(|d| (d.0, d.1));
@@ -6096,16 +6115,19 @@ impl Editor {
                             continue;
                         }
                         let c = omsi_geometry::SplineCurve::from_map(s, org);
+                        // (a kerb's end is marked where it is drawn, where the tool catches it)
+                        let mid = assets.spline(&s.file).map(|m| crate::end_snap::profile_middle(&m, s.mirror)).unwrap_or(0.0);
+                        let seen = |q: DVec3, along: f64| crate::end_snap::catch(q, along, along, mid, 0.0, true, true).0;
                         if s.prev_id == 0 {
                             let a = c.point_at(0.0);
                             if (a.truncate() - focus).length() <= reach && free(a) {
-                                disc(&mut x.overlay, cam, a, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                                disc(&mut x.overlay, cam, seen(a, s.heading), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
                             }
                         }
                         if s.next_id == 0 {
                             let b = c.end_point();
                             if (b.truncate() - focus).length() <= reach && free(b) {
-                                disc(&mut x.overlay, cam, b, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                                disc(&mut x.overlay, cam, seen(b, c.heading_at(s.length)), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
                             }
                         }
                     }
@@ -11755,10 +11777,7 @@ fn path_ends_at(doc: &Document, assets: &mut Assets, held: &Origin, pos: DVec2, 
                 if c.length <= 0.05 {
                     return None;
                 }
-                let at = |s: f64| {
-                    let q = c.point_at(s);
-                    pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
-                };
+                let at = |s: f64| crate::object_paths::world_point(&c, s, &pose, model.deform.as_deref());
                 let (a, b) = (at(0.0), at(c.length));
                 let step = (c.length * 0.05).clamp(0.05, 1.0);
                 let ha = roads::heading_of((at(step) - a).truncate());
@@ -12528,6 +12547,63 @@ mod tests {
         let linked = d.spline((0, 0), 2).unwrap().next_id;
         assert_ne!(linked, 0, "the two footpaths were not linked");
         assert_eq!(d.find_spline(linked).unwrap().1.next_id, 2);
+    }
+
+    /// A kerb without AI paths whose line lies beside it is caught where it is drawn, the middle
+    /// of its profile (#55): another kerb of its type goes on from its line and is linked, a fence
+    /// is drawn to the kerb itself, keeping its way.
+    #[test]
+    fn a_kerbs_end_is_caught_where_it_is_drawn() {
+        let mut doc = flat_map(1);
+        // (a kerb running north from (100, 100) to (100, 140), drawn 3 to 3.4 m east of its line)
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].file = "Splines\\kerb.sli".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let model = |x0: f32, x1: f32| crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: x0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: x1, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: x0.abs().max(x1.abs()),
+        };
+        assert!(!model(3.0, 3.4).joinable());
+        assets.splines.insert("splines\\kerb.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model(3.0, 3.4))));
+        assets.splines.insert("splines\\fence.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model(-0.05, 0.05))));
+        let lib = crate::library::Library::default();
+        let seen = DVec2::new(103.2, 140.0);
+        // (the same kerb, started near what is drawn: from the line's end, linked)
+        ed.road_type = Some("Splines\\kerb.sli".into());
+        ed.hover_point(&mut assets, &lib, DVec3::new(104.5, 141.0, 0.0));
+        let snap = ed.road_snap.expect("the kerb's end was not caught where it is drawn");
+        assert!((snap.pos.truncate() - DVec2::new(100.0, 140.0)).length() < 1e-6, "{:?}", snap.pos);
+        assert_eq!(snap.spline, Some(((0, 0), 1, true)));
+        // (a fence drawn to it from the north: its line ends on the kerb's middle, arriving
+        // along the kerb's way)
+        ed.road_type = Some("Splines\\fence.sli".into());
+        ed.road_start = Some((Anchor { pos: DVec3::new(103.2, 180.0, 0.0), ..Default::default() }, false));
+        ed.hover_point(&mut assets, &lib, DVec3::new(105.5, 140.5, 0.0));
+        let snap = ed.road_snap.expect("the kerb's end was not caught");
+        assert!((snap.pos.truncate() - seen).length() < 1e-6, "{:?}", snap.pos);
+        assert!(snap.spline.is_none(), "beside the kerb's line it is not linked");
+        ed.left_press(&mut assets, &lib, false);
+        let d = ed.doc.as_ref().unwrap();
+        assert_eq!(d.spline((0, 0), 1).unwrap().next_id, 0, "the kerb stays as it was");
+        let made = d.tiles[&(0, 0)].tile.splines.iter().filter(|s| s.id != 1).collect::<Vec<_>>();
+        let last = made.iter().find(|s| s.next_id == 0).expect("the fence was not built");
+        let c = omsi_geometry::SplineCurve::from_map(last, tile_origin((0, 0)));
+        assert!((c.end_point().truncate() - seen).length() < 0.01, "{:?}", c.end_point());
+        let off = (roads::norm_deg(c.heading_at(last.length)) - 180.0).abs();
+        assert!(off < 0.5, "it arrives along the kerb's way: {}", c.heading_at(last.length));
     }
 
     /// A building is what it draws, not the box it was measured with: its box holds its

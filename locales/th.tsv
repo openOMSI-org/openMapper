@@ -2818,3 +2818,76 @@ Click a 2nd reference point on the object, or Esc to finish	คลิกจุ�
 Aligned angle! (Ctrl+Z to undo)	จัดแนวมุมแล้ว! (Ctrl+Z เพื่อเลิกทำ)
 Vertex snap complete	ตรึงจุดยอดเสร็จสมบูรณ์
 Align vertex angle	จัดแนวมุมของจุดยอด
+Complete to	ต่อให้ถึง
+Complete to: a new piece between the free ends of the selected splines	ต่อให้ถึง: ชิ้นใหม่ระหว่างปลายว่างของสไปลน์ที่เลือก
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	ชิ้นใหม่ชนิดเดียวกับสไปลน์ที่เลือกเป็นอันแรก ระหว่างปลายว่างสองปลายของสไปลน์ที่เลือก โดยตรงกับทั้งสองทั้งตำแหน่ง ทิศทาง และความสูง ส่วนสองชิ้นเดิมไม่เปลี่ยน กดอีกครั้ง: ปลายสองปลายที่เหลือจะต่อกันและปิดวง
+The two ends already meet	ปลายทั้งสองบรรจบกันอยู่แล้ว
+Select the splines whose free ends are to be joined	เลือกสไปลน์ที่ต้องการต่อปลายว่าง
+No piece of spline can join these two ends	ไม่มีชิ้นสไปลน์ใดต่อปลายทั้งสองนี้ได้
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	เปิดสำเนาของ openMapper สำหรับแผนที่นี้ในโฟลเดอร์เนื้อหาแล้ว (แผนที่ในโฟลเดอร์ OMSI 2 จะไม่ถูกเขียนทับ)
+Read in again, changed on disk by another program:	อ่านใหม่แล้ว โปรแกรมอื่นเปลี่ยนบนดิสก์:
+Could not bring the changes over	ไม่สามารถนำการเปลี่ยนแปลงมาได้
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	ไฟล์ของแผนที่ถูกเปลี่ยนหลังการบันทึกอัตโนมัตินี้ (โดยโปรแกรมอื่น เช่น ตัวแก้ไขของ OMSI 2) การกู้คืนจะวางไทล์ที่เก่ากว่าจากการบันทึกทับการเปลี่ยนแปลงเหล่านั้น
+tile(s)	ไทล์
+the global settings	การตั้งค่าทั่วไป
+the timetable	ตารางเวลา
+the traffic	การจราจร
+the descriptions	คำอธิบาย
+Reload from disk	โหลดใหม่จากดิสก์
+The map changed on disk	แผนที่เปลี่ยนบนดิสก์
+Another program changed the map's files where it has changes here not saved yet:	โปรแกรมอื่นเปลี่ยนไฟล์ของแผนที่ในส่วนที่ที่นี่มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก:
+The other changes made on disk were read in already.	อ่านการเปลี่ยนแปลงอื่นบนดิสก์แล้ว
+Keep mine	เก็บของฉันไว้
+The map changed in OMSI 2's folder	แผนที่เปลี่ยนในโฟลเดอร์ OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	สำเนาของแผนที่นี้ในการติดตั้งถูกเปลี่ยนหลังจากบันทึกสำเนาของ openMapper ในโฟลเดอร์เนื้อหาแล้ว เช่น โดยตัวแก้ไขของ OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	การนำการเปลี่ยนแปลงมาจะแทนที่ไฟล์เหล่านั้นในสำเนาของ openMapper ไฟล์ที่ถูกแทนที่จะเก็บไว้ในข้อมูลสำรอง (ไฟล์ > เวอร์ชันก่อนหน้า)
+Bring the changes over	นำการเปลี่ยนแปลงมา
+Keep openMapper's copy	เก็บสำเนาของ openMapper
+its way has a gap after path	เส้นทางขาดช่วงหลังพาธที่
+its way does not pass	เส้นทางไม่ผ่าน
+On demand	ตามคำขอ
+Not served (checkpoint)	ไม่จอด (จุดตรวจ)
+Wait for departure time	รอเวลาออก
+Always + wait for departure time	เสมอ + รอเวลาออก
+The bus stops only when somebody waits or wants to get off (the game's default)	รถบัสจอดเฉพาะเมื่อมีคนรอหรือต้องการลง (ค่าเริ่มต้นของเกม)
+The bus always stops here	รถบัสจอดที่นี่เสมอ
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	รถบัสวิ่งผ่านโดยไม่จอด: ป้ายเพียงกำหนดเส้นทาง (จุดตรวจ)
+The bus stops only when it is early, and waits there for its departure time	รถบัสจอดเฉพาะเมื่อมาก่อนเวลา และรอที่นั่นจนถึงเวลาออก
+The bus always stops here, and when it is early it waits for its departure time	รถบัสจอดที่นี่เสมอ และถ้ามาก่อนเวลาจะรอจนถึงเวลาออก
+All trips	เที่ยวทั้งหมด
+Every trip of the map, those no tour drives too	ทุกเที่ยวของแผนที่ รวมถึงเที่ยวที่ไม่มีทัวร์ใดวิ่ง
+The line number the trip shows; the line of this number lists it among its trips	หมายเลขสายที่เที่ยวแสดง; สายที่มีหมายเลขนี้จะแสดงเที่ยวนี้ในรายการเที่ยวของตน
+Way picked by hand:	เส้นทางที่เลือกเอง:
+the paths picked do not pass this stop	พาธที่เลือกไม่ผ่านป้ายนี้
+Other trips	เที่ยวอื่น
+The time profile this departure runs to	โปรไฟล์เวลาที่เที่ยวออกนี้ใช้
+Time profile	โปรไฟล์เวลา
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	เที่ยวหนึ่งมีได้หลายโปรไฟล์ (ชั่วโมงเร่งด่วน, กลางคืน…): เที่ยวออกแต่ละเที่ยวของทัวร์ระบุว่าใช้โปรไฟล์ใด
+The profile's name	ชื่อโปรไฟล์
+A new profile, a copy of this one	โปรไฟล์ใหม่ สำเนาของโปรไฟล์นี้
+Delete this profile (its departures run to the first)	ลบโปรไฟล์นี้ (เที่ยวออกของมันจะใช้โปรไฟล์แรก)
+Times from stop to stop	เวลาจากป้ายถึงป้าย
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	ตั้งเวลาจากป้ายก่อนหน้าได้ที่ทุกป้าย: เวลาหลังจากนั้นจะเลื่อนตาม และเวลาของเที่ยวก็เลื่อนตามด้วย เวลาที่ไม่ได้ตั้งจะเป็นไปตามระยะทางระหว่างป้ายที่กำหนดไว้; ที่ป้ายที่กำหนดไว้ รถบัสที่มาก่อนเวลาจะรอ
+From the stop before	จากป้ายก่อนหน้า
+After departure	หลังออก
+Minutes from the stop before to this one	นาทีจากป้ายก่อนหน้าถึงป้ายนี้
+As in OMSI 2's editor. Hover a choice to see what the bus does.	เหมือนในเอดิเตอร์ของ OMSI 2 วางเมาส์บนตัวเลือกเพื่อดูว่ารถบัสทำอะไร
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	ทุกเที่ยวของแผนที่ ไม่ว่าสายใดแสดงหรือทัวร์ใดวิ่ง เที่ยวที่ไม่มีทัวร์ใดวิ่งจะถูกเก็บไว้ และแก้ไข มอบให้ทัวร์ หรือลบได้ที่นี่
+trips	เที่ยว
+driven by no tour	ไม่มีทัวร์วิ่ง
+no tour	ไม่มีทัวร์
+departures	เที่ยวออก
+No path there: click a lane of a road (View > AI lanes shows them)	ไม่มีพาธที่นั่น: คลิกเลนของถนน (มุมมอง > เลน AI แสดงเลนเหล่านั้น)
+Done picking paths	เลือกเสร็จ
+Pick the paths on the map	เลือกพาธบนแผนที่
+Choose the way yourself, path by path, as in OMSI 2's editor	เลือกเส้นทางเอง ทีละพาธ เหมือนในเอดิเตอร์ของ OMSI 2
+Find the way automatically	หาเส้นทางอัตโนมัติ
+Forget the paths picked: the way is found along the roads again	ลืมพาธที่เลือก: เส้นทางจะถูกหาตามถนนอีกครั้ง
+The paths were picked by hand: they are kept when the stops change.	พาธถูกเลือกเอง: จะยังคงอยู่เมื่อป้ายเปลี่ยน
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	คลิกพาธในมุมมอง พาธหลังจุดสิ้นสุดหรือก่อนจุดเริ่มต้นจะถูกเพิ่มพร้อมพาธที่ไปถึง; พาธข้างเส้นทางจะแทนที่ส่วนที่มันอ้อม (อีกแยกหนึ่งที่ทางแยก); พาธของเส้นทางจะถูกเอาออก เส้นทางเริ่มก่อนป้ายแรกและวิ่งต่อหลังป้ายสุดท้ายได้
+The way breaks after path	เส้นทางขาดหลังพาธที่
+the paths do not join, the bus's GPS loses its way here in the game	พาธไม่เชื่อมกัน GPS ของรถบัสในเกมจะหลงทางตรงนี้
+Paths of the way	พาธของเส้นทาง
+Cut before the first stop	ตัดก่อนป้ายแรก
+Cut after the last stop	ตัดหลังป้ายสุดท้าย
+path	พาธ

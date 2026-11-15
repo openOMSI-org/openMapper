@@ -405,7 +405,7 @@ impl RoadSpec {
 
     /// The file name it is saved as.
     pub fn file_stem(&self) -> String {
-        let s: String = self.name.trim().chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+        let s = crate::omsi_name::ascii_stem(&self.name);
         if s.is_empty() { "road".into() } else { s }
     }
 

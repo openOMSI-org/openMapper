@@ -2818,3 +2818,76 @@ Click a 2nd reference point on the object, or Esc to finish	Clique num 2º ponto
 Aligned angle! (Ctrl+Z to undo)	Ângulo alinhado! (Ctrl+Z para anular)
 Vertex snap complete	Encaixe de vértice concluído
 Align vertex angle	Alinhar ângulo de vértice
+Complete to	Completar até
+Complete to: a new piece between the free ends of the selected splines	Completar até: uma peça nova entre as pontas livres das splines selecionadas
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Uma peça nova do tipo da primeira spline selecionada entre duas pontas livres das splines selecionadas, que coincide com ambas em posição, direção e altura; estas não mudam. Outra vez: as duas pontas que restam são juntas e o anel fecha-se.
+The two ends already meet	As duas pontas já se encontram
+Select the splines whose free ends are to be joined	Selecione as splines cujas pontas livres devem ser juntas
+No piece of spline can join these two ends	Nenhuma peça de spline consegue juntar estas duas pontas
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Aberta a cópia do openMapper deste mapa na pasta de conteúdo (a da pasta do OMSI 2 nunca é escrita)
+Read in again, changed on disk by another program:	Lido de novo, alterado no disco por outro programa:
+Could not bring the changes over	Não foi possível trazer as alterações
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Os ficheiros do mapa foram alterados depois desta gravação automática (por outro programa, como o editor do OMSI 2). Restaurar põe os mosaicos antigos da gravação sobre essas alterações.
+tile(s)	mosaico(s)
+the global settings	as definições globais
+the timetable	o horário
+the traffic	o tráfego
+the descriptions	as descrições
+Reload from disk	Recarregar do disco
+The map changed on disk	O mapa mudou no disco
+Another program changed the map's files where it has changes here not saved yet:	Outro programa alterou ficheiros do mapa onde aqui há alterações por guardar:
+The other changes made on disk were read in already.	As outras alterações do disco já foram lidas.
+Keep mine	Manter as minhas
+The map changed in OMSI 2's folder	O mapa mudou na pasta do OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	A cópia deste mapa na instalação foi alterada depois de a cópia do openMapper na pasta de conteúdo ser guardada, por exemplo pelo editor do OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Trazer as alterações substitui esses ficheiros da cópia do openMapper; os substituídos ficam numa cópia de segurança (Ficheiro > Versões anteriores).
+Bring the changes over	Trazer as alterações
+Keep openMapper's copy	Manter a cópia do openMapper
+its way has a gap after path	o seu percurso tem uma falha após o caminho
+its way does not pass	o seu percurso não passa por
+On demand	A pedido
+Not served (checkpoint)	Não servida (ponto de controlo)
+Wait for departure time	Esperar pela hora de partida
+Always + wait for departure time	Sempre + esperar pela hora de partida
+The bus stops only when somebody waits or wants to get off (the game's default)	O autocarro só para se alguém espera ou quer sair (o predefinido do jogo)
+The bus always stops here	O autocarro para sempre aqui
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	O autocarro passa sem parar: a paragem só marca o percurso (um ponto de controlo)
+The bus stops only when it is early, and waits there for its departure time	O autocarro só para quando está adiantado, e espera aí pela sua hora de partida
+The bus always stops here, and when it is early it waits for its departure time	O autocarro para sempre aqui, e quando está adiantado espera pela sua hora de partida
+All trips	Todas as viagens
+Every trip of the map, those no tour drives too	Todas as viagens do mapa, também as que nenhum serviço faz
+The line number the trip shows; the line of this number lists it among its trips	O número de linha que a viagem mostra; a linha com esse número lista-a entre as suas viagens
+Way picked by hand:	Percurso escolhido à mão:
+the paths picked do not pass this stop	os caminhos escolhidos não passam por esta paragem
+Other trips	Outras viagens
+The time profile this departure runs to	O perfil de tempos que esta partida segue
+Time profile	Perfil de tempos
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Uma viagem pode ter vários perfis (hora de ponta, noite…): cada partida de um serviço diz qual segue
+The profile's name	O nome do perfil
+A new profile, a copy of this one	Um perfil novo, cópia deste
+Delete this profile (its departures run to the first)	Eliminar este perfil (as suas partidas seguem o primeiro)
+Times from stop to stop	Tempos de paragem a paragem
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	O tempo desde a paragem anterior pode ser definido em cada paragem: os tempos seguintes deslocam-se, e o tempo da viagem com eles. Os tempos não definidos seguem a distância entre os fixos; numa paragem fixa, um autocarro adiantado espera.
+From the stop before	Desde a paragem anterior
+After departure	Após a partida
+Minutes from the stop before to this one	Minutos da paragem anterior até esta
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Como no editor do OMSI 2. Passe o rato sobre uma opção para ver o que o autocarro faz.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Todas as viagens do mapa, seja qual for a linha que as mostra ou o serviço que as faz. Uma viagem que nenhum serviço faz é mantida, e pode ser editada, dada a um serviço ou eliminada aqui.
+trips	viagens
+driven by no tour	sem nenhum serviço
+no tour	sem serviço
+departures	partidas
+No path there: click a lane of a road (View > AI lanes shows them)	Nenhum caminho aí: clique numa faixa de uma estrada (Ver > Faixas de IA mostra-as)
+Done picking paths	Escolha concluída
+Pick the paths on the map	Escolher os caminhos no mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Escolha o percurso você mesmo, caminho a caminho, como no editor do OMSI 2
+Find the way automatically	Encontrar o percurso automaticamente
+Forget the paths picked: the way is found along the roads again	Esquecer os caminhos escolhidos: o percurso volta a ser encontrado pelas estradas
+The paths were picked by hand: they are kept when the stops change.	Os caminhos foram escolhidos à mão: mantêm-se quando as paragens mudam.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Clique em caminhos na vista. Um após o fim ou antes do início é acrescentado, com os caminhos até ele; um ao lado do percurso toma o lugar do troço que contorna (outro ramo num cruzamento); um caminho do percurso é retirado. O percurso pode começar antes da primeira paragem e continuar após a última.
+The way breaks after path	O percurso interrompe-se após o caminho
+the paths do not join, the bus's GPS loses its way here in the game	os caminhos não se ligam, o GPS do autocarro perde-se aqui no jogo
+Paths of the way	Caminhos do percurso
+Cut before the first stop	Cortar antes da primeira paragem
+Cut after the last stop	Cortar após a última paragem
+path	caminho

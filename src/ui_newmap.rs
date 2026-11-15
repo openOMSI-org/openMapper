@@ -197,7 +197,9 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
             let ok = !f.name.trim().is_empty();
             if ui.add_enabled(ok, egui::Button::new(tr("Create", "Создать"))).clicked() || (ok && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)) {
                 let friendly = f.name.trim().to_string();
-                let folder: String = friendly.chars().map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' { c } else { '_' }).collect::<String>().trim().to_string();
+                // (OMSI 2 opens no map whose folder has a letter outside ASCII)
+                let folder = friendly.split(' ').map(crate::omsi_name::ascii_stem).filter(|w| !w.is_empty()).collect::<Vec<_>>().join(" ");
+                let folder = if folder.is_empty() { "Map".to_string() } else { folder };
                 actions.push(Action::NewMap { folder, friendly, size: f.size, options: f.options.clone() });
                 close = true;
             }

@@ -208,6 +208,7 @@ fn commands() -> Vec<Command> {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a track (double-click: all of it): Overhead wire under Parallel copy in its properties", "Выберите путь (двойной клик: весь): «Контактный провод» под «Параллельной копией» в свойствах"));
         }),
+        cmd!(Icon::Route, "Complete to", "Достроить до", "join connect close ring loop gap fill splines kerb соединить замкнуть кольцо разрыв сплайны бордюр", "J", |_, ed, _| ed.complete_to()),
         cmd!(Icon::Road, "Parallel copy of a road", "Параллельная копия дороги", "second track carriageway второй путь проезжая часть", "", |_, ed, _| {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a road or a chain: Parallel copy in its properties", "Выберите дорогу или цепочку: «Параллельная копия» в свойствах"));

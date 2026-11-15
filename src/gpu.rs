@@ -15,6 +15,16 @@ pub fn take_out_of_memory() -> bool {
     OUT_OF_MEMORY.swap(false, std::sync::atomic::Ordering::Relaxed)
 }
 
+/// The graphics memory ran out at some time in this run: a texture or buffer whose creation
+/// failed is invalid from then on, and the next upload into it is an echo of that, not a bug.
+static RAN_OUT_ONCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whether a wgpu error is only the echo of graphics memory having run out: the use of a
+/// resource whose creation failed for want of memory (#62).
+fn echo_of_out_of_memory(message: &str) -> bool {
+    RAN_OUT_ONCE.load(std::sync::atomic::Ordering::Relaxed) && message.contains("is invalid")
+}
+
 pub struct Gpu {
     pub surface: wgpu::Surface<'static>,
     pub device: wgpu::Device,
@@ -164,12 +174,15 @@ impl Gpu {
         let info = adapter.get_info();
         log::info!("GPU: {} ({:?})", info.name, info.backend);
         // (running out of graphics memory is not a reason to close the editor: the renderer
-        // frees what it can make again; any other error is fatal, as wgpu has it by default)
+        // frees what it can make again, and the uses of what failed to be made are passed over;
+        // any other error is fatal, as wgpu has it by default)
         device.on_uncaptured_error(Arc::new(|e: wgpu::Error| match e {
             wgpu::Error::OutOfMemory { source } => {
                 log::error!("graphics memory ran out: {source}");
                 OUT_OF_MEMORY.store(true, std::sync::atomic::Ordering::Relaxed);
+                RAN_OUT_ONCE.store(true, std::sync::atomic::Ordering::Relaxed);
             }
+            other if echo_of_out_of_memory(&other.to_string()) => log::warn!("after graphics memory ran out: {other}"),
             other => panic!("wgpu error: {other}"),
         }));
         let size = window.inner_size();
@@ -267,6 +280,15 @@ fn targets(device: &wgpu::Device, c: &wgpu::SurfaceConfiguration, scene_format: 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_upload_into_a_texture_memory_failed_to_make_is_no_crash() {
+        let echo = "Validation Error\n  In Queue::write_texture\n    Texture with 'texture' label is invalid";
+        assert!(!echo_of_out_of_memory(echo));
+        RAN_OUT_ONCE.store(true, std::sync::atomic::Ordering::Relaxed);
+        assert!(echo_of_out_of_memory(echo));
+        assert!(!echo_of_out_of_memory("Validation Error\n  In a set_pipeline command\n    Incompatible color attachments"));
+    }
 
     #[test]
     fn the_api_asked_for_is_tried_first_and_the_rest_follow() {
