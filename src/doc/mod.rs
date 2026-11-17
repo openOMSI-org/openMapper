@@ -269,7 +269,8 @@ impl Document {
     /// stays as it is).
     pub fn load(roots: &crate::install::Roots, cfg: &Path, mut progress: impl FnMut(f32)) -> anyhow::Result<Document> {
         let started = std::time::Instant::now();
-        let global = GlobalCfg::load(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        let mut global = GlobalCfg::load(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        crate::transport::read(&mut global);
         omsi_map::configure_grid(&global);
         let src_dir = cfg.parent().unwrap_or(Path::new(".")).to_path_buf();
         let folder = src_dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "Map".into());
