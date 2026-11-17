@@ -26,7 +26,7 @@ impl Server {
         let hi = self.point(a.get("max").ok_or("`max` is needed")?)?;
         let cell = a.f64("cell").unwrap_or(1.0).clamp(0.1, 10.0);
         let (w, h) = (((hi.x - lo.x) / cell).ceil().max(1.0) as usize, ((hi.y - lo.y) / cell).ceil().max(1.0) as usize);
-        if w * h > 40_000_000 {
+        if w.saturating_mul(h) > 40_000_000 {
             return Err("too many cells: a larger `cell` or a smaller box".into());
         }
         let doc = self.ed.doc.as_ref().ok_or("no map")?;

@@ -164,3 +164,11 @@ fn a_plate_is_undone_as_one_step() {
     call(&mut s, "undo", json!({})).unwrap();
     assert_eq!(next(&s), 0, "the link undone");
 }
+
+/// A read-only server does not put right what `street_check` finds: `fix` changes the map.
+#[test]
+fn a_read_only_street_check_fixes_nothing() {
+    let mut s = server(false);
+    assert!(call(&mut s, "street_check", json!({})).is_ok());
+    assert!(call(&mut s, "street_check", json!({ "fix": true })).is_err());
+}

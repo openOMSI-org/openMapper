@@ -536,10 +536,17 @@ impl Server {
                     "auto_switches" => self.ed.auto_switches,
                     "snap_roads" => self.ed.snap_roads,
                     "inherit_type" => self.ed.inherit_type,
-                    _ => return Err(format!("no road option {k}")),
+                    _ => {
+                        self.restore(old);
+                        return Err(format!("no road option {k}"));
+                    }
                 };
                 old.push((k.clone(), json!(was)));
-                self.setting(k, v)?;
+                // (a bad value puts back what this call set before it: else it stays for the calls after)
+                if let Err(e) = self.setting(k, v) {
+                    self.restore(old);
+                    return Err(e);
+                }
             }
         }
         Ok(old)
@@ -596,7 +603,8 @@ impl Server {
         let mut measured = 0usize;
         if let Some(im) = a.get("imagery") {
             let url = im.get("url").and_then(|u| u.as_str()).ok_or("imagery.url is needed")?.to_string();
-            let z = im.get("z").and_then(|z| z.as_u64()).unwrap_or(19) as u8;
+            // (as `shot` takes it: a zoom past the tiles' 2^z would overflow)
+            let z = im.get("z").and_then(|z| z.as_u64()).unwrap_or(19).clamp(1, 22) as u8;
             let src = crate::geo::sources::Source { name: format!("street-model {}", url.len()), url, attribution: String::new(), max_zoom: z, kind: Default::default(), needs_key: false, key_link: String::new(), bounds: None, resolution: 0.0, tile_px: 256, ortho: false, builtin: false };
             let prefs = crate::geo::sources::GeoPrefs::default();
             let doc = self.ed.doc.as_ref().ok_or("no map")?;
