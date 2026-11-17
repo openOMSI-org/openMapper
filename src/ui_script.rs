@@ -3,7 +3,7 @@
 
 use std::path::{Path, PathBuf};
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 
 use crate::doc::Sel;
 use crate::editor::Editor;
@@ -12,7 +12,8 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::scripting::{self, Behaviour, Diag};
-use crate::ui::{Action, TEXT_DIM};
+use crate::ui::Action;
+use crate::theme::pal;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Tab {
@@ -101,15 +102,15 @@ fn editor(ui: &mut egui::Ui, e: &mut Editing, id: &str, rows: usize) {
 
 fn diagnostics(ui: &mut egui::Ui, d: &[Diag]) {
     if d.is_empty() {
-        ui.label(RichText::new(format!("{} {}", icons::Icon::CheckCircle.ch(), tr("No problems found", "Проблем не найдено"))).color(Color32::from_rgb(120, 200, 130)));
+        ui.label(RichText::new(format!("{} {}", icons::Icon::CheckCircle.ch(), tr("No problems found", "Проблем не найдено"))).color(pal().ok));
         return;
     }
     for x in d.iter().take(12) {
         let text = if x.line > 0 { format!("{} {}: {}", tr("line", "строка"), x.line, x.message) } else { x.message.clone() };
-        ui.label(RichText::new(text).small().color(Color32::from_rgb(240, 130, 110)));
+        ui.label(RichText::new(text).small().color(pal().error));
     }
     if d.len() > 12 {
-        ui.label(RichText::new(format!("… +{}", d.len() - 12)).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("… +{}", d.len() - 12)).small().color(pal().text_dim));
     }
 }
 
@@ -138,7 +139,7 @@ impl ScriptsUi {
             }
             if let Some((m, bad)) = &self.message {
                 ui.add_space(4.0);
-                ui.label(RichText::new(m).color(if *bad { Color32::from_rgb(240, 130, 110) } else { Color32::from_rgb(120, 200, 130) }));
+                ui.label(RichText::new(m).color(if *bad { pal().error } else { pal().ok }));
             }
         });
         self.open = open;
@@ -151,7 +152,7 @@ impl ScriptsUi {
             self.lua_exists = body.is_some();
             self.lua = Some(editing(scripting::lua_path(&roots.content, folder), body.unwrap_or_default(), true, scripting::check_lua));
         }
-        ui.label(RichText::new(tr("A Lua script that runs in openOMSI while this map is played: it reacts to what happens (a stop reached, a new hour, a new trip) and can show messages, change the traffic and the weather, move the bus. `on` and `every` work for this map only. OMSI 2 does not run Lua: its scripts belong to objects (the next tab).", "Скрипт на Lua, который openOMSI выполняет, пока играют на этой карте: он реагирует на происходящее (остановка, новый час, новый рейс), показывает сообщения, меняет движение и погоду, переставляет автобус. `on` и `every` работают только для этой карты. OMSI 2 Lua не выполняет: его скрипты принадлежат объектам (следующая вкладка).")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A Lua script that runs in openOMSI while this map is played: it reacts to what happens (a stop reached, a new hour, a new trip) and can show messages, change the traffic and the weather, move the bus. `on` and `every` work for this map only. OMSI 2 does not run Lua: its scripts belong to objects (the next tab).", "Скрипт на Lua, который openOMSI выполняет, пока играют на этой карте: он реагирует на происходящее (остановка, новый час, новый рейс), показывает сообщения, меняет движение и погоду, переставляет автобус. `on` и `every` работают только для этой карты. OMSI 2 Lua не выполняет: его скрипты принадлежат объектам (следующая вкладка).")).small().color(pal().text_dim));
         ui.add_space(4.0);
         let templates = scripting::lua_templates();
         let mut insert = None;
@@ -212,7 +213,7 @@ impl ScriptsUi {
                 }
             }
         });
-        ui.label(RichText::new(e.path.display().to_string()).small().color(TEXT_DIM));
+        ui.label(RichText::new(e.path.display().to_string()).small().color(pal().text_dim));
     }
 
     /// Load the scripts of `rel` (when the selection moved to another object).
@@ -241,14 +242,14 @@ impl ScriptsUi {
     }
 
     fn object_tab(&mut self, ui: &mut egui::Ui, roots: &Roots, selected: Option<String>, actions: &mut Vec<Action>) {
-        ui.label(RichText::new(tr("What a scenery object runs every frame: lamps that switch, signs that change, doors that open. Select an object to see its scripts; the game's own compiler checks them as you write. Scripts of the installation's objects can be read and learned from; to change one, make an object of your own (Edit the mesh makes a copy) and open it here.", "Что сценарный объект выполняет каждый кадр: лампы, которые включаются, вывески, которые меняются, двери, которые открываются. Выделите объект, чтобы увидеть его скрипты; встроенный компилятор игры проверяет их по мере набора. Скрипты объектов установки можно читать и изучать; чтобы изменить, сделайте собственный объект («Править меш» делает копию) и откройте его здесь.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("What a scenery object runs every frame: lamps that switch, signs that change, doors that open. Select an object to see its scripts; the game's own compiler checks them as you write. Scripts of the installation's objects can be read and learned from; to change one, make an object of your own (Edit the mesh makes a copy) and open it here.", "Что сценарный объект выполняет каждый кадр: лампы, которые включаются, вывески, которые меняются, двери, которые открываются. Выделите объект, чтобы увидеть его скрипты; встроенный компилятор игры проверяет их по мере набора. Скрипты объектов установки можно читать и изучать; чтобы изменить, сделайте собственный объект («Править меш» делает копию) и откройте его здесь.")).small().color(pal().text_dim));
         ui.add_space(4.0);
         if self.object != selected {
             self.load_object(roots, selected.clone());
         }
         match &self.object {
             None => {
-                ui.label(RichText::new(tr("Select one object on the map.", "Выделите на карте один объект.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Select one object on the map.", "Выделите на карте один объект.")).color(pal().text_dim));
             }
             Some(rel) if self.scripts.is_empty() => {
                 ui.label(format!("{}: {}", rel.rsplit('\\').next().unwrap_or(rel), tr("this object has no script", "у этого объекта нет скрипта")));
@@ -270,7 +271,7 @@ impl ScriptsUi {
                 let (vars, strs, consts) = self.declared.clone();
                 if let Some(e) = self.osc.as_mut() {
                     if !e.writable {
-                        ui.label(RichText::new(tr("From the installation: read only.", "Из установки: только чтение.")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("From the installation: read only.", "Из установки: только чтение.")).small().color(pal().text_dim));
                     }
                     editor(ui, e, "osc text", 16);
                     if e.stale {
@@ -282,7 +283,7 @@ impl ScriptsUi {
                     let (nums, _) = scripting::used_vars(&e.text);
                     let missing: Vec<&String> = nums.iter().filter(|n| !vars.iter().any(|v| v.eq_ignore_ascii_case(n))).collect();
                     if !missing.is_empty() {
-                        ui.label(RichText::new(format!("{}: {}", tr("Not in the object's variable list", "Нет в списке переменных объекта"), missing.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "))).small().color(Color32::from_rgb(230, 190, 90)));
+                        ui.label(RichText::new(format!("{}: {}", tr("Not in the object's variable list", "Нет в списке переменных объекта"), missing.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "))).small().color(pal().warn));
                     }
                     ui.horizontal(|ui| {
                         if ui.add_enabled(e.writable && e.dirty(), egui::Button::new(icons::labelled(Icon::Save, tr("Save the script", "Сохранить скрипт")))).clicked() {
@@ -300,14 +301,14 @@ impl ScriptsUi {
                             e.stale = true;
                         }
                     });
-                    ui.label(RichText::new(e.path.display().to_string()).small().color(TEXT_DIM));
+                    ui.label(RichText::new(e.path.display().to_string()).small().color(pal().text_dim));
                 }
             }
         }
         ui.add_space(8.0);
         ui.separator();
         ui.label(RichText::new(tr("A light switched by a script", "Свет, включаемый скриптом")).strong());
-        ui.label(RichText::new(tr("A new object: a lamp that glows and lights the ground while its script says so. The script is yours to change after.", "Новый объект: лампа, которая светит и освещает землю, пока так говорит её скрипт. Потом скрипт можно менять.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A new object: a lamp that glows and lights the ground while its script says so. The script is yours to change after.", "Новый объект: лампа, которая светит и освещает землю, пока так говорит её скрипт. Потом скрипт можно менять.")).small().color(pal().text_dim));
         let kinds = [Behaviour::Hours { from: 18.0, to: 23.0 }, Behaviour::Blink { period: 2.0 }, Behaviour::Months { from: 12, to: 1 }];
         ui.horizontal_wrapped(|ui| {
             for k in kinds {

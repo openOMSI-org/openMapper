@@ -2,6 +2,7 @@
 //! tour drives stays there to be edited, used or deleted.
 
 use super::*;
+use crate::theme::pal;
 
 /// How many departures of the tours drive trip `name`.
 fn departures(tt: &Timetable, name: &str) -> usize {
@@ -22,7 +23,7 @@ impl TimetableUi {
 
     pub(super) fn all_trips_panel(&mut self, ui: &mut egui::Ui, doc: &mut Document, toasts: &mut Vec<crate::editor::Toast>, actions: &mut Vec<Action>) {
         heading(ui, tr("All trips", "Все рейсы"));
-        ui.label(RichText::new(tr("Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.", "Все рейсы карты, какая бы линия их ни показывала и какой бы выход ни ездил. Рейс, по которому не ездит ни один выход, сохраняется: его можно править, дать выходу или удалить здесь.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.", "Все рейсы карты, какая бы линия их ни показывала и какой бы выход ни ездил. Рейс, по которому не ездит ни один выход, сохраняется: его можно править, дать выходу или удалить здесь.")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut self.trip_filter).hint_text(tr("Search", "Поиск")).desired_width(180.0));
             if ui.button(icons::labelled(Icon::Add, tr("New trip", "Новый рейс"))).clicked() {
@@ -41,7 +42,7 @@ impl TimetableUi {
             .collect();
         names.sort_by_key(|x| x.0.to_lowercase());
         let unused = doc.timetable.trips.iter().filter(|t| departures(&doc.timetable, &t.name) == 0).count();
-        ui.label(RichText::new(format!("{} {} · {} {}", doc.timetable.trips.len(), tr("trips", "рейсов"), unused, tr("driven by no tour", "без выходов"))).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("{} {} · {} {}", doc.timetable.trips.len(), tr("trips", "рейсов"), unused, tr("driven by no tour", "без выходов"))).small().color(pal().text_dim));
         egui::ScrollArea::vertical().id_salt("tt all trips").max_height(240.0).show(ui, |ui| {
             egui::Grid::new("tt all trips grid").num_columns(4).striped(true).spacing(Vec2::new(10.0, 2.0)).show(ui, |ui| {
                 for (name, line, stops, deps) in &names {
@@ -50,12 +51,12 @@ impl TimetableUi {
                     if ui.add(egui::Button::selectable(on, icons::labelled(if warn { Icon::Warning } else { Icon::Route }, name))).clicked() && !on {
                         self.select_trip(Some(name.clone()));
                     }
-                    ui.label(RichText::new(if line.is_empty() { "–".to_string() } else { format!("{} {line}", tr("line", "линия")) }).color(TEXT_DIM));
-                    ui.label(RichText::new(format!("{stops} {}", tr("stops", "ост."))).color(TEXT_DIM));
+                    ui.label(RichText::new(if line.is_empty() { "–".to_string() } else { format!("{} {line}", tr("line", "линия")) }).color(pal().text_dim));
+                    ui.label(RichText::new(format!("{stops} {}", tr("stops", "ост."))).color(pal().text_dim));
                     if *deps == 0 {
-                        ui.label(RichText::new(tr("no tour", "нет выходов")).color(WARN));
+                        ui.label(RichText::new(tr("no tour", "нет выходов")).color(pal().warn));
                     } else {
-                        ui.label(RichText::new(format!("{deps} {}", tr("departures", "отпр."))).color(TEXT_DIM));
+                        ui.label(RichText::new(format!("{deps} {}", tr("departures", "отпр."))).color(pal().text_dim));
                     }
                     ui.end_row();
                 }

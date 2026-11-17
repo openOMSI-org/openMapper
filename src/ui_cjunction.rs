@@ -16,8 +16,9 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::{Category, Kind, Library};
 use crate::roads::{self, Seg};
-use crate::ui::{check, Action, TEXT_DIM};
+use crate::ui::{check, Action};
 use crate::ui_tex::{quad, TexCache};
+use crate::theme::pal;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tool {
@@ -468,7 +469,7 @@ impl ComplexJunctions {
                 }
             });
             let name = self.obj_file.as_deref().and_then(|f| lib.find(f)).map(|a| a.name.clone()).unwrap_or_else(|| tr("nothing chosen", "ничего не выбрано").to_string());
-            ui.label(RichText::new(format!("{} {name}", tr("Standing:", "Ставится:"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {name}", tr("Standing:", "Ставится:"))).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.label(tr("Turn", "Поворот"));
                 ui.add(egui::DragValue::new(&mut self.obj_turn).speed(1.0).suffix("°")).on_hover_text(tr("Added to the way the piece goes where it stands on one (180° faces it the other way)", "Добавляется к направлению детали, на которой он стоит (180° — в другую сторону)"));
@@ -496,12 +497,12 @@ impl ComplexJunctions {
                 }
             });
             let name = self.file.as_deref().and_then(|f| lib.find(f)).map(|a| a.name.clone()).unwrap_or_else(|| tr("nothing chosen", "ничего не выбрано").to_string());
-            ui.label(RichText::new(format!("{} {name}", tr("Drawing with:", "Рисуется:"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {name}", tr("Drawing with:", "Рисуется:"))).small().color(pal().text_dim));
             // the chosen type as it looks: a stretch of it from above, as it will be drawn
             if let Some(file) = self.file.clone() {
                 let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 64.0), Sense::hover());
                 let painter = ui.painter_at(rect);
-                painter.rect_filled(rect, 3.0, Color32::from_rgb(34, 38, 34));
+                painter.rect_filled(rect, 3.0, pal().view);
                 let hw = half_of(lib, &file).max(0.5);
                 let sc = ((rect.height() - 8.0) as f64 / (hw * 2.0)).min(14.0) as f32;
                 let to = move |p: DVec2| Pos2::new(rect.center().x + p.x as f32 * sc, rect.center().y - p.y as f32 * sc);
@@ -530,7 +531,7 @@ impl ComplexJunctions {
                     ui.add(egui::DragValue::new(&mut a.out).speed(1.0).range(0.0..=360.0).suffix("°"));
                 });
                 if a.auto {
-                    ui.label(RichText::new(tr("found from a road's free end", "найден по свободному концу дороги")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("found from a road's free end", "найден по свободному концу дороги")).small().color(pal().text_dim));
                 }
                 ui.label(RichText::new(if a.road.is_empty() { tr("any road type", "любой тип дороги").to_string() } else { lib.find(&a.road).map(|r| r.name.clone()).unwrap_or_else(|| a.road.clone()) }).small());
                 ui.horizontal(|ui| {
@@ -676,7 +677,7 @@ impl ComplexJunctions {
             for i in (0..n).rev() {
                 if self.layout.pieces[i].auto {
                     let name = lib.find(&self.layout.pieces[i].file).map(|a| a.name.clone()).unwrap_or_else(|| self.layout.pieces[i].file.clone());
-                    ui.label(RichText::new(format!("{} · {name}", tr("auto", "авто"))).small().color(TEXT_DIM)).on_hover_text(tr("Built by Auto-Junction from the arms", "Построено Авто-перекрёстком из въездов"));
+                    ui.label(RichText::new(format!("{} · {name}", tr("auto", "авто"))).small().color(pal().text_dim)).on_hover_text(tr("Built by Auto-Junction from the arms", "Построено Авто-перекрёстком из въездов"));
                     continue;
                 }
                 ui.horizontal(|ui| {
@@ -744,7 +745,7 @@ impl ComplexJunctions {
         let p = &mut self.layout.pieces[i];
         ui.label(RichText::new(lib.find(&p.file).map(|a| a.name.clone()).unwrap_or_else(|| p.file.clone())).small());
         let len: f64 = p.segs.iter().map(|s| s.length).sum();
-        ui.label(RichText::new(format!("{len:.1} m · {} {}", p.segs.len(), tr("segments", "участков"))).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("{len:.1} m · {} {}", p.segs.len(), tr("segments", "участков"))).small().color(pal().text_dim));
         if let [s] = p.segs.as_mut_slice() {
             ui.horizontal(|ui| {
                 ui.label("x");
@@ -838,7 +839,7 @@ impl ComplexJunctions {
             if ui.button(tr("Fit", "Вписать")).on_hover_text(tr("The whole drawing in view (F)", "Весь рисунок в окне (F)")).clicked() {
                 self.fit = true;
             }
-            ui.label(RichText::new(format!("{:.0}%", self.scale / 12.0 * 100.0)).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{:.0}%", self.scale / 12.0 * 100.0)).small().color(pal().text_dim));
         });
     }
 
@@ -912,7 +913,7 @@ impl ComplexJunctions {
         let from_screen = move |q: Pos2| DVec2::new(centre.x + (q.x - rect.center().x) as f64 / scale as f64, centre.y - (q.y - rect.center().y) as f64 / scale as f64);
         let painter = ui.painter_at(rect);
         let preview = self.preview;
-        painter.rect_filled(rect, 3.0, if preview { Color32::from_rgb(78, 96, 70) } else { Color32::from_rgb(34, 38, 34) });
+        painter.rect_filled(rect, 3.0, if preview { Color32::from_rgb(78, 96, 70) } else { pal().view });
         // the grid: metres up close, tens far away
         if !preview {
             let step = if scale >= 14.0 { 1.0 } else if scale >= 4.0 { 5.0 } else if scale >= 1.2 { 10.0 } else { 50.0 };
@@ -1015,7 +1016,7 @@ impl ComplexJunctions {
             let pt = |a: f64, b: f64| to_screen(DVec2::new(o.x, o.y) + f * a + r * b);
             painter.add(egui::Shape::convex_polygon(vec![pt(m, 0.0), pt(-m * 0.6, m * 0.7), pt(-m * 0.6, -m * 0.7)], col, Stroke::new(1.0, Color32::BLACK)));
             if !preview {
-                painter.text(c + Vec2::new(8.0, -8.0), egui::Align2::LEFT_BOTTOM, lib.find(&o.file).map(|a| a.name.as_str()).unwrap_or("?"), egui::FontId::proportional(9.5), Color32::from_gray(200));
+                painter.text(c + Vec2::new(8.0, -8.0), egui::Align2::LEFT_BOTTOM, lib.find(&o.file).map(|a| a.name.as_str()).unwrap_or("?"), egui::FontId::proportional(9.5), pal().view_text);
             }
         }
         if !preview {
@@ -1041,8 +1042,8 @@ impl ComplexJunctions {
         // a scale bar: 5 m, or 50 far away
         let bar = if scale >= 3.0 { 5.0 } else { 50.0 };
         let sy = rect.bottom() - 10.0;
-        painter.line_segment([Pos2::new(rect.left() + 12.0, sy), Pos2::new(rect.left() + 12.0 + bar as f32 * scale, sy)], Stroke::new(2.0, Color32::from_gray(190)));
-        painter.text(Pos2::new(rect.left() + 18.0 + bar as f32 * scale, sy), egui::Align2::LEFT_CENTER, format!("{bar} m"), egui::FontId::proportional(11.0), Color32::from_gray(190));
+        painter.line_segment([Pos2::new(rect.left() + 12.0, sy), Pos2::new(rect.left() + 12.0 + bar as f32 * scale, sy)], Stroke::new(2.0, pal().view_text));
+        painter.text(Pos2::new(rect.left() + 18.0 + bar as f32 * scale, sy), egui::Align2::LEFT_CENTER, format!("{bar} m"), egui::FontId::proportional(11.0), pal().view_text);
 
         if !preview {
             self.interact(ui, &resp, &painter, rect, lib, assets, &to_screen, &from_screen);
@@ -1059,8 +1060,8 @@ impl ComplexJunctions {
                 Tool::Object => tr("Click where the object stands; on a piece it faces along it", "Клик там, где встанет объект; на детали он смотрит вдоль неё"),
             }
         };
-        painter.text(rect.left_top() + Vec2::new(8.0, 6.0), egui::Align2::LEFT_TOP, hint, egui::FontId::proportional(11.5), Color32::from_gray(if preview { 235 } else { 200 }));
-        painter.text(rect.left_top() + Vec2::new(8.0, 22.0), egui::Align2::LEFT_TOP, tr("Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels", "Колесо — масштаб, правая/средняя кнопка — сдвиг, F — вписать, Ctrl+Z — отмена, Esc — сброс"), egui::FontId::proportional(10.5), Color32::from_gray(if preview { 220 } else { 140 }));
+        painter.text(rect.left_top() + Vec2::new(8.0, 6.0), egui::Align2::LEFT_TOP, hint, egui::FontId::proportional(11.5), if preview { Color32::from_gray(235) } else { pal().view_text });
+        painter.text(rect.left_top() + Vec2::new(8.0, 22.0), egui::Align2::LEFT_TOP, tr("Wheel zooms, right or middle drag pans, F fits, Ctrl+Z undoes, Esc cancels", "Колесо — масштаб, правая/средняя кнопка — сдвиг, F — вписать, Ctrl+Z — отмена, Esc — сброс"), egui::FontId::proportional(10.5), if preview { Color32::from_gray(220) } else { pal().view_text_dim });
     }
 
     /// Clicks, keys, dragging and what follows the cursor while drawing.
@@ -1117,7 +1118,7 @@ impl ComplexJunctions {
             for p in &self.pending {
                 painter.circle_filled(to_screen(*p), 3.0, Color32::from_rgb(255, 200, 90));
             }
-            painter.text(rect.right_top() + Vec2::new(-8.0, 6.0), egui::Align2::RIGHT_TOP, format!("{:.1}, {:.1} m", c.x, c.y), egui::FontId::proportional(11.0), Color32::from_gray(190));
+            painter.text(rect.right_top() + Vec2::new(-8.0, 6.0), egui::Align2::RIGHT_TOP, format!("{:.1}, {:.1} m", c.x, c.y), egui::FontId::proportional(11.0), pal().view_text);
         }
 
         // keys and clicks
@@ -1316,9 +1317,9 @@ impl ComplexJunctions {
     /// Under the drawing: what it can be done with.
     fn bottom(&mut self, ui: &mut egui::Ui, ed: &mut Editor, content: Option<&PathBuf>, actions: &mut Vec<Action>) {
         ui.horizontal(|ui| {
-            ui.label(RichText::new(format!("{} {} · {} {}", self.layout.pieces.len(), tr("pieces", "деталей"), self.layout.arms.len(), tr("arms", "въездов"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {} · {} {}", self.layout.pieces.len(), tr("pieces", "деталей"), self.layout.arms.len(), tr("arms", "въездов"))).small().color(pal().text_dim));
             if let Some((m, bad)) = &self.message {
-                ui.colored_label(if *bad { Color32::from_rgb(240, 120, 100) } else { Color32::from_rgb(120, 200, 150) }, m);
+                ui.colored_label(if *bad { pal().error } else { pal().ok }, m);
             }
         });
         ui.horizontal_wrapped(|ui| {
@@ -1350,9 +1351,9 @@ impl ComplexJunctions {
             }
         });
         if self.skipped > 0 {
-            ui.label(RichText::new(tr("A junction was not made: its roads are too short or too close together. Lengthen them or move the junctions apart.", "Перекрёсток не построен: дороги слишком короткие или стоят слишком близко. Удлините их или раздвиньте перекрёстки.")).small().color(Color32::from_rgb(235, 150, 80)));
+            ui.label(RichText::new(tr("A junction was not made: its roads are too short or too close together. Lengthen them or move the junctions apart.", "Перекрёсток не построен: дороги слишком короткие или стоят слишком близко. Удлините их или раздвиньте перекрёстки.")).small().color(pal().warn));
         }
-        ui.label(RichText::new(tr("A custom junction is cut back to its arms where roads meet it; draw the roads' own types at the arms so they join cleanly.", "Свой перекрёсток обрезает дороги по въездам; рисуйте у въездов те типы дорог, что подойдут.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A custom junction is cut back to its arms where roads meet it; draw the roads' own types at the arms so they join cleanly.", "Свой перекрёсток обрезает дороги по въездам; рисуйте у въездов те типы дорог, что подойдут.")).small().color(pal().text_dim));
     }
 
     /// After a custom junction was written: the layout as saved.

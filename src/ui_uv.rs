@@ -11,6 +11,7 @@ use openmapper_mesh::edit::Selection;
 
 use crate::editor::Editor;
 use crate::i18n::tr;
+use crate::theme::pal;
 
 pub struct UvEditor {
     /// The picture shown under the faces, and the file it was read from.
@@ -101,10 +102,10 @@ pub fn window(ctx: &egui::Context, st: &mut UvEditor, open: &mut bool, ed: &mut 
                 });
             }
         });
-        ui.label(egui::RichText::new(tr("Click: a face (Shift adds) · drag: move the selected · wheel: zoom · right button: pan", "Клик: грань (Shift — добавить) · протяжка: двигать выделенное · колесо: масштаб · правая кнопка: панорама")).small().color(Color32::from_gray(150)));
+        ui.label(egui::RichText::new(tr("Click: a face (Shift adds) · drag: move the selected · wheel: zoom · right button: pan", "Клик: грань (Shift — добавить) · протяжка: двигать выделенное · колесо: масштаб · правая кнопка: панорама")).small().color(pal().text_dim));
         let (rect, resp) = ui.allocate_exact_size(ui.available_size().max(Vec2::splat(200.0)), Sense::click_and_drag());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, Color32::from_rgb(28, 29, 32));
+        painter.rect_filled(rect, 0.0, pal().view);
         let side = rect.width().min(rect.height()) * 0.9 * st.zoom;
         let origin = rect.center() - Vec2::splat(side * 0.5) + st.pan;
         let to_screen = |uv: GVec2| Pos2::new(origin.x + uv.x * side, origin.y + uv.y * side);

@@ -4,14 +4,15 @@
 //! from them; the Lines window shows the same) and the number
 //! plates of the AI's cars (`registrations.txt`).
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use omsi_map::calendar::{Dst, Holiday, HolidayRange};
 
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::traffic::File;
-use crate::ui::{prop_row, TEXT_DIM};
+use crate::ui::prop_row;
+use crate::theme::pal;
 
 #[derive(Default, PartialEq, Clone, Copy)]
 enum Tab {
@@ -161,7 +162,7 @@ impl CalendarWindow {
                             }
                         });
                     });
-                    ui.label(RichText::new(tr("Where the sun stands and when it rises and sets come from here.", "Отсюда берутся положение солнца, восход и закат.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Where the sun stands and when it rises and sets come from here.", "Отсюда берутся положение солнца, восход и закат.")).small().color(pal().text_dim));
                     ui.add_space(8.0);
                     ui.label(RichText::new(tr("Summer time", "Летнее время")).strong());
                     let (a, b) = (z.dst.first().map(|d| d.start / 10_000), z.dst.last().map(|d| d.start / 10_000));
@@ -192,9 +193,9 @@ impl CalendarWindow {
                         ui.label(tr("Year", "Год"));
                         ui.add(egui::DragValue::new(&mut self.year).range(1900..=2100));
                         let n = c.holidays.iter().filter(|h| h.date / 10_000 == self.year).count() + c.ranges.iter().filter(|r| r.start / 10_000 == self.year).count();
-                        ui.label(RichText::new(format!("{n} {}", tr("entries", "записей"))).color(TEXT_DIM));
+                        ui.label(RichText::new(format!("{n} {}", tr("entries", "записей"))).color(pal().text_dim));
                     });
-                    ui.label(RichText::new(tr("Public holidays run Sunday's timetable; school holidays the holiday one.", "В праздники ходит воскресное расписание, в каникулы — каникулярное.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Public holidays run Sunday's timetable; school holidays the holiday one.", "В праздники ходит воскресное расписание, в каникулы — каникулярное.")).small().color(pal().text_dim));
                     let y = self.year;
                     egui::ScrollArea::vertical().auto_shrink([false, true]).max_height(360.0).show(ui, |ui| {
                         ui.label(RichText::new(tr("Public holidays", "Праздники")).strong());
@@ -235,7 +236,7 @@ impl CalendarWindow {
                                 }
                             });
                             if r.end < r.start {
-                                ui.label(RichText::new(tr("Ends before it starts", "Кончается раньше начала")).small().color(Color32::from_rgb(230, 160, 60)));
+                                ui.label(RichText::new(tr("Ends before it starts", "Кончается раньше начала")).small().color(pal().warn));
                             }
                         }
                         if let Some(i) = remove {
@@ -247,7 +248,7 @@ impl CalendarWindow {
                     });
                 }
                 Tab::Plates => {
-                    ui.label(RichText::new(tr("The AI's cars carry these, one a line.", "Эти номера носят машины ИИ, по одному в строке.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("The AI's cars carry these, one a line.", "Эти номера носят машины ИИ, по одному в строке.")).small().color(pal().text_dim));
                     let text = self.plates.get_or_insert_with(|| t.registrations.join("\n"));
                     ui.horizontal(|ui| {
                         ui.add(egui::TextEdit::singleline(&mut self.pattern).desired_width(110.0)).on_hover_text(tr("X: a letter, 9: a digit", "X: буква, 9: цифра"));
@@ -258,7 +259,7 @@ impl CalendarWindow {
                         }
                     });
                     let n = text.lines().filter(|l| !l.trim().is_empty()).count();
-                    ui.label(RichText::new(format!("{n} {}", tr("plates", "номеров"))).color(TEXT_DIM));
+                    ui.label(RichText::new(format!("{n} {}", tr("plates", "номеров"))).color(pal().text_dim));
                     egui::ScrollArea::vertical().max_height(340.0).show(ui, |ui| {
                         ui.add(egui::TextEdit::multiline(text).desired_width(f32::INFINITY).font(egui::TextStyle::Monospace));
                     });

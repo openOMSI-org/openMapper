@@ -9,6 +9,7 @@ use egui::{Color32, Pos2, Rect, RichText, Sense, Stroke, Vec2};
 
 use crate::i18n::tr;
 use crate::road_maker::{arrow_polygon, Hand, RoadSpec, HAND_H, HAND_W, WHITE, YELLOW};
+use crate::theme::pal;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Tool {
@@ -123,7 +124,7 @@ impl MarkCanvas {
                         }
                     });
                     ui.add_space(6.0);
-                    ui.label(RichText::new(tr("Drag to draw. The picture is the roadway as the texture lies on it, up is the way of the road; it repeats along, so what leaves at the top comes in at the bottom.", "Рисуйте протяжкой. Картинка — проезжая часть так, как на ней лежит текстура, вверх — по ходу дороги; она повторяется вдоль, и что уходит вверх, входит снизу.")).small().color(Color32::from_gray(150)));
+                    ui.label(RichText::new(tr("Drag to draw. The picture is the roadway as the texture lies on it, up is the way of the road; it repeats along, so what leaves at the top comes in at the bottom.", "Рисуйте протяжкой. Картинка — проезжая часть так, как на ней лежит текстура, вверх — по ходу дороги; она повторяется вдоль, и что уходит вверх, входит снизу.")).small().color(pal().text_dim));
                 });
                 ui.separator();
                 self.board(ui, spec, cw, len);
@@ -153,14 +154,14 @@ impl MarkCanvas {
             }
         }
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, Color32::from_rgb(40, 42, 46));
+        painter.rect_filled(rect, 0.0, pal().view);
         match &self.shown {
             Some((_, h)) => {
                 // (row 0 is the road's start, at the bottom: the way of the road goes up)
                 egui::Image::new((h.id(), rect.size())).uv(Rect::from_min_max(Pos2::new(0.0, 1.0), Pos2::new(1.0, 0.0))).paint_at(ui, rect);
             }
             None => {
-                painter.text(rect.center(), egui::Align2::CENTER_CENTER, tr("Pick a roadway texture first", "Сначала выберите текстуру проезжей части"), egui::FontId::proportional(14.0), Color32::from_gray(180));
+                painter.text(rect.center(), egui::Align2::CENTER_CENTER, tr("Pick a roadway texture first", "Сначала выберите текстуру проезжей части"), egui::FontId::proportional(14.0), pal().view_text_dim);
                 return;
             }
         }
@@ -176,7 +177,7 @@ impl MarkCanvas {
             painter.line_segment([to_screen((0.0, y)), to_screen((cw, y))], Stroke::new(1.0, Color32::from_white_alpha(if (y as i32) % 5 == 0 { 28 } else { 10 })));
             y += 1.0;
         }
-        painter.text(rect.left_top() + Vec2::new(4.0, 2.0), egui::Align2::LEFT_TOP, format!("{cw:.1} × {len:.1} m"), egui::FontId::proportional(11.0), Color32::from_gray(200));
+        painter.text(rect.left_top() + Vec2::new(4.0, 2.0), egui::Align2::LEFT_TOP, format!("{cw:.1} × {len:.1} m"), egui::FontId::proportional(11.0), pal().view_text);
 
         let snap = self.snap;
         let to_m = |p: Pos2| -> (f32, f32) {

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::doc::{tile_origin, Document};
 use crate::i18n::tr;
 use crate::install::Roots;
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 /// Whether a session started from here is running (the bottom bar reads it).
 static RUNNING: AtomicBool = AtomicBool::new(false);
@@ -154,7 +154,7 @@ impl Drive {
                 Spawn::View => tr("See this view in openOMSI", "Посмотреть этот вид в openOMSI").to_string(),
             };
             egui::Grid::new("drive grid").num_columns(2).spacing(egui::Vec2::new(10.0, 8.0)).show(ui, |ui| {
-                ui.label(RichText::new(tr("Start from", "Откуда ехать")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Start from", "Откуда ехать")).color(pal().text_dim));
                 egui::ComboBox::from_id_salt("drive spawn").width(260.0).selected_text(name_of(spawn)).show_ui(ui, |ui| {
                     ui.selectable_value(spawn, Spawn::Camera, name_of(&Spawn::Camera));
                     for (i, e) in doc.global.entry_points.iter().enumerate() {
@@ -179,7 +179,7 @@ impl Drive {
                 ui.end_row();
 
                 let free_camera = *spawn == Spawn::View;
-                ui.add_enabled_ui(!free_camera, |ui| ui.label(RichText::new(tr("Vehicle", "Транспорт")).color(TEXT_DIM)));
+                ui.add_enabled_ui(!free_camera, |ui| ui.label(RichText::new(tr("Vehicle", "Транспорт")).color(pal().text_dim)));
                 ui.add_enabled_ui(!free_camera, |ui| {
                     let current = if settings.on_foot {
                         tr("No vehicle (on foot)", "Без транспорта (пешком)").to_string()
@@ -201,7 +201,7 @@ impl Drive {
                 });
                 ui.end_row();
 
-                ui.label(RichText::new(tr("Time of day", "Время суток")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Time of day", "Время суток")).color(pal().text_dim));
                 ui.horizontal(|ui| {
                     let (mut h, mut m) = (settings.minutes / 60 % 24, settings.minutes % 60);
                     ui.add(egui::DragValue::new(&mut h).range(0..=23).custom_formatter(|v, _| format!("{:02}", v as u32)));
@@ -211,7 +211,7 @@ impl Drive {
                 });
                 ui.end_row();
 
-                ui.label(RichText::new(tr("Weather", "Погода")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Weather", "Погода")).color(pal().text_dim));
                 let weather_name = |w: &str| match w {
                     "" => tr("The map's own", "Как в карте").to_string(),
                     "natural" => tr("Natural weather", "Естественная погода").to_string(),
@@ -228,7 +228,7 @@ impl Drive {
                 });
                 ui.end_row();
 
-                ui.label(RichText::new(tr("Traffic", "Движение")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Traffic", "Движение")).color(pal().text_dim));
                 ui.add(egui::Slider::new(&mut settings.traffic, 0..=100));
                 ui.end_row();
 
@@ -238,7 +238,7 @@ impl Drive {
             });
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                let start = ui.add(egui::Button::new(RichText::new(tr("Start", "Старт")).strong()).fill(Color32::from_rgb(46, 134, 255)));
+                let start = ui.add(egui::Button::new(RichText::new(tr("Start", "Старт")).strong().color(Color32::WHITE)).fill(Color32::from_rgb(46, 134, 255)));
                 if start.clicked() || ctx.input(|i| i.key_pressed(egui::Key::Enter)) && !ctx.egui_wants_keyboard_input() {
                     // (no vehicle chosen yet: the first one, as the list shows it)
                     if !settings.on_foot && settings.bus.is_empty() {

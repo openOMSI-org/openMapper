@@ -13,6 +13,7 @@ use crate::library::{Category, Kind, Library};
 use crate::road_maker::{MarkStyle, Marking, RoadSpec};
 use crate::ui::Action;
 use crate::ui_tex::{quad, TexCache};
+use crate::theme::{self, pal};
 
 #[derive(Default)]
 pub struct RoadTypes {
@@ -68,7 +69,7 @@ fn file_name(p: &Path) -> String {
 fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 170.0), Sense::hover());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, Color32::from_rgb(28, 30, 33));
+    p.rect_filled(rect, 3.0, pal().canvas);
     let total = s.total_width().max(1.0);
     let k = ((rect.width() - 30.0) / total).min((rect.height() - 20.0) / 14.0);
     let rw = s.roadway_width();
@@ -174,13 +175,13 @@ fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     }
     if s.pocket > 0.0 {
         arrow(rw / 2.0 + s.pocket / 2.0, true, Color32::from_rgb(120, 200, 150));
-        p.text(Pos2::new(x(rw / 2.0 + s.pocket / 2.0), (top + bottom) / 2.0), egui::Align2::CENTER_CENTER, "BUS", egui::FontId::proportional(11.0), Color32::from_rgb(120, 200, 150));
+        p.text(Pos2::new(x(rw / 2.0 + s.pocket / 2.0), (top + bottom) / 2.0), egui::Align2::CENTER_CENTER, "BUS", egui::FontId::proportional(11.0), theme::readable(Color32::from_rgb(120, 200, 150)));
     }
     // 5 m scale
     let sy = rect.bottom() - 9.0;
-    p.line_segment([Pos2::new(rect.left() + 10.0, sy), Pos2::new(rect.left() + 10.0 + 5.0 * k, sy)], Stroke::new(2.0, Color32::from_gray(170)));
-    p.text(Pos2::new(rect.left() + 16.0 + 5.0 * k, sy), egui::Align2::LEFT_CENTER, "5 m", egui::FontId::proportional(11.0), Color32::from_gray(170));
-    p.text(Pos2::new(rect.right() - 8.0, sy), egui::Align2::RIGHT_CENTER, format!("{:.1} m", total), egui::FontId::proportional(11.0), Color32::from_gray(170));
+    p.line_segment([Pos2::new(rect.left() + 10.0, sy), Pos2::new(rect.left() + 10.0 + 5.0 * k, sy)], Stroke::new(2.0, pal().text_dim));
+    p.text(Pos2::new(rect.left() + 16.0 + 5.0 * k, sy), egui::Align2::LEFT_CENTER, "5 m", egui::FontId::proportional(11.0), pal().text_dim);
+    p.text(Pos2::new(rect.right() - 8.0, sy), egui::Align2::RIGHT_CENTER, format!("{:.1} m", total), egui::FontId::proportional(11.0), pal().text_dim);
 }
 
 /// The spline seen from above or across it (the choice is kept while the maker is open).
@@ -199,7 +200,7 @@ fn preview(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
 fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 100.0), Sense::hover());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, Color32::from_rgb(28, 30, 33));
+    p.rect_filled(rect, 3.0, pal().canvas);
     let total = s.total_width().max(1.0);
     let k = (rect.width() - 20.0) / total;
     let rw = s.roadway_width();
@@ -244,7 +245,7 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
         let y = base - 18.0;
         let col = if fwd { Color32::from_rgb(232, 170, 60) } else { Color32::from_rgb(110, 180, 240) };
         p.text(Pos2::new(c, y), egui::Align2::CENTER_CENTER, if fwd { Icon::Up.ch() } else { Icon::Down.ch() }, Icon::font(14.0), col);
-        p.line_segment([Pos2::new(x(left), base - 8.0), Pos2::new(x(left), base)], Stroke::new(1.0, Color32::from_gray(200)));
+        p.line_segment([Pos2::new(x(left), base - 8.0), Pos2::new(x(left), base)], Stroke::new(1.0, pal().ink_dim));
     };
     let offset = s.centerline();
     if two_way {
@@ -259,7 +260,7 @@ fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
             lane(-rw / 2.0 + i as f32 * s.lane_width, s.lanes_fwd > 0);
         }
     }
-    p.text(Pos2::new(rect.center().x, rect.bottom() - 10.0), egui::Align2::CENTER_CENTER, format!("{:.1} m · {} {:.1} m", total, tr("roadway", "проезжая часть"), rw), egui::FontId::proportional(11.0), Color32::from_gray(170));
+    p.text(Pos2::new(rect.center().x, rect.bottom() - 10.0), egui::Align2::CENTER_CENTER, format!("{:.1} m · {} {:.1} m", total, tr("roadway", "проезжая часть"), rw), egui::FontId::proportional(11.0), pal().text_dim);
 }
 
 impl RoadTypes {
@@ -349,8 +350,8 @@ impl RoadTypes {
                         });
                     } else if let Some(rel) = self.picked.clone() {
                         let name = lib.find(&rel).map(|a| a.name.clone()).unwrap_or_else(|| rel.clone());
-                        ui.label(RichText::new(name).strong().color(Color32::WHITE));
-                        crate::ui::long_label(ui, &rel, egui::TextStyle::Small, Color32::from_gray(140));
+                        ui.label(RichText::new(name).strong().color(pal().text_strong));
+                        crate::ui::long_label(ui, &rel, egui::TextStyle::Small, pal().text_dim);
                         ui.add_space(6.0);
                         if ui.button(icons::labelled(Icon::Road, tr("Build with it", "Строить им"))).clicked() {
                             ed.road_type = Some(rel.clone());
@@ -391,7 +392,7 @@ impl RoadTypes {
                             tr("Pieces with a place made for this road type. The one picked is offered first when a junction is put on this road's end (select the road: Junction on an end).", "Перекрёстки с местом под этот тип дороги. Выбранный предлагается первым, когда перекрёсток ставят на конец такой дороги (выделите дорогу: «Перекрёсток на конце дороги»).")
                         } else {
                             tr("No piece is made for this road type; the list holds every piece with places for roads.", "Под этот тип дороги перекрёстков нет; в списке все перекрёстки с местами для дорог.")
-                        }).small().color(Color32::from_gray(140)));
+                        }).small().color(pal().text_dim));
                         if pick != preferred {
                             ed.road_styles.set_piece(&rel, pick);
                             if let Err(e) = ed.road_styles.save(&roots.content) {
@@ -409,7 +410,7 @@ impl RoadTypes {
                         });
                         crate::ui::check(ui, &mut st.lights, tr("Traffic lights by themselves", "Светофоры сами"));
                         crate::ui::check(ui, &mut st.crossings, tr("Zebra crossings on every arm", "Пешеходные переходы на всех въездах"));
-                        ui.label(RichText::new(tr("Used for the junctions made from now on (where several road types meet, the one asking more wins). A junction already made keeps its own settings: select it to change them.", "Применяется к новым перекрёсткам (где встречаются разные дороги, берётся большее). Готовый перекрёсток хранит свои настройки: выделите его, чтобы изменить.")).small().color(Color32::from_gray(140)));
+                        ui.label(RichText::new(tr("Used for the junctions made from now on (where several road types meet, the one asking more wins). A junction already made keeps its own settings: select it to change them.", "Применяется к новым перекрёсткам (где встречаются разные дороги, берётся большее). Готовый перекрёсток хранит свои настройки: выделите его, чтобы изменить.")).small().color(pal().text_dim));
                         if st != before {
                             ed.road_styles.set(&rel, st);
                             if let Err(e) = ed.road_styles.save(&roots.content) {
@@ -420,7 +421,7 @@ impl RoadTypes {
                         ui.label(tr("Pick a road type on the left, or make a new one.", "Выберите тип дороги слева или создайте новый."));
                     }
                     if let Some(e) = &self.error {
-                        ui.colored_label(Color32::from_rgb(240, 120, 100), e);
+                        ui.colored_label(pal().error, e);
                     }
                     if cancel {
                         self.maker = None;
@@ -436,7 +437,7 @@ impl RoadTypes {
     }
 
     fn maker_ui(ui: &mut egui::Ui, s: &mut RoadSpec, textures: &mut Option<Vec<PathBuf>>, search: &mut [String; 3], roots: &Roots, tex: &mut TexCache, canvas: &mut bool) {
-        ui.label(RichText::new(tr("Road maker", "Конструктор дороги")).strong().color(Color32::WHITE));
+        ui.label(RichText::new(tr("Road maker", "Конструктор дороги")).strong().color(pal().text_strong));
         ui.horizontal(|ui| {
             ui.label(tr("Start from", "Взять за основу"));
             egui::ComboBox::from_id_salt("road preset").selected_text(tr("a ready-made road…", "готовую дорогу…")).show_ui(ui, |ui| {
@@ -458,7 +459,7 @@ impl RoadTypes {
                 ui.add(egui::DragValue::new(&mut s.lanes_fwd).range(0..=5));
                 ui.label(Icon::Down.text(15.0)).on_hover_text(tr("Lanes against it", "Полосы против хода"));
                 ui.add(egui::DragValue::new(&mut s.lanes_back).range(0..=5));
-                ui.label(RichText::new(tr("(0 against: one-way)", "(0 против: одностороннее)")).small().color(Color32::from_gray(140)));
+                ui.label(RichText::new(tr("(0 against: one-way)", "(0 против: одностороннее)")).small().color(pal().text_dim));
             });
             ui.end_row();
             ui.label(tr("Lane width", "Ширина полосы"));
@@ -526,7 +527,7 @@ impl RoadTypes {
                 }
             });
         }
-        egui::CollapsingHeader::new(RichText::new(tr("Road markings", "Дорожная разметка")).strong().color(Color32::WHITE)).id_salt("road markings").default_open(s.marked).show(ui, |ui| {
+        egui::CollapsingHeader::new(RichText::new(tr("Road markings", "Дорожная разметка")).strong().color(pal().text_strong)).id_salt("road markings").default_open(s.marked).show(ui, |ui| {
             ui.checkbox(&mut s.marked, tr("Paint my own markings", "Нарисовать свою разметку")).on_hover_text(tr("The maker paints the lines onto the roadway texture: pick a plain asphalt texture, or its own lines show too", "Конструктор рисует линии на текстуре проезжей части: берите гладкий асфальт, иначе проступят и его собственные линии"));
             if !s.marked {
                 return;
@@ -548,7 +549,7 @@ impl RoadTypes {
                     s.marked = true;
                 }
                 if s.hand.as_ref().map(|h| !h.is_empty()).unwrap_or(false) {
-                    ui.label(RichText::new(tr("a drawing is on the road", "на дороге есть рисунок")).small().color(Color32::from_gray(150)));
+                    ui.label(RichText::new(tr("a drawing is on the road", "на дороге есть рисунок")).small().color(pal().text_dim));
                 }
             });
             let half = s.roadway_width() / 2.0;
@@ -581,6 +582,6 @@ impl RoadTypes {
                 s.markings.remove(i);
             }
         });
-        ui.label(RichText::new(tr("The roadway texture is laid once across all its lanes (as OMSI 2's lane textures are painted: pick one with as many lanes); the footway texture's right end is the kerb.", "Текстура проезжей части ложится один раз поперёк всех полос (как нарисованы полосные текстуры OMSI 2: берите с тем же числом полос); правый край текстуры тротуара: бордюр.")).small().color(Color32::from_gray(140)));
+        ui.label(RichText::new(tr("The roadway texture is laid once across all its lanes (as OMSI 2's lane textures are painted: pick one with as many lanes); the footway texture's right end is the kerb.", "Текстура проезжей части ложится один раз поперёк всех полос (как нарисованы полосные текстуры OMSI 2: берите с тем же числом полос); правый край текстуры тротуара: бордюр.")).small().color(pal().text_dim));
     }
 }

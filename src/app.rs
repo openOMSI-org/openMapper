@@ -376,6 +376,8 @@ impl App {
         }
         let egui_ctx = egui::Context::default();
         ui::style(&egui_ctx);
+        // OPENMAPPER_THEME=dark|light|system: that theme for this run (checks of both)
+        crate::theme::Choice::from_code(&std::env::var("OPENMAPPER_THEME").unwrap_or_else(|_| self.prefs.theme.clone())).apply(&egui_ctx);
         if self.prefs.ui_scale > 0.0 {
             egui_ctx.set_zoom_factor(self.prefs.ui_scale.clamp(0.5, 2.0));
         }
@@ -383,7 +385,7 @@ impl App {
         if let Some(z) = std::env::var("OPENMAPPER_UI_SCALE").ok().and_then(|z| z.parse::<f32>().ok()) {
             egui_ctx.set_zoom_factor(z.clamp(0.5, 2.0));
         }
-        let egui_state = egui_winit::State::new(egui_ctx.clone(), egui::ViewportId::ROOT, &window, Some(window.scale_factor() as f32), None, Some(gpu.device.limits().max_texture_dimension_2d as usize));
+        let egui_state = egui_winit::State::new(egui_ctx.clone(), egui::ViewportId::ROOT, &window, Some(window.scale_factor() as f32), window.theme(), Some(gpu.device.limits().max_texture_dimension_2d as usize));
         let egui_renderer = egui_wgpu::Renderer::new(&gpu.device, gpu.config.format, egui_wgpu::RendererOptions { msaa_samples: 1, depth_stencil_format: None, dithering: true, predictable_texture_filtering: false });
         log::info!("graphics: {}", gpu.adapter_name);
         self.gfx = Some(Gfx { window, gpu, renderer, egui_ctx, egui_state, egui_renderer });
@@ -1947,6 +1949,13 @@ impl App {
                     g.egui_ctx.set_zoom_factor(z);
                 }
             }
+            Action::SetTheme(c) => {
+                self.prefs.theme = c.code().to_string();
+                self.prefs.save();
+                if let Some(g) = &self.gfx {
+                    c.apply(&g.egui_ctx);
+                }
+            }
             Action::Copy => {
                 self.ed.copy(&self.lib);
             }
@@ -3008,6 +3017,7 @@ impl App {
         g.renderer.profile.add("ui.before", crate::render::profile::ms(t_ui));
         let full = g.egui_ctx.run_ui(raw, |ui| {
             let ctx = ui.ctx().clone();
+            crate::theme::sync(&ctx);
             if self.ed.doc.is_none() {
                 ui::welcome(ui, &mut self.ui, &self.prefs, self.roots.as_ref().map(|r| r.omsi.as_path()), &mut actions);
             } else {

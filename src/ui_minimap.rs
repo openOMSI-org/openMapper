@@ -7,6 +7,7 @@ use glam::DVec2;
 use crate::doc::{tile_origin, tile_size, Document};
 use crate::i18n::tr;
 use crate::library::{Category, Library};
+use crate::theme::pal;
 
 /// What the camera shows, for the marker.
 #[derive(Clone, Copy)]
@@ -249,7 +250,7 @@ impl Minimap {
 
         let resp = ui.interact(rect.expand(4.0), ui.id().with("minimap"), Sense::click_and_drag());
         let painter = ui.painter_at(rect.expand(6.0));
-        painter.rect_filled(rect.expand(4.0), CornerRadius::same(3), Color32::from_rgba_unmultiplied(20, 21, 24, 220));
+        painter.rect_filled(rect.expand(4.0), CornerRadius::same(3), pal().overlay);
         let ts = tile_size();
         for &o in &self.tiles {
             let r = Rect::from_two_pos(to_screen(o), to_screen(o + DVec2::splat(ts)));
@@ -280,7 +281,7 @@ impl Minimap {
         let accent = Color32::from_rgb(232, 120, 40);
         painter.add(Shape::convex_polygon(vec![at, at + fwd * reach + side_v, at + fwd * reach - side_v], Color32::from_rgba_unmultiplied(232, 120, 40, 50), Stroke::new(1.0, accent)));
         painter.circle_filled(at, 3.5, accent);
-        painter.rect_stroke(rect.expand(4.0), CornerRadius::same(3), Stroke::new(1.0, Color32::from_rgb(60, 62, 68)), egui::StrokeKind::Inside);
+        painter.rect_stroke(rect.expand(4.0), CornerRadius::same(3), Stroke::new(1.0, pal().border), egui::StrokeKind::Inside);
         let resp = resp.on_hover_text(tr("Overview: click or drag to move there · double-click: larger / smaller · M: hide", "Обзор: клик или перетаскивание: переместиться · двойной клик: крупнее / мельче · M: скрыть"));
         if resp.double_clicked() {
             self.large = !self.large;

@@ -88,6 +88,7 @@ mod ed_author;
 mod ed_ground;
 mod switches;
 mod texts;
+mod theme;
 mod timetable;
 mod traffic;
 mod sysfont;

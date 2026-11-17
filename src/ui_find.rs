@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec2;
 
 use crate::doc::{tile_origin, Document, Sel, TileKey};
@@ -13,7 +13,8 @@ use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
-use crate::ui::{Action, ACCENT, TEXT_DIM};
+use crate::ui::Action;
+use crate::theme::pal;
 
 /// One kind of thing the map uses, and where.
 struct Group {
@@ -144,8 +145,8 @@ impl Find {
                 egui::ScrollArea::vertical().id_salt("places").max_height(150.0).show(ui, |ui| {
                     for (name, kind, sel, p) in places.iter().take(50) {
                         ui.horizontal(|ui| {
-                            ui.label(RichText::new(name).color(Color32::WHITE));
-                            ui.label(RichText::new(*kind).small().color(TEXT_DIM));
+                            ui.label(RichText::new(name).color(pal().text_strong));
+                            ui.label(RichText::new(*kind).small().color(pal().text_dim));
                             if ui.small_button(icons::labelled(Icon::Focus, tr("Go to", "Перейти"))).clicked() {
                                 go = Some((*sel, *p));
                             }
@@ -169,22 +170,22 @@ impl Find {
                         });
                     }
                     None => {
-                        ui.label(RichText::new(tr("Nothing on the map has this IDCode.", "На карте нет ничего с таким IDCode.")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Nothing on the map has this IDCode.", "На карте нет ничего с таким IDCode.")).color(pal().text_dim));
                     }
                 }
                 ui.separator();
             }
             let shown: Vec<&Group> = self.groups.iter().filter(|g| q.is_empty() || g.file.to_lowercase().contains(&q) || name_of(g).to_lowercase().contains(&q)).collect();
             let total: usize = shown.iter().map(|g| g.at.len()).sum();
-            ui.label(RichText::new(format!("{} {} · {} {total}", tr("kinds", "видов"), shown.len(), tr("on the map", "на карте"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {} · {} {total}", tr("kinds", "видов"), shown.len(), tr("on the map", "на карте"))).small().color(pal().text_dim));
             ui.separator();
             egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                 for g in shown.iter().take(400) {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(format!("{:>5}", g.at.len())).monospace().color(ACCENT));
+                        ui.label(RichText::new(format!("{:>5}", g.at.len())).monospace().color(pal().accent));
                         ui.vertical(|ui| {
-                            ui.label(RichText::new(name_of(g)).color(Color32::WHITE));
-                            crate::ui::long_label(ui, &g.file, egui::TextStyle::Small, TEXT_DIM);
+                            ui.label(RichText::new(name_of(g)).color(pal().text_strong));
+                            crate::ui::long_label(ui, &g.file, egui::TextStyle::Small, pal().text_dim);
                         });
                     });
                     ui.horizontal_wrapped(|ui| {
@@ -211,7 +212,7 @@ impl Find {
                     ui.add_space(4.0);
                 }
                 if shown.len() > 400 {
-                    ui.label(RichText::new(tr("More: type to narrow the list", "Есть ещё: уточните поиск")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("More: type to narrow the list", "Есть ещё: уточните поиск")).color(pal().text_dim));
                 }
             });
         });

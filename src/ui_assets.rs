@@ -14,6 +14,7 @@ use crate::icons::{self, Icon};
 use crate::library::{Asset, Category, Kind, Library};
 use crate::render::Thumb;
 use crate::ui::Action;
+use crate::theme::pal;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Show {
@@ -111,7 +112,7 @@ impl AssetBrowser {
             _ => self.build_cache(key, lib, favourites, textures),
         };
         let on_textures = self.show == Show::Textures;
-        egui::Panel::bottom("assets").resizable(true).default_size(260.0).size_range(140.0..=600.0).frame(egui::Frame::new().fill(Color32::from_rgb(33, 34, 38)).inner_margin(egui::Margin::same(6))).show(root, |ui| {
+        egui::Panel::bottom("assets").resizable(true).default_size(260.0).size_range(140.0..=600.0).frame(egui::Frame::new().fill(pal().panel).inner_margin(egui::Margin::same(6))).show(root, |ui| {
             // the bar: search, kind, size, import
             ui.horizontal(|ui| {
                 ui.label(icons::labelled(Icon::Objects, tr("Assets", "Ассеты")));
@@ -168,7 +169,7 @@ impl AssetBrowser {
                             for (top, n, subs) in &cache.tex_tree {
                                 let on = self.tex_folder.as_deref() == Some(top.as_str());
                                 let text = RichText::new(format!("{top} ({n})"));
-                                let r = egui::CollapsingHeader::new(if on { text.color(Color32::from_rgb(232, 150, 80)) } else { text }).id_salt(("tex top", top)).show(ui, |ui| {
+                                let r = egui::CollapsingHeader::new(if on { text.color(pal().accent) } else { text }).id_salt(("tex top", top)).show(ui, |ui| {
                                     for (sub, n) in subs {
                                         let path = format!("{top}\\{sub}");
                                         if ui.selectable_label(self.tex_folder.as_deref() == Some(path.as_str()), format!("{sub} ({n})")).clicked() {
@@ -191,7 +192,7 @@ impl AssetBrowser {
                                 for (top, n, subs) in tops {
                                     let on = self.folder.as_ref().map(|f| f.0 == *kind && f.1 == *top).unwrap_or(false);
                                     let text = RichText::new(format!("{top} ({n})"));
-                                    let r = egui::CollapsingHeader::new(if on { text.color(Color32::from_rgb(232, 150, 80)) } else { text }).id_salt(("asset top", *kind == Kind::Spline, top)).show(ui, |ui| {
+                                    let r = egui::CollapsingHeader::new(if on { text.color(pal().accent) } else { text }).id_salt(("asset top", *kind == Kind::Spline, top)).show(ui, |ui| {
                                         for (sub, n) in subs {
                                             let path = format!("{top}\\{sub}");
                                             let on = self.folder.as_ref().map(|f| f.0 == *kind && f.1 == path).unwrap_or(false);
@@ -217,7 +218,7 @@ impl AssetBrowser {
                         let grid_w = (ui.available_width() - detail_w - 8.0).max(120.0);
                         ui.vertical(|ui| {
                             ui.set_width(grid_w);
-                            ui.label(RichText::new(format!("{} {}", cache.items.len(), tr("items", "шт."))).small().color(Color32::from_gray(140)));
+                            ui.label(RichText::new(format!("{} {}", cache.items.len(), tr("items", "шт."))).small().color(pal().text_dim));
                             let cell = Vec2::new(self.size + 8.0, self.size + 30.0);
                             let per_row = ((grid_w / cell.x).floor() as usize).max(1);
                             // (only the rows in view are drawn, and only those ask for pictures)
@@ -312,7 +313,7 @@ impl AssetBrowser {
     fn texture_cell(&mut self, ui: &mut egui::Ui, rel: &str, cell: Vec2, swatches: &HashMap<String, egui::TextureHandle>, wanted: &mut Vec<String>) {
         let (rect, resp) = ui.allocate_exact_size(cell, Sense::click());
         let on = self.tex_picked.as_deref() == Some(rel);
-        let bg = if on { Color32::from_rgb(64, 86, 122) } else if resp.hovered() { Color32::from_gray(48) } else { Color32::from_rgb(40, 41, 45) };
+        let bg = if on { pal().selection } else if resp.hovered() { pal().hover } else { pal().field };
         ui.painter().rect_filled(rect.shrink(2.0), CornerRadius::same(4), bg);
         let img = Rect::from_min_size(rect.min + Vec2::new(4.0, 4.0), Vec2::splat(self.size));
         match swatches.get(&rel.to_lowercase()) {
@@ -321,13 +322,13 @@ impl AssetBrowser {
             }
             None => {
                 wanted.push(rel.to_string());
-                ui.painter().rect_filled(img.shrink(self.size * 0.3), CornerRadius::same(3), Color32::from_gray(55));
+                ui.painter().rect_filled(img.shrink(self.size * 0.3), CornerRadius::same(3), pal().thumb);
             }
         }
         let name = rel.rsplit('\\').next().unwrap_or(rel);
         let text_rect = Rect::from_min_max(Pos2::new(rect.left() + 4.0, img.bottom() + 2.0), rect.right_bottom() - Vec2::new(4.0, 2.0));
-        let galley = ui.painter().layout(name.to_string(), egui::FontId::proportional(11.0), Color32::from_gray(220), text_rect.width());
-        ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, Color32::WHITE);
+        let galley = ui.painter().layout(name.to_string(), egui::FontId::proportional(11.0), pal().row_text(on), text_rect.width());
+        ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, pal().row_text(on));
         if resp.on_hover_text(rel).clicked() {
             self.tex_picked = Some(rel.to_string());
         }
@@ -337,8 +338,8 @@ impl AssetBrowser {
         if let Some(h) = swatches.get(&rel.to_lowercase()) {
             ui.add(egui::Image::new((h.id(), Vec2::splat(150.0))));
         }
-        ui.label(RichText::new(rel.rsplit('\\').next().unwrap_or(rel)).strong().color(Color32::WHITE));
-        ui.label(RichText::new(rel).small().color(Color32::from_gray(140)));
+        ui.label(RichText::new(rel.rsplit('\\').next().unwrap_or(rel)).strong().color(pal().text_strong));
+        ui.label(RichText::new(rel).small().color(pal().text_dim));
         ui.add_space(4.0);
         if ui.button(icons::labelled(Icon::Paint, tr("Add as a ground texture", "Добавить как текстуру земли"))).clicked() {
             actions.push(Action::AddGroundTexture(rel.to_string()));
@@ -349,25 +350,25 @@ impl AssetBrowser {
     fn cell(&mut self, ui: &mut egui::Ui, a: &Asset, cell: Vec2, ed: &mut Editor, thumbs: &HashMap<String, Option<Thumb>>, wanted: &mut Vec<(String, bool)>, actions: &mut Vec<Action>) {
         let (rect, resp) = ui.allocate_exact_size(cell, Sense::click_and_drag());
         let on = self.picked.as_deref().map(|p| p.eq_ignore_ascii_case(&a.rel)).unwrap_or(false);
-        let bg = if on { Color32::from_rgb(64, 86, 122) } else if resp.hovered() { Color32::from_gray(48) } else { Color32::from_rgb(40, 41, 45) };
+        let bg = if on { pal().selection } else if resp.hovered() { pal().hover } else { pal().field };
         ui.painter().rect_filled(rect.shrink(2.0), CornerRadius::same(4), bg);
         let img = Rect::from_min_size(rect.min + Vec2::new(4.0, 4.0), Vec2::splat(self.size));
         match thumbs.get(&a.rel.to_lowercase()) {
             Some(Some(t)) => {
                 egui::Image::new((t.id, img.size())).paint_at(ui, img);
             }
-            Some(None) => icons::paint(ui.painter(), a.category.icon(), img.center(), self.size * 0.4, Color32::from_gray(110)),
+            Some(None) => icons::paint(ui.painter(), a.category.icon(), img.center(), self.size * 0.4, pal().text_off),
             None => {
                 wanted.push((a.rel.clone(), a.kind == Kind::Spline));
-                ui.painter().rect_filled(img.shrink(self.size * 0.3), CornerRadius::same(3), Color32::from_gray(55));
+                ui.painter().rect_filled(img.shrink(self.size * 0.3), CornerRadius::same(3), pal().thumb);
             }
         }
         if a.from_content {
-            ui.painter().circle_filled(img.right_top() + Vec2::new(-6.0, 6.0), 4.0, Color32::from_rgb(232, 120, 40));
+            ui.painter().circle_filled(img.right_top() + Vec2::new(-6.0, 6.0), 4.0, pal().accent);
         }
         let text_rect = Rect::from_min_max(Pos2::new(rect.left() + 4.0, img.bottom() + 2.0), rect.right_bottom() - Vec2::new(4.0, 2.0));
-        let galley = ui.painter().layout(a.name.clone(), egui::FontId::proportional(11.0), Color32::from_gray(220), text_rect.width());
-        ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, Color32::WHITE);
+        let galley = ui.painter().layout(a.name.clone(), egui::FontId::proportional(11.0), pal().row_text(on), text_rect.width());
+        ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, pal().row_text(on));
         let resp = resp.on_hover_text(format!("{}\n{}", a.name, a.rel));
         if let Some((rel, true)) = &ed.reveal {
             if rel.eq_ignore_ascii_case(&a.rel) {
@@ -398,8 +399,8 @@ impl AssetBrowser {
         if let Some(Some(t)) = thumbs.get(&a.rel.to_lowercase()) {
             ui.add(egui::Image::new((t.id, Vec2::splat(150.0))));
         }
-        ui.label(RichText::new(&a.name).strong().color(Color32::WHITE));
-        ui.label(RichText::new(&a.rel).small().color(Color32::from_gray(140)));
+        ui.label(RichText::new(&a.name).strong().color(pal().text_strong));
+        ui.label(RichText::new(&a.rel).small().color(pal().text_dim));
         ui.label(RichText::new(format!("{} · {}", a.category.label(), if a.from_content { tr("content folder (mod, import, own)", "папка контента (мод, импорт, своё)") } else { tr("OMSI 2", "OMSI 2") })).small());
         if a.kind == Kind::Spline && a.half_width > 0.0 {
             ui.label(RichText::new(format!("{} {:.1} m", tr("width", "ширина"), a.half_width * 2.0)).small());
@@ -423,7 +424,7 @@ impl AssetBrowser {
             self.confirm_delete = Some(a.rel.clone());
         }
         if matches!(a.category, Category::Technical) {
-            ui.label(RichText::new(tr("Not seen in the game (a helper).", "В игре не видно (служебный).")).small().color(Color32::from_gray(140)));
+            ui.label(RichText::new(tr("Not seen in the game (a helper).", "В игре не видно (служебный).")).small().color(pal().text_dim));
         }
     }
 

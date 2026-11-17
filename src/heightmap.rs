@@ -11,6 +11,7 @@ use omsi_map::TERRAIN_SAMPLES;
 use crate::doc::{tile_of, tile_origin, tile_size, Document, TileKey};
 use crate::history::History;
 use crate::i18n::tr;
+use crate::theme::pal;
 
 /// The tiles' rectangle: the lowest and the highest tile key.
 pub fn extent(doc: &Document) -> Option<(TileKey, TileKey)> {
@@ -189,7 +190,7 @@ impl HeightMapUi {
         use crate::icons::{self, Icon};
         ui.add_space(8.0);
         ui.label(egui::RichText::new(tr("Height map", "Карта высот")).strong());
-        ui.label(egui::RichText::new(tr("The ground as a grey picture, to shape in another program and bring back", "Рельеф как серая картинка: обработать в другой программе и вернуть")).small().color(crate::ui::TEXT_DIM));
+        ui.label(egui::RichText::new(tr("The ground as a grey picture, to shape in another program and bring back", "Рельеф как серая картинка: обработать в другой программе и вернуть")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             if ui.add_enabled(ed.doc.is_some(), egui::Button::new(icons::labelled(Icon::Save, tr("Export…", "Экспорт…")))).clicked() {
                 self.export(ed);
@@ -201,11 +202,11 @@ impl HeightMapUi {
         let Some((path, pic, how, smooth)) = &mut self.pending else { return };
         let mut go = false;
         let mut cancel = false;
-        egui::Frame::new().fill(crate::ui::BG_FIELD).inner_margin(6.0).show(ui, |ui| {
+        egui::Frame::new().fill(pal().field).inner_margin(6.0).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.label(egui::RichText::new(path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()).strong());
             let (w, h) = ed.doc.as_ref().and_then(extent).map(|(lo, hi)| ((hi.0 - lo.0 + 1) as f64 * tile_size(), (hi.1 - lo.1 + 1) as f64 * tile_size())).unwrap_or((0.0, 0.0));
-            ui.label(egui::RichText::new(format!("{} × {} px {} {:.0} × {:.0} m ({:.1} m {})", pic.w, pic.h, tr("over", "на"), w, h, w / (pic.w - 1) as f64, tr("a pixel", "на пиксель"))).small().color(crate::ui::TEXT_DIM));
+            ui.label(egui::RichText::new(format!("{} × {} px {} {:.0} × {:.0} m ({:.1} m {})", pic.w, pic.h, tr("over", "на"), w, h, w / (pic.w - 1) as f64, tr("a pixel", "на пиксель"))).small().color(pal().text_dim));
             egui::Grid::new("heightmap import").num_columns(2).show(ui, |ui| {
                 ui.label(if how.add { tr("Black adds", "Чёрный добавляет") } else { tr("Black is", "Чёрный это") });
                 ui.add(egui::DragValue::new(&mut how.range.lowest).speed(0.5).suffix(" m"));
@@ -221,9 +222,9 @@ impl HeightMapUi {
                 ui.selectable_value(&mut how.add, false, tr("Replace the ground", "Заменить рельеф"));
                 ui.selectable_value(&mut how.add, true, tr("Add to it", "Добавить к нему"));
             });
-            ui.label(egui::RichText::new(tr("Roads and objects keep their heights: best done before building", "Дороги и объекты остаются на своей высоте: лучше делать до строительства")).small().color(crate::ui::TEXT_DIM));
+            ui.label(egui::RichText::new(tr("Roads and objects keep their heights: best done before building", "Дороги и объекты остаются на своей высоте: лучше делать до строительства")).small().color(pal().text_dim));
             if pic.coarse {
-                ui.label(egui::RichText::new(tr("An 8-bit picture has only 256 steps of height: smoothing hides them", "В 8-битной картинке лишь 256 ступеней высоты: сглаживание их скрывает")).small().color(crate::ui::TEXT_DIM));
+                ui.label(egui::RichText::new(tr("An 8-bit picture has only 256 steps of height: smoothing hides them", "В 8-битной картинке лишь 256 ступеней высоты: сглаживание их скрывает")).small().color(pal().text_dim));
             }
             ui.horizontal(|ui| {
                 go = ui.button(icons::labelled(Icon::Terrain, tr("Lay it on the map", "Наложить на карту"))).clicked();

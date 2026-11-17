@@ -128,8 +128,8 @@ use egui::{Color32, RichText};
 use openmapper_mesh::edit::{self, Delete, MergeAt, SelectMode};
 use openmapper_mesh::modifiers::{CastShape, DeformMode, Modifier};
 use openmapper_mesh::{Axis, Material, Stacked};
+use crate::theme::pal;
 
-const DIM: Color32 = Color32::from_rgb(140, 143, 150);
 
 /// A change made in the panel: kept for undo when it begins, the files written after it.
 fn touched(m: &mut Session, r: &egui::Response) {
@@ -143,7 +143,7 @@ fn touched(m: &mut Session, r: &egui::Response) {
 
 fn heading(ui: &mut egui::Ui, text: &str) {
     ui.add_space(8.0);
-    ui.label(RichText::new(text).strong().color(Color32::WHITE));
+    ui.label(RichText::new(text).strong().color(pal().text_strong));
     ui.add_space(2.0);
 }
 
@@ -181,7 +181,7 @@ fn axis_combo(ui: &mut egui::Ui, id: egui::Id, a: &mut Axis) -> bool {
 
 fn num(ui: &mut egui::Ui, label: &str, v: &mut f32, speed: f64, range: std::ops::RangeInclusive<f32>, suffix: &str) -> egui::Response {
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).color(DIM));
+        ui.label(RichText::new(label).color(pal().text_dim));
         ui.add(egui::DragValue::new(v).speed(speed).range(range).max_decimals(3).suffix(suffix))
     })
     .inner
@@ -189,7 +189,7 @@ fn num(ui: &mut egui::Ui, label: &str, v: &mut f32, speed: f64, range: std::ops:
 
 fn count(ui: &mut egui::Ui, label: &str, v: &mut u32, range: std::ops::RangeInclusive<u32>) -> egui::Response {
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).color(DIM));
+        ui.label(RichText::new(label).color(pal().text_dim));
         ui.add(egui::DragValue::new(v).speed(0.1).range(range))
     })
     .inner
@@ -197,7 +197,7 @@ fn count(ui: &mut egui::Ui, label: &str, v: &mut u32, range: std::ops::RangeIncl
 
 fn vec3(ui: &mut egui::Ui, label: &str, v: &mut glam::Vec3, speed: f64) -> egui::Response {
     ui.horizontal(|ui| {
-        ui.label(RichText::new(label).color(DIM));
+        ui.label(RichText::new(label).color(pal().text_dim));
         let a = ui.add(egui::DragValue::new(&mut v.x).speed(speed).max_decimals(3).prefix("x "));
         let b = ui.add(egui::DragValue::new(&mut v.y).speed(speed).max_decimals(3).prefix("y "));
         let c = ui.add(egui::DragValue::new(&mut v.z).speed(speed).max_decimals(3).prefix("z "));
@@ -264,7 +264,7 @@ fn modifier_ui(ui: &mut egui::Ui, id: usize, m: &mut Modifier, parts: &[String])
             rs.push(count(ui, tr("Steps", "Шаги"), steps, 1..=1024));
             rs.push(num(ui, tr("Height", "Высота"), height, 0.01, -100.0..=100.0, " m"));
             let r = ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("Axis", "Ось")).color(DIM));
+                ui.label(RichText::new(tr("Axis", "Ось")).color(pal().text_dim));
                 axis_combo(ui, egui::Id::new(("screw", id)), axis)
             });
             if r.inner {
@@ -284,7 +284,7 @@ fn modifier_ui(ui: &mut egui::Ui, id: usize, m: &mut Modifier, parts: &[String])
             let unit = if matches!(mode, DeformMode::Twist | DeformMode::Bend) { "°" } else { "" };
             rs.push(num(ui, tr("Amount", "Величина"), amount, 0.5, -3600.0..=3600.0, unit));
             changed |= ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("Axis", "Ось")).color(DIM));
+                ui.label(RichText::new(tr("Axis", "Ось")).color(pal().text_dim));
                 axis_combo(ui, egui::Id::new(("deform", id)), axis)
             })
             .inner;
@@ -319,14 +319,14 @@ fn modifier_ui(ui: &mut egui::Ui, id: usize, m: &mut Modifier, parts: &[String])
                 }
             });
             ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("With the part", "С частью")).color(DIM));
+                ui.label(RichText::new(tr("With the part", "С частью")).color(pal().text_dim));
                 egui::ComboBox::from_id_salt(("bool", id)).selected_text(if operand.is_empty() { "—" } else { operand.as_str() }).show_ui(ui, |ui| {
                     for p in parts {
                         changed |= ui.selectable_value(operand, p.clone(), p).changed();
                     }
                 });
             });
-            ui.label(RichText::new(tr("Tip: hide the cutting part (its eye in the list) so only the cut shows", "Совет: скройте режущую часть (глаз в списке), чтобы был виден только вырез")).small().color(DIM));
+            ui.label(RichText::new(tr("Tip: hide the cutting part (its eye in the list) so only the cut shows", "Совет: скройте режущую часть (глаз в списке), чтобы был виден только вырез")).small().color(pal().text_dim));
             if changed {
                 let mut r = ui.label("");
                 r.mark_changed();
@@ -335,7 +335,7 @@ fn modifier_ui(ui: &mut egui::Ui, id: usize, m: &mut Modifier, parts: &[String])
         }
         Modifier::Ground { offset } => {
             rs.push(num(ui, tr("Above the ground", "Над землёй"), offset, 0.01, -10.0..=10.0, " m"));
-            ui.label(RichText::new(tr("Every vertex follows the terrain under it (in the editor's view and the written files at the place it stands)", "Каждая вершина следует рельефу под ней")).small().color(DIM));
+            ui.label(RichText::new(tr("Every vertex follows the terrain under it (in the editor's view and the written files at the place it stands)", "Каждая вершина следует рельефу под ней")).small().color(pal().text_dim));
         }
     }
     rs.into_iter().reduce(|a, b| a.union(b))
@@ -351,7 +351,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     heading(ui, tr("Mesh (openMapper object)", "Меш (объект openMapper)"));
     if users > 1 {
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(format!("{} {users} {}", tr("Shared by", "Используется"), tr("objects on the map: changes apply to all", "объектами карты: изменения затронут все"))).small().color(Color32::from_rgb(230, 180, 90)));
+            ui.label(RichText::new(format!("{} {users} {}", tr("Shared by", "Используется"), tr("objects on the map: changes apply to all", "объектами карты: изменения затронут все"))).small().color(pal().warn));
             if ui.small_button(tr("Make this one single", "Сделать отдельной копией")).clicked() {
                 actions.push(Action::Mesh(MeshAction::MakeSingle));
             }
@@ -359,7 +359,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     }
     ui.horizontal_wrapped(|ui| {
         let label = if m.editing { tr("Leave the edit mode (Tab)", "Выйти из редактирования (Tab)") } else { tr("Edit the mesh (Tab)", "Редактировать меш (Tab)") };
-        if ui.add(egui::Button::new(RichText::new(label).strong()).fill(if m.editing { crate::ui::ACCENT } else { Color32::from_rgb(52, 54, 60) })).clicked() {
+        if ui.add(egui::Button::new(RichText::new(label).strong()).fill(if m.editing { pal().accent } else { pal().widget })).clicked() {
             actions.push(Action::Mesh(MeshAction::ToggleEdit));
         }
         if ui.button(tr("Export…", "Экспорт…")).on_hover_text(tr("Write it as OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X or O3D", "Записать в OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X или O3D")).clicked() {
@@ -367,7 +367,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         }
     });
     ui.horizontal(|ui| {
-        ui.label(RichText::new(tr("Name", "Имя")).color(DIM));
+        ui.label(RichText::new(tr("Name", "Имя")).color(pal().text_dim));
         let mut n = m.src.name.clone();
         let r = ui.add(egui::TextEdit::singleline(&mut n).desired_width(f32::INFINITY));
         if r.changed() {
@@ -419,7 +419,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 }
             }
             touched(m, &r);
-            ui.label(RichText::new(format!("{}", m.src.model.parts[i].mesh.faces.len())).small().color(DIM)).on_hover_text(tr("faces", "граней"));
+            ui.label(RichText::new(format!("{}", m.src.model.parts[i].mesh.faces.len())).small().color(pal().text_dim)).on_hover_text(tr("faces", "граней"));
             if ui.small_button("⧉").on_hover_text(tr("Duplicate the part", "Дублировать часть")).clicked() {
                 dup = Some(i);
             }
@@ -470,7 +470,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     // the shape's own settings, while it is not edited
     let pi = m.part.min(m.src.model.parts.len().saturating_sub(1));
     if let Some(mut p) = m.src.model.parts.get(pi).and_then(|p| p.primitive) {
-        ui.label(RichText::new(format!("{}: {}", tr("Shape", "Фигура"), primitive_label(&p))).small().color(DIM));
+        ui.label(RichText::new(format!("{}: {}", tr("Shape", "Фигура"), primitive_label(&p))).small().color(pal().text_dim));
         if let Some(r) = primitive_ui(ui, &mut p) {
             touched(m, &r);
             if r.changed() {
@@ -495,7 +495,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     for k in 0..n_mods {
         let mut st = m.src.model.parts[pi].modifiers[k].clone();
         let mut resp = None;
-        egui::Frame::new().fill(Color32::from_rgb(40, 42, 47)).corner_radius(4.0).inner_margin(egui::Margin::same(6)).show(ui, |ui| {
+        egui::Frame::new().fill(pal().header).corner_radius(4.0).inner_margin(egui::Margin::same(6)).show(ui, |ui| {
             ui.horizontal(|ui| {
                 let r = ui.checkbox(&mut st.on, RichText::new(modifier_label(&st.modifier)).strong());
                 resp = Some(r);
@@ -596,7 +596,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(tr("Texture", "Текстура")).color(DIM));
+                ui.label(RichText::new(tr("Texture", "Текстура")).color(pal().text_dim));
                 let tex = mat.texture.as_deref().unwrap_or("—");
                 ui.add(egui::Label::new(tex.rsplit(['\\', '/']).next().unwrap_or(tex)).truncate()).on_hover_text(tex);
                 if ui.small_button(tr("Choose…", "Выбрать…")).clicked() {
@@ -615,15 +615,15 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(tr("Transparency", "Прозрачность")).color(DIM));
+                ui.label(RichText::new(tr("Transparency", "Прозрачность")).color(pal().text_dim));
                 for (v, label) in [(0u8, tr("Opaque", "Нет")), (1, tr("Cut out", "Вырез")), (2, tr("Blended", "Смешивание"))] {
                     join(ui.selectable_value(&mut mat.alpha, v, label));
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(tr("Glows", "Свечение")).color(DIM));
+                ui.label(RichText::new(tr("Glows", "Свечение")).color(pal().text_dim));
                 join(ui.color_edit_button_rgb(&mut mat.emissive).on_hover_text(tr("Light of its own: black for none", "Собственный свет: чёрный — без свечения")));
-                ui.label(RichText::new(tr("Shine", "Блеск")).color(DIM));
+                ui.label(RichText::new(tr("Shine", "Блеск")).color(pal().text_dim));
                 join(ui.add(egui::DragValue::new(&mut mat.power).speed(0.5).range(1.0..=200.0)));
             });
             ui.horizontal_wrapped(|ui| {
@@ -683,18 +683,18 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         egui::CollapsingHeader::new(format!("{} {}", match l.kind { LightKind::Glow => tr("Glow", "Свечение"), LightKind::Ground => tr("Light on the ground", "Свет на земле") }, i + 1)).id_salt(("light", i)).show(ui, |ui| {
             join(vec3(ui, tr("Where", "Где"), &mut l.pos, 0.01));
             ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("Colour", "Цвет")).color(DIM));
+                ui.label(RichText::new(tr("Colour", "Цвет")).color(pal().text_dim));
                 join(ui.color_edit_button_srgb(&mut l.color));
                 if l.kind == LightKind::Glow {
-                    ui.label(RichText::new(tr("Size", "Размер")).color(DIM));
+                    ui.label(RichText::new(tr("Size", "Размер")).color(pal().text_dim));
                     join(ui.add(egui::DragValue::new(&mut l.size).speed(0.01).range(0.01..=20.0).suffix(" m")));
                 } else {
-                    ui.label(RichText::new(tr("Reach", "Радиус")).color(DIM));
+                    ui.label(RichText::new(tr("Reach", "Радиус")).color(pal().text_dim));
                     join(ui.add(egui::DragValue::new(&mut l.range).speed(0.1).range(0.5..=100.0).suffix(" m")));
                 }
             });
             ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("On", "Горит")).color(DIM));
+                ui.label(RichText::new(tr("On", "Горит")).color(pal().text_dim));
                 let night = l.when == When::Night;
                 let always = l.when == When::Always;
                 if ui.selectable_label(always, tr("Always", "Всегда")).clicked() {
@@ -763,15 +763,15 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         }
     });
     if let Some(sig) = &m.src.signal {
-        ui.label(RichText::new(format!("{}: {}", tr("Signal head, lamps", "Светофор, секции"), sig.lamps.iter().map(|l| l.label()).collect::<Vec<_>>().join(", "))).small().color(DIM));
-        ui.label(RichText::new(tr("Put it within 40 m of a crossing with a light program: it takes its light from it (or link it in its properties)", "Поставьте его ближе 40 м к перекрёстку со светофорной программой: он возьмёт свет от него (или привяжите в свойствах)")).small().color(DIM));
+        ui.label(RichText::new(format!("{}: {}", tr("Signal head, lamps", "Светофор, секции"), sig.lamps.iter().map(|l| l.label()).collect::<Vec<_>>().join(", "))).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("Put it within 40 m of a crossing with a light program: it takes its light from it (or link it in its properties)", "Поставьте его ближе 40 м к перекрёстку со светофорной программой: он возьмёт свет от него (или привяжите в свойствах)")).small().color(pal().text_dim));
     }
 
     // baking
     heading(ui, tr("Bake", "Запекание"));
-    ui.label(RichText::new(tr("Its textures and colours painted into one picture on a new UV map (one material: fewer draws in the game), with its own shadows and its lamps' night light if chosen", "Текстуры и цвета объекта рисуются в одну картинку на новой UV-развёртке (один материал: меньше вызовов отрисовки в игре), по желанию с собственными тенями и ночным светом ламп")).small().color(DIM));
+    ui.label(RichText::new(tr("Its textures and colours painted into one picture on a new UV map (one material: fewer draws in the game), with its own shadows and its lamps' night light if chosen", "Текстуры и цвета объекта рисуются в одну картинку на новой UV-развёртке (один материал: меньше вызовов отрисовки в игре), по желанию с собственными тенями и ночным светом ламп")).small().color(pal().text_dim));
     ui.horizontal(|ui| {
-        ui.label(RichText::new(tr("Size", "Размер")).color(DIM));
+        ui.label(RichText::new(tr("Size", "Размер")).color(pal().text_dim));
         egui::ComboBox::from_id_salt("bake size").selected_text(format!("{0} × {0}", bake.size)).width(110.0).show_ui(ui, |ui| {
             for s in [256u32, 512, 1024, 2048, 4096] {
                 ui.selectable_value(&mut bake.size, s, format!("{s} × {s}"));
@@ -946,7 +946,7 @@ pub fn many_panel(ui: &mut egui::Ui, keep: &mut bool, objects: usize, splines: u
     if ui.button(tr("Join into one object (Ctrl+J)", "Объединить в один объект (Ctrl+J)")).on_hover_text(tr("All their parts in the one shown in the properties, the others gone", "Все их части — в объекте из свойств, остальные удаляются")).clicked() {
         actions.push(Action::Mesh(MeshAction::Join));
     }
-    ui.label(RichText::new(tr("Solid modelling (CSG): the object shown in the properties with the others", "Твердотельное моделирование (CSG): объект из свойств с остальными")).small().color(DIM));
+    ui.label(RichText::new(tr("Solid modelling (CSG): the object shown in the properties with the others", "Твердотельное моделирование (CSG): объект из свойств с остальными")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
         for op in crate::meshops::Bool::ALL {
             if ui.button(op.label()).on_hover_text(op.hint()).clicked() {
@@ -973,7 +973,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
     });
     if m.src.model.parts.len() > 1 {
         ui.horizontal(|ui| {
-            ui.label(RichText::new(tr("Part", "Часть")).color(DIM));
+            ui.label(RichText::new(tr("Part", "Часть")).color(pal().text_dim));
             let mut pi = m.part;
             egui::ComboBox::from_id_salt("edit part").selected_text(m.src.model.parts[pi].name.clone()).show_ui(ui, |ui| {
                 for (i, p) in m.src.model.parts.iter().enumerate() {
@@ -987,26 +987,26 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
         });
     }
     let mesh = m.mesh();
-    ui.label(RichText::new(format!("{} {} · {} {} · {} {}", mesh.positions.len(), tr("vertices", "вершин"), mesh.edges().len(), tr("edges", "рёбер"), mesh.faces.len(), tr("faces", "граней"))).small().color(DIM));
-    ui.label(RichText::new(format!("{}: {} / {} / {}", tr("Selected", "Выделено"), m.sel.verts.len(), m.sel.edges.len(), m.sel.faces.len())).small().color(DIM));
-    egui::CollapsingHeader::new(RichText::new(tr("Display", "Показ")).strong().color(Color32::WHITE)).id_salt("tab display").default_open(true).show(ui, |ui| {
+    ui.label(RichText::new(format!("{} {} · {} {} · {} {}", mesh.positions.len(), tr("vertices", "вершин"), mesh.edges().len(), tr("edges", "рёбер"), mesh.faces.len(), tr("faces", "граней"))).small().color(pal().text_dim));
+    ui.label(RichText::new(format!("{}: {} / {} / {}", tr("Selected", "Выделено"), m.sel.verts.len(), m.sel.edges.len(), m.sel.faces.len())).small().color(pal().text_dim));
+    egui::CollapsingHeader::new(RichText::new(tr("Display", "Показ")).strong().color(pal().text_strong)).id_salt("tab display").default_open(true).show(ui, |ui| {
         ui.checkbox(&mut m.xray, tr("X-ray (Alt+Z): see and pick through the mesh", "Рентген (Alt+Z): видеть и выбирать сквозь меш"));
         ui.checkbox(&mut m.tex_preview, tr("Show the textures", "Показывать текстуры")).on_hover_text(tr("The object's own pictures under the editing shading", "Картинки самого объекта под рабочей заливкой"));
         if m.tex_preview {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(tr("Shading opacity", "Непрозрачность заливки")).color(DIM));
+                ui.label(RichText::new(tr("Shading opacity", "Непрозрачность заливки")).color(pal().text_dim));
                 let mut pct = m.shade * 100.0;
                 if ui.add(egui::Slider::new(&mut pct, 0.0..=100.0).suffix(" %").integer()).changed() {
                     m.shade = pct / 100.0;
                 }
             });
-            ui.label(RichText::new(tr("0 %: the textures as they are; 100 %: the plain shading. The picture is renewed a moment after each change.", "0 %: текстуры как есть; 100 %: простая заливка. Картинка обновляется через мгновение после правки.")).small().color(DIM));
+            ui.label(RichText::new(tr("0 %: the textures as they are; 100 %: the plain shading. The picture is renewed a moment after each change.", "0 %: текстуры как есть; 100 %: простая заливка. Картинка обновляется через мгновение после правки.")).small().color(pal().text_dim));
         }
     });
 
     let view = ed.gizmo_view();
     let Some(m) = ed.mesh.as_mut() else { return };
-    egui::CollapsingHeader::new(RichText::new(tr("Select", "Выделение")).strong().color(Color32::WHITE)).id_salt("tab select").default_open(true).show(ui, |ui| {
+    egui::CollapsingHeader::new(RichText::new(tr("Select", "Выделение")).strong().color(pal().text_strong)).id_salt("tab select").default_open(true).show(ui, |ui| {
     ui.horizontal_wrapped(|ui| {
         if ui.button(tr("All (A)", "Всё (A)")).clicked() {
             m.sel = edit::Selection::all(m.mesh());
@@ -1027,10 +1027,10 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
             m.sel = edit::select_less(m.mesh(), &m.sel);
         }
     });
-    ui.label(RichText::new(tr("Click, Shift + click to add, drag on nothing for a box, a second click or Alt + click for a loop", "Клик, Shift + клик — добавить, протяжка по пустому — рамка, второй клик или Alt + клик — петля")).small().color(DIM));
+    ui.label(RichText::new(tr("Click, Shift + click to add, drag on nothing for a box, a second click or Alt + click for a loop", "Клик, Shift + клик — добавить, протяжка по пустому — рамка, второй клик или Alt + клик — петля")).small().color(pal().text_dim));
     });
 
-    egui::CollapsingHeader::new(RichText::new(tr("Change", "Изменить")).strong().color(Color32::WHITE)).id_salt("tab change").default_open(true).show(ui, |ui| {
+    egui::CollapsingHeader::new(RichText::new(tr("Change", "Изменить")).strong().color(pal().text_strong)).id_salt("tab change").default_open(true).show(ui, |ui| {
     let start = |m: &mut Session, k: Sizing| {
         if let Some(v) = &view {
             m.start(k, v);
@@ -1201,7 +1201,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
             Sizing::LoopCut(_) => tr("Slide", "Сдвиг"),
         };
         let a = ui.horizontal(|ui| {
-            ui.label(RichText::new(label).color(DIM));
+            ui.label(RichText::new(label).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut v).speed(0.005).max_decimals(3))
         });
         let b = match l.kind {
@@ -1214,7 +1214,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
         }
     }
 
-    egui::CollapsingHeader::new(RichText::new(tr("UV map", "UV-развёртка")).strong().color(Color32::WHITE)).id_salt("tab uv").default_open(false).show(ui, |ui| {
+    egui::CollapsingHeader::new(RichText::new(tr("UV map", "UV-развёртка")).strong().color(pal().text_strong)).id_salt("tab uv").default_open(false).show(ui, |ui| {
     ui.horizontal_wrapped(|ui| {
         use openmapper_mesh::uv::Unwrap;
         let faces: Vec<usize> = m.sel.faces.iter().copied().collect();
@@ -1246,11 +1246,11 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
             *uv_open = !*uv_open;
         }
     });
-    ui.label(RichText::new(tr("Faces of the selection (all, with none selected); mark seams on edges first for an unwrap by seams", "Грани выделения (все, если ничего не выделено); для развёртки по швам сначала пометьте швы на рёбрах")).small().color(DIM));
+    ui.label(RichText::new(tr("Faces of the selection (all, with none selected); mark seams on edges first for an unwrap by seams", "Грани выделения (все, если ничего не выделено); для развёртки по швам сначала пометьте швы на рёбрах")).small().color(pal().text_dim));
     });
 
     if !m.src.model.materials.is_empty() {
-        egui::CollapsingHeader::new(RichText::new(tr("Materials", "Материалы")).strong().color(Color32::WHITE)).id_salt("tab materials").default_open(true).show(ui, |ui| {
+        egui::CollapsingHeader::new(RichText::new(tr("Materials", "Материалы")).strong().color(pal().text_strong)).id_salt("tab materials").default_open(true).show(ui, |ui| {
             // how many of the selected faces each material has
             let mut used = vec![0usize; m.src.model.materials.len()];
             for &f in &m.sel.faces {
@@ -1274,7 +1274,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                             ui.painter().rect_filled(rect, egui::CornerRadius::same(3), Color32::from_rgb(c(color[0]), c(color[1]), c(color[2])));
                         }
                     }
-                    ui.painter().rect_stroke(rect, egui::CornerRadius::same(3), egui::Stroke::new(1.0, Color32::from_gray(90)), egui::StrokeKind::Inside);
+                    ui.painter().rect_stroke(rect, egui::CornerRadius::same(3), egui::Stroke::new(1.0, pal().border), egui::StrokeKind::Inside);
                     let label = if used[i] > 0 { format!("{name}  ({})", used[i]) } else { name.clone() };
                     let r = ui.add_enabled(any, egui::Button::new(label).selected(used[i] > 0 && used[i] == m.sel.faces.len()));
                     if r.on_hover_text(tr("Give this material to the selected faces", "Назначить этот материал выделенным граням")).clicked() {
@@ -1286,7 +1286,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                 });
             }
             if !any {
-                ui.label(RichText::new(tr("Select faces to give them a material.", "Выделите грани, чтобы назначить им материал.")).small().color(DIM));
+                ui.label(RichText::new(tr("Select faces to give them a material.", "Выделите грани, чтобы назначить им материал.")).small().color(pal().text_dim));
             }
         });
     }
@@ -1299,7 +1299,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
 /// The makers of objects with lamps, in the Objects tool's Shapes.
 pub fn lamp_makers(ui: &mut egui::Ui, lamps: &mut Vec<Lamp>, actions: &mut Vec<Action>) {
     ui.add_space(4.0);
-    ui.label(RichText::new(tr("With lamps", "Со светом")).small().color(DIM));
+    ui.label(RichText::new(tr("With lamps", "Со светом")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
         if ui.button(tr("Street lamp", "Фонарь")).on_hover_text(tr("A pole with a lamp that glows and lights the ground at night", "Столб с лампой, светящейся и освещающей землю ночью")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewLamp));
@@ -1309,7 +1309,7 @@ pub fn lamp_makers(ui: &mut egui::Ui, lamps: &mut Vec<Lamp>, actions: &mut Vec<A
         }
     });
     ui.horizontal_wrapped(|ui| {
-        ui.label(RichText::new(tr("Lamps:", "Секции:")).small().color(DIM));
+        ui.label(RichText::new(tr("Lamps:", "Секции:")).small().color(pal().text_dim));
         for l in [Lamp::Red, Lamp::Yellow, Lamp::Green] {
             let mut on = lamps.contains(&l);
             if ui.checkbox(&mut on, l.label()).changed() {
@@ -1327,7 +1327,7 @@ pub fn lamp_makers(ui: &mut egui::Ui, lamps: &mut Vec<Lamp>, actions: &mut Vec<A
 /// Pictures and patterns, lights and sounds to put on the map, in the Objects tool's Shapes.
 pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions: &mut Vec<Action>) {
     ui.add_space(6.0);
-    ui.label(RichText::new(tr("Picture, light, sound", "Картинка, свет, звук")).small().color(DIM));
+    ui.label(RichText::new(tr("Picture, light, sound", "Картинка, свет, звук")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
         if ui.button(tr("Picture / pattern…", "Картинка / паттерн…")).on_hover_text(tr("Choose a picture or a texture: it becomes an object you place, move, turn and scale like any other. Several repeats make a pattern", "Выберите картинку или текстуру: получится объект, который ставится, двигается, поворачивается и масштабируется как любой другой. Несколько повторов дают паттерн")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewPicture(s.clone())));
@@ -1340,7 +1340,7 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
         }
     });
     ui.add_space(6.0);
-    ui.label(RichText::new(tr("Polygon", "Многоугольник")).small().color(DIM));
+    ui.label(RichText::new(tr("Polygon", "Многоугольник")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
         if ui.button(tr("Draw a polygon", "Нарисовать многоугольник")).on_hover_text(tr("Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other", "Кликайте по углам на карте; клик по первому углу или Enter замыкает контур, Esc убирает последний угол. Внутренность заполняется объектом, который можно двигать и править как любой другой")).clicked() {
             actions.push(Action::Mesh(MeshAction::PolygonDraw));
@@ -1350,7 +1350,7 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
         }
     });
     egui::Grid::new("polygon makers").num_columns(2).show(ui, |ui| {
-        ui.label(RichText::new(tr("Texture", "Текстура")).small().color(DIM));
+        ui.label(RichText::new(tr("Texture", "Текстура")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             let name = s.poly_texture.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().to_string());
             if ui.button(name.clone().unwrap_or_else(|| tr("Choose…", "Выбрать…").to_string())).clicked() {
@@ -1364,52 +1364,52 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
         });
         ui.end_row();
         if s.poly_texture.is_none() {
-            ui.label(RichText::new(tr("Colour", "Цвет")).small().color(DIM));
+            ui.label(RichText::new(tr("Colour", "Цвет")).small().color(pal().text_dim));
             ui.color_edit_button_srgb(&mut s.poly_color);
             ui.end_row();
         }
-        ui.label(RichText::new(tr("Texture size, m", "Размер текстуры, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Texture size, m", "Размер текстуры, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.poly_scale).range(0.1..=500.0).speed(0.1));
         ui.end_row();
-        ui.label(RichText::new(tr("Thickness, m", "Толщина, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Thickness, m", "Толщина, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.poly_thickness).range(0.0..=50.0).speed(0.01));
         ui.end_row();
-        ui.label(RichText::new(tr("Above the ground, m", "Над землёй, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Above the ground, m", "Над землёй, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.poly_lift).range(-5.0..=5.0).speed(0.01));
         ui.end_row();
     });
     egui::Grid::new("extra makers").num_columns(2).show(ui, |ui| {
-        ui.label(RichText::new(tr("Picture width, m", "Ширина картинки, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Picture width, m", "Ширина картинки, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.picture_width).range(0.1..=300.0).speed(0.1));
         ui.end_row();
-        ui.label(RichText::new(tr("Repeats", "Повторов")).small().color(DIM));
+        ui.label(RichText::new(tr("Repeats", "Повторов")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut s.picture_repeat[0]).range(0.01..=200.0).speed(0.1));
             ui.add(egui::DragValue::new(&mut s.picture_repeat[1]).range(0.01..=200.0).speed(0.1));
         });
         ui.end_row();
-        ui.label(RichText::new(tr("Picture", "Картинка")).small().color(DIM));
+        ui.label(RichText::new(tr("Picture", "Картинка")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             ui.selectable_value(&mut s.picture_standing, false, tr("on the ground", "на земле"));
             ui.selectable_value(&mut s.picture_standing, true, tr("standing", "стоит"));
         });
         ui.end_row();
-        ui.label(RichText::new(tr("Light colour", "Цвет света")).small().color(DIM));
+        ui.label(RichText::new(tr("Light colour", "Цвет света")).small().color(pal().text_dim));
         ui.color_edit_button_srgb(&mut s.light_color);
         ui.end_row();
-        ui.label(RichText::new(tr("Light reach, m", "Дальность света, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Light reach, m", "Дальность света, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.light_range).range(1.0..=200.0));
         ui.end_row();
-        ui.label(RichText::new(tr("Light", "Свет")).small().color(DIM));
+        ui.label(RichText::new(tr("Light", "Свет")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             ui.selectable_value(&mut s.light_night_only, true, tr("at night", "ночью"));
             ui.selectable_value(&mut s.light_night_only, false, tr("always", "всегда"));
         });
         ui.end_row();
-        ui.label(RichText::new(tr("Sound reach, m", "Дальность звука, м")).small().color(DIM));
+        ui.label(RichText::new(tr("Sound reach, m", "Дальность звука, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.sound_radius).range(1.0..=1000.0));
         ui.end_row();
-        ui.label(RichText::new(tr("Sound volume", "Громкость звука")).small().color(DIM));
+        ui.label(RichText::new(tr("Sound volume", "Громкость звука")).small().color(pal().text_dim));
         ui.add(egui::Slider::new(&mut s.sound_volume, 0.0..=1.0));
         ui.end_row();
     });

@@ -10,7 +10,9 @@ use crate::editor::{attach_hint, Editor, Sample};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
-use crate::ui::{check, prop_row, section, ACCENT, TEXT_DIM};
+use crate::ui::{check, prop_row, section};
+use crate::theme::pal;
+use crate::theme;
 
 /// The selection box over the view.
 pub fn paint_box(ctx: &egui::Context, ed: &Editor) {
@@ -18,7 +20,7 @@ pub fn paint_box(ctx: &egui::Context, ed: &Editor) {
     let r = egui::Rect::from_two_pos(egui::pos2(a.0, a.1), egui::pos2(b.0, b.1));
     let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("select box")));
     p.rect_filled(r, CornerRadius::ZERO, Color32::from_rgba_unmultiplied(232, 122, 50, 28));
-    p.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, ACCENT), egui::StrokeKind::Inside);
+    p.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, pal().accent), egui::StrokeKind::Inside);
 }
 
 /// The names of the bus stops and start points near the camera, over them in the view.
@@ -268,7 +270,7 @@ pub fn snap_controls(ui: &mut egui::Ui, ed: &mut Editor, room: f32) {
                 let d = b - a;
                 let flat = d.truncate().length();
                 let grade = if flat > 0.01 { format!("{:+.1} %", d.z / flat * 100.0) } else { "-".into() };
-                ui.label(RichText::new(format!("{:.2} m · Δh {:+.2} m · {grade}", flat, d.z)).small().monospace().color(Color32::from_rgb(255, 216, 51)));
+                ui.label(RichText::new(format!("{:.2} m · Δh {:+.2} m · {grade}", flat, d.z)).small().monospace().color(theme::readable(Color32::from_rgb(255, 216, 51))));
             }
         }
         for i in 2..shown {
@@ -295,8 +297,8 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
     let splines = sels.len() - objects;
     section(ui, tr("Selection", "Выделение"));
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
-        ui.label(RichText::new(format!("{} {}", tr("Selected:", "Выбрано:"), sels.len())).strong().color(Color32::WHITE));
-        ui.label(RichText::new(format!("{} {objects} · {} {splines}", tr("objects", "объектов"), tr("splines", "сплайнов"))).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("{} {}", tr("Selected:", "Выбрано:"), sels.len())).strong().color(pal().text_strong));
+        ui.label(RichText::new(format!("{} {objects} · {} {splines}", tr("objects", "объектов"), tr("splines", "сплайнов"))).small().color(pal().text_dim));
         let shared = shared_signal_heads(ed, lib);
         if let (Some((_, lights)), Some((_, heads))) = (parent_lights, shared.as_ref()) {
             if heads.len() > 1 && !lights.is_empty() {
@@ -307,7 +309,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     it.all(|l| l == first).then_some(first).flatten()
                 });
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(tr("Light", "Сигнал")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Light", "Сигнал")).color(pal().text_dim));
                     let shown = |i: usize| match lights.get(i) {
                         Some(n) if !n.trim().is_empty() => format!("{i}: {n}"),
                         _ => format!("{i}"),
@@ -337,7 +339,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                         ed.ungroup_selection();
                     }
                 });
-                ui.label(RichText::new(tr("A click on one of it selects all of it, Ctrl + click one alone", "Клик по любому её объекту выделяет всю группу, Ctrl + клик — один объект")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("A click on one of it selects all of it, Ctrl + click one alone", "Клик по любому её объекту выделяет всю группу, Ctrl + клик — один объект")).small().color(pal().text_dim));
             }
             None => {
                 if ui.button(icons::labelled(Icon::Layers, tr("Group", "Сгруппировать"))).on_hover_text(tr("Keep these together: a click on one selects all, a drag moves all (Ctrl+G)", "Держать вместе: клик по одному выделяет все, перетаскивание двигает все (Ctrl+G)")).clicked() {
@@ -351,7 +353,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
         let mut v: [f64; 4] = ui.data_mut(|d| *d.get_temp_mut_or_default(id));
         let mut act: Option<u8> = None;
         egui::Grid::new("group").num_columns(3).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
-            ui.label(RichText::new(tr("Move", "Сдвиг")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Move", "Сдвиг")).color(pal().text_dim));
             ui.horizontal_wrapped(|ui| {
                 ui.add(egui::DragValue::new(&mut v[0]).speed(0.1).max_decimals(2).prefix("X ").suffix(" m").min_decimals(0));
                 ui.add(egui::DragValue::new(&mut v[1]).speed(0.1).max_decimals(2).prefix("Y ").suffix(" m").min_decimals(0));
@@ -360,13 +362,13 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                 act = Some(0);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Height", "Высота")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Height", "Высота")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut v[2]).speed(0.05).max_decimals(2).prefix("Z ").suffix(" m"));
             if ui.button(tr("Apply", "Применить")).clicked() {
                 act = Some(1);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Turn", "Поворот")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Turn", "Поворот")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut v[3]).speed(1.0).range(-360.0..=360.0).suffix("°"));
             if ui.button(tr("Apply", "Применить")).clicked() {
                 act = Some(2);
@@ -537,10 +539,10 @@ pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id
     ui.label(RichText::new(tr("Ends (joined roads follow)", "Концы (соседние дороги следуют)")).strong());
     egui::Grid::new("spline ends").num_columns(5).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
         ui.label("");
-        ui.label(RichText::new(tr("height", "высота")).small().color(TEXT_DIM));
-        ui.label(RichText::new(tr("gradient", "уклон")).small().color(TEXT_DIM));
-        ui.label(RichText::new(tr("cant", "вираж")).small().color(TEXT_DIM)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
-        ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(TEXT_DIM)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
+        ui.label(RichText::new(tr("height", "высота")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("gradient", "уклон")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("cant", "вираж")).small().color(pal().text_dim)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
+        ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(pal().text_dim)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
         ui.end_row();
         for (at_end, z, g, cant, h, name) in [(false, &mut z0, &mut g0, &mut c0, &mut h0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, &mut h1, tr("End", "Конец"))] {
             prop_row(ui, name, |ui| {
@@ -624,7 +626,7 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
     let mut numbered = false;
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
         egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Path rules", "Правила путей"), rules.iter().filter(|r| !r.kill).count())).strong()).id_salt("rules").default_open((1..=6).contains(&rules.iter().filter(|r| !r.kill).count())).show(ui, |ui| {
-            ui.label(RichText::new(tr("For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers", "Для ИИ и игрока на одном пути (полосе), считая от 0: их номера видны в окне вида")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers", "Для ИИ и игрока на одном пути (полосе), считая от 0: их номера видны в окне вида")).small().color(pal().text_dim));
             numbered = true;
             let mut remove = None;
             let mut close_to_cars = None;
@@ -689,10 +691,10 @@ pub fn attach_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: Tile
     let mut add = false;
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
         egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Hanging on it", "Висит на нём"), hung.len())).strong()).id_salt("attach").show(ui, |ui| {
-            ui.label(RichText::new(format!("{} {points}", tr("Points to hang objects on:", "Точек для крепления:"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {points}", tr("Points to hang objects on:", "Точек для крепления:"))).small().color(pal().text_dim));
             for (aid, at, file) in &hung {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(format!("#{at}")).color(TEXT_DIM));
+                    ui.label(RichText::new(format!("#{at}")).color(pal().text_dim));
                     let n = lib.find(file).map(|a| a.name.clone()).unwrap_or_else(|| file.rsplit('\\').next().unwrap_or(file).to_string());
                     if ui.link(n).on_hover_text(tr("Select it", "Выбрать его")).clicked() {
                         go = Some(Sel::Object(k, *aid));
@@ -730,7 +732,7 @@ pub fn array_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
     let mut v: [f64; 7] = ui.data_mut(|d| *d.get_temp_mut_or_insert_with(key, || [5.0, 10.0, 0.0, 0.0, 1.0, 0.0, 10.0]));
     let mut go = false;
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| egui::CollapsingHeader::new(RichText::new(tr("Copies in a row", "Копии в ряд")).strong()).id_salt("array").show(ui, |ui| {
-        ui.label(RichText::new(tr("A fence, a row of houses, an avenue: the selection copied again and again, a step on each time", "Забор, ряд домов, аллея: выделение копируется снова и снова, каждый раз на шаг дальше")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A fence, a row of houses, an avenue: the selection copied again and again, a step on each time", "Забор, ряд домов, аллея: выделение копируется снова и снова, каждый раз на шаг дальше")).small().color(pal().text_dim));
         egui::Grid::new("array").num_columns(2).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
             prop_row(ui, tr("Copies", "Копий"), |ui| {
                 ui.add(egui::DragValue::new(&mut v[0]).speed(0.2).range(1.0..=200.0).max_decimals(0));
@@ -799,7 +801,7 @@ fn parallel_inner(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKey,
             ed.parallel_copy(dist);
         }
     });
-    ui.label(RichText::new(tr("Left and right of the way the road runs (its arrows with AI lanes shown)", "Слева и справа по ходу дороги (её стрелки при показе полос ИИ)")).small().color(TEXT_DIM));
+    ui.label(RichText::new(tr("Left and right of the way the road runs (its arrows with AI lanes shown)", "Слева и справа по ходу дороги (её стрелки при показе полос ИИ)")).small().color(pal().text_dim));
     ui.data_mut(|d| d.insert_temp(key, dist));
     // a track's overhead wire: a wire spline laid on it, piece for piece
     // (whether the road copied is a track, read in its tile: one look-up, not one for every
@@ -812,7 +814,7 @@ fn parallel_inner(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKey,
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Overhead wire", "Контактный провод")).strong()).on_hover_text(tr("For trams and electric trains: a wire spline laid on the selected track, piece for piece and linked (its height is the wire spline's own); the masts go in with Objects along the road", "Для трамваев и электричек: сплайн провода поверх выбранного пути, кусок за куском и со связями (высота — своя у сплайна провода); мачты ставятся «Объектами вдоль дороги»"));
     if wires.is_empty() {
-        ui.label(RichText::new(tr("No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)", "Нет сплайна провода (с Fahrdraht, Oberleitung или wire в имени)")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("No wire spline installed (one whose name says Fahrdraht, Oberleitung or wire)", "Нет сплайна провода (с Fahrdraht, Oberleitung или wire в имени)")).small().color(pal().text_dim));
         return;
     }
     let wkey = egui::Id::new("wire type");
@@ -840,29 +842,29 @@ pub fn paint_along_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
     let names: Vec<String> = doc.global.ground_textures.iter().map(|g| std::path::Path::new(&g.texture.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()).collect();
     egui::CollapsingHeader::new(RichText::new(tr("Paint the ground along it", "Покрасить землю вдоль")).strong()).id_salt("paint along").show(ui, |ui| {
         if names.len() < 2 {
-            ui.label(RichText::new(tr("Add a ground texture in the Paint tool first: the base ground is under everything", "Сначала добавьте текстуру земли в инструменте «Покраска»: основа лежит под всем")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Add a ground texture in the Paint tool first: the base ground is under everything", "Сначала добавьте текстуру земли в инструменте «Покраска»: основа лежит под всем")).small().color(pal().text_dim));
             return;
         }
         let a = &mut ed.paint_along;
         a.layer = a.layer.clamp(1, names.len() - 1);
         egui::Grid::new("paint along grid").num_columns(2).spacing(Vec2::new(8.0, 4.0)).show(ui, |ui| {
-            ui.label(RichText::new(tr("Layer", "Слой")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Layer", "Слой")).color(pal().text_dim));
             egui::ComboBox::from_id_salt("paint along layer").selected_text(&names[a.layer]).show_ui(ui, |ui| {
                 for (i, n) in names.iter().enumerate().skip(1) {
                     ui.selectable_value(&mut a.layer, i, n);
                 }
             });
             ui.end_row();
-            ui.label(RichText::new(tr("Where", "Где")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Where", "Где")).color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut a.under, false, tr("beside it", "рядом"));
                 ui.selectable_value(&mut a.under, true, tr("under it too", "и под ней"));
             });
             ui.end_row();
-            ui.label(RichText::new(tr("Out from its edge", "От края")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Out from its edge", "От края")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut a.width).range(0.0..=40.0).speed(0.1).suffix(" m"));
             ui.end_row();
-            ui.label(RichText::new(tr("Soft edge", "Мягкий край")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Soft edge", "Мягкий край")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut a.soft).range(0.0..=20.0).speed(0.1).suffix(" m"));
             ui.end_row();
         });
@@ -890,7 +892,7 @@ pub fn rows_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
             let new_type = ed.object_type.clone();
             for (r, a) in &rows {
                 let mut b = a.clone();
-                crate::ui::long_label(ui, &name_of(&a.file), egui::TextStyle::Body, Color32::WHITE);
+                crate::ui::long_label(ui, &name_of(&a.file), egui::TextStyle::Body, pal().text_strong);
                 egui::Grid::new(("row", *r)).num_columns(2).spacing(Vec2::new(6.0, 4.0)).show(ui, |ui| {
                     prop_row(ui, tr("Every", "Шаг"), |ui| {
                         let mut i = b.interval;
@@ -960,7 +962,7 @@ pub fn rows_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
         // a new row
         match &ed.object_type {
             Some(t) => ui.label(format!("{} {}", tr("Object:", "Объект:"), crate::ui::short(&name_of(t), 40))),
-            None => ui.label(RichText::new(tr("Pick an object (a lamp, a tree, a bollard) in the Objects tool's catalogue", "Выберите объект (фонарь, дерево, столбик) в каталоге инструмента «Объекты»")).small().color(TEXT_DIM)),
+            None => ui.label(RichText::new(tr("Pick an object (a lamp, a tree, a bollard) in the Objects tool's catalogue", "Выберите объект (фонарь, дерево, столбик) в каталоге инструмента «Объекты»")).small().color(pal().text_dim)),
         };
         let p = &mut ed.row_params;
         egui::Grid::new("new row").num_columns(2).spacing(Vec2::new(6.0, 4.0)).show(ui, |ui| {
@@ -1048,8 +1050,8 @@ pub fn pocket_options(ui: &mut egui::Ui, ed: &mut Editor) {
         });
         check(ui, &mut ed.pocket_alike, tr("Both ends alike", "Оба конца одинаковые"));
         check(ui, &mut ed.pocket_fit, tr("Slide the bay to where it fits", "Сдвигать карман туда, где он помещается")).on_hover_text(tr("Near the end of a road or a junction there is no room for the taper at both ends: the bay is moved along the road to where there is", "У конца дороги или перекрёстка нет места для перехода с обеих сторон: карман сдвигается вдоль дороги туда, где место есть"));
-        ui.label(RichText::new(tr("A bay always gets a taper at both ends; where one cannot be laid nothing is changed.", "Карман всегда получает переход с обеих сторон; если один уложить нельзя, ничего не меняется.")).small().color(TEXT_DIM));
-        ui.label(RichText::new(tr("The stretch is cut out of the road and given the bay along its kerb, its ends tapering to the road's width. The road's own type is widened: nothing to pick.", "Участок вырезается из дороги и получает карман вдоль бордюра, концы сужаются до ширины дороги. Тип дороги расширяется сам: выбирать ничего не нужно.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A bay always gets a taper at both ends; where one cannot be laid nothing is changed.", "Карман всегда получает переход с обеих сторон; если один уложить нельзя, ничего не меняется.")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("The stretch is cut out of the road and given the bay along its kerb, its ends tapering to the road's width. The road's own type is widened: nothing to pick.", "Участок вырезается из дороги и получает карман вдоль бордюра, концы сужаются до ширины дороги. Тип дороги расширяется сам: выбирать ничего не нужно.")).small().color(pal().text_dim));
     });
 }
 
@@ -1061,7 +1063,7 @@ pub fn road_entry(ctx: &egui::Context, ed: &mut Editor, view: egui::Rect, action
     }
     let facts = ed.road_plan_facts();
     egui::Area::new(egui::Id::new("road entry")).fixed_pos(view.left_bottom() + Vec2::new(10.0, -46.0)).order(egui::Order::Foreground).show(ctx, |ui| {
-        egui::Frame::new().fill(Color32::from_rgba_unmultiplied(27, 28, 30, 235)).corner_radius(CornerRadius::same(4)).inner_margin(Margin::symmetric(8, 5)).stroke(Stroke::new(1.0, Color32::from_gray(60))).show(ui, |ui| {
+        egui::Frame::new().fill(pal().overlay).corner_radius(CornerRadius::same(4)).inner_margin(Margin::symmetric(8, 5)).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
             ui.horizontal(|ui| {
                 let shown = |v: Option<f64>, unit: &str| v.map(|v| format!("{v:.1}{unit}")).unwrap_or_default();
                 let (len, rad, head, rise) = match facts {
@@ -1078,7 +1080,7 @@ pub fn road_entry(ctx: &egui::Context, ed: &mut Editor, view: egui::Rect, action
                 }
                 let mut enter = false;
                 for (i, name, hint) in fields {
-                    ui.label(RichText::new(name).small().color(TEXT_DIM));
+                    ui.label(RichText::new(name).small().color(pal().text_dim));
                     let r = ui.add(egui::TextEdit::singleline(&mut ed.typed_text[i]).desired_width(58.0).hint_text(hint));
                     if r.changed() {
                         ed.replan = true;
@@ -1091,7 +1093,7 @@ pub fn road_entry(ctx: &egui::Context, ed: &mut Editor, view: egui::Rect, action
                     ed.typed_text = Default::default();
                     ed.replan = true;
                 }
-                ui.label(RichText::new(tr("Shift: straight · Enter: build", "Shift: прямая · Enter: построить")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Shift: straight · Enter: build", "Shift: прямая · Enter: построить")).small().color(pal().text_dim));
                 if enter {
                     actions.push(crate::ui::Action::BuildRoad);
                 }
@@ -1126,7 +1128,7 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
         }
         if new.lights {
             if arms.len() < 3 {
-                ui.label(RichText::new(tr("Lights need three roads or more", "Светофорам нужно не меньше трёх дорог")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Lights need three roads or more", "Светофорам нужно не меньше трёх дорог")).small().color(pal().text_dim));
             }
             // (the seconds are applied with the button: the plate is not made again while dragging)
             let tid = egui::Id::new(("junction greens", id));
@@ -1147,7 +1149,7 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
                     apply = true;
                 }
             }
-            ui.label(RichText::new(tr("The main road is the pair of roads most in line; red-yellow 2 s, yellow 3 s, 2 s all red between", "Главная: пара дорог, лежащих ближе всего к одной линии; красный с жёлтым 2 с, жёлтый 3 с, между фазами 2 с всем красный")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The main road is the pair of roads most in line; red-yellow 2 s, yellow 3 s, 2 s all red between", "Главная: пара дорог, лежащих ближе всего к одной линии; красный с жёлтым 2 с, жёлтый 3 с, между фазами 2 с всем красный")).small().color(pal().text_dim));
         }
         ui.add_space(4.0);
         ui.label(RichText::new(tr("Zebra crossings", "Пешеходные переходы")).strong());
@@ -1223,21 +1225,21 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
     let count = parent.is_some() as usize + children.len();
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
         egui::CollapsingHeader::new(RichText::new(format!("{} ({count})", tr("Linked objects", "Связанные объекты"))).strong()).id_salt("varparent").default_open(head || count > 0).show(ui, |ui| {
-            ui.label(RichText::new(tr("An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.", "Объект может брать состояние от другого ([varparent]): светофор показывает сигнал программы своего перекрёстка, табло остановки — свою остановку.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.", "Объект может брать состояние от другого ([varparent]): светофор показывает сигнал программы своего перекрёстка, табло остановки — свою остановку.")).small().color(pal().text_dim));
             match &parent {
                 Some((pid, Some((pk, name, _)))) => {
                     ui.horizontal_wrapped(|ui| {
-                        ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(pal().text_dim));
                         if ui.link(name).on_hover_text(format!("{} {pid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
                             go = Some(crate::selection::as_sel(doc, *pk, *pid));
                         }
                     });
                 }
                 Some((pid, None)) => {
-                    ui.label(RichText::new(format!("{} {pid}", tr("Takes its state from an object that is gone: IDCode", "Берёт состояние от исчезнувшего объекта: IDCode"))).color(Color32::from_rgb(230, 170, 100)));
+                    ui.label(RichText::new(format!("{} {pid}", tr("Takes its state from an object that is gone: IDCode", "Берёт состояние от исчезнувшего объекта: IDCode"))).color(pal().warn));
                 }
                 None => {
-                    ui.label(RichText::new(tr("Takes its state from nothing", "Ни от чего не берёт состояние")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Takes its state from nothing", "Ни от чего не берёт состояние")).color(pal().text_dim));
                 }
             }
             // a signal head: which light of its crossing's program it shows
@@ -1245,7 +1247,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                 match (parent_lights, &parent) {
                     (Some((_, lights)), Some(_)) if !lights.is_empty() => {
                         ui.horizontal(|ui| {
-                            ui.label(RichText::new(tr("Light", "Сигнал")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("Light", "Сигнал")).color(pal().text_dim));
                             let shown = |i: usize| match lights.get(i) {
                                 Some(n) if !n.trim().is_empty() => format!("{i}: {n}"),
                                 _ => format!("{i}"),
@@ -1259,14 +1261,14 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                             });
                         });
                         if light.map(|l| l >= lights.len()).unwrap_or(true) {
-                            ui.label(RichText::new(tr("Its light is not one of the crossing's: it stays dark", "Его сигнала нет у перекрёстка: он не горит")).small().color(Color32::from_rgb(230, 170, 100)));
+                            ui.label(RichText::new(tr("Its light is not one of the crossing's: it stays dark", "Его сигнала нет у перекрёстка: он не горит")).small().color(pal().warn));
                         }
                     }
                     (Some(_), Some(_)) => {
-                        ui.label(RichText::new(tr("That object runs no traffic lights: link the head to a crossing with a light program", "Тот объект не управляет светофорами: свяжите головку с перекрёстком, где есть программа")).small().color(Color32::from_rgb(230, 170, 100)));
+                        ui.label(RichText::new(tr("That object runs no traffic lights: link the head to a crossing with a light program", "Тот объект не управляет светофорами: свяжите головку с перекрёстком, где есть программа")).small().color(pal().warn));
                     }
                     (_, None) => {
-                        ui.label(RichText::new(tr("A signal head: link it to its crossing to have it light", "Головка светофора: свяжите её с перекрёстком, чтобы она горела")).small().color(Color32::from_rgb(230, 170, 100)));
+                        ui.label(RichText::new(tr("A signal head: link it to its crossing to have it light", "Головка светофора: свяжите её с перекрёстком, чтобы она горела")).small().color(pal().warn));
                     }
                     _ => {}
                 }
@@ -1282,7 +1284,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
             });
             if !children.is_empty() {
                 ui.add_space(4.0);
-                ui.label(RichText::new(format!("{} {}", tr("Taking their state from it:", "Берут состояние от него:"), children.len())).color(TEXT_DIM));
+                ui.label(RichText::new(format!("{} {}", tr("Taking their state from it:", "Берут состояние от него:"), children.len())).color(pal().text_dim));
                 for (ck, cid, name, l) in children.iter().take(40) {
                     ui.horizontal(|ui| {
                         if ui.link(name).on_hover_text(format!("{} {cid}", tr("Select it: IDCode", "Выбрать его: IDCode"))).clicked() {
@@ -1290,12 +1292,12 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                         }
                         if let (Some(l), false) = (l, own_lights.is_empty()) {
                             let n = own_lights.get(*l).map(|n| n.as_str()).unwrap_or("?");
-                            ui.label(RichText::new(format!("{} {l}: {n}", tr("light", "сигнал"))).small().color(TEXT_DIM));
+                            ui.label(RichText::new(format!("{} {l}: {n}", tr("light", "сигнал"))).small().color(pal().text_dim));
                         }
                     });
                 }
                 if children.len() > 40 {
-                    ui.label(RichText::new(format!("… {}", children.len() - 40)).color(TEXT_DIM));
+                    ui.label(RichText::new(format!("… {}", children.len() - 40)).color(pal().text_dim));
                 }
             }
         });
@@ -1327,7 +1329,7 @@ pub fn end_junction_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, a
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         let (pieces, fits) = lib.junction_pieces(&file);
         if pieces.is_empty() {
-            ui.label(RichText::new(tr("The installation has no junction pieces with places for roads.", "В установке нет перекрёстков с местами для дорог.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The installation has no junction pieces with places for roads.", "В установке нет перекрёстков с местами для дорог.")).small().color(pal().text_dim));
             return;
         }
         let preferred = ed.road_styles.piece(&file).map(str::to_string);
@@ -1346,7 +1348,7 @@ pub fn end_junction_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, a
         });
         ed.junction_piece = pick.clone();
         if !fits {
-            ui.label(RichText::new(tr("None of the pieces is made for this road type: its first place is used.", "Ни один перекрёсток не сделан под этот тип дороги: берётся его первое место.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("None of the pieces is made for this road type: its first place is used.", "Ни один перекрёсток не сделан под этот тип дороги: берётся его первое место.")).small().color(pal().text_dim));
         }
         let Some(piece) = pick else { return };
         ui.horizontal(|ui| {

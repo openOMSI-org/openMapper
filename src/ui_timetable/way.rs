@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::timetable::way;
+use crate::theme::pal;
 
 /// How near a click must be to a path to pick it (m).
 const PATH_REACH: f64 = 8.0;
@@ -84,17 +85,17 @@ impl TimetableUi {
             }
         });
         if hand {
-            ui.label(RichText::new(tr("The paths were picked by hand: they are kept when the stops change.", "Пути выбраны вручную: они сохраняются при изменении остановок.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The paths were picked by hand: they are kept when the stops change.", "Пути выбраны вручную: они сохраняются при изменении остановок.")).small().color(pal().text_dim));
         }
         if self.way_edit {
-            ui.label(RichText::new(tr("Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.", "Кликайте пути на карте. Путь после конца или перед началом добавляется вместе с путями до него; путь в стороне заменяет участок, который он объезжает (другая ветка на перекрёстке); путь из маршрута убирается. Путь может идти и до первой остановки, и после последней.")).small().color(ACCENT));
+            ui.label(RichText::new(tr("Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.", "Кликайте пути на карте. Путь после конца или перед началом добавляется вместе с путями до него; путь в стороне заменяет участок, который он объезжает (другая ветка на перекрёстке); путь из маршрута убирается. Путь может идти и до первой остановки, и после последней.")).small().color(pal().accent));
         }
         // where the way breaks
         let gaps = way::gaps(net, &lanes);
         for &(k, m) in &gaps {
             ui.horizontal(|ui| {
                 let text = format!("{} {} ({:.1} m): {}", tr("The way breaks after path", "Путь прерывается после пути"), k + 1, m, tr("the paths do not join, the bus's GPS loses its way here in the game", "пути не соединены, GPS автобуса в игре здесь теряет маршрут"));
-                ui.label(coloured(icons::labelled(Icon::Warning, &text), WARN));
+                ui.label(coloured(icons::labelled(Icon::Warning, &text), pal().warn));
                 if small_button(ui, Icon::Focus, tr("Show on the map", "Показать на карте")) {
                     actions.push(Action::LookAt(net.lanes[lanes[k]].pts.last().unwrap().truncate()));
                 }
@@ -126,7 +127,7 @@ impl TimetableUi {
                         let stop = stop_at.contains(&k);
                         let text = format!("{:>3}. {} {} · {} {} · {:.0} m{}", k + 1, what, lane.key.id, tr("path", "путь"), lane.key.path, lane.length(), if stop { "  ●" } else { "" });
                         let broken = gaps.iter().any(|g| g.0 == k);
-                        ui.label(RichText::new(text).monospace().color(if broken { WARN } else { Color32::from_gray(210) }));
+                        ui.label(RichText::new(text).monospace().color(if broken { pal().warn } else { pal().text }));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if small_button(ui, Icon::Delete, tr("Take out", "Убрать")) {
                                 let mut v = lanes.clone();

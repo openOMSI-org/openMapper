@@ -1,7 +1,7 @@
 //! The window of Map > GPS tracks to trace: files of tracks loaded, each line shown in the
 //! view or not, and built into a road of the Roads tool's type (see `trace`).
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec2;
 
 use crate::editor::Editor;
@@ -10,7 +10,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
 use crate::trace::Trace;
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 #[derive(Default)]
 pub struct TraceWindow {
@@ -61,9 +61,9 @@ impl TraceWindow {
         }
         let mut open = self.open;
         egui::Window::new(icons::labelled(Icon::Route, tr("GPS tracks to trace", "GPS-треки для обводки"))).id(egui::Id::new("trace window")).open(&mut open).default_pos([360.0, 120.0]).default_width(340.0).resizable(false).show(ctx, |ui| {
-            ui.label(RichText::new(tr("A route recorded on a phone or drawn elsewhere (GPX, KML, GeoJSON), shown in the view in magenta to draw roads along, or built into a road at once", "Маршрут, записанный телефоном или нарисованный в другой программе (GPX, KML, GeoJSON): показан в окне малиновым, чтобы рисовать дороги по нему, или сразу строится дорогой")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("A route recorded on a phone or drawn elsewhere (GPX, KML, GeoJSON), shown in the view in magenta to draw roads along, or built into a road at once", "Маршрут, записанный телефоном или нарисованный в другой программе (GPX, KML, GeoJSON): показан в окне малиновым, чтобы рисовать дороги по нему, или сразу строится дорогой")).small().color(pal().text_dim));
             if georef.is_none() {
-                ui.colored_label(Color32::from_rgb(230, 160, 90), tr("Place the map on the Earth first (Map > Satellite and terrain)", "Сначала поместите карту на Землю (Карта > Спутник и рельеф)"));
+                ui.colored_label(pal().warn, tr("Place the map on the Earth first (Map > Satellite and terrain)", "Сначала поместите карту на Землю (Карта > Спутник и рельеф)"));
             }
             if ui.button(icons::labelled(Icon::Open, tr("Load a file…", "Загрузить файл…"))).clicked() {
                 if let Some(files) = rfd::FileDialog::new().add_filter("GPX, KML, GeoJSON", &["gpx", "kml", "geojson", "json"]).set_title(tr("GPS tracks to trace", "GPS-треки для обводки")).pick_files() {
@@ -73,11 +73,11 @@ impl TraceWindow {
                 }
             }
             if let Some(e) = &self.error {
-                ui.colored_label(Color32::from_rgb(235, 110, 90), e);
+                ui.colored_label(pal().error, e);
             }
             ui.separator();
             if self.traces.is_empty() {
-                ui.label(RichText::new(tr("None loaded", "Ничего не загружено")).italics().color(TEXT_DIM));
+                ui.label(RichText::new(tr("None loaded", "Ничего не загружено")).italics().color(pal().text_dim));
             }
             let road = ed.road_type.clone();
             let road_name = road.as_deref().map(|r| lib.find(r).map(|a| a.name.clone()).unwrap_or_else(|| r.to_string()));
@@ -89,7 +89,7 @@ impl TraceWindow {
                 ui.horizontal(|ui| {
                     crate::ui::check(ui, &mut t.shown, "");
                     ui.label(RichText::new(&t.name).strong());
-                    ui.label(RichText::new(format!("{:.2} km", len / 1000.0)).small().color(TEXT_DIM));
+                    ui.label(RichText::new(format!("{:.2} km", len / 1000.0)).small().color(pal().text_dim));
                     if !world.is_empty() && ui.small_button(Icon::Focus.text(13.0)).on_hover_text(tr("Go there", "Перейти туда")).clicked() {
                         look = Some(world[world.len() / 2]);
                     }

@@ -3,7 +3,7 @@
 
 use std::hash::{Hash, Hasher};
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use glam::DVec2;
 use omsi_geometry::SplineCurve;
 
@@ -12,10 +12,8 @@ use crate::editor::{Editor, LogicMode, Tool};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::{Category, Library};
+use crate::theme::pal;
 
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
-const DONE: Color32 = Color32::from_rgb(120, 200, 130);
-const WARN: Color32 = Color32::from_rgb(230, 170, 100);
 /// How near a road a stop must stand to be served (m), as the Lines window finds them.
 const STOP_REACH: f64 = 15.0;
 
@@ -150,19 +148,19 @@ impl Guide {
             .default_width(340.0)
             .resizable(false)
             .show(ctx, |ui| {
-                ui.label(RichText::new(format!("{} {done} / {}", tr("A map you can drive in service:", "Карта, по которой можно ездить по расписанию:"), steps.len())).color(Color32::from_gray(220)));
+                ui.label(RichText::new(format!("{} {done} / {}", tr("A map you can drive in service:", "Карта, по которой можно ездить по расписанию:"), steps.len())).color(pal().text_strong));
                 ui.add(egui::ProgressBar::new(done as f32 / steps.len() as f32).desired_height(6.0));
                 ui.add_space(4.0);
                 let mut first_open = true;
                 for (ok, title, how, button) in steps {
                     ui.horizontal(|ui| {
-                        let (icon, color) = if ok { (Icon::CheckCircle, DONE) } else { (Icon::RadioOff, if first_open { WARN } else { TEXT_DIM }) };
+                        let (icon, color) = if ok { (Icon::CheckCircle, pal().ok) } else { (Icon::RadioOff, if first_open { pal().warn } else { pal().text_dim }) };
                         ui.label(icon.text(18.0).color(color));
                         ui.vertical(|ui| {
                             ui.set_width(250.0);
-                            ui.label(RichText::new(title).strong().color(if ok { Color32::from_gray(170) } else { Color32::from_gray(230) }));
+                            ui.label(RichText::new(title).strong().color(if ok { pal().text_dim } else { pal().text_strong }));
                             if !ok && first_open {
-                                ui.label(RichText::new(how).small().color(TEXT_DIM));
+                                ui.label(RichText::new(how).small().color(pal().text_dim));
                             }
                         });
                         if let Some(b) = button {
@@ -176,11 +174,11 @@ impl Guide {
                     }
                 }
                 if s.stops > 0 && !s.stop_on_road {
-                    ui.label(RichText::new(tr("Your stops stand away from the roads: a bus serves a stop within 15 m of its lane.", "Остановки стоят далеко от дорог: автобус обслуживает остановку в пределах 15 м от полосы.")).small().color(WARN));
+                    ui.label(RichText::new(tr("Your stops stand away from the roads: a bus serves a stop within 15 m of its lane.", "Остановки стоят далеко от дорог: автобус обслуживает остановку в пределах 15 м от полосы.")).small().color(pal().warn));
                 }
                 // (a real place: most of it can come at once)
                 if !s.road {
-                    ui.label(RichText::new(tr("A real place? Put the map on the Earth (Map > Satellite and terrain), then Map > From OpenStreetMap brings its streets, stops, lines and trees.", "Реальное место? Привяжите карту к Земле («Карта > Спутник и рельеф»), затем «Карта > Из OpenStreetMap» привезёт её улицы, остановки, линии и деревья.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A real place? Put the map on the Earth (Map > Satellite and terrain), then Map > From OpenStreetMap brings its streets, stops, lines and trees.", "Реальное место? Привяжите карту к Земле («Карта > Спутник и рельеф»), затем «Карта > Из OpenStreetMap» привезёт её улицы, остановки, линии и деревья.")).small().color(pal().text_dim));
                 }
                 ui.separator();
                 let auto = !prefs.guide_off;

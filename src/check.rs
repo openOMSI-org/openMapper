@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::{DVec2, DVec3};
 use omsi_geometry::SplineCurve;
 
@@ -21,6 +21,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::{Category, Library};
 use crate::ui::Action;
+use crate::theme::pal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Severity {
@@ -1232,12 +1233,12 @@ impl Checker {
                 }
                 if self.running() || lib.scanning {
                     ui.spinner();
-                    ui.label(RichText::new(tr("Checking the map…", "Проверяем карту…")).color(Color32::GRAY));
+                    ui.label(RichText::new(tr("Checking the map…", "Проверяем карту…")).color(pal().text_dim));
                 } else if let Some(list) = &self.issues {
                     let errors = list.iter().filter(|i| i.severity == Severity::Error).count();
                     let warnings = list.iter().filter(|i| i.severity == Severity::Warning).count();
                     let notes = list.len() - errors - warnings;
-                    ui.label(RichText::new(format!("{} {errors} · {} {warnings} · {} {notes}", tr("errors", "ошибок"), tr("warnings", "предупреждений"), tr("notes", "заметок"))).color(Color32::GRAY));
+                    ui.label(RichText::new(format!("{} {errors} · {} {warnings} · {} {notes}", tr("errors", "ошибок"), tr("warnings", "предупреждений"), tr("notes", "заметок"))).color(pal().text_dim));
                 }
             });
             ui.separator();
@@ -1254,9 +1255,9 @@ impl Checker {
                     let group = i..end;
                     let sev = list[i].severity;
                     let (icon, color) = match sev {
-                        Severity::Error => (Icon::Error, Color32::from_rgb(235, 100, 90)),
-                        Severity::Warning => (Icon::Warning, Color32::from_rgb(235, 180, 70)),
-                        Severity::Info => (Icon::Info, Color32::from_rgb(130, 170, 230)),
+                        Severity::Error => (Icon::Error, pal().error),
+                        Severity::Warning => (Icon::Warning, pal().warn),
+                        Severity::Info => (Icon::Info, pal().info),
                     };
                     let left = group.clone().filter(|n| !self.fixed.contains(n)).count();
                     let folded = self.folded.contains(&kind);
@@ -1278,7 +1279,7 @@ impl Checker {
                         }
                     });
                     if !folded {
-                        ui.label(RichText::new(kind.help()).small().color(Color32::GRAY));
+                        ui.label(RichText::new(kind.help()).small().color(pal().text_dim));
                         for n in group.clone() {
                             let it = &list[n];
                             let done = self.fixed.contains(&n);
@@ -1296,7 +1297,7 @@ impl Checker {
                                     ui.add_space(12.0);
                                     let full = format!("{}  {}", it.title, it.detail);
                                     let text = RichText::new(full.clone());
-                                    let text = if done { text.strikethrough().color(Color32::DARK_GRAY) } else { text };
+                                    let text = if done { text.strikethrough().color(pal().text_off) } else { text };
                                     let r = ui.add(egui::Label::new(text).sense(egui::Sense::click()).truncate());
                                     let hint = if it.at.is_some() { format!("{full}\n{}", tr("Click to fly there", "Клик: перелететь туда")) } else { full };
                                     let r = r.on_hover_text(hint);

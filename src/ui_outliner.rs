@@ -5,7 +5,7 @@
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec2;
 
 use crate::doc::{tile_origin, Document, Sel, TileKey};
@@ -14,8 +14,8 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
 use crate::ui::Action;
+use crate::theme::pal;
 
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
 /// How many of one kind are listed one by one (the rest are counted).
 const LIST: usize = 200;
 
@@ -116,10 +116,10 @@ impl Outliner {
         let Some(doc) = ed.doc.as_ref() else { return };
         self.refresh(doc);
         ui.horizontal(|ui| {
-            ui.label(Icon::Search.text(16.0).color(TEXT_DIM));
+            ui.label(Icon::Search.text(16.0).color(pal().text_dim));
             ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(tr("Name, file or IDCode", "Имя, файл или IDCode")).desired_width(f32::INFINITY));
         });
-        ui.label(RichText::new(format!("{} {}", self.root.count, tr("things on the map", "объектов на карте"))).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("{} {}", self.root.count, tr("things on the map", "объектов на карте"))).small().color(pal().text_dim));
         let q = self.search.trim().to_lowercase();
         if self.view_for.as_ref() != Some(&(self.key, q.clone())) {
             let mut view = Folder::default();
@@ -135,7 +135,7 @@ impl Outliner {
         let mut pick_group: Option<usize> = None;
         if !ed.groups().is_empty() {
             let current = ed.selected_group();
-            egui::CollapsingHeader::new(RichText::new(format!("{}  ({})", tr("Groups", "Группы"), ed.groups().len())).color(Color32::from_gray(225))).id_salt("outliner groups").icon(folder_icon).default_open(true).show(ui, |ui| {
+            egui::CollapsingHeader::new(RichText::new(format!("{}  ({})", tr("Groups", "Группы"), ed.groups().len())).color(pal().text_strong)).id_salt("outliner groups").icon(folder_icon).default_open(true).show(ui, |ui| {
                 for (i, g) in ed.groups().iter().enumerate().filter(|(_, g)| q.is_empty() || g.name.to_lowercase().contains(&q)) {
                     if ui.selectable_label(current == Some(i), format!("{}  ·  {}", g.name, g.ids.len())).on_hover_text(tr("Select the group and go there", "Выделить группу и перейти")).clicked() {
                         pick_group = Some(i);
@@ -237,7 +237,7 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
         let here = format!("{path}\\{name}");
         // (a search opens every folder it finds something in; the top ones are open)
         let open = if q.is_empty() { None } else { Some(true) };
-        let r = egui::CollapsingHeader::new(RichText::new(format!("{name}  ({n})")).color(Color32::from_gray(225)))
+        let r = egui::CollapsingHeader::new(RichText::new(format!("{name}  ({n})")).color(pal().text_strong))
             .id_salt(("outliner folder", &here))
             .icon(folder_icon)
             .default_open(path.is_empty())
@@ -260,7 +260,7 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
             continue;
         }
         let has_sel = items.iter().any(|i| selected.contains(&i.sel));
-        let title = RichText::new(format!(" {name}  ({})", shown.len())).color(if has_sel { crate::ui::ACCENT } else { Color32::from_gray(205) });
+        let title = RichText::new(format!(" {name}  ({})", shown.len())).color(if has_sel { pal().accent } else { pal().text });
         let open = if q.is_empty() { None } else if shown.len() <= 20 { Some(true) } else { None };
         let spline = file.to_lowercase().ends_with(".sli");
         let r = egui::CollapsingHeader::new(title).id_salt(("outliner file", file)).icon(if spline { road_icon } else { object_icon }).open(open).show(ui, |ui| {
@@ -275,7 +275,7 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
                 }
             }
             if shown.len() > LIST {
-                ui.label(RichText::new(format!("… {} {}", shown.len() - LIST, tr("more: narrow the search", "ещё: уточните поиск"))).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("… {} {}", shown.len() - LIST, tr("more: narrow the search", "ещё: уточните поиск"))).small().color(pal().text_dim));
             }
         });
         r.header_response.on_hover_text(file.as_str()).context_menu(|ui| {
@@ -293,7 +293,7 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
 
 /// A folder's arrow in the tree, turned as it opens.
 fn folder_icon(ui: &mut egui::Ui, openness: f32, response: &egui::Response) {
-    icons::paint(ui.painter(), if openness > 0.5 { Icon::ExpandMore } else { Icon::ChevronRight }, response.rect.center(), 16.0, TEXT_DIM);
+    icons::paint(ui.painter(), if openness > 0.5 { Icon::ExpandMore } else { Icon::ChevronRight }, response.rect.center(), 16.0, pal().text_dim);
 }
 
 /// A kind of object in the tree: its icon, brighter while open.
@@ -306,7 +306,7 @@ fn road_icon(ui: &mut egui::Ui, openness: f32, response: &egui::Response) {
 }
 
 fn kind_icon(ui: &mut egui::Ui, icon: Icon, openness: f32, response: &egui::Response) {
-    let c = if openness > 0.5 { crate::ui::ACCENT } else { TEXT_DIM };
+    let c = if openness > 0.5 { pal().accent } else { pal().text_dim };
     icons::paint(ui.painter(), icon, response.rect.center(), 15.0, c);
 }
 
