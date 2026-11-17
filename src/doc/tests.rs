@@ -514,3 +514,54 @@ fn the_timetable_follows_the_tile_list_before_a_background_save() {
     assert_eq!(tt.order, vec![(1, 0)]);
     assert!(tt.dirty);
 }
+
+/// A tile from OMSI 1 (version 10) writes a linked spline at place 0: it goes on from the end
+/// of the spline before it - a 40 m curve of radius 300 climbing 2 % here - and is saved where
+/// it goes on; one written unlinked (-1) keeps its own place.
+#[test]
+fn an_old_tiles_linked_splines_go_on_from_the_one_before_and_are_saved_there() {
+    let text = "[version]\n10\n\n\
+[spline]\n0\nSplines\\road.sli\n0\n-1\n180\n5\n170\n10\n40\n300\n2\n2\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n2\n0\n0\n0\n0\n0\n50\n50\n0\n8\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n3\n-1\n0\n0\n0\n0\n20\n0\n0\n0\n0\n0\n";
+    let d = std::env::temp_dir().join(format!("openmapper-test-linked-{}", std::process::id()));
+    std::fs::create_dir_all(&d).unwrap();
+    let p = d.join("tile_0_0.map");
+    std::fs::write(&p, text).unwrap();
+    let tile = read_tile_file(&p).unwrap();
+    let first = omsi_geometry::SplineCurve::from_map(&tile.splines[0], DVec2::ZERO);
+    let end = first.end_point();
+    assert!((DVec3::from_array(tile.splines[1].pos) - end).length() < 1e-9, "{:?} vs {end:?}", tile.splines[1].pos);
+    assert!((tile.splines[1].heading - first.heading_at(40.0)).abs() < 1e-9);
+    assert!((tile.splines[1].pos[2] - 5.8).abs() < 1e-9, "the height at the end of a 2 % climb of 40 m");
+    assert_eq!((tile.splines[2].pos, tile.splines[2].heading), ([0.0; 3], 0.0));
+    // (written as version 14, with both neighbours named and every place its own)
+    let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &tile_text(&tile)));
+    assert!(back.splines.iter().all(|s| !s.linked));
+    assert_eq!((back.splines[0].next_id, back.splines[1].prev_id), (2, 0));
+    assert!((DVec3::from_array(back.splines[1].pos) - end).length() < 1e-6, "{:?}", back.splines[1].pos);
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+/// A map from OMSI 1 lists no `[entrypoints]`: its start points are the entry point objects of
+/// its tiles, as Omsi.exe and openOMSI take them, and opening it changes nothing to save.
+#[test]
+fn a_map_without_entrypoints_takes_its_tiles_entry_objects() {
+    let _map = one_map();
+    let roots = scratch("entry-objects");
+    let map = roots.content.join("maps").join("Old");
+    std::fs::create_dir_all(&map).unwrap();
+    std::fs::create_dir_all(roots.content.join("Sceneryobjects").join("Generic")).unwrap();
+    std::fs::write(roots.content.join("Sceneryobjects/Generic/entrypoint_bus.sco"), "[entrypoint]\n[onlyeditor]\n").unwrap();
+    std::fs::write(map.join("tile_0_0.map"), "[version]\n10\n\n[object]\n0\nSceneryobjects\\Generic\\entrypoint_bus.sco\n7\n6.5\n225.5\n0.2\n90\n1\nDepot\n").unwrap();
+    std::fs::write(map.join("global.cfg"), "[map]\n0\n0\ntile_0_0.map\n").unwrap();
+    omsi_cfg::add_content_root(roots.content.clone());
+    let doc = Document::load(&roots, &map.join("global.cfg"), |_| {});
+    omsi_cfg::remove_content_root(&roots.content);
+    let doc = doc.unwrap();
+    let e: Vec<_> = doc.global.entry_points.iter().map(|e| (e.object_id, e.name.as_str(), e.group)).collect();
+    assert_eq!(e, vec![(7, "Depot", 0)]);
+    assert!(doc.global.entry_points[0].pos.iter().all(|v| v.is_finite()), "{:?}", doc.global.entry_points[0].pos);
+    assert!(!doc.is_dirty());
+    let _ = std::fs::remove_dir_all(&roots.content);
+}

@@ -108,7 +108,7 @@ impl Groups {
                                 }
                             }
                             if ui.small_button(icons::labelled(Icon::Paste, tr("Use", "Взять"))).on_hover_text(tr("Into the clipboard: Ctrl+V puts it down at the cursor, as often as wanted", "В буфер обмена: Ctrl+V ставит её у курсора, сколько угодно раз")).clicked() {
-                                match omsi_map::Tile::load(&e.path) {
+                                match crate::doc::read_tile_file(&e.path) {
                                     Ok(t) => {
                                         let clip: Clip = Clip::from_tile(&t, abs);
                                         ed.clip = Some(clip);
