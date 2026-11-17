@@ -467,6 +467,16 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     ed.lean_objects(false);
                 }
             });
+            if objects > 2 {
+                ui.horizontal_wrapped(|ui| {
+                    if ui.button(tr("Line up", "В линию")).on_hover_text(tr("On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)", "На прямой между двумя самыми дальними, с равным шагом (столбы, фонари, ряд деревьев)")).clicked() {
+                        ed.line_up(true);
+                    }
+                    if ui.button(tr("Space evenly", "Расставить поровну")).on_hover_text(tr("Equal steps between the two farthest apart, each keeping its distance to the side", "Равный шаг между двумя самыми дальними, каждый сохраняет отступ вбок")).clicked() {
+                        ed.line_up(false);
+                    }
+                });
+            }
         }
         if splines > 0 {
             if let Some(rt) = ed.road_type.clone() {

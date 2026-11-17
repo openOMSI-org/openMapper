@@ -357,6 +357,8 @@ impl Server {
             "align_to_roads" => said = json!(e.align_to_roads()),
             "turn_objects" => e.turn_objects(c.bool("random").unwrap_or(true)),
             "lean_objects" => e.lean_objects(c.bool("lean").unwrap_or(true)),
+            "line_up" => said = json!(e.line_up(true)),
+            "space_evenly" => said = json!(e.line_up(false)),
             "replace_objects" | "retype_splines" | "wire_along" => {
                 let spline = name != "replace_objects";
                 let f = self.resolve(c.str("file").ok_or("`file` is needed")?, Some(spline))?;

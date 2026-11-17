@@ -73,6 +73,12 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Junction, "Complex junction editor…", "Редактор сложных перекрёстков…", "custom junction top view splines markings кастомный перекрёсток вид сверху разметка", "", |_, _, a| a.push(Action::ComplexJunctions)),
         cmd!(Icon::Layers, "PBR maps for a picture…", "PBR-карты для картинки…", "normal roughness нормали", "", |_, _, a| a.push(Action::PbrMaker)),
         cmd!(Icon::Road, "Knife: cut roads", "Нож: разрезать дороги", "cut split knife road spline разрезать разделить дорогу сплайн", "K", |_, ed, _| ed.toggle_cutting()),
+        cmd!(Icon::Objects, "Line up the selected objects", "Выстроить выбранные объекты в линию", "align straight row equal spacing distribute выровнять ряд прямая равный шаг", "", |_, ed, _| {
+            ed.line_up(true);
+        }),
+        cmd!(Icon::Objects, "Space the selected objects evenly", "Расставить выбранные объекты поровну", "distribute equal spacing spread step распределить равный шаг интервал", "", |_, ed, _| {
+            ed.line_up(false);
+        }),
         cmd!(Icon::Road, "Next road piece", "Следующий кусок дороги", "next spline linked chain walk along следующий сплайн связанный цепочка", ".", |_, ed, _| {
             ed.select_linked(true, false);
         }),

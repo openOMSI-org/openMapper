@@ -10084,7 +10084,7 @@ impl Editor {
 
     /// The road ends the selected junctions hold (not those of roads selected with them,
     /// which move along).
-    fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
+    pub(crate) fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
         let Some(doc) = self.doc.as_ref() else { return Vec::new() };
         let ids: Vec<i64> = sels.iter().filter_map(|s| if let Sel::Spline(_, id) = s { Some(*id) } else { None }).collect();
         let mut out = Vec::new();
@@ -10106,7 +10106,7 @@ impl Editor {
     /// The roads junctions hold follow them (turned by `deg` round `pivot`, shifted by
     /// `delta`, raised by `dz`), and the ground comes to the junctions' plates. Inside an open
     /// history step.
-    fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
+    pub(crate) fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
         let mut failed = 0;
         for (_, arms) in groups {
             for a in arms {
@@ -10149,7 +10149,7 @@ impl Editor {
 
     /// Close the open step, unless junction plates are still to be made again in it (the
     /// next tick does that and closes it).
-    fn finish_step(&mut self) {
+    pub(crate) fn finish_step(&mut self) {
         if self.pending_rebuild.is_empty() {
             self.history.commit();
         }

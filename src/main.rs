@@ -87,6 +87,7 @@ mod street_check;
 mod ed_author;
 mod ed_ground;
 mod ed_walk;
+mod ed_align;
 mod transport;
 mod trolley;
 mod ui_trolley;
