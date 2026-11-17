@@ -233,6 +233,11 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
     for (k, t) in &doc.tiles {
         for sp in t.tile.splines.iter().filter(|s| !s.deleted && s.next_id != 0) {
             let Some((k2, nx)) = by_id.get(&sp.next_id) else { continue };
+            // (two joined end to end name each other: one joint, looked at once - from both, each
+            // fix would bring the other's end to its own old height, and the step stayed)
+            if nx.next_id == sp.id && nx.prev_id != sp.id && nx.id < sp.id {
+                continue;
+            }
             // (only what is driven or walked along runs on smoothly: walls and fences turn corners)
             let carries = lib.find(&sp.file).map(|a| matches!(a.category, Category::Roads | Category::Tracks | Category::Paths)).unwrap_or_else(|| assets.spline(&sp.file).map(|m| m.joinable()).unwrap_or(false));
             if !carries {
@@ -379,6 +384,31 @@ pub fn apply(doc: &mut Document, issues: &[StreetIssue]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Two roads joined end to end with a step in height: one issue, and putting it right
+    /// leaves their ends at one height (each was brought to the other's old one).
+    #[test]
+    fn a_step_between_roads_joined_end_to_end_is_put_right() {
+        use crate::library::{Asset, Kind};
+        let mut doc = crate::selection::tests::flat_map(1);
+        // (north to y 150, and south down to it: both end there)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 2);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 2, 100.0, 200.0, 180.0, 50.0, 0, 1);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[1].pos[2] = 1.0;
+        let mut lib = Library::default();
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        let dir = std::env::temp_dir().join("openmapper-street-check-none");
+        let mut assets = Assets::new(dir.clone(), dir);
+        let found: Vec<StreetIssue> = check(&doc, &lib, &mut assets, None).into_iter().filter(|i| i.kind == "link_kink").collect();
+        assert_eq!(found.len(), 1, "one joint: {found:?}");
+        apply(&mut doc, &found);
+        let end = |id: i64| {
+            let sp = doc.spline((0, 0), id).unwrap();
+            omsi_geometry::SplineCurve::from_map(sp, tile_origin((0, 0))).end_point().z
+        };
+        assert!((end(1) - end(2)).abs() < 1e-6, "{} vs {}", end(1), end(2));
+    }
 
     #[test]
     fn a_heading_is_squared_to_the_nearest_quarter_of_its_road() {
