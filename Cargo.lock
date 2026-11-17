@@ -165,7 +165,7 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-core-graphics",
  "objc2-foundation 0.3.2",
- "parking_lot",
+ "parking_lot 0.12.5",
  "percent-encoding",
  "windows-sys 0.60.2",
  "x11rb",
@@ -242,6 +242,12 @@ name = "bit-vec"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
+
+[[package]]
+name = "bit_field"
+version = "0.10.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb2907cc03d08cdb1c6724ad0670ce67c4a71e1c45a6d7635224011714cfc4b1"
 
 [[package]]
 name = "bitflags"
@@ -462,6 +468,12 @@ checksum = "2ec7c5eb7a16992b1904d76c517d170ab353b0e0b3d5a0c81a8a0cd1037893cf"
 dependencies = [
  "bytemuck",
 ]
+
+[[package]]
+name = "color_quant"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "colorchoice"
@@ -904,7 +916,7 @@ dependencies = [
  "harfrust",
  "log",
  "nohash-hasher",
- "parking_lot",
+ "parking_lot 0.12.5",
  "profiling",
  "self_cell",
  "skrifa",
@@ -948,6 +960,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "exr"
+version = "1.74.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb29d0be702adf92c645d9b2f93472906ba83d400e59f98adb3770ce5c18c2f6"
+dependencies = [
+ "bit_field",
+ "half",
+ "lebe",
+ "miniz_oxide 0.8.9",
+ "multiversion",
+ "smallvec",
+ "zune-inflate",
 ]
 
 [[package]]
@@ -1153,6 +1180,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gif"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159"
+dependencies = [
+ "color_quant",
+ "weezl",
+]
+
+[[package]]
 name = "gl_generator"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1169,6 +1206,7 @@ version = "0.30.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19fc433e8437a212d1b6f1e68c7824af3aed907da60afa994e7f542d18d12aa9"
 dependencies = [
+ "bytemuck",
  "serde_core",
 ]
 
@@ -1500,10 +1538,14 @@ checksum = "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104"
 dependencies = [
  "bytemuck",
  "byteorder-lite",
+ "color_quant",
+ "exr",
+ "gif",
  "image-webp",
  "moxcms",
  "num-traits",
  "png",
+ "qoi",
  "tiff",
  "zune-core",
  "zune-jpeg",
@@ -1718,10 +1760,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
-name = "libc"
-version = "0.2.190"
+name = "lebe"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
+
+[[package]]
+name = "libc"
+version = "0.2.191"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
 name = "libloading"
@@ -1791,6 +1839,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lock_api"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65d91b22da179613dcf4d6ec8349563f52a363f6849e03b00dd0a185ec4a59af"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
 name = "log"
 version = "0.4.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1839,6 +1896,28 @@ checksum = "bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b"
 dependencies = [
  "num-traits",
  "pxfm",
+]
+
+[[package]]
+name = "multiversion"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb8a68be21d0755f83bfe47e79b896cc732687cf1903f0e50585e8d6ecc53076"
+dependencies = [
+ "multiversion-macros",
+ "target-features",
+]
+
+[[package]]
+name = "multiversion-macros"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a05e0c3c3e4edaa21d87c645852ed0b0c3663752bcc6ec43353bd6189dce35e1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+ "target-features",
 ]
 
 [[package]]
@@ -2263,20 +2342,22 @@ dependencies = [
 [[package]]
 name = "omsi-cfg"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "encoding_rs",
  "flate2",
  "log",
+ "rayon",
  "ring",
  "thiserror 2.0.21",
  "unicode-normalization",
+ "windows",
 ]
 
 [[package]]
 name = "omsi-content"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -2285,7 +2366,7 @@ dependencies = [
 [[package]]
 name = "omsi-geometry"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "glam",
  "log",
@@ -2293,14 +2374,19 @@ dependencies = [
  "omsi-map",
  "omsi-o3d",
  "omsi-scenery",
+ "spade",
 ]
 
 [[package]]
 name = "omsi-map"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
+ "bytemuck",
+ "glam",
+ "hashbrown 0.17.1",
  "log",
+ "memmap2",
  "omsi-cfg",
  "thiserror 2.0.21",
 ]
@@ -2308,7 +2394,7 @@ dependencies = [
 [[package]]
 name = "omsi-model"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -2317,34 +2403,41 @@ dependencies = [
 [[package]]
 name = "omsi-net"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "flate2",
  "libc",
  "log",
  "omsi-cfg",
  "ring",
- "sha2 0.10.9",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
  "tungstenite",
  "ureq 2.12.1",
+ "windows",
 ]
 
 [[package]]
 name = "omsi-o3d"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "encoding_rs",
  "glam",
+ "gltf",
+ "half",
  "log",
  "omsi-cfg",
+ "serde_json",
  "thiserror 2.0.21",
+ "ufbx",
 ]
 
 [[package]]
 name = "omsi-scenery"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -2354,7 +2447,7 @@ dependencies = [
 [[package]]
 name = "omsi-script"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "hashbrown 0.17.1",
  "log",
@@ -2365,21 +2458,32 @@ dependencies = [
 [[package]]
 name = "omsi-texture"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "hashbrown 0.17.1",
  "image",
  "log",
  "omsi-cfg",
- "parking_lot",
+ "parking_lot 0.13.0",
  "rayon",
+ "texture2ddecoder",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "omsi-timetable"
 version = "0.1.0"
-source = "git+https://github.com/openOMSI-org/openOMSI?rev=c4738ed6f43f11b4c06ead299af7ac74280d5c5b#c4738ed6f43f11b4c06ead299af7ac74280d5c5b"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
+dependencies = [
+ "log",
+ "omsi-cfg",
+ "omsi-transit",
+]
+
+[[package]]
+name = "omsi-transit"
+version = "0.1.0"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "log",
  "omsi-cfg",
@@ -2497,8 +2601,18 @@ version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
 dependencies = [
- "lock_api",
- "parking_lot_core",
+ "lock_api 0.4.14",
+ "parking_lot_core 0.9.12",
+]
+
+[[package]]
+name = "parking_lot"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9cf937ca4e1d0b7578784559063422fc39ae7c5a00f02471f2614d5486fd226"
+dependencies = [
+ "lock_api 0.5.0",
+ "parking_lot_core 0.10.0",
 ]
 
 [[package]]
@@ -2510,6 +2624,18 @@ dependencies = [
  "cfg-if",
  "libc",
  "redox_syscall 0.5.18",
+ "smallvec",
+ "windows-link",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cfff060068cc18aa7815010fcaf80c68c7fb9e85fc7f5c0f9bf142c21d19826"
+dependencies = [
+ "libc",
+ "redox_syscall 0.9.4",
  "smallvec",
  "windows-link",
 ]
@@ -2684,6 +2810,15 @@ name = "pxfm"
 version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
+
+[[package]]
+name = "qoi"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f6d64c71eb498fe9eae14ce4ec935c555749aef511cca85b5568910d6e48001"
+dependencies = [
+ "bytemuck",
+]
 
 [[package]]
 name = "quick-error"
@@ -2894,6 +3029,12 @@ dependencies = [
  "untrusted",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "robust"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e27ee8bb91ca0adcf0ecb116293afa12d393f9c2b9b9cd54d33e8078fe19839"
 
 [[package]]
 name = "rustc-hash"
@@ -3256,6 +3397,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "spade"
+version = "2.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9699399fd9349b00b184f5635b074f9ec93afffef30c853f8c875b32c0f8c7fa"
+dependencies = [
+ "hashbrown 0.16.1",
+ "num-traits",
+ "robust",
+ "smallvec",
+]
+
+[[package]]
 name = "spirv"
 version = "0.4.0+sdk-1.4.341.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3330,6 +3483,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.6",
+]
+
+[[package]]
+name = "target-features"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1bbb9f3c5c463a01705937a24fdabc5047929ac764b2d5b9cf681c1f5041ed5"
+
+[[package]]
+name = "texture2ddecoder"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "427ae8ec7f2f0fdd3146b77cfa44bea880caf066f7e55398a8467afe2645c832"
+dependencies = [
+ "paste",
 ]
 
 [[package]]
@@ -4058,7 +4226,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "js-sys",
  "log",
- "parking_lot",
+ "parking_lot 0.12.5",
  "portable-atomic",
  "profiling",
  "raw-window-handle",
@@ -4089,7 +4257,7 @@ dependencies = [
  "log",
  "naga",
  "once_cell",
- "parking_lot",
+ "parking_lot 0.12.5",
  "portable-atomic",
  "profiling",
  "raw-window-handle",
@@ -4161,7 +4329,7 @@ dependencies = [
  "objc2-quartz-core 0.3.2",
  "once_cell",
  "ordered-float",
- "parking_lot",
+ "parking_lot 0.12.5",
  "portable-atomic",
  "portable-atomic-util",
  "profiling",
@@ -4783,6 +4951,15 @@ name = "zune-core"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b"
+
+[[package]]
+name = "zune-inflate"
+version = "0.2.54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73ab332fe2f6680068f3582b16a24f90ad7096d5d39b974d1c0aff0125116f02"
+dependencies = [
+ "simd-adler32",
+]
 
 [[package]]
 name = "zune-jpeg"
