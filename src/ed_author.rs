@@ -103,7 +103,8 @@ impl Editor {
         check_room(doc, segs)?;
         self.history.begin(tr("Splines laid", "Сплайны проложены"));
         let doc = self.doc.as_mut().unwrap();
-        let keys: Vec<TileKey> = segs.iter().flat_map(|s| [tile_of(s.start), tile_of(s.end())]).collect();
+        // (and the tiles of the ends it is linked to: their links change too)
+        let keys: Vec<TileKey> = segs.iter().flat_map(|s| [tile_of(s.start), tile_of(s.end())]).chain(from.map(|e| e.0)).chain(to.map(|e| e.0)).collect();
         for k in keys {
             self.history.touch_tile(doc, k);
         }
@@ -260,7 +261,11 @@ impl Editor {
             self.history.touch_tile(doc, k);
         }
         let r = paint_areas_in(doc, layer, polys, feather, erase);
-        self.history.commit();
+        if r.is_ok() {
+            self.history.commit();
+        } else {
+            self.history.rollback(doc);
+        }
         r
     }
 }
@@ -591,6 +596,29 @@ impl Editor {
 #[cfg(test)]
 mod short_joint_tests {
     use super::*;
+
+    /// A chain laid on from a road whose spline starts on another tile is undone whole: that
+    /// road's link to it was changed with its tile not kept, and kept pointing at a spline
+    /// that no longer was.
+    #[test]
+    fn a_chain_laid_on_from_a_road_on_another_tile_is_undone_whole() {
+        let mut doc = crate::selection::tests::flat_map(2);
+        let ts = crate::doc::tile_size();
+        // (from tile 0, 0 across into tile 1, 0)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, ts - 20.0, 100.0, 90.0, 40.0, 0, 0);
+        let (end, heading) = end_of(&doc, ((0, 0), 1, true)).unwrap();
+        assert_eq!(tile_of(end.truncate()), (1, 0));
+        let way = DVec2::new(heading.to_radians().sin(), heading.to_radians().cos());
+        let seg = crate::roads::straight(end.truncate(), end.truncate() + way * 30.0).unwrap();
+        assert_eq!(tile_of(seg.end()), (1, 0), "the chain lies on tile 1, 0 alone");
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let made = ed.lay_chain("Splines\\road.sli", &[seg], Some(((0, 0), 1, true)), None, 0.0).unwrap();
+        let next = |ed: &Editor| ed.doc.as_ref().unwrap().spline((0, 0), 1).unwrap().next_id;
+        assert_eq!(next(&ed), made[0].1, "linked");
+        ed.undo();
+        assert_eq!(next(&ed), 0, "the link undone with the chain");
+    }
 
     #[test]
     fn a_short_piece_between_two_ends_runs_from_the_one_height_to_the_other() {

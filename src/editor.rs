@@ -6949,10 +6949,11 @@ impl Editor {
                         self.history.touch_tile(doc, t);
                     }
                     let after = sb.next_id;
-                    doc.delete_spline(b.0, b.1);
+                    // (kept before the delete unlinks it, or undo would leave it unlinked)
                     if let Some((nk, _)) = doc.find_spline(after) {
                         self.history.touch_tile(doc, nk);
                     }
+                    doc.delete_spline(b.0, b.1);
                     if let Some(t) = doc.tiles.get_mut(&a.0) {
                         if let Some(x) = t.tile.splines.iter_mut().find(|x| x.id == a.1) {
                             x.next_id = after;
@@ -8777,6 +8778,8 @@ impl Editor {
         }
         let Some(doc) = self.doc.as_mut() else { return Err("") };
         self.history.begin(tr("Put on a road", "Поставить на дорогу"));
+        // (taking the free object away takes its start points with it: undo brings them back)
+        self.history.touch_global(doc);
         let mut placed = Vec::new();
         for (from, onto, sid, u, rec) in planned {
             self.history.touch_tile(doc, from);
@@ -14040,6 +14043,24 @@ mod tests {
         assert!((o.pos[0] - 102.0).abs() < 1e-3 && (o.pos[1] - 120.0).abs() < 1e-3, "{:?}", o.pos);
         assert!(o.rot[0].abs() < 1e-6, "{:?}", o.rot);
         assert_eq!(ed.selected, Some(Sel::Object((0, 0), 2)));
+    }
+
+    /// Undoing "put on a road" brings back the start point the object was: taking the free
+    /// object away took it, with the global settings not kept for the undo.
+    #[test]
+    fn undoing_put_on_a_road_brings_its_start_point_back() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 200.0, 0, 0);
+        add_object(&mut doc, (0, 0), 2, 102.0, 120.0);
+        doc.global.entry_points.push(omsi_map::EntryPoint { object_id: 2, name: "Depot".into(), ..Default::default() });
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let lib = crate::library::Library::default();
+        ed.attach_object_onto(&lib, (0, 0), 2, None).unwrap();
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        assert!(d.object((0, 0), 2).is_some());
+        assert!(d.global.entry_points.iter().any(|e| e.object_id == 2), "the start point is back");
     }
 
     /// The button waits for a click, and the object goes on that spline even when another is nearer.
