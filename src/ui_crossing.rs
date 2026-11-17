@@ -1862,8 +1862,28 @@ fn unsaved_text() -> &'static str {
 }
 
 impl CrossingPaths {
-    fn unsaved(&self) -> bool {
+    /// Whether there are edits here not saved yet (they live in the window alone: the map
+    /// itself is not marked changed by them).
+    pub fn unsaved(&self) -> bool {
         self.sheet.as_ref().is_some_and(|s| s.crossing != self.seen)
+    }
+
+    /// The map is about to be left (closed, another opened, the program ended). False when
+    /// there are edits here not saved: the window asks about them first, and the map stays.
+    pub fn may_leave_map(&mut self) -> bool {
+        if !self.unsaved() {
+            return true;
+        }
+        self.open = true;
+        self.ask_close = true;
+        false
+    }
+
+    /// The map the crossing was opened on is gone: the window goes with it (left open, it
+    /// would show that crossing's paths over whatever object of the next map has its tile and
+    /// IDCode, and work on that object).
+    pub fn map_gone(&mut self) {
+        self.discard();
     }
 
     /// Whether the paths are shown - and worked on - on the map itself: the crossing object in
@@ -5134,6 +5154,21 @@ Main
         assert!(!w.open);
         assert!(w.sheet.is_none(), "nothing is left to be shown");
         assert!(!w.ask_close, "the question is put away with the window");
+    }
+
+    /// Leaving the map (closing it, opening another, ending the program) asks about the
+    /// crossing's edits first: they live in this window alone, the map is not marked changed
+    /// by them, and they were lost without a word.
+    #[test]
+    fn leaving_the_map_asks_about_the_crossing_first() {
+        let mut w = opened(Tab::Paths);
+        assert!(w.may_leave_map(), "nothing to lose");
+        w.sheet.as_mut().unwrap().crossing.paths[0].v[9] = 5.0;
+        w.open = false;
+        assert!(!w.may_leave_map(), "the map stays");
+        assert!(w.open && w.ask_close, "the window asks");
+        w.map_gone();
+        assert!(!w.open && w.sheet.is_none(), "another map's object is not worked on");
     }
 
     /// "+" carries a path on from the picked one: it starts at that path's end, in the way it
