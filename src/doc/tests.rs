@@ -370,7 +370,7 @@ fn a_new_map_has_the_cars_its_traffic_names() {
 /// Where the objects of every row on tile (0, 0) stand.
 fn row_spots(doc: &Document) -> Vec<DVec3> {
     let t = &doc.tiles[&(0, 0)].tile;
-    let mut v: Vec<DVec3> = t.spline_attachments.iter().flat_map(|a| crate::place::row_objects(a, &t.splines, tile_origin((0, 0)))).map(|o| o.pose.pos).collect();
+    let mut v: Vec<DVec3> = t.spline_attachments.iter().flat_map(|a| crate::place::row_objects(a, &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc))).map(|o| o.pose.pos).collect();
     v.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
     v
 }

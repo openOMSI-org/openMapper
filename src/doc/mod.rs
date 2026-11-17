@@ -782,7 +782,7 @@ impl Document {
         }
         // the second's rows measured along the joined spline (and the objects hanging on them stay)
         let ia = t.tile.splines.iter().position(|s| s.id == a.id).ok_or("")?;
-        let shift = a.map_chain_offset.unwrap_or(0.0) + a.length - b.map_chain_offset.unwrap_or(0.0);
+        let shift = crate::place::chain_offset_of(self, &a) + a.length - crate::place::chain_offset_of(self, &b);
         let after = b.next_id;
         let t = self.tiles.get_mut(&k).unwrap();
         for r in t.tile.spline_attachments.iter_mut().filter(|r| r.spline_index == ib as i32) {

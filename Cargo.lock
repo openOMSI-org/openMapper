@@ -2490,6 +2490,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "omsi-world"
+version = "0.1.0"
+source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
+dependencies = [
+ "glam",
+ "hashbrown 0.17.1",
+ "log",
+ "omsi-cfg",
+ "omsi-geometry",
+ "omsi-map",
+ "omsi-scenery",
+ "parking_lot 0.13.0",
+ "rayon",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2530,6 +2546,7 @@ dependencies = [
  "omsi-script",
  "omsi-texture",
  "omsi-timetable",
+ "omsi-world",
  "openmapper-collab",
  "openmapper-mesh",
  "pollster 1.0.1",

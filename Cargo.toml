@@ -21,6 +21,8 @@ omsi-texture = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c
 omsi-timetable = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
 omsi-content = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
 omsi-script = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+# where the game lays the objects of spline rows (its map index and placement)
+omsi-world = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
 
 wgpu = { version = "29", default-features = false, features = ["std", "parking_lot", "metal", "vulkan", "dx12", "gles", "wgsl"] }
 winit = "0.30"

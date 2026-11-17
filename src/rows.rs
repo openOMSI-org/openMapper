@@ -117,7 +117,7 @@ pub fn plan(doc: &Document, chain: &[Step], file: &str, p: &RowParams) -> Vec<(T
         }
         local.sort_by(|x, y| x.total_cmp(y));
         let Some(s) = doc.spline(st.key, st.id) else { continue };
-        let chain_offset = s.map_chain_offset.unwrap_or(0.0);
+        let chain_offset = crate::place::chain_offset_of(doc, s);
         let range = (local.len() - 1) as f64 * interval;
         // (right of the way walked is left of a spline walked backwards)
         let (side, turn) = if st.reversed { (-p.offset, p.turn + 180.0) } else { (p.offset, p.turn) };
@@ -198,9 +198,10 @@ mod tests {
     /// Where the objects of every row on the map stand (world, x and y).
     fn placed(doc: &Document) -> Vec<DVec2> {
         let mut v = Vec::new();
+        let rows = crate::place::row_index(doc);
         for (k, t) in &doc.tiles {
             for a in &t.tile.spline_attachments {
-                v.extend(crate::place::row_objects(a, &t.tile.splines, tile_origin(*k)).iter().map(|o| o.pose.pos.truncate()));
+                v.extend(crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), &rows).iter().map(|o| o.pose.pos.truncate()));
             }
         }
         v.sort_by(|a, b| a.y.total_cmp(&b.y).then(a.x.total_cmp(&b.x)));

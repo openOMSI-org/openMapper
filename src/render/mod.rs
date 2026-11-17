@@ -1339,6 +1339,7 @@ impl Renderer {
     /// clock runs the programs).
     fn gather_heads(&mut self, device: &wgpu::Device, doc: &Document, assets: &mut Assets, disp: &[(TileKey, Arc<omsi_map::Tile>)], extras: &FrameExtras, anchor: DVec3) -> Vec<Head> {
         let mut heads = Vec::new();
+        let rows = crate::place::row_index(doc);
         for (k, t) in disp {
             let mut parents: HashMap<i64, (Pose, Arc<ObjectModel>)> = HashMap::new();
             for o in &t.objects {
@@ -1357,7 +1358,7 @@ impl Renderer {
                     continue;
                 }
                 let o = omsi_map::MapObject { file: a.file.clone(), id: a.id, extra: a.strings.clone(), var_parent: a.var_parent, ..Default::default() };
-                for ro in crate::place::row_objects(a, &t.splines, org) {
+                for ro in crate::place::row_objects(a, &t.splines, org, &rows) {
                     if let Some(mut h) = self.head_of(device, doc, assets, *k, &o, ro.pose.matrix_from(anchor), model.clone(), extras) {
                         h.sel = Sel::Attached(*k, a.id);
                         heads.push(h);
@@ -1553,6 +1554,7 @@ impl Renderer {
             self.scene_key = key;
             // each tile's instances are kept, and made again only when it changed
             self.tile_groups.retain(|k, _| doc.tiles.contains_key(k) && is_live(k));
+            let rows = crate::place::row_index(doc);
             for (k, t) in &disp {
                 let Some(td) = doc.tiles.get(k) else { continue };
                 let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64]);
@@ -1585,7 +1587,7 @@ impl Renderer {
                 for a in t.spline_attachments.iter().filter(|_| !extras.hide[1]) {
                     let Some(model) = assets.object(&a.file) else { continue };
                     let rel_key = self.model_with_labels(device, &a.file.to_lowercase(), &model, &a.strings, assets);
-                    let objs = crate::place::row_objects(a, &t.splines, org);
+                    let objs = crate::place::row_objects(a, &t.splines, org, &rows);
                     let first = objs.iter().map(|o| o.index).min();
                     // (each record is a thing of its own: clicking one of its copies picks it,
                     // and they take its tint - selected or hovered - as an object does)
