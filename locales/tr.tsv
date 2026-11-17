@@ -2785,3 +2785,109 @@ no track within 15 m	15 m içinde ray yok
 the tracks are not joined, or run the other way (see View > AI lanes)	raylar bağlı değil ya da ters yöne gidiyor (Görünüm > YZ şeritleri)
 no track beside	yanında ray yok:
 Drives on	Gittiği yol
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Kaynak köşesi seçildi. Yakalamak için hedef köşeyi tıklayın (Shift: yalnızca yatay, Esc: cancel)
+Aim at a vertex of the selected object	Seçilen nesnenin bir tepe noktasına nişan alın
+Snapped to vertex! (Ctrl+Z to undo)	Köşeye sıkıştı! (Geri almak için Ctrl+Z)
+Aim at a target vertex or spline endpoint	Hedef köşeyi veya spline uç noktasını hedefleyin
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Kaynak kenarı seçildi. Hizalamak için bir hedef kenarı veya yolu tıklayın (Shift: yalnızca yatay, Esc: iptal)
+Aim at an edge of the selected object	Seçilen nesnenin bir kenarına nişan alın
+Aligned edge to edge! (Ctrl+Z to undo)	Kenardan kenara hizalanmış! (Geri almak için Ctrl+Z)
+Aim at a target edge or road	Hedef kenarı veya yolu hedefleyin
+Target cancelled. Pick a source vertex again	Hedef iptal edildi. Tekrar bir kaynak tepe noktası seçin
+Vertex snap cancelled	Tepe noktası yakalaması iptal edildi
+Target cancelled. Pick a source edge again	Hedef iptal edildi. Tekrar bir kaynak kenarı seçin
+Edge snap cancelled	Kenar yapıştırma iptal edildi
+Select an object first to snap its vertex	Tepe noktasını yakalamak için önce bir nesne seçin
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Köşe yakalama: seçilen nesnedeki bir kaynak köşe noktasına tıklayın (iptal etmek için Esc)
+Snap vertex to vertex	Tepe noktasını tepe noktasına yasla
+Select an object first to align its edge	Kenarını hizalamak için önce bir nesne seçin
+Edge snap: click a source edge on the selected object (Esc to cancel)	Kenar yakalama: seçili nesnede bir kaynak kenara tıklayın (iptal etmek için Esc)
+Snap edge to edge	Kenardan kenara yasla
+Snap vertex to vertex (V)	Tepe noktasını tepe noktasına yasla (V)
+Snap edge to edge (L)	Kenardan kenara yasla (L)
+Snap vertex (V)	Köşeyi yasla (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Bu nesnenin bir köşesini başka bir köşeye tuttur (Kısayol: V)
+Snap edge (L)	Geçme kenarı (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Bu nesnenin bir kenarını başka bir kenara veya yola yaslayın (Kısayol: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Seçilen nesnenin tepe noktasını başka bir nesnenin tepe noktasına yasla (V)\nShift: Yalnızca yatay, Esc/Sağ tıklama: İptal
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Seçilen nesnenin bir kenarını bir kenara veya yola hizalayın (L)\nDöndürür ve eşdoğrusal\nyakalar Shift: Yalnızca yatay, Esc/Sağ tıklama: İptal
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1. nokta hizalandı! Döndürmek için nesne üzerindeki 2. noktaya tıklayın veya tamamlamak için Esc tuşuna basın
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referans açısı ayarlandı. Hizalamak için bir hedef noktaya veya yola tıklayın (Esc: bitir)
+Pick a different vertex on the object	Nesne üzerinde farklı bir tepe noktası seçin
+Click a 2nd reference point on the object, or Esc to finish	Nesne üzerinde 2. referans noktasına tıklayın veya bitirmek için Esc tuşuna basın
+Aligned angle! (Ctrl+Z to undo)	Açı hizalandı! (Geri almak için Ctrl+Z)
+Vertex snap complete	Köşe yakalama tamamlandı
+Align vertex angle	Köşe açısını hizala
+Complete to	Şuraya kadar tamamla
+Complete to: a new piece between the free ends of the selected splines	Şuraya kadar tamamla: seçili spline'ların serbest uçları arasına yeni parça
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Seçili spline'ların iki serbest ucu arasına, ilk seçilen spline'ın türünde, ikisiyle de konum, yön ve yükseklikte buluşan yeni bir parça; ikisi değişmez. Tekrar: kalan iki uç birleştirilir, halka kapanır.
+The two ends already meet	İki uç zaten buluşuyor
+Select the splines whose free ends are to be joined	Serbest uçları birleştirilecek spline'ları seçin
+No piece of spline can join these two ends	Hiçbir spline parçası bu iki ucu birleştiremez
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Bu haritanın openMapper kopyası içerik klasöründe açıldı (OMSI 2 klasöründeki asla yazılmaz)
+Read in again, changed on disk by another program:	Yeniden okundu, diskte başka bir program tarafından değiştirildi:
+Could not bring the changes over	Değişiklikler aktarılamadı
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Haritanın dosyaları bu otomatik kayıttan sonra değiştirildi (başka bir programla, örneğin OMSI 2 editörüyle). Geri yüklemek, kayıttaki eski karoları bu değişikliklerin üzerine koyar.
+tile(s)	karo
+the global settings	genel ayarlar
+the timetable	tarife
+the traffic	trafik
+the descriptions	açıklamalar
+Reload from disk	Diskten yeniden yükle
+The map changed on disk	Harita diskte değişti
+Another program changed the map's files where it has changes here not saved yet:	Başka bir program, burada kaydedilmemiş değişiklikler olan yerlerde haritanın dosyalarını değiştirdi:
+The other changes made on disk were read in already.	Diskteki diğer değişiklikler zaten okundu.
+Keep mine	Benimkileri tut
+The map changed in OMSI 2's folder	Harita OMSI 2 klasöründe değişti
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Bu haritanın kurulumdaki kopyası, openMapper'ın içerik klasöründeki kopyası kaydedildikten sonra değiştirildi, örneğin OMSI 2 editörüyle
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Değişiklikleri aktarmak openMapper kopyasındaki bu dosyaları değiştirir; değiştirilen dosyalar bir yedekte tutulur (Dosya > Önceki sürümler).
+Bring the changes over	Değişiklikleri aktar
+Keep openMapper's copy	openMapper kopyasını tut
+its way has a gap after path	güzergâhında şu yoldan sonra boşluk var:
+its way does not pass	güzergâhı şuradan geçmiyor:
+On demand	İsteğe bağlı
+Not served (checkpoint)	Hizmet yok (kontrol noktası)
+Wait for departure time	Kalkış saatini bekle
+Always + wait for departure time	Her zaman + kalkış saatini bekle
+The bus stops only when somebody waits or wants to get off (the game's default)	Otobüs yalnızca biri bekliyorsa ya da inmek istiyorsa durur (oyunun varsayılanı)
+The bus always stops here	Otobüs burada her zaman durur
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Otobüs durmadan geçer: durak yalnızca güzergâhı işaretler (kontrol noktası)
+The bus stops only when it is early, and waits there for its departure time	Otobüs yalnızca erkense durur ve orada kalkış saatini bekler
+The bus always stops here, and when it is early it waits for its departure time	Otobüs burada her zaman durur ve erkense kalkış saatini bekler
+All trips	Tüm seferler
+Every trip of the map, those no tour drives too	Haritanın her seferi, hiçbir sefer turunun yapmadıkları da
+The line number the trip shows; the line of this number lists it among its trips	Seferin gösterdiği hat numarası; bu numaralı hat onu kendi seferleri arasında listeler
+Way picked by hand:	Güzergâh elle seçildi:
+the paths picked do not pass this stop	seçilen yollar bu duraktan geçmiyor
+Other trips	Diğer seferler
+The time profile this departure runs to	Bu kalkışın izlediği zaman profili
+Time profile	Zaman profili
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Bir seferin birkaç profili olabilir (yoğun saat, gece…): sefer turunun her kalkışı hangisini izlediğini söyler
+The profile's name	Profilin adı
+A new profile, a copy of this one	Yeni bir profil, bunun kopyası
+Delete this profile (its departures run to the first)	Bu profili sil (kalkışları ilkini izler)
+Times from stop to stop	Duraktan durağa süreler
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Her durakta önceki duraktan süre ayarlanabilir: sonraki süreler kayar, onlarla birlikte seferin süresi de. Ayarlanmamış süreler sabit olanlar arasındaki mesafeyi izler; sabit bir durakta erken gelen otobüs bekler.
+From the stop before	Önceki duraktan
+After departure	Kalkıştan sonra
+Minutes from the stop before to this one	Önceki duraktan buna kadar dakika
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2'nin editöründeki gibi. Otobüsün ne yaptığını görmek için bir seçeneğin üzerine gelin.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Haritanın her seferi, hangi hat gösterirse ya da hangi sefer turu yaparsa yapsın. Hiçbir sefer turunun yapmadığı sefer saklanır; burada düzenlenebilir, bir sefer turuna verilebilir ya da silinebilir.
+trips	sefer
+driven by no tour	hiçbir sefer turu yapmıyor
+no tour	sefer turu yok
+departures	kalkış
+No path there: click a lane of a road (View > AI lanes shows them)	Orada yol yok: bir yolun şeridine tıklayın (Görünüm > YZ şeritleri onları gösterir)
+Done picking paths	Seçim bitti
+Pick the paths on the map	Yolları haritada seç
+Choose the way yourself, path by path, as in OMSI 2's editor	Güzergâhı kendiniz seçin, yol yol, OMSI 2'nin editöründeki gibi
+Find the way automatically	Güzergâhı otomatik bul
+Forget the paths picked: the way is found along the roads again	Seçilen yolları unut: güzergâh yeniden yollar boyunca bulunur
+The paths were picked by hand: they are kept when the stops change.	Yollar elle seçildi: duraklar değişince korunur.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Görünümde yollara tıklayın. Sondan sonraki ya da baştan önceki yol, ona giden yollarla birlikte eklenir; güzergâhın yanındaki yol, dolandığı parçanın yerini alır (kavşakta başka bir kol); güzergâhtaki yol çıkarılır. Güzergâh ilk duraktan önce başlayıp son duraktan sonra sürebilir.
+The way breaks after path	Güzergâh şu yoldan sonra kopuyor:
+the paths do not join, the bus's GPS loses its way here in the game	yollar birleşmiyor, otobüsün GPS'i oyunda burada yolunu kaybediyor
+Paths of the way	Güzergâhın yolları
+Cut before the first stop	İlk duraktan öncesini kes
+Cut after the last stop	Son duraktan sonrasını kes
+path	yol

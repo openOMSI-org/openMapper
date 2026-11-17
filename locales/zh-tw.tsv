@@ -2781,3 +2781,109 @@ no track within 15 m	15 m 內沒有軌道
 the tracks are not joined, or run the other way (see View > AI lanes)	軌道未相連，或方向相反（見 檢視 > AI 行車線）
 no track beside	旁邊沒有軌道：
 Drives on	行駛於
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	已選擇來源頂點。點擊目標頂點以吸附（Shift：僅水平，Esc：取消）
+Aim at a vertex of the selected object	對準所選物件的頂點
+Snapped to vertex! (Ctrl+Z to undo)	已吸附至頂點！（Ctrl+Z 復原）
+Aim at a target vertex or spline endpoint	對準目標頂點或道路端點
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	已選擇來源邊緣。點擊目標邊緣或道路以對齊（Shift：僅水平，Esc：取消）
+Aim at an edge of the selected object	對準所選物件的邊緣
+Aligned edge to edge! (Ctrl+Z to undo)	已完成邊緣對齊！（Ctrl+Z 復原）
+Aim at a target edge or road	對準目標邊緣或道路
+Target cancelled. Pick a source vertex again	目標已取消。請重新選取來源頂點
+Vertex snap cancelled	已取消頂點吸附
+Target cancelled. Pick a source edge again	目標已取消。請重新選取來源邊緣
+Edge snap cancelled	已取消邊緣吸附
+Select an object first to snap its vertex	請先選取物件以吸附其頂點
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	頂點吸附：點擊所選物件上的來源頂點（Esc 取消）
+Snap vertex to vertex	頂點對頂點吸附
+Select an object first to align its edge	請先選取物件以對齊其邊緣
+Edge snap: click a source edge on the selected object (Esc to cancel)	邊緣吸附：點擊所選物件上的來源邊緣（Esc 取消）
+Snap edge to edge	邊緣對邊緣吸附
+Snap vertex to vertex (V)	頂點對頂點吸附 (V)
+Snap edge to edge (L)	邊緣對邊緣吸附 (L)
+Snap vertex (V)	吸附頂點 (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	將此物件的頂點吸附至另一頂點（快捷鍵：V）
+Snap edge (L)	吸附邊緣 (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	將此物件的邊緣吸附至另一邊緣或道路（快捷鍵：L）
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	將所選物件的頂點吸附至另一物件的頂點 (V)\nShift：僅水平，Esc／右鍵：取消
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	將所選物件的邊緣對齊至邊緣或道路 (L)\n旋轉並同線吸附\nShift：僅水平，Esc／右鍵：取消
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	第 1 點已對齊！點擊物件上的第 2 個點進行旋轉，或按 Esc 完成
+Reference angle set. Click a target point or spline to align (Esc: finish)	參考角度已設定。點擊目標點或道路以對齊（Esc：完成）
+Pick a different vertex on the object	請選取物件上的其他頂點
+Click a 2nd reference point on the object, or Esc to finish	點擊物件上的第 2 個參考點，或按 Esc 完成
+Aligned angle! (Ctrl+Z to undo)	已對齊角度！（Ctrl+Z 復原）
+Vertex snap complete	頂點吸附完成
+Align vertex angle	對齊頂點角度
+Complete to	補完至
+Complete to: a new piece between the free ends of the selected splines	補完至：在所選Spline的空端之間加一段新的
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	在所選Spline的兩個空端之間加一段新的，類型同第一條所選Spline，位置、方向和高度都與兩端吻合；原有兩段不變。再按一次：剩下的兩端相接，環就封閉。
+The two ends already meet	這兩端已經相接
+Select the splines whose free ends are to be joined	請選擇要接合空端的Spline
+No piece of spline can join these two ends	沒有任何Spline段能接合這兩端
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	已在內容資料夾中開啟此地圖的 openMapper 副本(OMSI 2 資料夾中的地圖從不寫入)
+Read in again, changed on disk by another program:	已重新讀取,磁碟上被其他程式變更:
+Could not bring the changes over	無法匯入變更
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	此自動儲存之後,地圖檔案已被變更(由其他程式,例如 OMSI 2 編輯器)。還原會把自動儲存中較舊的地塊覆蓋到這些變更之上。
+tile(s)	地塊
+the global settings	全域設定
+the timetable	時刻表
+the traffic	交通
+the descriptions	描述
+Reload from disk	從磁碟重新載入
+The map changed on disk	地圖在磁碟上已變更
+Another program changed the map's files where it has changes here not saved yet:	其他程式變更了地圖檔案,而此處這些部分有未儲存的變更:
+The other changes made on disk were read in already.	磁碟上的其他變更已讀取。
+Keep mine	保留我的
+The map changed in OMSI 2's folder	地圖在 OMSI 2 資料夾中已變更
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	在內容資料夾中儲存 openMapper 副本之後,安裝目錄中的此地圖被變更了(例如由 OMSI 2 編輯器)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	匯入變更會取代 openMapper 副本中的這些檔案;被取代的檔案保存在備份中(檔案 > 先前的版本)。
+Bring the changes over	匯入變更
+Keep openMapper's copy	保留 openMapper 副本
+its way has a gap after path	其路線有斷口，在路徑之後：
+its way does not pass	其路線不經過
+On demand	按需停靠
+Not served (checkpoint)	不停靠（檢查點）
+Wait for departure time	等待發車時間
+Always + wait for departure time	永遠 + 等待發車時間
+The bus stops only when somebody waits or wants to get off (the game's default)	僅在有人候車或要下車時停靠（遊戲預設）
+The bus always stops here	巴士永遠在此停靠
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	巴士不停駛過：該站只標記路線（檢查點）
+The bus stops only when it is early, and waits there for its departure time	僅在巴士早到時停靠，並在此等到發車時間
+The bus always stops here, and when it is early it waits for its departure time	巴士永遠在此停靠，早到時等到發車時間
+All trips	所有班次
+Every trip of the map, those no tour drives too	地圖上的所有班次，包括沒有車班行駛的
+The line number the trip shows; the line of this number lists it among its trips	班次顯示的路線號碼；該號碼的路線在其班次中列出它
+Way picked by hand:	手動選取的路線：
+the paths picked do not pass this stop	選取的路徑不經過此站
+Other trips	其他班次
+The time profile this departure runs to	此發車所依照的時間設定檔
+Time profile	時間設定檔
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	一個班次可有多個設定檔（尖峰、夜間…）：車班的每次發車註明依照哪一個
+The profile's name	設定檔名稱
+A new profile, a copy of this one	新設定檔，複製此設定檔
+Delete this profile (its departures run to the first)	刪除此設定檔（其發車改依第一個設定檔）
+Times from stop to stop	站間時間
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	可在每個站設定距上一站的時間：其後的時間隨之移動，班次時長也一樣。未設定的時間依固定站之間的距離分配；在固定站，早到的巴士會等待。
+From the stop before	距上一站
+After departure	發車後
+Minutes from the stop before to this one	從上一站到本站的分鐘數
+As in OMSI 2's editor. Hover a choice to see what the bus does.	與 OMSI 2 編輯器相同。將滑鼠停在選項上可查看巴士的行為。
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	地圖上的所有班次，無論由哪條路線顯示或哪個車班行駛。沒有車班行駛的班次也會保留，可在此編輯、指派給車班或刪除。
+trips	個班次
+driven by no tour	無車班
+no tour	無車班
+departures	次發車
+No path there: click a lane of a road (View > AI lanes shows them)	此處沒有路徑：請點擊道路的行車線（檢視 > AI 行車線 可顯示行車線）
+Done picking paths	選取完成
+Pick the paths on the map	在地圖上選取路徑
+Choose the way yourself, path by path, as in OMSI 2's editor	像 OMSI 2 編輯器那樣，逐條選取路徑來自己決定路線
+Find the way automatically	自動尋找路線
+Forget the paths picked: the way is found along the roads again	忘掉選取的路徑：重新沿道路尋找路線
+The paths were picked by hand: they are kept when the stops change.	路徑是手動選取的：站點改變時會保留。
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	在檢視中點擊路徑。終點之後或起點之前的路徑會連同通往它的路徑一起加入；路線旁邊的路徑會取代它繞過的那一段（路口的另一分支）；路線上的路徑會被移除。路線可以在第一站之前開始，並在最後一站之後繼續。
+The way breaks after path	路線中斷，在路徑之後：
+the paths do not join, the bus's GPS loses its way here in the game	路徑沒有相連，遊戲中巴士的 GPS 在此會迷路
+Paths of the way	路線的路徑
+Cut before the first stop	剪掉第一站之前
+Cut after the last stop	剪掉最後一站之後
+path	路徑

@@ -2366,7 +2366,7 @@ impl CrossingPaths {
         let m = crate::render::object_matrix(DVec3::ZERO, rot);
         // (the roads come up to the crossing's edge: a lane further out than this is passing
         // it, not ending at it)
-        let reach = (self.span() * 0.6 + 25.0).clamp(40.0, 220.0);
+        let reach = (self.span() * 0.6 + 50.0).clamp(40.0, 3500.0);
         let Some(assets) = assets else { return false };
         let (lanes, ends) = crate::lanes::near_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
         let roads = road_lane_ends(&lanes, &ends, world, &m, rot[0], doc);
@@ -2448,7 +2448,16 @@ impl CrossingPaths {
         let inv = m.inverse();
         // (the same reach the 3D view draws: a shorter one left green circles on the map
         // that no click could take, because they were never in this list)
-        let reach = ed.neighbour_reach();
+        let mut max_ext: f64 = 0.0;
+        if let Some(sheet) = self.sheet.as_ref() {
+            for p in &sheet.crossing.paths {
+                max_ext = max_ext.max(p.start().truncate().length()).max(p.end().truncate().length());
+            }
+        }
+        if let Some((_, _, b)) = &self.footprint {
+            max_ext = max_ext.max(b[0].abs().max(b[2].abs()).max(b[1].abs().max(b[3].abs())));
+        }
+        let reach = ed.neighbour_reach().max(max_ext + 300.0).clamp(300.0, 3500.0);
         // (ends only: the lines between them are already drawn, and laying every one out
         // again just to find its two ends was the stall)
         let tips = crate::lanes::tips_skipping(doc, assets, world.truncate(), reach, Some((k, id)));
@@ -2570,7 +2579,7 @@ impl CrossingPaths {
         if lo.x > hi.x {
             return 30.0;
         }
-        (hi - lo).length().clamp(6.0, 300.0)
+        (hi - lo).length().clamp(6.0, 4000.0)
     }
 
     /// The ends of the paths, three numbers each in the object's own frame (x, y, z and

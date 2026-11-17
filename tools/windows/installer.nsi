@@ -4,6 +4,7 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 
 !include "MUI2.nsh"
+!include "x64.nsh"
 
 !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\openMapper"
 
@@ -25,6 +26,22 @@ BrandingText "openMapper ${VERSION}"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "assets\icons\app\installer-sidebar.bmp"
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\openmapper.exe"
+
+; (a program built for the other processor only says "This app can't run on your PC" when
+; started: the installer says which package this computer needs instead, #102)
+Function .onInit
+!if "${ARCH}" == "arm64"
+  ${IfNot} ${IsNativeARM64}
+    MessageBox MB_ICONSTOP "This is openMapper for ARM64 processors. This computer has an Intel or AMD processor: download openMapper-${VERSION}-windows-x64-setup.exe instead.$\r$\n$\r$\nЭто openMapper для процессоров ARM64. В этом компьютере процессор Intel или AMD: скачайте openMapper-${VERSION}-windows-x64-setup.exe."
+    Abort
+  ${EndIf}
+!else
+  ${IfNot} ${RunningX64}
+    MessageBox MB_ICONSTOP "openMapper needs a 64-bit Windows 10 or 11; this Windows is 32-bit.$\r$\n$\r$\nopenMapper нужна 64-битная Windows 10 или 11, а эта Windows 32-битная."
+    Abort
+  ${EndIf}
+!endif
+FunctionEnd
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY

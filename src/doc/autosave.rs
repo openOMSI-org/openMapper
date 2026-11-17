@@ -40,6 +40,10 @@ pub struct Meta {
     pub descriptions: bool,
     /// Seconds since 1970.
     pub time: u64,
+    /// The map's files were written after the autosave (by OMSI 2's editor say): bringing it
+    /// back puts older tiles over newer ones.
+    #[serde(skip)]
+    pub disk_newer: bool,
 }
 
 impl Meta {
@@ -152,6 +156,7 @@ fn prepare_from(doc: &Document, known: &std::collections::HashSet<TileKey>, epoc
         traffic: doc.traffic.dirty,
         descriptions: doc.descriptions.dirty,
         time: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+        disk_newer: false,
     };
     Job {
         target,
@@ -184,7 +189,15 @@ impl Job {
 /// The autosave left by a session that did not end normally.
 pub fn pending(content: &Path) -> Option<Meta> {
     let s = std::fs::read_to_string(dir(content).join(META)).ok()?;
-    serde_json::from_str(&s).ok()
+    let mut meta: Meta = serde_json::from_str(&s).ok()?;
+    meta.disk_newer = !meta.fresh && newer_on_disk(&meta);
+    Some(meta)
+}
+
+/// Whether a file of the map was written after the autosave was.
+fn newer_on_disk(meta: &Meta) -> bool {
+    let after = meta.time.saturating_add(1).saturating_mul(1_000_000_000);
+    [Some(meta.dir.clone()), meta.source.clone()].into_iter().flatten().any(|d| super::sync::stamp(&d).files.values().any(|s| s.1 >= after))
 }
 
 /// Nothing to keep any more (saved, or the changes were dropped).
@@ -303,6 +316,10 @@ pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
             meta.age()
         ));
         ui.label(egui::RichText::new(tr("The changes kept by the autosave can be brought back. The map itself was not changed.", "Изменения, сохранённые автосохранением, можно вернуть. Сама карта не изменялась.")).small().color(egui::Color32::GRAY));
+        if meta.disk_newer {
+            ui.add_space(4.0);
+            ui.colored_label(egui::Color32::from_rgb(230, 180, 80), tr("The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.", "Файлы карты изменены после этого автосохранения (другой программой, например редактором OMSI 2). Восстановление положит старые тайлы из автосохранения поверх этих изменений."));
+        }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
             if ui.button(tr("Restore the changes", "Вернуть изменения")).clicked() {
@@ -353,6 +370,13 @@ mod tests {
         // the tile reads back with what was on it
         let t = omsi_map::Tile::load(&d.join("tile_0_0.map")).unwrap();
         assert_eq!(t.objects.len(), 1);
+        // the map's own files written later: the question says so
+        assert!(!meta.disk_newer);
+        std::fs::create_dir_all(&doc.dir).unwrap();
+        std::fs::write(doc.dir.join("global.cfg"), "[name]\nM\n").unwrap();
+        let mut old = meta.clone();
+        old.time -= 60;
+        assert!(newer_on_disk(&old) && !newer_on_disk(&Meta { time: old.time + 3600, ..old.clone() }));
         clear(&content);
         assert!(pending(&content).is_none());
         let _ = std::fs::remove_dir_all(&content);

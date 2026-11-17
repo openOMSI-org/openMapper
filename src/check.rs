@@ -824,6 +824,21 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
         let net = crate::timetable::network::Network::build(d, &mut files);
         for trip in trips {
             let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| crate::timetable::stop_world(d, &mut files, *id)).collect();
+            // (the way as saved: where its paths do not join, the game's bus loses it)
+            if let Some(track) = tt.track(&trip.name) {
+                let lanes = crate::timetable::way::lanes_of_track(&net, &track.entries, &d.order);
+                if lanes.iter().all(|l| l.is_some()) {
+                    let lanes: Vec<usize> = lanes.into_iter().flatten().collect();
+                    if let Some(&(k, m)) = crate::timetable::way::gaps(&net, &lanes).first() {
+                        let p = net.lanes[lanes[k]].pts.last().copied();
+                        out.push(Issue { severity: Severity::Warning, kind: Kind::TripNoRoute, title: trip.name.clone(), detail: format!("{} {} ({m:.1} m)", tr("its way has a gap after path", "в его пути разрыв после пути"), k + 1), at: p.map(|p| p.truncate()), sel: None, fix: None });
+                        continue;
+                    }
+                }
+            }
+            if tt.by_hand(&trip.name) {
+                continue;
+            }
             let r = crate::timetable::route::find(&net, &pos, d.global.left_hand_traffic, crate::timetable::route::ways_of(tt, &trip.name, &net, &d.order));
             if r.ok() {
                 continue;
@@ -833,7 +848,8 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
                 Some(Problem::NoObject(i)) => (*i, format!("{} {}", tr("the stop has no object:", "у остановки нет объекта:"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoRoad(i)) if r.ways == Some(crate::timetable::route::Ways::Rail) => (*i, format!("{} {}", tr("no track beside", "нет рельсов у"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoRoad(i)) => (*i, format!("{} {}", tr("no road beside", "нет дороги у"), stop_name(trip.stations[*i]))),
-                Some(Problem::NoWay(i)) => (*i, format!("{} {} -> {}", tr("no way", "нет пути"), stop_name(trip.stations[*i]), trip.stations.get(i + 1).map(|s| stop_name(*s)).unwrap_or_default())),
+                Some(Problem::OffWay(i)) => (*i, format!("{} {}", tr("its way does not pass", "его путь не проходит у"), stop_name(trip.stations[*i]))),
+                Some(Problem::NoWay(i)) =>(*i, format!("{} {} -> {}", tr("no way", "нет пути"), stop_name(trip.stations[*i]), trip.stations.get(i + 1).map(|s| stop_name(*s)).unwrap_or_default())),
                 None => (0, tr("no way found", "путь не найден").to_string()),
             };
             let (at, sel) = trip.stations.get(i).map(|id| place(&mut files, *id)).unwrap_or((None, None));

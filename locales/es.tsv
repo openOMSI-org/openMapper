@@ -2785,3 +2785,109 @@ no track within 15 m	no hay vía a menos de 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	las vías no están unidas o van en sentido contrario (ver Ver > Carriles de IA)
 no track beside	sin vía junto a
 Drives on	Circula por
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Vértice de origen elegido. Haga clic en un vértice de destino para ajustar (Shift: solo horizontal, Esc: cancelar)
+Aim at a vertex of the selected object	Apunta a un vértice del objeto seleccionado.
+Snapped to vertex! (Ctrl+Z to undo)	¡Ajustado al vértice! (Ctrl+Z para deshacer)
+Aim at a target vertex or spline endpoint	Apunte a un vértice objetivo o al punto final de una spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Borde de origen elegido. Haga clic en un borde o carretera de destino para alinear (Shift: solo horizontal, Esc: cancelar)
+Aim at an edge of the selected object	Apunta a un borde del objeto seleccionado.
+Aligned edge to edge! (Ctrl+Z to undo)	¡Alineado de borde a borde! (Ctrl+Z para deshacer)
+Aim at a target edge or road	Apunta a un borde o camino objetivo
+Target cancelled. Pick a source vertex again	Objetivo cancelado. Elija un vértice de origen nuevamente
+Vertex snap cancelled	Ajuste de vértice cancelado
+Target cancelled. Pick a source edge again	Objetivo cancelado. Elija un borde de origen nuevamente
+Edge snap cancelled	Ajuste de borde cancelado
+Select an object first to snap its vertex	Seleccione un objeto primero para ajustar su vértice
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Ajuste de vértice: haga clic en un vértice de origen en el objeto seleccionado (Esc para cancelar)
+Snap vertex to vertex	Ajustar vértice a vértice
+Select an object first to align its edge	Seleccione un objeto primero para alinear su borde
+Edge snap: click a source edge on the selected object (Esc to cancel)	Ajuste de borde: haga clic en un borde de origen en el objeto seleccionado (Esc para cancelar)
+Snap edge to edge	Ajustar borde a borde
+Snap vertex to vertex (V)	Ajustar vértice a vértice (V)
+Snap edge to edge (L)	Ajustar borde a borde (L)
+Snap vertex (V)	Ajustar vértice (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Ajustar un vértice de este objeto a otro vértice (Atajo: V)
+Snap edge (L)	Borde a presión (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Ajustar un borde de este objeto a otro borde o carretera (atajo: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajustar un vértice del objeto seleccionado a un vértice de otro objeto (V)\nMayús: Solo horizontal, Esc/Clic derecho: Cancelar
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinear un borde del objeto seleccionado con un borde o carretera (L)\nGira y ajusta\ncolineal Mayús: Solo horizontal, Esc/Clic derecho: Cancelar
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	¡Punto 1 alineado! Haga clic en un 2.º punto del objeto para rotar, o Esc para finalizar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Ángulo de referencia establecido. Haga clic en un punto objetivo o carretera para alinear (Esc: finalizar)
+Pick a different vertex on the object	Elija un vértice diferente en el objeto
+Click a 2nd reference point on the object, or Esc to finish	Haga clic en un 2.º punto de referencia en el objeto, o Esc para finalizar
+Aligned angle! (Ctrl+Z to undo)	¡Ángulo alineado! (Ctrl+Z para deshacer)
+Vertex snap complete	Ajuste de vértice completado
+Align vertex angle	Alinear ángulo del vértice
+Complete to	Completar hasta
+Complete to: a new piece between the free ends of the selected splines	Completar hasta: una pieza nueva entre los extremos libres de los splines seleccionados
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Una pieza nueva del tipo del primer spline seleccionado entre dos extremos libres de los splines seleccionados, que coincide con ambos en posición, dirección y altura; ellos no cambian. Otra vez: se unen los dos extremos que quedan y se cierra el anillo.
+The two ends already meet	Los dos extremos ya se encuentran
+Select the splines whose free ends are to be joined	Selecciona los splines cuyos extremos libres hay que unir
+No piece of spline can join these two ends	Ninguna pieza de spline puede unir estos dos extremos
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Se abrió la copia de openMapper de este mapa en la carpeta de contenido (la de la carpeta de OMSI 2 nunca se escribe)
+Read in again, changed on disk by another program:	Leído de nuevo, cambiado en el disco por otro programa:
+Could not bring the changes over	No se pudieron traer los cambios
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Los archivos del mapa cambiaron después de este autoguardado (por otro programa, como el editor de OMSI 2). Restaurar pone las casillas antiguas del autoguardado sobre esos cambios.
+tile(s)	casilla(s)
+the global settings	la configuración global
+the timetable	el horario
+the traffic	el tráfico
+the descriptions	las descripciones
+Reload from disk	Recargar desde el disco
+The map changed on disk	El mapa cambió en el disco
+Another program changed the map's files where it has changes here not saved yet:	Otro programa cambió archivos del mapa donde aquí hay cambios sin guardar:
+The other changes made on disk were read in already.	Los demás cambios del disco ya se leyeron.
+Keep mine	Conservar los míos
+The map changed in OMSI 2's folder	El mapa cambió en la carpeta de OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	La copia de este mapa en la instalación cambió después de guardar la copia de openMapper en la carpeta de contenido, por ejemplo con el editor de OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Traer los cambios reemplaza esos archivos de la copia de openMapper; los reemplazados se guardan en una copia de seguridad (Archivo > Versiones anteriores).
+Bring the changes over	Traer los cambios
+Keep openMapper's copy	Conservar la copia de openMapper
+its way has a gap after path	su camino tiene un hueco tras la ruta
+its way does not pass	su camino no pasa por
+On demand	A demanda
+Not served (checkpoint)	Sin servicio (punto de control)
+Wait for departure time	Esperar la hora de salida
+Always + wait for departure time	Siempre + esperar la hora de salida
+The bus stops only when somebody waits or wants to get off (the game's default)	El autobús solo para si alguien espera o quiere bajar (lo predeterminado en el juego)
+The bus always stops here	El autobús siempre para aquí
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	El autobús pasa sin parar: la parada solo marca el camino (un punto de control)
+The bus stops only when it is early, and waits there for its departure time	El autobús solo para si va adelantado, y espera allí su hora de salida
+The bus always stops here, and when it is early it waits for its departure time	El autobús siempre para aquí, y si va adelantado espera su hora de salida
+All trips	Todos los viajes
+Every trip of the map, those no tour drives too	Todos los viajes del mapa, también los que no hace ningún recorrido
+The line number the trip shows; the line of this number lists it among its trips	El número de línea que muestra el viaje; la línea con ese número lo muestra entre sus viajes
+Way picked by hand:	Camino elegido a mano:
+the paths picked do not pass this stop	las rutas elegidas no pasan por esta parada
+Other trips	Otros viajes
+The time profile this departure runs to	El perfil de tiempos que sigue esta salida
+Time profile	Perfil de tiempos
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Un viaje puede tener varios perfiles (hora punta, noche…): cada salida de un recorrido dice cuál sigue
+The profile's name	El nombre del perfil
+A new profile, a copy of this one	Un perfil nuevo, copia de este
+Delete this profile (its departures run to the first)	Borrar este perfil (sus salidas siguen el primero)
+Times from stop to stop	Tiempos de parada a parada
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	El tiempo desde la parada anterior se puede fijar en cada parada: los tiempos siguientes se desplazan, y con ellos el tiempo del viaje. Los tiempos no fijados siguen la distancia entre los fijados; en una parada fijada, un autobús adelantado espera.
+From the stop before	Desde la parada anterior
+After departure	Tras la salida
+Minutes from the stop before to this one	Minutos desde la parada anterior hasta esta
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Como en el editor de OMSI 2. Pasa el ratón por una opción para ver qué hace el autobús.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Todos los viajes del mapa, sea cual sea la línea que los muestra o el recorrido que los hace. Un viaje que no hace ningún recorrido se conserva, y aquí se puede editar, dar a un recorrido o borrar.
+trips	viajes
+driven by no tour	sin ningún recorrido
+no tour	sin recorrido
+departures	salidas
+No path there: click a lane of a road (View > AI lanes shows them)	Aquí no hay ruta: haz clic en un carril de una carretera (Ver > Carriles de IA los muestra)
+Done picking paths	Terminado
+Pick the paths on the map	Elegir las rutas en el mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Elige tú el camino, ruta a ruta, como en el editor de OMSI 2
+Find the way automatically	Buscar el camino automáticamente
+Forget the paths picked: the way is found along the roads again	Olvidar las rutas elegidas: el camino vuelve a buscarse por las carreteras
+The paths were picked by hand: they are kept when the stops change.	Las rutas se eligieron a mano: se conservan cuando cambian las paradas.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Haz clic en rutas en la vista. Una tras el final o antes del inicio se añade, con las rutas hasta ella; una junto al camino ocupa el lugar del tramo que rodea (otro ramal en un cruce); una ruta del camino se quita. El camino puede empezar antes de la primera parada y seguir tras la última.
+The way breaks after path	El camino se corta tras la ruta
+the paths do not join, the bus's GPS loses its way here in the game	las rutas no se unen, el GPS del autobús se pierde aquí en el juego
+Paths of the way	Rutas del camino
+Cut before the first stop	Cortar antes de la primera parada
+Cut after the last stop	Cortar tras la última parada
+path	ruta

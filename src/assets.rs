@@ -76,6 +76,9 @@ pub struct ObjectModel {
     pub holes: Vec<MeshData>,
     /// Its own lanes (`[path]`: junctions, stops), in its frame.
     pub paths: Vec<omsi_scenery::PathDef>,
+    /// Its `[crossing_heightdeformation]` field: its mesh is draped onto it, and so are its
+    /// paths when they are laid into the world (`object_paths::world_point`).
+    pub deform: Option<Arc<MeshData>>,
     /// Not seen in the game (`[onlyeditor]`, a start point, a car park, a help arrow,
     /// nothing to draw): the editor shows it as a marker that casts no shadow.
     pub technical: bool,
@@ -256,6 +259,11 @@ pub struct Assets {
 /// The largest texture side kept (the editor need not hold 4K pictures).
 const MAX_SIDE: u32 = 1024;
 
+#[inline]
+pub(crate) fn norm_asset_key(rel: &str) -> String {
+    rel.replace('\\', "/").to_lowercase()
+}
+
 impl Assets {
     pub fn new(omsi: PathBuf, content: PathBuf) -> Assets {
         let (tx, wrx) = mpsc::channel::<Req>();
@@ -295,8 +303,10 @@ impl Assets {
     }
 
     pub fn object(&mut self, rel: &str) -> Option<Arc<ObjectModel>> {
-        let key = rel.to_lowercase();
-        match self.objects.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -312,12 +322,14 @@ impl Assets {
     /// [`Assets::object`], waiting for the model when it has to be read first (for what is done
     /// once, on a click, not every frame): None if it cannot be read in `ms` milliseconds.
     pub fn object_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<ObjectModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.object(rel) {
                 return Some(m);
             }
-            if matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
             }
             self.poll();
@@ -357,12 +369,14 @@ impl Assets {
 
     /// [`Assets::spline`], waiting for the model (see [`Assets::object_wait`]).
     pub fn spline_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<SplineModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.spline(rel) {
                 return Some(m);
             }
-            if matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
             }
             self.poll();
@@ -371,8 +385,10 @@ impl Assets {
     }
 
     pub fn spline(&mut self, rel: &str) -> Option<Arc<SplineModel>> {
-        let key = rel.to_lowercase();
-        match self.splines.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -470,17 +486,21 @@ impl Assets {
     }
 
     pub fn spline_failed(&self, rel: &str) -> bool {
-        matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.splines.get(&norm_asset_key(rel)).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed))
     }
 
     pub fn object_failed(&self, rel: &str) -> bool {
-        matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.objects.get(&norm_asset_key(rel)).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed))
     }
 
     /// Forget one object's model, and the pictures in its folder, so they are read again
     /// (its files were written anew).
     pub fn forget_object(&mut self, rel: &str, dir: &Path) {
+        self.objects.remove(&norm_asset_key(rel));
         self.objects.remove(&rel.to_lowercase());
+        self.objects.remove(rel);
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
     }
 
@@ -636,22 +656,15 @@ pub(crate) fn load_object(path: &Path, omsi: &Path, content: &Path) -> Option<Ob
     // a junction plate draped onto its `[crossing_heightdeformation]` field, as openOMSI
     // (and Omsi.exe, as it loads the type) does: its arms meet roads that do not lie at the
     // plate's height, and the file's normals give way to ones made from the faces
-    if let Some(f) = &sco.crossing_height_deformation {
-        let in_model = omsi_cfg::resolve_path(&omsi_cfg::resolve_path(&model_dir, "model"), f);
-        let p = if omsi_cfg::vfs::is_file(&in_model) { in_model } else { omsi_cfg::resolve_path(&model_dir, f) };
-        match omsi_o3d::load_mesh(&p) {
-            Ok(m) => {
-                let field = omsi_geometry::mesh_from_o3d(&m);
-                for part in &mut parts {
-                    for v in part.mesh.positions.iter_mut() {
-                        if let Some(d) = field_height(&field, v.x, v.y) {
-                            v.z += d;
-                        }
-                    }
-                    omsi_geometry::compute_normals_d3d(&mut part.mesh);
+    let deform = crate::object_paths::load_field(&sco, path);
+    if let Some(field) = &deform {
+        for part in &mut parts {
+            for v in part.mesh.positions.iter_mut() {
+                if let Some(d) = crate::object_paths::field_height(field, v.x, v.y) {
+                    v.z += d;
                 }
             }
-            Err(e) => log::warn!("crossing height deformation {}: {e}", p.display()),
+            omsi_geometry::compute_normals_d3d(&mut part.mesh);
         }
     }
     let tree = sco.tree.as_ref().map(|t| {
@@ -712,7 +725,7 @@ pub(crate) fn load_object(path: &Path, omsi: &Path, content: &Path) -> Option<Ob
     }
     // (a tree with an editor-only helper box is seen in the game: only the box is not)
     let technical = (sco.only_editor && tree.is_none()) || sco.is_entry_point || sco.is_car_park || sco.is_help_arrow || (parts.is_empty() && tree.is_none());
-    Some(ObjectModel { parts, lo, hi, abs_height: sco.absolute_height(), tree, helpers, attachments, surface, holes, technical, editor_parts: sco.only_editor, paths: sco.paths.clone(), texts: model.text_textures.clone(), labels: label_names, lights: sco.traffic_lights.clone(), cycle: sco.traffic_lights_group, light_head: sco.is_traffic_light && sco.traffic_lights.is_empty() })
+    Some(ObjectModel { parts, lo, hi, abs_height: sco.absolute_height(), tree, helpers, attachments, surface, holes, technical, editor_parts: sco.only_editor, paths: sco.paths.clone(), deform: deform.map(Arc::new), texts: model.text_textures.clone(), labels: label_names, lights: sco.traffic_lights.clone(), cycle: sco.traffic_lights_group, light_head: sco.is_traffic_light && sco.traffic_lights.is_empty() })
 }
 
 fn load_spline(path: &Path, omsi: &Path, content: &Path) -> Option<SplineModel> {
@@ -811,27 +824,6 @@ pub fn tree_mesh() -> MeshData {
     }
     m.ranges.push((0, m.indices.len() as u32, 0));
     m
-}
-
-/// The height of a `[crossing_heightdeformation]` field over (x, y) in the object's frame,
-/// where the field reaches (the highest face there; openOMSI's `field_height`).
-fn field_height(m: &omsi_geometry::MeshData, x: f32, y: f32) -> Option<f32> {
-    let mut best: Option<f32> = None;
-    for t in m.indices.chunks_exact(3) {
-        let (a, b, c) = (m.positions[t[0] as usize], m.positions[t[1] as usize], m.positions[t[2] as usize]);
-        let det = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-        if det.abs() < 1e-9 {
-            continue;
-        }
-        let l1 = ((b.x - a.x) * (y - a.y) - (x - a.x) * (b.y - a.y)) / det;
-        let l2 = ((x - a.x) * (c.y - a.y) - (c.x - a.x) * (y - a.y)) / det;
-        let l0 = 1.0 - l1 - l2;
-        if l0 >= -1e-4 && l1 >= -1e-4 && l2 >= -1e-4 {
-            let h = l0 * a.z + l2 * b.z + l1 * c.z;
-            best = Some(best.map_or(h, |o: f32| o.max(h)));
-        }
-    }
-    best
 }
 
 /// A script variable that only says the time of year (`sommerhalbjahr`): the meshes it

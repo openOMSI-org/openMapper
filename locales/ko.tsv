@@ -2785,3 +2785,109 @@ no track within 15 m	15 m 이내에 선로 없음
 the tracks are not joined, or run the other way (see View > AI lanes)	선로가 연결되지 않았거나 반대 방향입니다(보기 > AI 차선 참조)
 no track beside	옆에 선로 없음:
 Drives on	운행 경로
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	소스 정점이 선택되었습니다. 스냅할 대상 정점을 클릭합니다(Shift: 가로만, Esc: 취소).
+Aim at a vertex of the selected object	선택한 개체의 꼭지점을 겨냥합니다.
+Snapped to vertex! (Ctrl+Z to undo)	정점에 스냅되었습니다! (실행 취소하려면 Ctrl+Z)
+Aim at a target vertex or spline endpoint	대상 정점 또는 스플라인 끝점을 조준합니다.
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	소스 가장자리가 선택되었습니다. 정렬할 대상 가장자리나 도로를 클릭합니다(Shift: 수평만, Esc: 취소).
+Aim at an edge of the selected object	선택한 개체의 가장자리를 겨냥합니다.
+Aligned edge to edge! (Ctrl+Z to undo)	가장자리부터 가장자리까지 정렬! (실행 취소하려면 Ctrl+Z)
+Aim at a target edge or road	목표 가장자리나 도로를 겨냥하세요
+Target cancelled. Pick a source vertex again	타겟이 취소되었습니다. 소스 꼭지점을 다시 선택하세요.
+Vertex snap cancelled	정점 스냅이 취소되었습니다.
+Target cancelled. Pick a source edge again	타겟이 취소되었습니다. 소스 가장자리를 다시 선택하세요.
+Edge snap cancelled	가장자리 스냅이 취소되었습니다.
+Select an object first to snap its vertex	정점을 스냅하려면 먼저 객체를 선택하세요.
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	정점 스냅: 선택한 개체의 소스 정점을 클릭합니다(취소하려면 Esc를 누름).
+Snap vertex to vertex	정점을 정점에 스냅
+Select an object first to align its edge	가장자리를 정렬하려면 먼저 개체를 선택하세요.
+Edge snap: click a source edge on the selected object (Esc to cancel)	가장자리 스냅: 선택한 객체의 소스 가장자리를 클릭합니다(취소하려면 Esc를 누름).
+Snap edge to edge	가장자리를 가장자리에 맞춥니다.
+Snap vertex to vertex (V)	정점을 정점에 스냅(V)
+Snap edge to edge (L)	가장자리에서 가장자리로 스냅(L)
+Snap vertex (V)	스냅 정점(V)
+Snap a vertex of this object to another vertex (Shortcut: V)	이 객체의 정점을 다른 정점에 스냅합니다(단축키: V)
+Snap edge (L)	스냅 엣지(L)
+Snap an edge of this object to another edge or road (Shortcut: L)	이 개체의 가장자리를 다른 가장자리나 도로에 스냅합니다(단축키: L).
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 객체의 정점을 다른 객체의 정점에 스냅(V)\nShift: 수평만, Esc/우클릭: 취소
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 개체의 가장자리를 가장자리 또는 도로에 정렬(L)\n동일 선상에 회전하고 스냅합니다.\nShift: 수평만, Esc/오른쪽 클릭: 취소
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1번 점 정렬 완료! 회전할 개체의 2번째 점을 클릭하거나 Esc 키로 완료하세요
+Reference angle set. Click a target point or spline to align (Esc: finish)	기준 각도 설정됨. 정렬할 대상 점이나 도로를 클릭하세요 (Esc: 완료)
+Pick a different vertex on the object	개체에서 다른 꼭짓점을 선택하세요
+Click a 2nd reference point on the object, or Esc to finish	개체에서 2번째 기준점을 클릭하거나 Esc 키로 완료하세요
+Aligned angle! (Ctrl+Z to undo)	각도 정렬 완료! (Ctrl+Z: 실행 취소)
+Vertex snap complete	꼭짓점 스냅 완료
+Align vertex angle	꼭짓점 각도 정렬
+Complete to	여기까지 완성
+Complete to: a new piece between the free ends of the selected splines	여기까지 완성: 선택한 스플라인의 빈 끝 사이에 새 조각
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	처음 선택한 스플라인의 종류로, 선택한 스플라인의 빈 끝 두 곳 사이에 위치·방향·높이가 모두 맞는 새 조각을 만듭니다. 원래 두 조각은 바뀌지 않습니다. 한 번 더: 남은 두 끝이 이어져 고리가 닫힙니다.
+The two ends already meet	두 끝이 이미 만납니다
+Select the splines whose free ends are to be joined	빈 끝을 이을 스플라인을 선택하세요
+No piece of spline can join these two ends	이 두 끝을 이을 수 있는 스플라인 조각이 없습니다
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	이 맵의 openMapper 사본을 콘텐츠 폴더에서 열었습니다(OMSI 2 폴더의 맵은 절대 기록하지 않음)
+Read in again, changed on disk by another program:	다시 읽음, 다른 프로그램이 디스크에서 변경:
+Could not bring the changes over	변경 사항을 가져오지 못했습니다
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	이 자동 저장 이후 맵 파일이 변경되었습니다(다른 프로그램, 예: OMSI 2 편집기). 복원하면 자동 저장의 오래된 타일이 그 변경 위에 놓입니다.
+tile(s)	타일
+the global settings	전역 설정
+the timetable	시간표
+the traffic	교통
+the descriptions	설명
+Reload from disk	디스크에서 다시 불러오기
+The map changed on disk	디스크에서 맵이 변경됨
+Another program changed the map's files where it has changes here not saved yet:	여기에 저장하지 않은 변경이 있는 부분의 맵 파일을 다른 프로그램이 변경했습니다:
+The other changes made on disk were read in already.	디스크의 나머지 변경 사항은 이미 읽었습니다.
+Keep mine	내 것 유지
+The map changed in OMSI 2's folder	OMSI 2 폴더에서 맵이 변경됨
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	콘텐츠 폴더의 openMapper 사본을 저장한 뒤 설치 폴더의 이 맵이 변경되었습니다(예: OMSI 2 편집기)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	가져오면 openMapper 사본의 해당 파일이 바뀝니다. 바뀐 파일은 백업에 보관됩니다(파일 > 이전 버전).
+Bring the changes over	변경 사항 가져오기
+Keep openMapper's copy	openMapper 사본 유지
+its way has a gap after path	경로가 끊김, 다음 패스 뒤:
+its way does not pass	경로가 지나가지 않는 정류장:
+On demand	요청 시
+Not served (checkpoint)	정차 안 함(체크포인트)
+Wait for departure time	출발 시간까지 대기
+Always + wait for departure time	항상 + 출발 시간까지 대기
+The bus stops only when somebody waits or wants to get off (the game's default)	누군가 기다리거나 내리려 할 때만 정차합니다(게임 기본값)
+The bus always stops here	여기서 항상 정차합니다
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	정차하지 않고 지나갑니다. 정류장은 경로만 표시합니다(체크포인트)
+The bus stops only when it is early, and waits there for its departure time	일찍 도착했을 때만 정차하고, 그곳에서 출발 시간까지 기다립니다
+The bus always stops here, and when it is early it waits for its departure time	여기서 항상 정차하고, 일찍 도착하면 출발 시간까지 기다립니다
+All trips	모든 운행
+Every trip of the map, those no tour drives too	맵의 모든 운행(어떤 운행 순번도 운행하지 않는 것 포함)
+The line number the trip shows; the line of this number lists it among its trips	운행이 표시하는 노선 번호. 이 번호의 노선은 자기 운행 목록에 이 운행을 표시합니다
+Way picked by hand:	직접 고른 경로:
+the paths picked do not pass this stop	고른 패스가 이 정류장을 지나지 않습니다
+Other trips	다른 운행
+The time profile this departure runs to	이 출발이 따르는 시간 프로필
+Time profile	시간 프로필
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	운행에는 여러 프로필(출퇴근 시간, 야간…)이 있을 수 있습니다. 운행 순번의 각 출발이 어느 것을 따르는지 정합니다
+The profile's name	프로필 이름
+A new profile, a copy of this one	새 프로필(이 프로필의 복사본)
+Delete this profile (its departures run to the first)	이 프로필 삭제(그 출발은 첫 번째 프로필을 따릅니다)
+Times from stop to stop	정류장 간 시간
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	각 정류장에서 이전 정류장부터의 시간을 정할 수 있습니다. 이후 시간이 함께 밀리고, 운행 시간도 따라 바뀝니다. 정하지 않은 시간은 고정된 정류장 사이의 거리를 따릅니다. 고정된 정류장에서는 일찍 도착한 버스가 기다립니다.
+From the stop before	이전 정류장부터
+After departure	출발 후
+Minutes from the stop before to this one	이전 정류장부터 여기까지의 분
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 에디터와 같습니다. 항목에 마우스를 올리면 버스가 어떻게 하는지 보입니다.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	맵의 모든 운행(어느 노선이 표시하든, 어느 운행 순번이 운행하든). 어떤 운행 순번도 운행하지 않는 운행도 유지되며, 여기서 편집하거나 운행 순번에 넣거나 삭제할 수 있습니다.
+trips	운행
+driven by no tour	운행 순번 없음
+no tour	운행 순번 없음
+departures	출발
+No path there: click a lane of a road (View > AI lanes shows them)	여기에는 패스가 없습니다. 도로의 차선을 클릭하세요(보기 > AI 차선에서 표시)
+Done picking paths	선택 완료
+Pick the paths on the map	맵에서 패스 선택
+Choose the way yourself, path by path, as in OMSI 2's editor	OMSI 2 에디터처럼 패스를 하나씩 골라 경로를 직접 정합니다
+Find the way automatically	경로 자동 찾기
+Forget the paths picked: the way is found along the roads again	고른 패스 잊기: 경로를 다시 도로를 따라 찾습니다
+The paths were picked by hand: they are kept when the stops change.	패스를 직접 골랐습니다. 정류장이 바뀌어도 유지됩니다.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	보기에서 패스를 클릭하세요. 끝 다음이나 시작 앞의 패스는 그곳까지의 패스와 함께 추가됩니다. 경로 옆의 패스는 그것이 돌아가는 구간을 대신합니다(교차로의 다른 갈래). 경로에 있는 패스는 빠집니다. 경로는 첫 정류장 앞에서 시작하고 마지막 정류장 뒤까지 이어질 수 있습니다.
+The way breaks after path	경로가 끊어짐, 다음 패스 뒤:
+the paths do not join, the bus's GPS loses its way here in the game	패스가 이어지지 않아, 게임에서 버스의 GPS가 여기서 경로를 잃습니다
+Paths of the way	경로의 패스
+Cut before the first stop	첫 정류장 앞 자르기
+Cut after the last stop	마지막 정류장 뒤 자르기
+path	패스

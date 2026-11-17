@@ -2785,3 +2785,109 @@ no track within 15 m	15 м ішінде рельс жоқ
 the tracks are not joined, or run the other way (see View > AI lanes)	рельстер жалғанбаған немесе кері жаққа кетеді (Көрініс > ЖИ жолақтары қараңыз)
 no track beside	жанында рельс жоқ:
 Drives on	Жүретін жолы
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Таңдалған бастапқы шың. Кесу үшін мақсатты шыңды басыңыз (Shift: тек көлденең, Esc: бас тарту)
+Aim at a vertex of the selected object	Таңдалған нысанның шыңына бағыттаңыз
+Snapped to vertex! (Ctrl+Z to undo)	Шыңға ілінді! (Болдырмау үшін Ctrl+Z)
+Aim at a target vertex or spline endpoint	Мақсатты шыңға немесе сплайнның соңғы нүктесіне бағыттаңыз
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Бастапқы жиегі таңдалды. Түзету үшін мақсатты жиекті немесе жолды басыңыз (Shift: тек көлденең, Esc: бас тарту)
+Aim at an edge of the selected object	Таңдалған нысанның шетіне бағыттаңыз
+Aligned edge to edge! (Ctrl+Z to undo)	Шетінен шетіне тураланған! (Болдырмау үшін Ctrl+Z)
+Aim at a target edge or road	Мақсатты шетке немесе жолға бағыттаңыз
+Target cancelled. Pick a source vertex again	Мақсат жойылды. Қайтадан бастапқы шыңды таңдаңыз
+Vertex snap cancelled	Vertex snap бас тартылды
+Target cancelled. Pick a source edge again	Мақсат жойылды. Қайтадан бастапқы жиекті таңдаңыз
+Edge snap cancelled	Жиекті қысу тоқтатылды
+Select an object first to snap its vertex	Шыңын бекіту үшін алдымен нысанды таңдаңыз
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Шыңға қондырма: таңдалған нысандағы бастапқы шыңды басыңыз (бас тарту үшін Esc пернесін басыңыз)
+Snap vertex to vertex	Төбенің шыңына қарай бекітіңіз
+Select an object first to align its edge	Шетін туралау үшін алдымен нысанды таңдаңыз
+Edge snap: click a source edge on the selected object (Esc to cancel)	Жиекті қысу: таңдалған нысандағы бастапқы жиекті басыңыз (бас тарту үшін Esc пернесін басыңыз)
+Snap edge to edge	Шетінен шетіне қарай сырғытыңыз
+Snap vertex to vertex (V)	Шыңды шыңға (V) сырғыту
+Snap edge to edge (L)	Шеттен шетке сырғыту (L)
+Snap vertex (V)	Төбесі (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Осы нысанның төбесін басқа төбеге бекітіңіз (Таңбаша: V)
+Snap edge (L)	Кесетін жиегі (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Осы нысанның шетін басқа жиекке немесе жолға сырғытыңыз (таңбаша: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Таңдалған нысанның төбесін басқа нысанның шыңына бекіту (V)\nShift: тек көлденең, Esc/тінтуірдің оң жақ түймешігімен басыңыз: Болдырмау
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Таңдалған нысанның шетін жиекке немесе жолға туралау (L)\nБірдей етіп айналдырады және түсіреді\nShift: Тек көлденең, Esc/тінтуірдің оң жақ түймешігімен басыңыз: Болдырмау
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1-нүкте тураланды! Айналдыру үшін нысандағы 2-нүктені басыңыз немесе аяқтау үшін Esc пернесін басыңыз
+Reference angle set. Click a target point or spline to align (Esc: finish)	Негізгі бұрыш орнатылды. Туралау үшін нысана нүктесін немесе жолды басыңыз (Esc: аяқтау)
+Pick a different vertex on the object	Нысанда басқа төбені таңдаңыз
+Click a 2nd reference point on the object, or Esc to finish	Нысанда 2-ші тірек нүктесін басыңыз немесе аяқтау үшін Esc пернесін басыңыз
+Aligned angle! (Ctrl+Z to undo)	Бұрыш тураланды! (Болдырмау үшін Ctrl+Z)
+Vertex snap complete	Төбені бекіту аяқталды
+Align vertex angle	Төбе бұрышын туралау
+Complete to	Дейін толықтыру
+Complete to: a new piece between the free ends of the selected splines	Дейін толықтыру: таңдалған сплайндардың бос ұштары арасында жаңа бөлік
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Таңдалған сплайндардың екі бос ұшы арасында бірінші таңдалған сплайн түріндегі жаңа бөлік, екеуімен орны, бағыты және биіктігі бойынша сәйкес келеді; олардың өздері өзгермейді. Тағы бір рет: қалған екі ұш қосылып, сақина тұйықталады.
+The two ends already meet	Бұл екі ұш бұрыннан түйіседі
+Select the splines whose free ends are to be joined	Бос ұштарын қосатын сплайндарды таңдаңыз
+No piece of spline can join these two ends	Бұл екі ұшты ешбір сплайн бөлігі қоса алмайды
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Осы картаның openMapper көшірмесі контент қалтасында ашылды (OMSI 2 қалтасындағы карта өзгертілмейді)
+Read in again, changed on disk by another program:	Қайта жүктелді, дискіде басқа бағдарлама өзгертті:
+Could not bring the changes over	Өзгерістерді көшіру мүмкін болмады
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Карта файлдары осы автосақтаудан кейін өзгертілген (басқа бағдарлама, мысалы OMSI 2 редакторы). Қалпына келтіру автосақтаудағы ескі тайлдарды осы өзгерістердің үстіне қояды.
+tile(s)	тайл
+the global settings	жалпы баптаулар
+the timetable	кесте
+the traffic	қозғалыс
+the descriptions	сипаттамалар
+Reload from disk	Дискіден жүктеу
+The map changed on disk	Карта дискіде өзгерді
+Another program changed the map's files where it has changes here not saved yet:	Басқа бағдарлама карта файлдарын осында сақталмаған өзгерістер бар жерде өзгертті:
+The other changes made on disk were read in already.	Дискідегі қалған өзгерістер жүктеліп қойды.
+Keep mine	Менікін қалдыру
+The map changed in OMSI 2's folder	Карта OMSI 2 қалтасында өзгерді
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Осы картаның OMSI 2 орнатуындағы көшірмесі openMapper көшірмесі контент қалтасында сақталғаннан кейін өзгертілген, мысалы OMSI 2 редакторымен
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Көшіру openMapper көшірмесіндегі осы файлдарды ауыстырады; ауыстырылған файлдар сақтық көшірмеде қалады (Файл > Алдыңғы нұсқалар).
+Bring the changes over	Өзгерістерді көшіру
+Keep openMapper's copy	openMapper көшірмесін қалдыру
+its way has a gap after path	оның жолында мына жолдан кейін үзіліс бар:
+its way does not pass	оның жолы мына аялдаманың жанынан өтпейді:
+On demand	Сұраныс бойынша
+Not served (checkpoint)	Қызмет көрсетілмейді (бақылау нүктесі)
+Wait for departure time	Жөнелту уақытын күту
+Always + wait for departure time	Әрқашан + жөнелту уақытын күту
+The bus stops only when somebody waits or wants to get off (the game's default)	Автобус біреу күтсе немесе түскісі келсе ғана тоқтайды (ойындағы әдепкі)
+The bus always stops here	Автобус мұнда әрқашан тоқтайды
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Автобус тоқтамай өтеді: аялдама тек жолды белгілейді (бақылау нүктесі)
+The bus stops only when it is early, and waits there for its departure time	Автобус уақытынан ерте келсе ғана тоқтайды және сонда жөнелту уақытын күтеді
+The bus always stops here, and when it is early it waits for its departure time	Автобус мұнда әрқашан тоқтайды, ал ерте келсе жөнелту уақытын күтеді
+All trips	Барлық рейстер
+Every trip of the map, those no tour drives too	Картаның барлық рейстері, ешбір шығу жүрмейтіндері де
+The line number the trip shows; the line of this number lists it among its trips	Рейс көрсететін желі нөмірі; осы нөмірлі желі оны өз рейстерінің арасында көрсетеді
+Way picked by hand:	Жол қолмен таңдалған:
+the paths picked do not pass this stop	таңдалған жолдар бұл аялдаманың жанынан өтпейді
+Other trips	Басқа рейстер
+The time profile this departure runs to	Бұл жөнелтудің уақыт профилі
+Time profile	Уақыт профилі
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Рейстің бірнеше профилі болуы мүмкін (қарбалас уақыт, түн…): шығудың әр жөнелтуі қайсысымен жүретінін көрсетеді
+The profile's name	Профиль аты
+A new profile, a copy of this one	Жаңа профиль, осының көшірмесі
+Delete this profile (its departures run to the first)	Бұл профильді жою (оның жөнелтулері біріншісімен жүреді)
+Times from stop to stop	Аялдамадан аялдамаға дейінгі уақыт
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Әр аялдамада алдыңғысынан бергі уақытты беруге болады: кейінгі уақыттар жылжиды, олармен бірге рейс уақыты да. Берілмеген уақыттар бекітілгендердің арасындағы қашықтыққа сай болады; бекітілген аялдамада ерте келген автобус күтеді.
+From the stop before	Алдыңғы аялдамадан
+After departure	Жөнелтуден кейін
+Minutes from the stop before to this one	Алдыңғы аялдамадан осыған дейінгі минуттар
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 редакторындағыдай. Автобустың не істейтінін көру үшін нұсқаға меңзерді апарыңыз.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Картаның барлық рейстері, оларды қай желі көрсетсе де, қай шығу жүрсе де. Ешбір шығу жүрмейтін рейс сақталады: оны осы жерде өңдеуге, шығуға беруге немесе жоюға болады.
+trips	рейс
+driven by no tour	шығусыз
+no tour	шығу жоқ
+departures	жөнелту
+No path there: click a lane of a road (View > AI lanes shows them)	Мұнда жол жоқ: жолдың жолағын басыңыз (Көрініс > ЖИ жолақтары оларды көрсетеді)
+Done picking paths	Дайын
+Pick the paths on the map	Жолдарды картадан таңдау
+Choose the way yourself, path by path, as in OMSI 2's editor	Жолды өзіңіз таңдаңыз, жолма-жол, OMSI 2 редакторындағыдай
+Find the way automatically	Жолды автоматты түрде табу
+Forget the paths picked: the way is found along the roads again	Таңдалған жолдарды ұмыту: жол қайтадан көшелер бойымен табылады
+The paths were picked by hand: they are kept when the stops change.	Жолдар қолмен таңдалған: аялдамалар өзгергенде олар сақталады.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Көріністегі жолдарды басыңыз. Соңынан кейінгі немесе басынан алдыңғы жол оған дейінгі жолдармен бірге қосылады; маршрут жанындағы жол өзі айналып өтетін бөліктің орнын басады (қиылыстағы басқа тармақ); маршруттағы жол алынып тасталады. Маршрут бірінші аялдамаға дейін де, соңғысынан кейін де жүре алады.
+The way breaks after path	Жол мына жолдан кейін үзіледі:
+the paths do not join, the bus's GPS loses its way here in the game	жолдар жалғанбаған, ойында автобустың GPS-і мұнда бағытын жоғалтады
+Paths of the way	Маршрут жолдары
+Cut before the first stop	Бірінші аялдамаға дейін кесу
+Cut after the last stop	Соңғы аялдамадан кейін кесу
+path	жол

@@ -225,9 +225,17 @@ impl Prefs {
         self.save();
     }
 
+    /// The camera kept for a map folder, if it is one the camera can take (a broken one in the
+    /// settings would throw the view about at every start).
     pub fn last_view(&self, map_dir: &Path) -> Option<[f64; 6]> {
         let s = map_dir.to_string_lossy();
-        self.last_views.iter().find(|(d, _)| *d == s).map(|(_, v)| *v)
+        let mut v = self.last_views.iter().find(|(d, _)| *d == s).map(|(_, v)| *v)?;
+        if !v.iter().all(|x| x.is_finite()) {
+            return None;
+        }
+        v[4] = v[4].clamp(-85.0, 89.5);
+        v[5] = v[5].clamp(0.5, 8000.0);
+        Some(v)
     }
 
     pub fn push_recent(&mut self, cfg: &Path) {
@@ -417,4 +425,22 @@ fn friendly_name(cfg: &Path) -> Option<String> {
         }
     }
     name
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_broken_camera_kept_in_the_settings_is_not_taken() {
+        let mut p = Prefs::default();
+        p.last_views.push(("a".into(), [1.0, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        p.last_views.push(("b".into(), [f64::NAN, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        p.last_views.push(("c".into(), [1.0, 2.0, 3.0, 20.0, 400.0, f64::INFINITY]));
+        p.last_views.push(("d".into(), [1.0, 2.0, 3.0, 20.0, 400.0, 1e9]));
+        assert_eq!(p.last_view(Path::new("a")), Some([1.0, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        assert_eq!(p.last_view(Path::new("b")), None);
+        assert_eq!(p.last_view(Path::new("c")), None);
+        assert_eq!(p.last_view(Path::new("d")), Some([1.0, 2.0, 3.0, 20.0, 89.5, 8000.0]));
+    }
 }

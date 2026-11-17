@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use glam::{DVec2, DVec3, Vec3};
+use glam::{DVec2, DVec3};
 use omsi_geometry::SplineCurve;
 use omsi_scenery::PathDef;
 
@@ -18,6 +18,9 @@ use crate::place::Pose;
 const LINK: f64 = 1.5;
 /// How far the headings at a link may differ (degrees).
 const LINK_TURN: f64 = 40.0;
+/// How far apart in height a lane's end and the next one's start may lie (m), as openOMSI
+/// links them: a road object's lane a little off the road's still runs on into it.
+pub(crate) const LINK_RISE: f64 = 3.0;
 
 /// How far apart two lanes of a spline may lie for a bus to change between them (m).
 const LANE_CHANGE_WIDTH: f64 = 5.0;
@@ -30,6 +33,8 @@ const RAIL: i32 = 2;
 #[derive(Debug, Default)]
 pub struct FileInfo {
     pub paths: Vec<PathDef>,
+    /// An object's `[crossing_heightdeformation]` field, which its paths are draped onto.
+    pub deform: Option<omsi_geometry::MeshData>,
     pub abs_height: bool,
     pub is_bus_stop: bool,
 }
@@ -65,7 +70,7 @@ impl Files {
             if key.ends_with(".sli") {
                 omsi_scenery::Spline::load(&p).ok().map(|s| FileInfo { paths: s.paths, ..Default::default() })
             } else {
-                omsi_scenery::SceneryObject::load(&p).ok().map(|o| FileInfo { abs_height: o.absolute_height(), is_bus_stop: o.is_bus_stop, paths: o.paths })
+                omsi_scenery::SceneryObject::load(&p).ok().map(|o| FileInfo { abs_height: o.absolute_height(), is_bus_stop: o.is_bus_stop, deform: crate::object_paths::load_field(&o, &p), paths: o.paths })
             }
         });
         let info = info.map(Arc::new);
@@ -237,12 +242,7 @@ impl Network {
                         continue;
                     }
                     let n = (c.length / 2.0).ceil().clamp(1.0, 200.0) as usize;
-                    let pts = (0..=n)
-                        .map(|i| {
-                            let q = c.point_at(c.length * i as f64 / n as f64);
-                            pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
-                        })
-                        .collect();
+                    let pts = (0..=n).map(|i| crate::object_paths::world_point(&c, c.length * i as f64 / n as f64, &pose, info.deform.as_ref())).collect();
                     net.add(PathKey { tile: *k, id: o.id, path: pi }, pts, c.length, internal + pi, p.direction, (false, p.kind == RAIL));
                 }
                 internal += info.paths.len();
@@ -291,12 +291,22 @@ impl Network {
                             continue;
                         }
                         let d = b.pts[0] - end;
-                        if d.truncate().length() <= LINK && d.z.abs() < 2.0 && h.dot(b.heading_at_start()) >= cos {
+                        if d.truncate().length() <= LINK && d.z.abs() < LINK_RISE && h.dot(b.heading_at_start()) >= cos {
                             next[i].push(j);
                         }
                     }
                 }
             }
+        }
+        // a lane reached over a piece shorter than a link spans (a junction's connector) is
+        // not linked straight on as well: the way drives the piece, it does not jump over it
+        // to the path after it (#122). (Two branches that start a little apart stay linked
+        // both, as OMSI 2's own station links have them.)
+        let skips: Vec<Vec<usize>> = (0..self.lanes.len())
+            .map(|i| next[i].iter().copied().filter(|&b| next[i].iter().any(|&s| s != b && self.lanes[s].length() <= LINK * 2.0 && next[s].contains(&b))).collect())
+            .collect();
+        for (n, skip) in next.iter_mut().zip(skips) {
+            n.retain(|b| !skip.contains(b));
         }
         for (l, n) in self.lanes.iter_mut().zip(next) {
             l.next = n;

@@ -2783,3 +2783,109 @@ no track within 15 m	у 15 м немає рейок
 the tracks are not joined, or run the other way (see View > AI lanes)	рейки не з'єднані або йдуть в інший бік (Вигляд > Смуги ШІ)
 no track beside	немає рейок біля
 Drives on	Їздить по
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Вибрана вихідна вершина. Клацніть цільову вершину, щоб зробити прив’язку (Shift: лише горизонтально, Esc: скасувати)
+Aim at a vertex of the selected object	Наведіть приціл у вершину вибраного об'єкта
+Snapped to vertex! (Ctrl+Z to undo)	Прищеплено до вершини! (Ctrl+Z, щоб скасувати)
+Aim at a target vertex or spline endpoint	Наведіть на цільову вершину або кінцеву точку сплайна
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Вибраний край джерела. Клацніть цільовий край або дорогу, щоб вирівняти (Shift: лише горизонтально, Esc: скасувати)
+Aim at an edge of the selected object	Наведіть на край вибраного об’єкта
+Aligned edge to edge! (Ctrl+Z to undo)	Вирівняно від краю до краю! (Ctrl+Z, щоб скасувати)
+Aim at a target edge or road	Цільтесь у край цілі або дорогу
+Target cancelled. Pick a source vertex again	Ціль скасовано. Знову виберіть вихідну вершину
+Vertex snap cancelled	Прив’язку вершини скасовано
+Target cancelled. Pick a source edge again	Ціль скасовано. Знову виберіть край джерела
+Edge snap cancelled	Прив’язку краю скасовано
+Select an object first to snap its vertex	Спочатку виберіть об’єкт, щоб прив’язати його вершину
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Прив’язка вершин: клацніть вихідну вершину на вибраному об’єкті (Esc для скасування)
+Snap vertex to vertex	Прив’язка вершини до вершини
+Select an object first to align its edge	Спочатку виберіть об’єкт, щоб вирівняти його край
+Edge snap: click a source edge on the selected object (Esc to cancel)	Прив’язка краю: клацніть вихідний край вибраного об’єкта (Esc для скасування)
+Snap edge to edge	Прив'яжіть край до краю
+Snap vertex to vertex (V)	Прив’язати вершину до вершини (V)
+Snap edge to edge (L)	Прив’язати край до краю (L)
+Snap vertex (V)	Вершина прив'язки (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Прив’язати вершину цього об’єкта до іншої вершини (Ярлик: V)
+Snap edge (L)	Край кріплення (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Прив’язати край цього об’єкта до іншого краю або дороги (комбінація клавіш: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Прив’язати вершину вибраного об’єкта до вершини іншого об’єкта (V)\nShift: лише по горизонталі, Esc/клацання правою кнопкою миші: скасувати
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Вирівняйте край вибраного об’єкта за краєм або дорогою (L)\nОбертає та прив’язує колінеарно\nShift: Лише горизонтально, Esc/клацання правою кнопкою миші: Скасувати
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Точку 1 вирівняно! Клацніть другу точку на об'єкті для обертання або Esc для завершення
+Reference angle set. Click a target point or spline to align (Esc: finish)	Опорний кут задано. Клацніть цільову точку або дорогу для вирівнювання (Esc: завершити)
+Pick a different vertex on the object	Виберіть іншу вершину на об'єкті
+Click a 2nd reference point on the object, or Esc to finish	Клацніть 2-гу опорну точку на об'єкті або натисніть Esc для завершення
+Aligned angle! (Ctrl+Z to undo)	Кут вирівняно! (Ctrl+Z для скасування)
+Vertex snap complete	Прив'язку вершини завершено
+Align vertex angle	Вирівняти кут вершини
+Complete to	Добудувати до
+Complete to: a new piece between the free ends of the selected splines	Добудувати до: новий шматок між вільними кінцями вибраних сплайнів
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Новий шматок типу першого вибраного сплайна між двома вільними кінцями вибраних сплайнів, що збігається з обома за місцем, напрямком і висотою; самі вони не змінюються. Ще раз: з'єднуються два кінці, що лишилися, кільце замикається.
+The two ends already meet	Ці два кінці вже сходяться
+Select the splines whose free ends are to be joined	Виберіть сплайни, вільні кінці яких треба з'єднати
+No piece of spline can join these two ends	Жоден шматок сплайна не з'єднає ці два кінці
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Відкрито копію цієї карти openMapper у теці вмісту (карта в теці OMSI 2 не змінюється)
+Read in again, changed on disk by another program:	Завантажено заново, змінено на диску іншою програмою:
+Could not bring the changes over	Не вдалося перенести зміни
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Файли карти змінено після цього автозбереження (іншою програмою, наприклад редактором OMSI 2). Відновлення покладе старі тайли з автозбереження поверх цих змін.
+tile(s)	тайл(ів)
+the global settings	загальні налаштування
+the timetable	розклад
+the traffic	трафік
+the descriptions	описи
+Reload from disk	Завантажити з диска
+The map changed on disk	Карта змінилася на диску
+Another program changed the map's files where it has changes here not saved yet:	Інша програма змінила файли карти там, де тут є незбережені зміни:
+The other changes made on disk were read in already.	Решту змін з диска вже завантажено.
+Keep mine	Залишити мої
+The map changed in OMSI 2's folder	Карта змінилася в теці OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Копію цієї карти в установці OMSI 2 змінено після збереження копії openMapper у теці вмісту, наприклад редактором OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Перенесення замінить ці файли в копії openMapper; замінені файли зберігаються в резервній копії (Файл > Попередні версії).
+Bring the changes over	Перенести зміни
+Keep openMapper's copy	Залишити копію openMapper
+its way has a gap after path	у його шляху розрив після шляху
+its way does not pass	його шлях не проходить біля
+On demand	На вимогу
+Not served (checkpoint)	Не обслуговується (контрольна точка)
+Wait for departure time	Чекати часу відправлення
+Always + wait for departure time	Завжди + чекати часу відправлення
+The bus stops only when somebody waits or wants to get off (the game's default)	Автобус зупиняється, лише якщо хтось чекає або хоче вийти (так за замовчуванням у грі)
+The bus always stops here	Автобус завжди тут зупиняється
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Автобус проїжджає без зупинки: зупинка лише позначає шлях (контрольна точка)
+The bus stops only when it is early, and waits there for its departure time	Автобус зупиняється, лише якщо йде раніше часу, і чекає там часу відправлення
+The bus always stops here, and when it is early it waits for its departure time	Автобус завжди тут зупиняється, а якщо йде раніше часу, чекає часу відправлення
+All trips	Усі рейси
+Every trip of the map, those no tour drives too	Усі рейси карти, і ті, якими не їздить жоден оборот
+The line number the trip shows; the line of this number lists it among its trips	Номер лінії, який показує рейс; лінія з цим номером показує його серед своїх рейсів
+Way picked by hand:	Шлях вибрано вручну:
+the paths picked do not pass this stop	вибрані шляхи не проходять біля цієї зупинки
+Other trips	Інші рейси
+The time profile this departure runs to	Профіль часу цього відправлення
+Time profile	Профіль часу
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	У рейсу може бути кілька профілів (година пік, ніч…): кожне відправлення обороту вказує, за яким воно йде
+The profile's name	Назва профілю
+A new profile, a copy of this one	Новий профіль, копія цього
+Delete this profile (its departures run to the first)	Видалити цей профіль (його відправлення йтимуть за першим)
+Times from stop to stop	Час від зупинки до зупинки
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Біля кожної зупинки можна задати час від попередньої: наступні часи зсуваються, а з ними і час рейсу. Незадані часи йдуть за відстанню між закріпленими; на закріпленій зупинці автобус, що прийшов раніше, чекає.
+From the stop before	Від попередньої
+After departure	Після відправлення
+Minutes from the stop before to this one	Хвилини від попередньої зупинки до цієї
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Як у редакторі OMSI 2. Наведіть на варіант, щоб побачити, що робить автобус.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Усі рейси карти, хоч би яка лінія їх показувала і хоч би який оборот їздив. Рейс, яким не їздить жоден оборот, зберігається: його можна правити, дати обороту або видалити тут.
+trips	рейсів
+driven by no tour	без оборотів
+no tour	немає оборотів
+departures	відпр.
+No path there: click a lane of a road (View > AI lanes shows them)	Тут немає шляху: клацніть по смузі дороги (Вигляд > Смуги ШІ показує їх)
+Done picking paths	Готово
+Pick the paths on the map	Вибрати шляхи на карті
+Choose the way yourself, path by path, as in OMSI 2's editor	Виберіть шлях самі, шлях за шляхом, як у редакторі OMSI 2
+Find the way automatically	Знайти шлях автоматично
+Forget the paths picked: the way is found along the roads again	Забути вибрані шляхи: шлях знову знайдеться по дорогах
+The paths were picked by hand: they are kept when the stops change.	Шляхи вибрано вручну: вони зберігаються, коли змінюються зупинки.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Клацайте шляхи на карті. Шлях після кінця або перед початком додається разом зі шляхами до нього; шлях збоку замінює ділянку, яку він об'їжджає (інша гілка на перехресті); шлях із маршруту прибирається. Шлях може йти і до першої зупинки, і після останньої.
+The way breaks after path	Шлях переривається після шляху
+the paths do not join, the bus's GPS loses its way here in the game	шляхи не з'єднані, GPS автобуса в грі тут губить маршрут
+Paths of the way	Шляхи маршруту
+Cut before the first stop	Прибрати до першої зупинки
+Cut after the last stop	Прибрати після останньої зупинки
+path	шлях

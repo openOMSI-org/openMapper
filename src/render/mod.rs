@@ -174,6 +174,9 @@ pub struct FrameExtras {
     pub highlight_tile: Option<TileKey>,
     /// Draw what the game does not show (start points, car parks, AI paths, helpers).
     pub show_technical: bool,
+    /// openMapper draws the AI's lanes as lines (the Logic tool, View > lanes): the strips of
+    /// the invisible AI-path splines would only double them, so they are left out (#66).
+    pub lanes_drawn: bool,
     /// Layers left out of the view: trees, other objects, splines (View menu).
     pub hide: [bool; 3],
     /// Objects drawn at another size along their own axes (a scale being dragged); zero
@@ -1541,6 +1544,7 @@ impl Renderer {
         let mut key_parts: Vec<u64> = doc.tiles.iter().filter(|(k, _)| is_live(k)).flat_map(|(_, t)| [t.content_rev, t.terrain_rev]).collect();
         key_parts.push(self.live_rev);
         key_parts.push(extras.show_technical as u64);
+        key_parts.push(extras.lanes_drawn as u64);
         key_parts.extend(extras.hide.map(|h| h as u64));
         self.hide_splines = extras.hide[2];
         key_parts.push(self.asset_epoch);
@@ -2436,7 +2440,7 @@ impl Renderer {
         let (Some(dynamic), Some(scene)) = (&self.instances, &self.scene_buf) else { return };
         // what is in view, the same for both layers
         let mut splines: Vec<(&GpuMesh, &Vec<Material>, u32)> = self.chunks.values().filter(|c| !self.hide_splines && f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))).collect();
-        if extras.show_technical && !self.hide_splines {
+        if editor_splines_shown(extras) && !self.hide_splines {
             splines.extend(self.editor_chunks.values().filter(|c| f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))));
         }
         splines.extend(self.splines.values().filter(|e| !e.hidden && !e.in_chunk && f.sees(&e.bbox) && in_reach(&e.bbox)).filter_map(|e| e.mesh.as_ref().map(|m| (m, &e.materials, e.instance))));
@@ -2923,7 +2927,13 @@ pub fn hidden_layer(model: &ObjectModel, extras: &FrameExtras) -> bool {
 /// road once that switch is on: `invis_street.sli` has a profile (a 3 m strip of
 /// `helper_path_cars_1.bmp`), and exactly that strip is what the editor shows.
 pub fn spline_hidden(technical: bool, extras: &FrameExtras) -> bool {
-    technical && !extras.show_technical || extras.hide[2]
+    technical && !editor_splines_shown(extras) || extras.hide[2]
+}
+
+/// The `[onlyeditor]` splines' strips are drawn: what the game does not show is on, and the
+/// lanes are not drawn as lines already.
+pub fn editor_splines_shown(extras: &FrameExtras) -> bool {
+    extras.show_technical && !extras.lanes_drawn
 }
 
 /// Which merged mesh a spline belongs in.
@@ -3250,6 +3260,9 @@ mod tests {
         assert!(spline_hidden(true, &extras), "an invisible street is out of the view by default");
         extras.show_technical = true;
         assert!(!spline_hidden(true, &extras), "and is drawn with the editor's switch on");
+        let lanes = FrameExtras { show_technical: true, lanes_drawn: true, ..Default::default() };
+        assert!(spline_hidden(true, &lanes), "but not under the lanes drawn as lines (#66)");
+        assert!(!spline_hidden(false, &lanes));
         // (the roads' own layer still takes it away, as it takes every spline)
         extras.hide[2] = true;
         assert!(spline_hidden(true, &extras));

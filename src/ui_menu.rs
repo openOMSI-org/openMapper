@@ -89,6 +89,11 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                     done = true;
                 }
             }
+            // (two free ends among the selected splines: a new piece between them)
+            if sels.iter().any(|s| matches!(s, crate::doc::Sel::Spline(..))) && item(ui, Icon::Route, tr("Complete to", "Достроить до"), "J", true) {
+                ed.complete_to();
+                done = true;
+            }
             ui.separator();
             if item(ui, Icon::Layers, tr("Group", "Сгруппировать"), "Ctrl+G", n >= 2 && group.is_none()) {
                 ed.group_selection();

@@ -47,7 +47,7 @@ fn textures_of(text: &str) -> Vec<String> {
 pub fn lane_free_copy(roots: &Roots, rel: &str) -> anyhow::Result<String> {
     let from = [&roots.content, &roots.omsi].iter().map(|r| omsi_cfg::resolve_path(r, rel)).find(|p| p.is_file()).ok_or_else(|| anyhow::anyhow!("{rel} is not installed"))?;
     let text = omsi_cfg::decode_text(&std::fs::read(&from)?);
-    let stem = Path::new(&rel.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "road".into());
+    let stem = crate::editable::safe_name(&Path::new(&rel.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "road".into()));
     let dir = roots.content.join("Splines").join("openMapper");
     let tex_dir = dir.join("texture");
     std::fs::create_dir_all(&tex_dir)?;

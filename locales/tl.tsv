@@ -2785,3 +2785,109 @@ no track within 15 m	walang riles sa loob ng 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	hindi nakakabit ang mga riles, o kabilang direksyon ang takbo (tingnan ang View > Mga AI lane)
 no track beside	walang riles sa tabi ng
 Drives on	Tumatakbo sa
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Pinili ang source vertex. I-click ang isang target na vertex para i-snap (Shift: pahalang lang, Esc: kanselahin)
+Aim at a vertex of the selected object	Layunin ang isang vertex ng napiling bagay
+Snapped to vertex! (Ctrl+Z to undo)	Na-snap sa vertex! (Ctrl+Z para i-undo)
+Aim at a target vertex or spline endpoint	Layunin ang isang target na vertex o spline endpoint
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Pinili ang gilid ng pinagmulan. Mag-click ng target na gilid o kalsada para i-align (Shift: pahalang lang, Esc: kanselahin)
+Aim at an edge of the selected object	Layunin ang isang gilid ng napiling bagay
+Aligned edge to edge! (Ctrl+Z to undo)	Naka-align gilid sa gilid! (Ctrl+Z para i-undo)
+Aim at a target edge or road	Layunin ang isang target na gilid o kalsada
+Target cancelled. Pick a source vertex again	Kinansela ang target. Pumili muli ng source vertex
+Vertex snap cancelled	Kinansela ang vertex snap
+Target cancelled. Pick a source edge again	Kinansela ang target. Pumili muli ng gilid ng pinagmulan
+Edge snap cancelled	Kinansela ang Edge snap
+Select an object first to snap its vertex	Pumili muna ng isang bagay upang kunin ang tuktok nito
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: mag-click ng source vertex sa napiling object (Esc para kanselahin)
+Snap vertex to vertex	Mag-snap vertex sa vertex
+Select an object first to align its edge	Pumili muna ng isang bagay upang ihanay ang gilid nito
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: mag-click ng source edge sa napiling object (Esc para kanselahin)
+Snap edge to edge	Snap gilid sa gilid
+Snap vertex to vertex (V)	I-snap ang vertex sa vertex (V)
+Snap edge to edge (L)	Snap gilid sa gilid (L)
+Snap vertex (V)	Snap vertex (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Mag-snap ng vertex ng object na ito sa isa pang vertex (Shortcut: V)
+Snap edge (L)	Snap na gilid (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	I-snap ang isang gilid ng bagay na ito sa isa pang gilid o kalsada (Shortcut: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Mag-snap ng vertex ng napiling object papunta sa vertex ng isa pang object (V)\nShift: Horizontal lang, Esc/Right-click: Cancel
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	I-align ang isang gilid ng napiling bagay sa isang gilid o kalsada (L)\nUmiikot at kumukuha ng collinear\nShift: Pahalang lamang, Esc/Right-click: Kanselahin
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Naitugma ang Punto 1! Mag-click ng ika-2 punto sa bagay upang paikutin, o Esc upang matapos
+Reference angle set. Click a target point or spline to align (Esc: finish)	Naitakda ang anggulo ng sanggunian. Mag-click ng target na punto o daan upang itugma (Esc: tapusin)
+Pick a different vertex on the object	Pumili ng ibang vertex sa bagay
+Click a 2nd reference point on the object, or Esc to finish	Mag-click ng ika-2 sangguniang punto sa bagay, o Esc upang matapos
+Aligned angle! (Ctrl+Z to undo)	Naitugma ang anggulo! (Ctrl+Z upang i-undo)
+Vertex snap complete	Nakumpleto ang snap ng vertex
+Align vertex angle	Itugma ang anggulo ng vertex
+Complete to	Kumpletuhin hanggang
+Complete to: a new piece between the free ends of the selected splines	Kumpletuhin hanggang: bagong piraso sa pagitan ng malayang dulo ng mga napiling spline
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Bagong piraso na kauri ng unang napiling spline sa pagitan ng dalawang malayang dulo ng mga napiling spline, tugma sa pareho sa puwesto, direksyon at taas; hindi binabago ang dalawa. Muli: pinagdudugtong ang dalawang natitirang dulo at nasasara ang singsing.
+The two ends already meet	Nagtatagpo na ang dalawang dulo
+Select the splines whose free ends are to be joined	Piliin ang mga spline na pagdudugtungin ang malayang dulo
+No piece of spline can join these two ends	Walang piraso ng spline na makapagdudugtong sa dalawang dulong ito
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Binuksan ang kopya ng openMapper ng mapang ito sa content folder (hindi kailanman sinusulatan ang nasa folder ng OMSI 2)
+Read in again, changed on disk by another program:	Binasa muli, binago sa disk ng ibang programa:
+Could not bring the changes over	Hindi madala ang mga pagbabago
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Binago ang mga file ng mapa pagkatapos ng autosave na ito (ng ibang programa, gaya ng editor ng OMSI 2). Ang pagbalik ay maglalagay ng mas lumang tile ng autosave sa ibabaw ng mga pagbabagong iyon.
+tile(s)	tile
+the global settings	ang pangkalahatang setting
+the timetable	ang timetable
+the traffic	ang trapiko
+the descriptions	ang mga paglalarawan
+Reload from disk	I-reload mula sa disk
+The map changed on disk	Nagbago ang mapa sa disk
+Another program changed the map's files where it has changes here not saved yet:	Binago ng ibang programa ang mga file ng mapa kung saan may mga hindi pa naseseyb na pagbabago rito:
+The other changes made on disk were read in already.	Nabasa na ang iba pang pagbabago sa disk.
+Keep mine	Panatilihin ang akin
+The map changed in OMSI 2's folder	Nagbago ang mapa sa folder ng OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Binago ang kopya ng mapang ito sa instalasyon pagkatapos maseyb ang kopya ng openMapper sa content folder, halimbawa ng editor ng OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Papalitan ng pagdadala ang mga file na iyon sa kopya ng openMapper; itinatabi ang mga napalitang file sa isang backup (File > Mga naunang bersyon).
+Bring the changes over	Dalhin ang mga pagbabago
+Keep openMapper's copy	Panatilihin ang kopya ng openMapper
+its way has a gap after path	may puwang ang daan nito pagkatapos ng path
+its way does not pass	hindi dumadaan ang daan nito sa
+On demand	Kapag may sasakay o bababa
+Not served (checkpoint)	Hindi hinihintuan (checkpoint)
+Wait for departure time	Hintayin ang oras ng alis
+Always + wait for departure time	Palagi + hintayin ang oras ng alis
+The bus stops only when somebody waits or wants to get off (the game's default)	Humihinto lang ang bus kapag may naghihintay o gustong bumaba (default ng laro)
+The bus always stops here	Palaging humihinto rito ang bus
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Dumadaan ang bus nang hindi humihinto: tanda lang ng daan ang hintuan (checkpoint)
+The bus stops only when it is early, and waits there for its departure time	Humihinto lang ang bus kapag maaga ito, at doon hinihintay ang oras ng alis nito
+The bus always stops here, and when it is early it waits for its departure time	Palaging humihinto rito ang bus, at kapag maaga ito hinihintay nito ang oras ng alis
+All trips	Lahat ng biyahe
+Every trip of the map, those no tour drives too	Bawat biyahe ng mapa, pati ang mga walang tour na nagmamaneho
+The line number the trip shows; the line of this number lists it among its trips	Ang numero ng linyang ipinapakita ng biyahe; inililista ito ng linyang may numerong ito sa mga biyahe nito
+Way picked by hand:	Daang pinili nang manu-mano:
+the paths picked do not pass this stop	hindi dumadaan sa hintuang ito ang mga napiling path
+Other trips	Ibang biyahe
+The time profile this departure runs to	Ang time profile na sinusunod ng departure na ito
+Time profile	Time profile
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Puwedeng may ilang profile ang biyahe (rush hour, gabi…): sinasabi ng bawat departure ng tour kung alin ang sinusunod nito
+The profile's name	Ang pangalan ng profile
+A new profile, a copy of this one	Bagong profile, kopya nito
+Delete this profile (its departures run to the first)	Burahin ang profile na ito (susunod sa una ang mga departure nito)
+Times from stop to stop	Oras mula hintuan hanggang hintuan
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Maitatakda sa bawat hintuan ang oras mula sa naunang hintuan: gumagalaw kasabay ang mga oras pagkatapos nito, pati ang oras ng biyahe. Ang mga oras na hindi itinakda ay sumusunod sa layo sa pagitan ng mga nakapirmi; sa nakapirming hintuan, naghihintay ang bus na maaga.
+From the stop before	Mula sa naunang hintuan
+After departure	Pagkaalis
+Minutes from the stop before to this one	Minuto mula sa naunang hintuan hanggang dito
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Gaya sa editor ng OMSI 2. I-hover ang isang pagpipilian para makita ang ginagawa ng bus.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Bawat biyahe ng mapa, anumang linya ang nagpapakita nito o anumang tour ang nagmamaneho nito. Iniingatan ang biyaheng walang tour na nagmamaneho, at dito ito maaaring i-edit, ibigay sa isang tour o burahin.
+trips	biyahe
+driven by no tour	walang tour na nagmamaneho
+no tour	walang tour
+departures	departure
+No path there: click a lane of a road (View > AI lanes shows them)	Walang path diyan: mag-click ng lane ng kalsada (ipinapakita ang mga ito ng Tingnan > Mga AI lane)
+Done picking paths	Tapos na sa pagpili
+Pick the paths on the map	Piliin ang mga path sa mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Ikaw ang pumili ng daan, isa-isang path, gaya sa editor ng OMSI 2
+Find the way automatically	Hanapin ang daan nang awtomatiko
+Forget the paths picked: the way is found along the roads again	Kalimutan ang mga napiling path: muling hahanapin ang daan sa mga kalsada
+The paths were picked by hand: they are kept when the stops change.	Pinili nang manu-mano ang mga path: iniingatan ang mga ito kapag nagbago ang mga hintuan.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Mag-click ng mga path sa view. Idinadagdag ang isang path pagkatapos ng dulo o bago ang simula, kasama ang mga path papunta roon; ang isang nasa tabi ng daan ay pumapalit sa bahaging iniikutan nito (ibang sanga sa isang junction); inaalis ang path na nasa daan. Puwedeng magsimula ang daan bago ang unang hintuan at magpatuloy pagkatapos ng huli.
+The way breaks after path	Napuputol ang daan pagkatapos ng path
+the paths do not join, the bus's GPS loses its way here in the game	hindi nagdudugtong ang mga path, naliligaw dito ang GPS ng bus sa laro
+Paths of the way	Mga path ng daan
+Cut before the first stop	Putulin bago ang unang hintuan
+Cut after the last stop	Putulin pagkatapos ng huling hintuan
+path	path

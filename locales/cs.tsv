@@ -2785,3 +2785,109 @@ no track within 15 m	do 15 m nejsou koleje
 the tracks are not joined, or run the other way (see View > AI lanes)	koleje nejsou spojeny nebo vedou opačně (viz Zobrazení > Pruhy AI)
 no track beside	žádné koleje vedle
 Drives on	Jezdí po
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Zvolený zdrojový vertex. Klikněte na cílový vrchol, který chcete přichytit (Shift: pouze horizontální, Esc: zrušení)
+Aim at a vertex of the selected object	Zamiřte na vrchol vybraného objektu
+Snapped to vertex! (Ctrl+Z to undo)	Přichyceno k vrcholu! (Ctrl+Z pro vrácení zpět)
+Aim at a target vertex or spline endpoint	Zamiřte na cílový vrchol nebo koncový bod spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Okraj zdroje vybrán. Kliknutím na cílovou hranu nebo cestu zarovnáte (Shift: pouze vodorovně, Esc: zrušení)
+Aim at an edge of the selected object	Zamiřte na okraj vybraného objektu
+Aligned edge to edge! (Ctrl+Z to undo)	Zarovnáno od okraje k okraji! (Ctrl+Z pro vrácení zpět)
+Aim at a target edge or road	Zamiřte na cílovou hranu nebo silnici
+Target cancelled. Pick a source vertex again	Cíl zrušen. Znovu vyberte zdrojový vrchol
+Vertex snap cancelled	Vertex snap zrušeno
+Target cancelled. Pick a source edge again	Cíl zrušen. Znovu vyberte okraj zdroje
+Edge snap cancelled	Uchopení okraje zrušeno
+Select an object first to snap its vertex	Nejprve vyberte objekt, abyste přichytili jeho vrchol
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Uchop vertexu: klikněte na zdrojový vertex na vybraném objektu (Esc pro zrušení)
+Snap vertex to vertex	Přichytit vrchol k vrcholu
+Select an object first to align its edge	Nejprve vyberte objekt a zarovnejte jeho okraj
+Edge snap: click a source edge on the selected object (Esc to cancel)	Uchopení hrany: klikněte na zdrojovou hranu na vybraném objektu (zrušte pomocí klávesy Esc)
+Snap edge to edge	Přichytit okraj k okraji
+Snap vertex to vertex (V)	Přichytit vrchol k vrcholu (V)
+Snap edge to edge (L)	Přichytit okraj k okraji (L)
+Snap vertex (V)	Vrchol přichycení (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Přichyťte vrchol tohoto objektu k jinému vrcholu (Zkratka: V)
+Snap edge (L)	Zacvakávací okraj (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Přichyťte okraj tohoto objektu k jinému okraji nebo silnici (Zkratka: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Přichytit vrchol vybraného objektu k vrcholu jiného objektu (V)\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Zarovnat okraj vybraného objektu k okraji nebo silnici (L)\nOtočí a přichytí kolineárně\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Bod 1 zarovnán! Klikněte na 2. bod na objektu pro otočení, nebo Esc pro dokončení
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenční úhel nastaven. Klikněte na cílový bod nebo silnici pro zarovnání (Esc: dokončit)
+Pick a different vertex on the object	Vyberte jiný vrchol na objektu
+Click a 2nd reference point on the object, or Esc to finish	Klikněte na 2. referenční bod na objektu nebo Esc pro dokončení
+Aligned angle! (Ctrl+Z to undo)	Úhel zarovnán! (Ctrl+Z pro vrácení zpět)
+Vertex snap complete	Přichycení vrcholu dokončeno
+Align vertex angle	Zarovnat úhel vrcholu
+Complete to	Dokončit k
+Complete to: a new piece between the free ends of the selected splines	Dokončit k: nový kus mezi volnými konci vybraných splinů
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Nový kus typu prvního vybraného splinu mezi dvěma volnými konci vybraných splinů, navazující na oba polohou, směrem i výškou; ty samy se nemění. Znovu: spojí se dva zbylé konce a kruh se uzavře.
+The two ends already meet	Tyto dva konce se už stýkají
+Select the splines whose free ends are to be joined	Vyberte spliny, jejichž volné konce se mají spojit
+No piece of spline can join these two ends	Žádný kus splinu tyto dva konce nespojí
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Otevřena kopie této mapy od openMapperu ve složce obsahu (mapa ve složce OMSI 2 se nikdy nezapisuje)
+Read in again, changed on disk by another program:	Načteno znovu, změněno na disku jiným programem:
+Could not bring the changes over	Změny se nepodařilo převzít
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Soubory mapy byly změněny po tomto automatickém uložení (jiným programem, např. editorem OMSI 2). Obnovení položí starší dlaždice z uložení přes tyto změny.
+tile(s)	dlaždice
+the global settings	globální nastavení
+the timetable	jízdní řád
+the traffic	provoz
+the descriptions	popisy
+Reload from disk	Znovu načíst z disku
+The map changed on disk	Mapa se na disku změnila
+Another program changed the map's files where it has changes here not saved yet:	Jiný program změnil soubory mapy tam, kde jsou zde neuložené změny:
+The other changes made on disk were read in already.	Ostatní změny z disku už byly načteny.
+Keep mine	Ponechat moje
+The map changed in OMSI 2's folder	Mapa se změnila ve složce OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopie této mapy v instalaci byla změněna po uložení kopie openMapperu ve složce obsahu, např. editorem OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Převzetí změn nahradí tyto soubory v kopii openMapperu; nahrazené soubory zůstanou v záloze (Soubor > Dřívější verze).
+Bring the changes over	Převzít změny
+Keep openMapper's copy	Ponechat kopii openMapperu
+its way has a gap after path	jeho trasa má mezeru za cestou
+its way does not pass	jeho trasa nevede kolem
+On demand	Na znamení
+Not served (checkpoint)	Neobsluhovaná (kontrolní bod)
+Wait for departure time	Čekat na čas odjezdu
+Always + wait for departure time	Vždy + čekat na čas odjezdu
+The bus stops only when somebody waits or wants to get off (the game's default)	Autobus zastaví, jen když někdo čeká nebo chce vystoupit (výchozí ve hře)
+The bus always stops here	Autobus tu vždy zastaví
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Autobus projede bez zastavení: zastávka jen vyznačuje trasu (kontrolní bod)
+The bus stops only when it is early, and waits there for its departure time	Autobus zastaví, jen když jede napřed, a čeká tam na čas odjezdu
+The bus always stops here, and when it is early it waits for its departure time	Autobus tu vždy zastaví, a když jede napřed, čeká na čas odjezdu
+All trips	Všechny spoje
+Every trip of the map, those no tour drives too	Každý spoj mapy, i ty, které nejede žádný turnus
+The line number the trip shows; the line of this number lists it among its trips	Číslo linky, které spoj ukazuje; linka s tímto číslem ho uvádí mezi svými spoji
+Way picked by hand:	Trasa vybraná ručně:
+the paths picked do not pass this stop	vybrané cesty nevedou kolem této zastávky
+Other trips	Ostatní spoje
+The time profile this departure runs to	Časový profil, podle kterého jede tento odjezd
+Time profile	Časový profil
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Spoj může mít několik profilů (špička, noc…): každý odjezd turnusu říká, podle kterého jede
+The profile's name	Název profilu
+A new profile, a copy of this one	Nový profil, kopie tohoto
+Delete this profile (its departures run to the first)	Smazat tento profil (jeho odjezdy pojedou podle prvního)
+Times from stop to stop	Časy od zastávky k zastávce
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	U každé zastávky lze nastavit čas od předchozí: další časy se posunou a s nimi i čas spoje. Nenastavené časy se řídí vzdáleností mezi pevnými; na pevné zastávce autobus, který jede napřed, čeká.
+From the stop before	Od předchozí zastávky
+After departure	Po odjezdu
+Minutes from the stop before to this one	Minuty od předchozí zastávky k této
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Jako v editoru OMSI 2. Najeďte na volbu a uvidíte, co autobus udělá.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Každý spoj mapy, ať ho ukazuje kterákoli linka nebo jede kterýkoli turnus. Spoj, který nejede žádný turnus, zůstává a lze ho tu upravit, dát turnusu nebo smazat.
+trips	spojů
+driven by no tour	nejede žádný turnus
+no tour	žádný turnus
+departures	odjezdů
+No path there: click a lane of a road (View > AI lanes shows them)	Tady není cesta: klikněte na pruh silnice (Zobrazení > Pruhy AI je ukáže)
+Done picking paths	Hotovo
+Pick the paths on the map	Vybrat cesty na mapě
+Choose the way yourself, path by path, as in OMSI 2's editor	Vyberte trasu sami, cestu po cestě, jako v editoru OMSI 2
+Find the way automatically	Najít trasu automaticky
+Forget the paths picked: the way is found along the roads again	Zapomenout vybrané cesty: trasa se znovu najde podél silnic
+The paths were picked by hand: they are kept when the stops change.	Cesty byly vybrány ručně: při změně zastávek zůstanou.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klikejte na cesty v pohledu. Cesta za koncem nebo před začátkem se přidá i s cestami k ní; cesta vedle trasy nahradí úsek, který objíždí (jiná větev na křižovatce); cesta z trasy se odebere. Trasa smí začínat před první zastávkou a pokračovat za poslední.
+The way breaks after path	Trasa se přerušuje za cestou
+the paths do not join, the bus's GPS loses its way here in the game	cesty na sebe nenavazují, GPS autobusu tu ve hře ztrácí trasu
+Paths of the way	Cesty trasy
+Cut before the first stop	Odříznout před první zastávkou
+Cut after the last stop	Odříznout za poslední zastávkou
+path	cesta

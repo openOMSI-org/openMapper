@@ -2785,3 +2785,109 @@ no track within 15 m	15 m以内に線路がありません
 the tracks are not joined, or run the other way (see View > AI lanes)	線路が接続されていないか、逆向きです（表示 > AI車線を参照）
 no track beside	線路なし：
 Drives on	走行
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	ソース頂点が選択されました。スナップする対象の頂点をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at a vertex of the selected object	選択したオブジェクトの頂点を狙う
+Snapped to vertex! (Ctrl+Z to undo)	頂点にスナップされました! (元に戻すには Ctrl+Z)
+Aim at a target vertex or spline endpoint	ターゲットの頂点またはスプラインの終点を目指します
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	ソースエッジが選択されました。整列する対象のエッジまたは道路をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at an edge of the selected object	選択したオブジェクトの端を狙う
+Aligned edge to edge! (Ctrl+Z to undo)	端から端まで揃っています！ (元に戻すには Ctrl+Z)
+Aim at a target edge or road	ターゲットのエッジまたは道路を狙う
+Target cancelled. Pick a source vertex again	ターゲットはキャンセルされました。ソース頂点を再度選択します
+Vertex snap cancelled	頂点スナップがキャンセルされました
+Target cancelled. Pick a source edge again	ターゲットはキャンセルされました。ソースエッジを再度選択します
+Edge snap cancelled	エッジスナップがキャンセルされました
+Select an object first to snap its vertex	最初にオブジェクトを選択して、その頂点をスナップします
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	頂点スナップ: 選択したオブジェクト上のソース頂点をクリックします(キャンセルするにはEsc)
+Snap vertex to vertex	頂点を頂点にスナップ
+Select an object first to align its edge	まずオブジェクトを選択してエッジを揃えます
+Edge snap: click a source edge on the selected object (Esc to cancel)	エッジ スナップ: 選択したオブジェクトのソース エッジをクリックします (キャンセルするには Esc)
+Snap edge to edge	端から端までスナップ
+Snap vertex to vertex (V)	頂点を頂点にスナップ(V)
+Snap edge to edge (L)	端から端までスナップ (L)
+Snap vertex (V)	頂点スナップ(V)
+Snap a vertex of this object to another vertex (Shortcut: V)	このオブジェクトの頂点を別の頂点にスナップします(ショートカット: V)
+Snap edge (L)	スナップエッジ(L)
+Snap an edge of this object to another edge or road (Shortcut: L)	このオブジェクトのエッジを別のエッジまたは道路にスナップします (ショートカット: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの頂点を別のオブジェクトの頂点にスナップします (V)\nShift: 水平方向のみ、Esc/右クリック: キャンセル
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトのエッジをエッジまたは道路に位置合わせします (L)\n回転して同一線上にスナップします\nShift: 水平のみ、Esc/右クリック: キャンセル
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	ポイント1を配置しました！オブジェクト上の2点目をクリックして回転、またはEscで完了
+Reference angle set. Click a target point or spline to align (Esc: finish)	基準角度を設定しました。位置合わせ先の頂点または道路をクリックしてください（Esc：完了）
+Pick a different vertex on the object	オブジェクトの別の頂点を選択してください
+Click a 2nd reference point on the object, or Esc to finish	オブジェクト上の2点目の基準点をクリック、またはEscで完了
+Aligned angle! (Ctrl+Z to undo)	角度を合わせました！（Ctrl+Z で元に戻す）
+Vertex snap complete	頂点吸着完了
+Align vertex angle	頂点の角度を合わせる
+Complete to	ここまで補完
+Complete to: a new piece between the free ends of the selected splines	ここまで補完：選択したスプラインの空いた端の間に新しい部品
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	最初に選択したスプラインの種類で、選択したスプラインの空いた二つの端の間に新しい部品を作り、両方と位置・向き・高さを合わせます。元の二つは変わりません。もう一度押すと、残る二つの端がつながり、輪が閉じます。
+The two ends already meet	この二つの端はもうつながっています
+Select the splines whose free ends are to be joined	空いた端をつなぐスプラインを選択してください
+No piece of spline can join these two ends	この二つの端をつなげるスプラインの部品がありません
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	このマップの openMapper のコピーをコンテンツフォルダで開きました(OMSI 2 フォルダのものは書き換えません)
+Read in again, changed on disk by another program:	読み直しました。別のプログラムがディスク上で変更:
+Could not bring the changes over	変更を取り込めませんでした
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	この自動保存の後にマップのファイルが変更されています(別のプログラム、例えば OMSI 2 のエディタによる)。復元すると、自動保存の古いタイルがその変更の上に置かれます。
+tile(s)	タイル
+the global settings	全体設定
+the timetable	時刻表
+the traffic	交通
+the descriptions	説明
+Reload from disk	ディスクから再読み込み
+The map changed on disk	マップがディスク上で変更されました
+Another program changed the map's files where it has changes here not saved yet:	ここに未保存の変更がある部分のマップファイルを、別のプログラムが変更しました:
+The other changes made on disk were read in already.	ディスク上のその他の変更は読み込み済みです。
+Keep mine	自分の変更を残す
+The map changed in OMSI 2's folder	OMSI 2 フォルダでマップが変更されました
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	コンテンツフォルダの openMapper のコピーを保存した後に、インストール先のこのマップが変更されました(例えば OMSI 2 のエディタで)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	取り込むと openMapper のコピーのそれらのファイルが置き換わります。置き換えられたファイルはバックアップに残ります(ファイル > 以前のバージョン)。
+Bring the changes over	変更を取り込む
+Keep openMapper's copy	openMapper のコピーを残す
+its way has a gap after path	経路に途切れがあります。この後のパス：
+its way does not pass	経路が通らない停留所：
+On demand	要求時
+Not served (checkpoint)	通過（チェックポイント）
+Wait for departure time	発車時刻まで待つ
+Always + wait for departure time	常に + 発車時刻まで待つ
+The bus stops only when somebody waits or wants to get off (the game's default)	誰かが待っているか降りたい時だけ停車します（ゲームの既定）
+The bus always stops here	ここでは常に停車します
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	停車せずに通過します：停留所は経路を示すだけです（チェックポイント）
+The bus stops only when it is early, and waits there for its departure time	早着した時だけ停車し、発車時刻まで待ちます
+The bus always stops here, and when it is early it waits for its departure time	ここでは常に停車し、早着した時は発車時刻まで待ちます
+All trips	すべての便
+Every trip of the map, those no tour drives too	マップのすべての便（どの行路も走らない便も含む）
+The line number the trip shows; the line of this number lists it among its trips	便が表示する系統番号。この番号の系統は自分の便の中にこの便を表示します
+Way picked by hand:	手動で選んだ経路：
+the paths picked do not pass this stop	選んだパスがこの停留所を通りません
+Other trips	その他の便
+The time profile this departure runs to	この出発が従う時間プロファイル
+Time profile	時間プロファイル
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	便は複数のプロファイル（ラッシュ時、夜間…）を持てます。行路の各出発がどれに従うかを指定します
+The profile's name	プロファイル名
+A new profile, a copy of this one	新しいプロファイル（これのコピー）
+Delete this profile (its departures run to the first)	このプロファイルを削除（その出発は最初のプロファイルに従います）
+Times from stop to stop	停留所間の時間
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	各停留所で前の停留所からの時間を設定できます。以降の時間はずれ、便の所要時間も一緒に変わります。設定していない時間は固定した停留所間の距離に従います。固定した停留所では、早着したバスが待ちます。
+From the stop before	前の停留所から
+After departure	出発後
+Minutes from the stop before to this one	前の停留所からここまでの分
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2のエディタと同じです。選択肢にマウスを重ねると、バスの動きが表示されます。
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	マップのすべての便（どの系統が表示し、どの行路が走るかを問わず）。どの行路も走らない便も残り、ここで編集したり、行路に割り当てたり、削除したりできます。
+trips	便
+driven by no tour	行路なし
+no tour	行路なし
+departures	出発
+No path there: click a lane of a road (View > AI lanes shows them)	ここにパスはありません：道路の車線をクリックしてください（表示 > AI車線 で表示）
+Done picking paths	選択完了
+Pick the paths on the map	マップでパスを選択
+Choose the way yourself, path by path, as in OMSI 2's editor	OMSI 2のエディタと同じく、パスを一つずつ選んで経路を自分で決めます
+Find the way automatically	経路を自動で探す
+Forget the paths picked: the way is found along the roads again	選んだパスを破棄：経路は再び道路に沿って探されます
+The paths were picked by hand: they are kept when the stops change.	パスは手動で選ばれました：停留所が変わってもそのまま残ります。
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	ビューでパスをクリックします。終点の後や始点の前のパスは、そこまでのパスと一緒に追加されます。経路の脇のパスは、それが迂回する区間と置き換わります（交差点の別の分岐）。経路上のパスは外されます。経路は最初の停留所より前から始まり、最後の停留所より後まで続けられます。
+The way breaks after path	経路が途切れています。この後のパス：
+the paths do not join, the bus's GPS loses its way here in the game	パスがつながっていないため、ゲーム内でバスのGPSがここで経路を見失います
+Paths of the way	経路のパス
+Cut before the first stop	最初の停留所より前を切る
+Cut after the last stop	最後の停留所より後を切る
+path	パス

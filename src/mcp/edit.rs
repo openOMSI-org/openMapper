@@ -349,6 +349,7 @@ impl Server {
             "reverse" => e.reverse_selected(),
             "lay_on_ground" => e.lay_selected_on_ground(),
             "even_chain" => e.even_selected_chain(),
+            "complete_to" => e.complete_to(),
             "continue_spline" => said = json!(e.continue_spline()),
             "parallel_copy" => e.parallel_copy(c.f64("distance").ok_or("`distance` is needed (m, + right)")?),
             "level_under_objects" => said = json!(e.level_under_objects(&mut self.assets)),
