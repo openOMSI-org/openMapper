@@ -21,7 +21,7 @@ struct Side {
 impl Side {
     /// One frame of the editor: what was changed here, what came, what goes out.
     fn frame(&mut self) {
-        let ch = self.history.take_changed();
+        let ch = self.history.take_changed(&self.doc);
         if !ch.is_empty() {
             self.notes.extend(self.sync.edited(ch, &mut self.doc, &mut self.history));
         }

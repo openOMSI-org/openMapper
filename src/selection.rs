@@ -828,8 +828,12 @@ pub mod tests {
         let w = SplineWhere::of(&many);
         touch_spline_where(&mut h2, &many, &w, (0, 0), 1);
         h2.commit();
-        let a = h1.take_changed().tiles;
-        let b = h2.take_changed().tiles;
+        // (a step tells only the tiles it did change)
+        for doc in [&mut one, &mut many] {
+            doc.tiles.values_mut().for_each(|t| t.touch_content());
+        }
+        let a = h1.take_changed(&one).tiles;
+        let b = h2.take_changed(&many).tiles;
         assert!(a.contains(&(1, 0)), "the link's tile is kept: {a:?}");
         assert_eq!(a, b);
     }

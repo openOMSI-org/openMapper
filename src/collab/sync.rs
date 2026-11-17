@@ -65,7 +65,7 @@ impl Sync {
         if !self.host && (ch.timetable || ch.traffic || ch.descriptions) {
             // (those are kept by the host alone: a guest's change would never reach it)
             history.undo(doc);
-            let back = history.take_changed();
+            let back = history.take_changed(doc);
             self.mark(&back);
             return Some(Note::HostOnly);
         }

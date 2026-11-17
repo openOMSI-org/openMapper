@@ -159,7 +159,7 @@ impl Collab {
             return;
         }
         ed.history.commit();
-        let _ = ed.history.take_changed();
+        let _ = ed.history.take_changed(doc);
         let ip: std::net::IpAddr = if self.lan { std::net::Ipv4Addr::UNSPECIFIED.into() } else { std::net::Ipv4Addr::LOCALHOST.into() };
         let folder = doc.dir.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
         let map = MapInfo { folder, name: doc.global.friendly_name.clone() };
@@ -332,7 +332,7 @@ impl Collab {
         // the tool still holds its starting state), and so does sending this editor's.
         let open = ed.history.is_open();
         if !open && gone.is_none() {
-            let changed = ed.history.take_changed();
+            let changed = ed.history.take_changed(doc);
             if !changed.is_empty() {
                 notes.extend(l.sync.edited(changed, doc, &mut ed.history));
             }
