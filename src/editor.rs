@@ -8755,6 +8755,7 @@ impl Editor {
     /// Put the free object `id` onto the road nearest it (`which` is None), or onto the spline
     /// that was clicked, as a `[splineAttachement]` record: from then on it stands on that road
     /// and follows it, keeping its IDCode. `Err` says why not.
+    #[cfg(test)]
     pub fn attach_object_onto(&mut self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
         self.attach_objects_onto(lib, &[(k, id)], which)
     }
@@ -13168,7 +13169,7 @@ mod tests {
             let mut truth = f64::MAX;
             let mut named = f64::INFINITY;
             let aim = dir.as_vec3();
-            let mut dist = |assets: &mut Assets, mat: &glam::Mat4, m: &crate::assets::ObjectModel| -> Option<f64> {
+            let dist = |assets: &mut Assets, mat: &glam::Mat4, m: &crate::assets::ObjectModel| -> Option<f64> {
                 if let Some((dirs, tex, h, r)) = m.tree.clone() {
                     let mask = assets.tree_mask(&dirs, &tex);
                     let cards = ray_tree(glam::Vec3::ZERO, aim, mat, h, r, mask.as_deref());
@@ -13740,7 +13741,6 @@ mod tests {
             // its place with a hedge for part of its length is still clickable elsewhere)
             for frac in [0.5f64, 0.25, 0.75] {
                 let p = c.point_at(len * frac);
-                let g = ed.doc.as_ref().unwrap().ground(p.truncate());
                 for (ai, (el, az, _)) in angles.iter().enumerate() {
                     let from = p + off_of(*el, *az) * 4.0;
                     let dir = (p - from).normalize();

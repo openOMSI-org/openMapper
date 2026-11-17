@@ -1878,6 +1878,7 @@ impl CrossingPaths {
     }
 
     /// The path picked here (the map draws it picked too, when the paths are shown there).
+    #[cfg(test)]
     pub fn picked(&self) -> Option<usize> {
         self.selected
     }
@@ -2262,6 +2263,7 @@ impl CrossingPaths {
     }
 
     /// Which way round joins are made here.
+    #[cfg(test)]
     pub fn side(&self) -> Side {
         self.side
     }
