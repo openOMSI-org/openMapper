@@ -340,6 +340,10 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
     if g.left_hand_traffic {
         kw(&mut s, "LHT", &[]);
     }
+    // (openOMSI's: the modes the map is built for, `[tram_transport]` and the like)
+    for m in g.transport.iter() {
+        kw(&mut s, m.keyword(), &[]);
+    }
     if g.background_image.len() == 5 {
         // (OMSI's editor reads six lines here, openOMSI's reader keeps five: without the sixth
         // the original editor takes the next keyword for it and cannot open the map)
@@ -617,6 +621,11 @@ pub(crate) fn attachment_at(s: &mut String, a: &SplineAttachment, spline_index: 
     );
     labels(s, a.strings.len() as i32, &a.strings);
     s.push('\n');
+    // (the editor's flag on the record itself, right after it: Omsi.exe gives it to the
+    // record before)
+    if a.terrain_align {
+        s.push_str("[spline_terrain_align]\n\n");
+    }
     var_parent(s, a.var_parent);
     rules(s, &a.rules);
 }
@@ -657,8 +666,11 @@ mod tests {
             extra: vec!["Hauptstr.".into(), "".into()],
             ..Default::default()
         });
+        // (a row the editor flagged, with the flag on the record and not on the road before)
+        t.spline_attachments.push(SplineAttachment { file: "Sceneryobjects\\lamp.sco".into(), id: 10, interval: 30.0, range: 60.0, terrain_align: true, ..Default::default() });
         let text = tile_text(&t);
         let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
+        assert!(back.spline_attachments[0].terrain_align && !back.splines[0].terrain_align_flag);
         assert_eq!(back.splines.len(), 1);
         let s = &back.splines[0];
         assert_eq!((s.id, s.next_id, s.pos, s.heading, s.radius, s.mirror), (7, 8, [10.5, 20.25, 3.0], 45.0, -120.0, true));

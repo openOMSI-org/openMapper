@@ -1022,6 +1022,9 @@ pub fn unfit_from_world_grid(t: &mut Tile, ty: i32) {
         s.pos[1] /= ky;
         s.length /= k;
         s.radius /= k;
+        if let Some(o) = s.map_chain_offset.as_mut() {
+            *o /= k;
+        }
     }
     for a in t.spline_attachments.iter_mut() {
         a.offset[2] /= k;

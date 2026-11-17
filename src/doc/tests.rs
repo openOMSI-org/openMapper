@@ -23,6 +23,8 @@ pub(crate) fn sample_map(roots: &Roots) -> Document {
     global.friendly_name = "Round trip: Тест".into();
     global.description = "two lines\nof text".into();
     global.next_id_code = 100;
+    // (openOMSI's transport modes: a tram map)
+    global.transport.declare_keyword("tram_transport");
     global.ground_textures = vec![
         GroundTex { texture: "Texture\\gras.bmp".into(), detail_texture: "Texture\\gras_det.bmp".into(), params: [0.0, 1.0, 60.0] },
         GroundTex { texture: "Texture\\sand.bmp".into(), detail_texture: "Texture\\noise_low.bmp".into(), params: [8.0, 16.0, 4.0] },
@@ -86,6 +88,7 @@ fn a_map_saved_reads_back_the_same() {
     assert_eq!(back.global.friendly_name, doc.global.friendly_name);
     assert_eq!(back.global.description.trim(), doc.global.description);
     assert_eq!(back.global.next_id_code, 100);
+    assert_eq!(back.global.transport, doc.global.transport);
     assert_eq!(back.global.ground_textures.len(), 2);
     assert_eq!(back.tiles.keys().collect::<Vec<_>>(), doc.tiles.keys().collect::<Vec<_>>());
     assert_eq!(back.order, doc.order);
