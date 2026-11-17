@@ -432,6 +432,90 @@ impl Server {
                 e.history.commit();
                 said = json!(crate::transport::summary(&doc.global));
             }
+            "trolley_wire" | "trolley_from_splines" => {
+                // (the wire over the selected roads' kerb lanes, or read off the map's wire splines)
+                let lay = crate::trolley::Lay {
+                    height: c.f64("height").unwrap_or(5.6),
+                    ways: match c.str("ways").unwrap_or("both") { "with" => 1, "against" => 2, _ => 0 },
+                    section: c.i64("section").unwrap_or(1) as i32,
+                    left_hand: e.doc.as_ref().map(|d| d.global.left_hand_traffic).unwrap_or(false),
+                };
+                let sel = e.selection();
+                let from_splines = name == "trolley_from_splines";
+                // (with `lanes`: over those street lanes of the selected objects, junctions)
+                let chosen: Option<Vec<usize>> = c.get("lanes").and_then(|v| v.as_array()).map(|a| a.iter().filter_map(|x| x.as_u64().map(|n| n as usize)).collect());
+                if let Some(d) = self.ed.doc.as_ref() {
+                    for s in &sel {
+                        let f = match *s {
+                            Sel::Spline(k, id) => d.spline(k, id).map(|x| (x.file.clone(), true)),
+                            Sel::Object(k, id) => d.object(k, id).map(|x| (x.file.clone(), false)),
+                            Sel::Attached(..) => None,
+                        };
+                        match f {
+                            Some((f, true)) => drop(self.assets.spline_wait(&f, 3000)),
+                            Some((f, false)) => drop(self.assets.object_wait(&f, 3000)),
+                            None => {}
+                        }
+                    }
+                }
+                let assets = &mut self.assets;
+                let mut lanes_of = Vec::new();
+                let n = crate::trolley::edit(&mut self.ed, |w, doc| {
+                    let new = if from_splines {
+                        crate::trolley::from_wire_splines(doc, assets, lay.section)
+                    } else if let Some(ch) = &chosen {
+                        let mut v = Vec::new();
+                        for s in sel.iter().filter(|s| matches!(s, Sel::Object(..))) {
+                            let lanes = crate::trolley::object_lanes(doc, assets, *s);
+                            lanes_of.extend(lanes.iter().map(|(i, p)| json!({ "lane": i, "from": [p[0].x, p[0].y], "to": [p[p.len() - 1].x, p[p.len() - 1].y] })));
+                            v.extend(crate::trolley::over_lanes(&lanes, ch, lay));
+                        }
+                        v
+                    } else {
+                        crate::trolley::over_roads(doc, assets, &sel, lay)
+                    };
+                    crate::trolley::add_spans(w, new)
+                }).ok_or("no map")?;
+                let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
+                said = json!({ "spans_laid": n, "spans": w.spans.len(), "switches": w.switches.len(), "lanes_of_selected": lanes_of, "problems": crate::trolley::problems(w).into_iter().map(|(p, t)| json!({ "at": [p.x, p.y], "problem": t })).collect::<Vec<_>>() });
+            }
+            "trolley_switch" => {
+                // (the switch of the frog nearest a point set as given)
+                let at = self.point(c.get("at").ok_or("`at` is needed")?)?;
+                let mode = match c.str("mode") {
+                    Some(m) => Some(crate::trolley::Mode::ALL.into_iter().find(|x| format!("{x:?}").eq_ignore_ascii_case(m)).ok_or("`mode` is power, indicator, radio or fixed")?),
+                    None => None,
+                };
+                let initial = match c.str("initial") {
+                    Some(m) => Some(crate::trolley::Initial::ALL.into_iter().find(|x| format!("{x:?}").eq_ignore_ascii_case(m)).ok_or("`initial` is straight, branch or random")?),
+                    None => None,
+                };
+                let r = crate::trolley::edit(&mut self.ed, |w, _| -> Result<usize, String> {
+                    let i = (0..w.switches.len()).filter(|i| w.switches[*i].pos.truncate().distance(at) < 10.0).min_by(|a, b| w.switches[*a].pos.truncate().distance(at).total_cmp(&w.switches[*b].pos.truncate().distance(at))).ok_or("no switch within 10 m (a switch is where three spans meet)")?;
+                    let sw = &mut w.switches[i];
+                    if let Some(m) = mode {
+                        sw.mode = m;
+                    }
+                    if let Some(m) = initial {
+                        sw.initial = m;
+                    }
+                    if let Some(n) = c.str("name") {
+                        sw.name = n.to_string();
+                    }
+                    if let Some(ch) = c.i64("channel") {
+                        sw.channel = (ch >= 0).then_some(ch as u32);
+                    }
+                    if let Some(r) = c.f64("range") {
+                        sw.range = r.clamp(1.0, 1000.0);
+                    }
+                    if let Some(routes) = c.get("routes").and_then(|v| v.as_array()) {
+                        sw.routes = routes.iter().filter_map(|r| Some((r.get(0)?.as_u64()? as u32, r.get(1)?.as_str()?.to_lowercase()))).filter(|r| crate::trolley::WAYS.contains(&r.1.as_str())).collect();
+                    }
+                    Ok(i)
+                }).ok_or("no map")?;
+                // (an error comes before any change: the wire is as it was, no step kept)
+                said = json!({ "switch": r? });
+            }
             "group" => e.group_selection(),
             "ungroup" => e.ungroup_selection(),
             "remake_junctions" => said = json!(e.remake_all_junctions()),

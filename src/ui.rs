@@ -153,6 +153,8 @@ pub enum Action {
     Calendar,
     /// The signal routes window (railway signals and the track they protect).
     SignalRoutes,
+    /// The trolleybus wire window (openOMSI's `trolley.txt`).
+    Trolley,
     /// The chrono scenarios window (the map over the years).
     Chrono,
     /// The Lines window opened.
@@ -1160,6 +1162,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 }
                 if menu_item(ui, Some(Icon::Traffic), tr("Signal routes…", "Маршруты сигналов…"), "", true) {
                     actions.push(Action::SignalRoutes);
+                }
+                if menu_item(ui, Some(Icon::Bus), tr("Trolleybus wire…", "Контактная сеть троллейбуса…"), "", true) {
+                    actions.push(Action::Trolley);
                 }
                 if menu_item(ui, Some(Icon::History), tr("Chrono scenarios…", "Хроно-сценарии…"), "", true) {
                     actions.push(Action::Chrono);

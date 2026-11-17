@@ -98,6 +98,7 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
         cmd!(Icon::Code, "Scripts…", "Скрипты…", "lua osc script code plugin скрипт код плагин программа", "", |_, _, a| a.push(Action::Scripts)),
         cmd!(Icon::Schedule, "Calendar and place…", "Календарь и место…", "holidays time zone summer number plates праздники часовой пояс номера", "", |_, _, a| a.push(Action::Calendar)),
+        cmd!(Icon::Bus, "Trolleybus wire…", "Контактная сеть троллейбуса…", "trolley overhead catenary frog switch insulator section substation trolley.txt троллейбус провод контактная сеть стрелка изолятор секция подстанция", "", |_, _, a| a.push(Action::Trolley)),
         cmd!(Icon::Traffic, "Signal routes…", "Маршруты сигналов…", "railway signal железная дорога светофор", "", |_, _, a| a.push(Action::SignalRoutes)),
         cmd!(Icon::History, "Chrono scenarios…", "Хроно-сценарии…", "years history годы", "", |_, _, a| a.push(Action::Chrono)),
         cmd!(Icon::CheckCircle, "Check map…", "Проверить карту…", "errors problems validate ошибки проблемы", "", |st, _, _| {

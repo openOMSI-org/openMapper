@@ -186,6 +186,18 @@ The complete list. A short overview is in the [README](../README.md).
   place among its tile's paths is counted again on saving, as the game counts it (all 649
   pieces of the stock maps come out the same). The map check names routes whose signal or
   track is gone.
+* **Trolleybus wire** (Map menu), openOMSI's overhead wire for its trolleybuses (`trolley.txt`
+  beside the map; OMSI 2 has none and ignores it): spans laid over the kerb lane of the
+  selected roads (each way, or one way) at a height, over the ticked lanes of a selected
+  junction (shown in the view as they are ticked), or read off the map's wire splines as the
+  game reads them; drawn in the view while the window is open (the pair of wires in its
+  section's colour, an arrow the way it runs, frogs yellow, insulators black and white), a span
+  or a switch picked there with a click. Sections with their substation (live, feeder,
+  regeneration), an insulator's dead length where two meet; each span's section, own spacing,
+  height and way; every frog (three spans meeting) gets a switch: set by power, the indicator,
+  radio (route codes, a channel, a range) or fixed, and standing straight, to the branch or
+  at random when the game starts. Joints the game cannot use (four spans in one point) and
+  switches left without a frog are named. Undo as for the rest; saved with the map.
 * **Chrono scenarios** (Map menu): the map's changes over the years listed with their dates,
   tiles, the lines they take off and their descriptions; the view shows the map as on any day
   chosen, every scenario active then laid over it as the game does. A scenario's dates, the

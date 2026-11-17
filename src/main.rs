@@ -88,6 +88,8 @@ mod ed_author;
 mod ed_ground;
 mod ed_walk;
 mod transport;
+mod trolley;
+mod ui_trolley;
 mod switches;
 mod texts;
 mod timetable;

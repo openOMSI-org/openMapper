@@ -490,6 +490,8 @@ pub struct Editor {
     heading_drag: Option<HeadingDrag>,
     /// GPS tracks shown to trace over (world metres; Map > GPS tracks to trace).
     pub trace_lines: Vec<Vec<DVec2>>,
+    /// The trolleybus wire in the view, and clicks picking in it (the Trolleybus wire window).
+    pub wire: crate::trolley::WireView,
     /// The camera asked to go over this point (a window's "go there").
     pub look_request: Option<DVec2>,
     /// The ground under the selected objects is to be levelled at the next tick.
@@ -804,6 +806,7 @@ impl Default for Editor {
             heading_shown: None,
             heading_drag: None,
             trace_lines: Vec::new(),
+            wire: Default::default(),
             look_request: None,
             level_request: false,
             last_click: None,
@@ -2512,6 +2515,11 @@ impl Editor {
                 Some(_) => self.error(tr("Too near the road's end to cut it there", "Слишком близко к концу дороги, чтобы разрезать её здесь")),
                 None => self.toast(tr("No road under the cursor", "Под курсором нет дороги")),
             }
+            return;
+        }
+        // (the Trolleybus wire window picks a span or a switch with a click)
+        if self.wire.picking {
+            self.wire.click = self.cursor;
             return;
         }
         // the ruler takes the clicks while it is on: from one point to the next
@@ -6244,6 +6252,9 @@ impl Editor {
                 line(&mut x.overlay, cam, a + o + lift, c + o + lift, w * 0.5, [1.0, 1.0, 1.0, 0.6]);
             }
             disc(&mut x.overlay, cam, a + lift, dw * 3.0, ORANGE);
+        }
+        if let (true, Some(wire)) = (self.wire.show, doc.traffic.trolley.as_ref()) {
+            crate::trolley::draw(&mut x, cam, wire, &self.wire, w, dw);
         }
         // GPS tracks to trace, in magenta on the ground
         for t in &self.trace_lines {

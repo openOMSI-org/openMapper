@@ -29,6 +29,8 @@ pub enum File {
     SignalRoutes,
     /// The map's depot files (`*.hof`), all of them.
     Depots,
+    /// The trolleybus wire (`trolley.txt`, openOMSI's).
+    Trolley,
 }
 
 impl File {
@@ -44,6 +46,7 @@ impl File {
             File::Registrations => "registrations.txt",
             File::SignalRoutes => "signalroutes.cfg",
             File::Depots => "*.hof",
+            File::Trolley => "trolley.txt",
         }
     }
 }
@@ -69,6 +72,8 @@ pub struct Traffic {
     /// The depot files in the map's folder (`*.hof`): its destinations, stop names and
     /// IBIS routes.
     pub depots: Vec<crate::hof::Hof>,
+    /// The trolleybus wire openOMSI reads (`trolley.txt`); None: the map has none.
+    pub trolley: Option<crate::trolley::Wire>,
     /// Which of those three the map has (only they are written again on an undo).
     pub has: [bool; 3],
     /// The map has `unsched_vehgroups.txt`: without it the first group drives about.
@@ -120,6 +125,7 @@ impl Traffic {
             t.has[1] = true;
         }
         t.depots = crate::hof::load_dir(dir);
+        t.trolley = std::fs::read(omsi_cfg::resolve_path(dir, "trolley.txt")).ok().map(|b| crate::trolley::parse(&omsi_cfg::decode_text(&b)));
         t
     }
 
@@ -156,6 +162,7 @@ impl Traffic {
             }
         }
         self.changed.insert(File::Depots);
+        self.changed.insert(File::Trolley);
         self.mark();
     }
 
@@ -376,9 +383,18 @@ pub fn plan(t: &Traffic, map_dir: &Path) -> Vec<Op> {
     if t.changed.contains(&File::Depots) {
         ops.extend(depot_ops(&t.depots, map_dir));
     }
+    if t.changed.contains(&File::Trolley) {
+        let p = crate::doc::safe::own_path(map_dir, File::Trolley.name());
+        match &t.trolley {
+            Some(w) => ops.push(Op::Write(p, crate::trolley::text(w).into_bytes())),
+            // (the wire taken away: the game reads the map's wire splines again)
+            None if p.exists() => ops.push(Op::Remove(p)),
+            None => {}
+        }
+    }
     ops.extend(t.changed
         .iter()
-        .filter(|f| **f != File::Depots)
+        .filter(|f| !matches!(f, File::Depots | File::Trolley))
         .map(|f| {
             let text = match f {
                 File::AiLists => ailists_text(&t.groups),
@@ -390,7 +406,7 @@ pub fn plan(t: &Traffic, map_dir: &Path) -> Vec<Op> {
                 File::TimeZone => timezone_text(&t.timezone),
                 File::Registrations => list_text(&t.registrations),
                 File::SignalRoutes => crate::signals::text(&t.signal_routes),
-                File::Depots => unreachable!(),
+                File::Depots | File::Trolley => unreachable!(),
             };
             Op::Write(crate::doc::safe::own_path(map_dir, f.name()), encode(&text))
         }));

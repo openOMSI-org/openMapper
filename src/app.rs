@@ -146,6 +146,7 @@ pub struct App {
     map_settings: crate::ui_mapsettings::MapSettings,
     calendar: crate::ui_calendar::CalendarWindow,
     signals: crate::ui_signals::SignalWindow,
+    trolley: crate::ui_trolley::TrolleyWindow,
     chrono: crate::ui_chrono::ChronoWindow,
     /// The Satellite and terrain window and the overlay on the ground.
     geo: crate::ui_geo::GeoUi,
@@ -270,6 +271,7 @@ impl App {
             map_settings: Default::default(),
             calendar: Default::default(),
             signals: Default::default(),
+            trolley: Default::default(),
             chrono: Default::default(),
             geo: Default::default(),
             osm: Default::default(),
@@ -677,6 +679,7 @@ impl App {
         match std::env::var("OPENMAPPER_SETTINGS").as_deref() {
             Ok("calendar") => self.calendar.open = true,
             Ok("signals") => self.signals.open = true,
+            Ok("trolley") => self.trolley.open = true,
             Ok("chrono") => self.chrono.open = true,
             Ok(_) => self.map_settings.open = true,
             Err(_) => {}
@@ -2033,6 +2036,7 @@ impl App {
             Action::MapSettings => self.map_settings.open = true,
             Action::Calendar => self.calendar.open = true,
             Action::SignalRoutes => self.signals.open = true,
+            Action::Trolley => self.trolley.open = true,
             Action::Chrono => self.chrono.open = true,
             Action::OpenLines => self.tt.open = true,
             Action::OpenTraffic => self.traffic.open = true,
@@ -3069,6 +3073,7 @@ impl App {
                 self.calendar.window(&ctx, &mut self.ed);
                 self.chrono.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.signals.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
+                self.trolley.window(&ctx, &mut self.ed, self.assets.as_mut(), &mut actions);
                 self.geo.window(&ctx, &mut self.ed, &mut self.prefs);
                 self.ui.views.follow(self.ed.doc.as_ref().map(|d| d.dir.as_path()));
                 self.ui.views.window(&ctx, &mut self.cam);
