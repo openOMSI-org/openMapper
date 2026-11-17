@@ -4207,8 +4207,7 @@ impl CrossingPaths {
                     }
                     self.seen = crossing;
                     crate::hot::own_change();
-                    let key = self.rel.to_lowercase();
-                    assets.objects.remove(&key);
+                    assets.forget_object_model(&self.rel);
                     let _ = assets.object(&self.rel);
                     // (the GPU model too, and only that one: the catalogue is not read again)
                     actions.push(crate::ui::Action::CrossingSaved(self.rel.clone()));
@@ -4255,7 +4254,7 @@ impl CrossingPaths {
         }
         self.seen = crossing;
         crate::hot::own_change();
-        assets.objects.remove(&rel.to_lowercase());
+        assets.forget_object_model(&rel);
         let _ = assets.object(&rel);
         if fresh || !on_ours {
             ed.set_object_file(k, id, &rel);

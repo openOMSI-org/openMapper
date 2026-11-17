@@ -495,12 +495,18 @@ impl Assets {
         matches!(self.objects.get(&norm_asset_key(rel)).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed))
     }
 
-    /// Forget one object's model, and the pictures in its folder, so they are read again
-    /// (its files were written anew).
-    pub fn forget_object(&mut self, rel: &str, dir: &Path) {
+    /// Forget one object's model, so it is read again (its file was written anew), under
+    /// whichever spelling of its name it was asked for.
+    pub fn forget_object_model(&mut self, rel: &str) {
         self.objects.remove(&norm_asset_key(rel));
         self.objects.remove(&rel.to_lowercase());
         self.objects.remove(rel);
+    }
+
+    /// Forget one object's model, and the pictures in its folder, so they are read again
+    /// (its files were written anew).
+    pub fn forget_object(&mut self, rel: &str, dir: &Path) {
+        self.forget_object_model(rel);
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
     }
 
@@ -958,6 +964,35 @@ mod tests {
         assert_eq!(lamps, [crate::editable::Lamp::Red, crate::editable::Lamp::Yellow, crate::editable::Lamp::Green]);
         assert_eq!(m.parts.iter().filter(|p| p.visible.is_none()).count(), 1, "the body is not switched");
         assert!(m.light_head, "it takes its state from a crossing");
+    }
+
+    /// A crossing saved in place is read again: its model was kept under its name with the
+    /// slashes turned, and the save forgot it under the name as written, so the map went on
+    /// showing the old paths and lights until a restart.
+    #[test]
+    fn an_object_written_anew_is_read_again() {
+        let dir = std::env::temp_dir().join(format!("om-reread-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(dir.join("Sceneryobjects/X"));
+        let rel = "Sceneryobjects\\X\\Crossing.sco";
+        let write = |cycle: u32| std::fs::write(dir.join("Sceneryobjects/X/Crossing.sco"), format!("[traffic_lights_group]\n{cycle}\n\n[traffic_light]\nMain\n")).unwrap();
+        let mut assets = Assets::new(dir.clone(), dir.clone());
+        let load = |assets: &mut Assets| {
+            let t = std::time::Instant::now();
+            loop {
+                if let Some(m) = assets.object(rel) {
+                    return m.cycle;
+                }
+                assert!(!assets.object_failed(rel) && t.elapsed().as_secs() < 20, "the crossing does not read");
+                assets.poll();
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+        };
+        write(30);
+        assert_eq!(load(&mut assets), Some(30.0));
+        write(45);
+        assets.forget_object_model(rel);
+        assert_eq!(load(&mut assets), Some(45.0), "the file as it is now");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A crossing's program: not only the lights' names but their phases and the cycle, which
