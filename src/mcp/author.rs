@@ -95,8 +95,26 @@ impl Server {
             back: a.f64("cut_back"),
             backs: a.get("cut_back").and_then(|v| v.as_array()).map(|v| v.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect()),
         };
-        let made = self.ed.plate_from_ends_with(&mut self.assets, &ends, &ask)?;
-        Ok(json!({ "made": made }))
+        // (one undo step, as the Streets build that lays plates the same way makes: what the
+        // plate trims, links and reshapes may reach any tile its roads cross)
+        let doc = self.ed.doc.as_ref().ok_or("no map")?;
+        self.ed.history.begin("Plate");
+        for k in doc.tiles.keys() {
+            self.ed.history.touch_tile(doc, *k);
+        }
+        self.ed.history.touch_global(doc);
+        match self.ed.plate_from_ends_with(&mut self.assets, &ends, &ask) {
+            Ok(made) => {
+                self.ed.history.commit();
+                Ok(json!({ "made": made }))
+            }
+            Err(e) => {
+                if let Some(doc) = self.ed.doc.as_mut() {
+                    self.ed.history.rollback(doc);
+                }
+                Err(e)
+            }
+        }
     }
 
     /// `lay_spline`: a chain of one spline type through points, tangent-continuous everywhere,
