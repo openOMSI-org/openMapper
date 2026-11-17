@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use omsi_cfg::CfgFile;
-use omsi_map::ailists::{AiTypGroup, AiVehicleEntry, UnschedGroup};
+use omsi_map::ailists::{AiTypGroup, UnschedGroup};
 use omsi_map::{AiGroup, DepotEntry};
 
 use crate::doc::safe::Op;
@@ -89,7 +89,9 @@ impl Traffic {
         let mut t = Traffic::default();
         if let Some(f) = read("ailists.cfg") {
             t.legacy = is_legacy(&f);
-            t.groups = if t.legacy { parse_legacy(&f) } else { omsi_map::AiLists::parse(&f).groups };
+            // (openOMSI's reader takes the first format as Omsi.exe does: a group named
+            // again starts over, OMSI 1's depots and their type groups too)
+            t.groups = omsi_map::AiLists::parse(&f).groups;
         }
         if let Some(f) = read("unsched_vehgroups.txt") {
             t.veh_groups = omsi_map::ailists::parse_unsched_vehgroups(&f);
@@ -236,49 +238,6 @@ fn is_legacy(f: &CfgFile) -> bool {
         let l = l.trim().to_ascii_lowercase();
         l == "[ailist]" || l == "[aigroup]"
     })
-}
-
-/// The first format as groups of the second: each `[aigroup]` (name, count, the vehicles'
-/// numbers in `[ailist]`, its depot) with weight 1 per vehicle; with no default group
-/// (-1) the vehicles in no group make "NotInGroup", as OMSI does.
-fn parse_legacy(f: &CfgFile) -> Vec<AiGroup> {
-    let mut r = f.reader().with_rule(omsi_cfg::KeywordRule::AnyCase);
-    let mut list: Vec<String> = Vec::new();
-    let mut default = -1;
-    let mut groups: Vec<AiGroup> = Vec::new();
-    let mut used = BTreeSet::new();
-    while let Some(k) = r.next_keyword() {
-        match k.as_str() {
-            "ailist" => {
-                let _ = r.str();
-                default = r.str().trim().parse::<i32>().unwrap_or(-1);
-                let n = r.str().trim().parse::<usize>().unwrap_or(0).min(10_000);
-                list = (0..n).map(|_| r.str().trim().to_string()).collect();
-            }
-            "aigroup" => {
-                let name = r.str().trim().to_string();
-                let n = r.str().trim().parse::<usize>().unwrap_or(0).min(10_000);
-                let idx: Vec<usize> = (0..n).filter_map(|_| r.str().trim().parse::<usize>().ok()).collect();
-                let hof = r.str().trim().to_string();
-                let vehicles = idx
-                    .iter()
-                    .filter_map(|&i| {
-                        used.insert(i);
-                        list.get(i).map(|f| AiVehicleEntry { file: f.clone(), weight: 1.0, ..Default::default() })
-                    })
-                    .collect();
-                groups.push(AiGroup { name, vehicles, hof: (!hof.is_empty()).then_some(hof), ..Default::default() });
-            }
-            _ => {}
-        }
-    }
-    if default < 0 {
-        let rest: Vec<AiVehicleEntry> = list.iter().enumerate().filter(|(i, f)| !used.contains(i) && !f.is_empty()).map(|(_, f)| AiVehicleEntry { file: f.clone(), weight: 1.0, ..Default::default() }).collect();
-        if !rest.is_empty() {
-            groups.push(AiGroup { name: "NotInGroup".into(), vehicles: rest, ..Default::default() });
-        }
-    }
-    groups
 }
 
 /// A number the way the files have them (whole ones without a point).
