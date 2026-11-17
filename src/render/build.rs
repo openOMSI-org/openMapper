@@ -70,8 +70,9 @@ pub struct CutInput {
     /// The splines that cut: mesh (relative to its tile's corner), that corner, carries
     /// traffic, outlines, rims.
     pub splines: Vec<(Arc<MeshData>, DVec2, bool, Vec<Vec<DVec2>>, Vec<Vec<DVec3>>)>,
-    /// Surface objects and `[terrainhole]` cutters with where they stand.
-    pub objects: Vec<(Arc<ObjectModel>, Pose)>,
+    /// Surface objects and `[terrainhole]` cutters with where they stand, and which of its
+    /// cutters lie buried (see [`hole_is_buried`]).
+    pub objects: Vec<(Arc<ObjectModel>, Pose, Vec<bool>)>,
     pub terrain: Option<omsi_map::Terrain>,
 }
 
@@ -97,8 +98,8 @@ pub fn make_cut(c: &CutInput) -> CutDone {
         }
         rims.extend(srims.iter().map(|r| r.iter().map(|v| *v - corner).collect()));
     }
-    for (model, pose) in &c.objects {
-        for hm in &model.holes {
+    for (model, pose, buried) in &c.objects {
+        for (hm, _) in model.holes.iter().zip(buried).filter(|(_, b)| !**b) {
             surf.rasterize_hole(hm, &pose.rot, pose.pos, key.0, key.1);
             for rim in omsi_geometry::hole_mesh_rims(hm, &pose.rot, pose.pos) {
                 let ring: Vec<DVec2> = rim.iter().map(|v| v.truncate()).collect();
@@ -116,10 +117,45 @@ pub fn make_cut(c: &CutInput) -> CutDone {
             any |= omsi_geometry::road_cut();
         }
     }
-    let walls = c.terrain.as_ref().map(|t| omsi_geometry::terrain_hole_walls(&rims, t)).filter(|m| !m.indices.is_empty());
+    // (the walls stay open where a road goes on across a hole's rim, as in openOMSI: a
+    // tunnel's cutter ending at road height under a hill put a curtain of grass across the
+    // carriageway. What the wheels stand on tells where the roads are)
+    if !rims.is_empty() {
+        for (m, org, ..) in &c.splines {
+            surf.add_spline_drive(m, None, DVec3::new(org.x, org.y, 0.0), key.0, key.1);
+        }
+        for (model, pose, _) in c.objects.iter().filter(|o| o.0.surface) {
+            for p in &model.parts {
+                surf.add_drive_mesh(&p.mesh, &pose.rot, pose.pos, key.0, key.1);
+            }
+        }
+    }
+    surf.finish();
+    let walls = c.terrain.as_ref().map(|t| omsi_geometry::terrain_hole_walls_with_roads(&rims, t, &surf.drive)).filter(|m| !m.indices.is_empty());
     let terrain_at = |x: f32, y: f32| c.terrain.as_ref().map(|t| t.sample(x, y)).unwrap_or(0.0);
     let rgba = if any && surf.cuts_anything(&terrain_at, super::FLUSH) { surf.mask_image(&terrain_at, super::FLUSH) } else { vec![255u8; super::CUT * super::CUT * 4] };
     CutDone { rgba, walls }
+}
+
+/// How far (m) under the lowest ground of its footprint the top of a `[terrainhole]` cutter
+/// must lie for it to cut nothing: far more than a tunnel's or an underpass's roof.
+const BURIED_HOLE: f64 = 10.0;
+
+/// Whether a `[terrainhole]` cutter lies wholly that far under the ground (openOMSI's
+/// `hole_is_buried`): a junction a mapper left at height zero under a hill cut a pit thirty
+/// metres deep (Berlin-Spandau). Where the ground is not known it is not buried.
+pub fn hole_is_buried(hole: &MeshData, pose: &Pose, ground_at: impl Fn(f64, f64) -> Option<f64>) -> bool {
+    if hole.positions.is_empty() {
+        return false;
+    }
+    let (mut top, mut ground) = (f64::NEG_INFINITY, f64::INFINITY);
+    for v in &hole.positions {
+        let w = pose.rot.transform_point3(*v).as_dvec3() + pose.pos;
+        let Some(g) = ground_at(w.x, w.y) else { return false };
+        top = top.max(w.z);
+        ground = ground.min(g);
+    }
+    top + BURIED_HOLE < ground
 }
 
 enum Done {
@@ -244,5 +280,27 @@ impl Builder {
     /// Not wanted any more (built at once, or gone).
     pub fn forget(&mut self, key: &Key) {
         self.pending.remove(key);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn square(z: f32) -> MeshData {
+        MeshData { positions: vec![Vec3::new(-5.0, -5.0, z), Vec3::new(5.0, -5.0, z), Vec3::new(5.0, 5.0, z), Vec3::new(-5.0, 5.0, z)], ..Default::default() }
+    }
+
+    #[test]
+    fn a_cutter_thirty_metres_down_is_buried_and_a_shallow_one_is_not() {
+        let ground = |_: f64, _: f64| Some(30.0);
+        let at = |z: f64| Pose { pos: DVec3::new(100.0, 100.0, z), rot: glam::Mat4::IDENTITY };
+        assert!(hole_is_buried(&square(0.0), &at(0.0), ground));
+        // (an underpass or a tunnel a few metres down still cuts, and one reaching the ground)
+        assert!(!hole_is_buried(&square(0.0), &at(25.0), ground));
+        let mut slope = square(0.0);
+        slope.positions[0].z = 30.0;
+        assert!(!hole_is_buried(&slope, &at(0.0), ground));
+        assert!(!hole_is_buried(&square(0.0), &at(-50.0), |_, _| None));
     }
 }

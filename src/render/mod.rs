@@ -2092,7 +2092,9 @@ impl Renderer {
                         if outside([pose.pos.x - r, pose.pos.y - r, pose.pos.x + r, pose.pos.y + r]) {
                             continue;
                         }
-                        input.objects.push((model, pose));
+                        let ground = |x: f64, y: f64| doc.height_at(DVec2::new(x, y)).map(f64::from);
+                        let buried = model.holes.iter().map(|h| build::hole_is_buried(h, &pose, ground)).collect();
+                        input.objects.push((model, pose, buried));
                     }
                 }
             }
