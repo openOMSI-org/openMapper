@@ -198,6 +198,21 @@ impl Library {
         self.index = self.assets.iter().enumerate().map(|(i, a)| (a.rel.to_lowercase(), i)).collect();
     }
 
+    /// A file written while the editor runs (a road type of one's own, a made object) taken into
+    /// the catalogue at once, replacing what it said of that file before.
+    pub fn add_file(&mut self, root: &Path, path: &Path, kind: Kind) -> bool {
+        let Some(a) = describe(root, path, kind, true) else { return false };
+        let key = a.rel.to_lowercase();
+        match self.index.get(&key) {
+            Some(&i) => self.assets[i] = a,
+            None => {
+                self.index.insert(key, self.assets.len());
+                self.assets.push(a);
+            }
+        }
+        true
+    }
+
     pub fn find(&self, rel: &str) -> Option<&Asset> {
         // (an ASCII path, nearly all of them, is lower-cased on the stack: no allocation)
         let mut buf = [0u8; 192];

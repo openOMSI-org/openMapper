@@ -16,7 +16,8 @@ pub fn take_out_of_memory() -> bool {
 }
 
 pub struct Gpu {
-    pub surface: wgpu::Surface<'static>,
+    /// The window's surface (none for pictures drawn without a window: the MCP `shot`).
+    pub surface: Option<wgpu::Surface<'static>>,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
@@ -214,7 +215,66 @@ impl Gpu {
         let max_samples = [8u32, 4, 2].into_iter().find(|n| colour.contains(n) && depth_counts.contains(n)).unwrap_or(1);
         let samples = max_samples.min(4);
         let (depth, msaa) = targets(&device, &config, scene_format, samples);
-        Ok(Gpu { surface, device, queue, config, scene_format, adapter_name: format!("{} ({:?})", info.name, info.backend), depth, msaa, samples, max_samples })
+        Ok(Gpu { surface: Some(surface), device, queue, config, scene_format, adapter_name: format!("{} ({:?})", info.name, info.backend), depth, msaa, samples, max_samples })
+    }
+
+    /// A device with no window: the 3D view drawn into a picture of `w` × `h` (the MCP
+    /// `shot`, which works with the screen locked or no screen at all).
+    pub fn headless(w: u32, h: u32, samples: u32) -> anyhow::Result<Gpu> {
+        let api = std::env::var("OPENMAPPER_BACKEND").ok().map(|c| Api::of(&c)).unwrap_or(Api::Auto);
+        let mut last = anyhow::anyhow!("no graphics adapter");
+        for (backends, fallback) in attempts(api) {
+            let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
+            descriptor.backends = backends;
+            let instance = wgpu::Instance::new(descriptor);
+            let adapter = match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions { power_preference: wgpu::PowerPreference::HighPerformance, compatible_surface: None, force_fallback_adapter: fallback })) {
+                Ok(a) => a,
+                Err(e) => {
+                    last = e.into();
+                    continue;
+                }
+            };
+            let (device, queue) = match pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+                label: Some("openMapper (no window)"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+                memory_hints: wgpu::MemoryHints::MemoryUsage,
+                ..Default::default()
+            })) {
+                Ok(d) => d,
+                Err(e) => {
+                    last = e.into();
+                    continue;
+                }
+            };
+            let info = adapter.get_info();
+            device.on_uncaptured_error(Arc::new(|e: wgpu::Error| match e {
+                wgpu::Error::OutOfMemory { source } => {
+                    log::error!("graphics memory ran out: {source}");
+                    OUT_OF_MEMORY.store(true, std::sync::atomic::Ordering::Relaxed);
+                }
+                other => log::error!("wgpu error: {other}"),
+            }));
+            let format = wgpu::TextureFormat::Rgba8Unorm;
+            let scene_format = format.add_srgb_suffix();
+            let config = wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                format,
+                width: w.max(1),
+                height: h.max(1),
+                present_mode: wgpu::PresentMode::AutoVsync,
+                desired_maximum_frame_latency: 2,
+                alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                view_formats: vec![scene_format],
+            };
+            let supported = |f: wgpu::TextureFormat| adapter.get_texture_format_features(f).flags.supported_sample_counts();
+            let (colour, depth_counts) = (supported(scene_format), supported(DEPTH));
+            let max_samples = [8u32, 4, 2].into_iter().find(|n| colour.contains(n) && depth_counts.contains(n)).unwrap_or(1);
+            let samples = samples.clamp(1, max_samples);
+            let (depth, msaa) = targets(&device, &config, scene_format, samples);
+            return Ok(Gpu { surface: None, device, queue, config, scene_format, adapter_name: format!("{} ({:?})", info.name, info.backend), depth, msaa, samples, max_samples });
+        }
+        Err(last)
     }
 
     pub fn resize(&mut self, w: u32, h: u32) {
@@ -223,7 +283,9 @@ impl Gpu {
         }
         self.config.width = w;
         self.config.height = h;
-        self.surface.configure(&self.device, &self.config);
+        if let Some(s) = &self.surface {
+            s.configure(&self.device, &self.config);
+        }
         let (d, m) = targets(&self.device, &self.config, self.scene_format, self.samples);
         self.depth = d;
         self.msaa = m;

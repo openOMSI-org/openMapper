@@ -454,6 +454,7 @@ pub struct Renderer {
     /// Materials may be missing (new things to draw, textures still coming).
     warm_pending: bool,
     warm_seen_pending: usize,
+    warm_seen_arrived: u64,
     /// The point everything is drawn relative to (a tile corner of the map).
     anchor: DVec3,
     anchor_for: u64,
@@ -478,10 +479,19 @@ pub struct Renderer {
     /// The scene's materials, once each, and the scene they were collected for.
     warm_mats: Vec<Material>,
     warm_for: u64,
+    /// Counts spline meshes come in with a material the view has not put up yet, and the count
+    /// the list was collected at: they come from the builder's threads after the scene's key
+    /// has settled (a map whose files are read quickly is keyed, and its list collected, before
+    /// its roads are built), and a list collected before them left their materials out - the
+    /// tile's chunk was drawn without them, the roads missing from the view.
+    spline_mats_rev: u64,
+    warm_spline_rev: u64,
     /// How far the walk over them has gone.
     warm_done: usize,
     /// Whether the last walk met one that could not be put up yet (its picture still loading).
     warm_missing: bool,
+    /// Whether the last sync left every tile's splines, cuts and objects up to date.
+    pub scene_complete: bool,
     /// When the list was last collected.
     warm_collect_at: Option<std::time::Instant>,
     chunks: HashMap<TileKey, Chunk>,
@@ -802,7 +812,7 @@ impl Renderer {
         let shadow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("shadow"),
             layout: Some(&mesh_layout),
-            vertex: wgpu::VertexState { module: &mesh_sh, entry_point: Some("vs"), compilation_options: Default::default(), buffers: &mesh_layouts() },
+            vertex: wgpu::VertexState { module: &mesh_sh, entry_point: Some("vs_shadow"), compilation_options: Default::default(), buffers: &mesh_layouts() },
             primitive: wgpu::PrimitiveState { cull_mode: None, ..Default::default() },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH,
@@ -1012,6 +1022,8 @@ impl Renderer {
             blank: Instance::new(Mat4::IDENTITY, [0.0; 4]),
             warm_pending: true,
             warm_seen_pending: 0,
+            warm_seen_arrived: 0,
+            scene_complete: false,
             anchor: DVec3::ZERO,
             anchor_for: 0,
             anchored: false,
@@ -1027,6 +1039,8 @@ impl Renderer {
             spline_hashes: HashMap::new(),
             warm_mats: Vec::new(),
             warm_for: 0,
+            spline_mats_rev: 0,
+            warm_spline_rev: 0,
             warm_done: 0,
             warm_missing: false,
             warm_collect_at: None,
@@ -1688,6 +1702,7 @@ impl Renderer {
         let mut alive: Vec<(TileKey, i64)> = Vec::new();
         let mut complete = assets.pending == 0;
         for (key, e) in self.builder.take() {
+            self.note_spline_materials(&e.materials);
             self.splines.insert(key, e);
             self.warm_pending = true;
         }
@@ -1726,7 +1741,9 @@ impl Renderer {
                     let editing = extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id));
                     if editing && start.elapsed().as_millis() < 25 {
                         self.builder.forget(&(*k, s.id));
-                        self.splines.insert((*k, s.id), build::make_entry(&model, s, org, corner, h));
+                        let e = build::make_entry(&model, s, org, corner, h);
+                        self.note_spline_materials(&e.materials);
+                        self.splines.insert((*k, s.id), e);
                         self.warm_pending = true;
                     } else {
                         self.builder.request((*k, s.id), h, model, s, org, corner);
@@ -1783,6 +1800,7 @@ impl Renderer {
         self.profile.add("sync.splines", profile::ms(t));
         t = std::time::Instant::now();
         complete &= self.cut_ground(gpu, doc, assets, &disp);
+        self.scene_complete = complete;
         if complete {
             self.profile.ready();
         }
@@ -1913,8 +1931,11 @@ impl Renderer {
         self.profile.add("sync.upload", profile::ms(t));
         t = std::time::Instant::now();
         // materials of everything that will be drawn (when something new is there to draw)
-        if self.warm_pending || assets.pending != self.warm_seen_pending {
+        // (again when pictures arrived since a walk that missed some: one may come in between
+        // two frames, leaving the number still loading as it was)
+        if self.warm_pending || assets.pending != self.warm_seen_pending || (self.warm_missing && assets.textures_arrived != self.warm_seen_arrived) {
             self.warm_seen_pending = assets.pending;
+            self.warm_seen_arrived = assets.textures_arrived;
             self.warm_pending = self.warm_materials(device, queue, assets);
         }
         self.profile.add("sync.materials", profile::ms(t));
@@ -2124,8 +2145,9 @@ impl Renderer {
     /// frame, for ever.
     fn warm_materials(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, assets: &mut Assets) -> bool {
         // (a map still streaming in gives a new scene key nearly every frame: collected again
-        // that often, the list itself cost more than uploading what was in it)
-        let stale = self.warm_for != self.scene_key;
+        // that often, the list itself cost more than uploading what was in it. Spline meshes
+        // bringing materials not put up yet make it stale too: they do not change the key)
+        let stale = warm_list_stale((self.warm_for, self.warm_spline_rev), (self.scene_key, self.spline_mats_rev));
         let waited = self.warm_collect_at.map(|t| t.elapsed().as_millis() > 500).unwrap_or(true);
         // (collected again only once the walk through the list has finished: starting it over
         // half way threw away the work, and a map that is still streaming gives a new scene key
@@ -2134,6 +2156,7 @@ impl Renderer {
         if self.warm_mats.is_empty() || (stale && finished && waited) {
             self.warm_mats = self.scene_materials();
             self.warm_for = self.scene_key;
+            self.warm_spline_rev = self.spline_mats_rev;
             self.warm_collect_at = Some(std::time::Instant::now());
             self.warm_done = 0;
             self.warm_missing = false;
@@ -2157,7 +2180,15 @@ impl Renderer {
         self.warm_mats = mats;
         self.warm_done = i;
         // (a scene changed since the list was made is asked about again until it is collected)
-        more || self.warm_for != self.scene_key
+        more || warm_list_stale((self.warm_for, self.warm_spline_rev), (self.scene_key, self.spline_mats_rev))
+    }
+
+    /// A spline mesh is coming in: if it brings a material the view has not put up yet, the
+    /// materials' list is to be collected again (see `spline_mats_rev`).
+    fn note_spline_materials(&mut self, mats: &[Material]) {
+        if brings_new_material(&self.materials, &self.picture_alpha, mats) {
+            self.spline_mats_rev += 1;
+        }
     }
 
     /// Every material the scene draws, once each.
@@ -2284,9 +2315,6 @@ impl Renderer {
     fn draw_shadows(&self, gpu: &Gpu, encoder: &mut wgpu::CommandEncoder, gl: &Globals, eye: Vec3) -> u32 {
         let mut sg = *gl;
         sg.view_proj = gl.light_vp;
-        // (the eye far off towards the sun: the roads' pull towards it is then a slight bias)
-        let sun = Vec3::new(gl.sun_dir[0], gl.sun_dir[1], gl.sun_dir[2]);
-        sg.eye = [sun.x * 1e5, sun.y * 1e5, sun.z * 1e5, gl.eye[3]];
         gpu.queue.write_buffer(&self.shadow_globals, 0, bytemuck::bytes_of(&sg));
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("shadow"),
@@ -2340,6 +2368,17 @@ impl Renderer {
 
     /// Draw the map into the frame.
     /// `vp`: the 3D view's rectangle in pixels (x, y, width, height).
+    /// What is still being put up (the MCP `shot`'s answer, when it is not complete).
+    pub fn progress(&self) -> serde_json::Value {
+        serde_json::json!({ "splines_built": self.splines.len(), "building": self.builder.busy(), "scene_complete": self.scene_complete, "materials_pending": self.warm_pending, "pictures_missing": self.warm_missing, "materials": self.materials.len(), "textures": self.textures.len() })
+    }
+
+    /// Whether a picture taken now shows everything: the scene cut, the models and their
+    /// textures put up (the MCP `shot` waits for it).
+    pub fn settled(&self, assets: &crate::assets::Assets) -> bool {
+        self.scene_complete && !self.warm_pending && !self.warm_missing && assets.pending == 0
+    }
+
     pub fn draw(&mut self, gpu: &Gpu, encoder: &mut wgpu::CommandEncoder, target: &wgpu::TextureView, cam: &Camera, extras: &FrameExtras, vp: [f32; 4]) {
         let aspect = vp[2] / vp[3].max(1.0);
         let gl = self.globals_for(cam, aspect, extras, self.anchor);
@@ -2705,6 +2744,17 @@ impl Renderer {
 
 /// Draw a mesh's parts whose material is ready (`blend`: only the blended ones, or only the
 /// others; None: all), once for each range of instances. Returns the draw calls made.
+/// Whether the scene's materials' list, collected for (scene key, spline materials count), is
+/// to be collected again now that they are what the second pair says.
+fn warm_list_stale(collected: (u64, u64), now: (u64, u64)) -> bool {
+    collected != now
+}
+
+/// Whether any of `mats` has no bind group in `have` yet (keyed by the mode it is drawn with).
+fn brings_new_material<V>(have: &HashMap<MatKey, V>, pictures: &HashMap<PathBuf, Alpha>, mats: &[Material]) -> bool {
+    mats.iter().any(|m| !have.contains_key(&mat_key_with(m, effective_alpha(m, pictures))))
+}
+
 fn draw_mesh(pass: &mut wgpu::RenderPass, materials: &HashMap<MatKey, wgpu::BindGroup>, mesh: &GpuMesh, mats: &[Material], blend: Option<bool>, ranges: &[std::ops::Range<u32>], pictures: &HashMap<PathBuf, Alpha>) -> u32 {
     let mut calls = 0;
     let mut bound = false;
@@ -3071,6 +3121,26 @@ mod tests {
 
     fn a_material(alpha: Alpha, texture: Option<&str>) -> Material {
         Material { texture: texture.map(PathBuf::from), color: [1.0; 4], alpha, glow: None }
+    }
+
+    /// Roads built on the builder's threads after the scene's key settled (a map whose files
+    /// are read quickly) brought materials the list collected before them did not hold: their
+    /// tile's chunk was drawn without bind groups for them, and the roads were not there. A
+    /// mesh bringing a material not put up yet makes the list stale, though the key is the same.
+    #[test]
+    fn a_spline_bringing_a_new_material_makes_the_materials_list_stale() {
+        let pictures = HashMap::new();
+        let (yard, street) = (a_material(Alpha::Opaque, Some("texture/Dvor2.jpg")), a_material(Alpha::Opaque, Some("texture/Doroga4.jpg")));
+        let mut have: HashMap<MatKey, ()> = HashMap::new();
+        have.insert(mat_key_with(&street, Alpha::Opaque), ());
+        assert!(!brings_new_material(&have, &pictures, std::slice::from_ref(&street)));
+        assert!(brings_new_material(&have, &pictures, &[street.clone(), yard.clone()]));
+        // (collected for scene 7 with none such; a yard drive's mesh comes in: the key stays 7)
+        assert!(!warm_list_stale((7, 0), (7, 0)));
+        assert!(warm_list_stale((7, 0), (7, 1)));
+        assert!(warm_list_stale((7, 1), (8, 1)));
+        have.insert(mat_key_with(&yard, Alpha::Opaque), ());
+        assert!(!brings_new_material(&have, &pictures, &[street, yard]));
     }
 
     #[test]

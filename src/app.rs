@@ -492,6 +492,10 @@ impl App {
             self.cam.jump_to(DVec3::new(v[0], v[1], h), v[2]);
             self.cam.yaw = v[3];
             self.cam.pitch = v[4];
+            // (the window of tiles loaded round where the camera now is)
+            self.stream_at = None;
+            self.stream_set = None;
+            self.ask_tile_streaming();
         }
         // OPENMAPPER_SELECT=x,y[,spline|chain]: the object (or the spline starting) nearest there
         // selected (checks of its properties)
@@ -2611,14 +2615,14 @@ impl App {
     /// end where the mouse is. The judgement is made where the circles are drawn - 0.40 m
     /// above its own ends and 0.55 m above a lane's - not at the bare point, since at a low
     /// camera angle the two are tens of pixels apart and the circle under the cursor misses.
-    fn crossing_snap_end(&mut self, at: DVec3, world: DVec3, m: glam::Mat4) -> Option<crate::crossing_edit::Joint> {
+    fn crossing_snap_end(&mut self, _at: DVec3, world: DVec3, m: glam::Mat4) -> Option<crate::crossing_edit::Joint> {
         if self.keys.ctrl {
             return None;
         }
         let skip = self.crossing.map_dragging();
         let mouse = self.mouse.pos;
         let mut best: Option<(f32, crate::crossing_edit::Joint)> = None;
-        let mut consider = |s: Option<(f32, f32)>, j: crate::crossing_edit::Joint, best: &mut Option<(f32, crate::crossing_edit::Joint)>| {
+        let consider = |s: Option<(f32, f32)>, j: crate::crossing_edit::Joint, best: &mut Option<(f32, crate::crossing_edit::Joint)>| {
             let Some(s) = s else { return };
             let d = ((s.0 - mouse.0).powi(2) + (s.1 - mouse.1).powi(2)).sqrt();
             if d <= 16.0 && best.map(|b| d < b.0).unwrap_or(true) {
@@ -3132,7 +3136,7 @@ impl App {
         g.renderer.profile.add("ui", crate::render::profile::ms(t_ui));
         let t_acquire = Instant::now();
         // draw
-        let frame = match g.gpu.surface.get_current_texture() {
+        let frame = match g.gpu.surface.as_ref().expect("the window's surface").get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(f) | wgpu::CurrentSurfaceTexture::Suboptimal(f) => Some(f),
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
                 let s = g.window.inner_size();
@@ -4331,7 +4335,7 @@ fn save_map_picture(img: image::RgbaImage, crop: [u32; 4], path: &Path) -> anyho
 }
 
 /// The window's picture as it was drawn.
-fn read_frame(gpu: &Gpu, tex: &wgpu::Texture) -> anyhow::Result<image::RgbaImage> {
+pub(crate) fn read_frame(gpu: &Gpu, tex: &wgpu::Texture) -> anyhow::Result<image::RgbaImage> {
     let (w, h) = (tex.width(), tex.height());
     let row = (w * 4).div_ceil(256) * 256;
     let buf = gpu.device.create_buffer(&wgpu::BufferDescriptor { label: Some("shot"), size: (row * h) as u64, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false });

@@ -15,7 +15,11 @@
 //! Read-only unless started with `--allow-edit`. The messages are JSON, one per line (the
 //! protocol's stdio transport); the log goes to stderr and the log file, never to stdout.
 
+mod author;
 mod edit;
+mod overlay;
+mod raster;
+mod shot;
 mod read;
 mod render;
 mod schema;
@@ -73,8 +77,14 @@ pub(crate) struct Server {
     pub allow_edit: bool,
     /// The spline types of the map are loaded (the road tool joins to them by their widths).
     warmed: bool,
+    /// The library size the switch catalogue was made for.
+    switches_for: usize,
     /// Inside `batch`: one undo step for all of it.
     in_batch: bool,
+    /// The device and renderer of `shot` pictures (made on the first one).
+    shooter: Option<Box<shot::Shooter>>,
+    /// The imagery `shot` compares with: a tile URL and its zoom (given once).
+    imagery_src: Option<(String, u8)>,
 }
 
 /// `openmapper --mcp`: serve until stdin closes. Returns the exit code.
@@ -181,7 +191,7 @@ impl Server {
         ed.content_dir = Some(roots.content.clone());
         ed.road_styles = crate::road_maker::Styles::load(&roots.content);
         ed.asphalt = crate::junction::asphalt_texture(&roots.omsi);
-        Server { roots, cfg: None, ed, assets, lib, tt: crate::ui_timetable::TimetableUi::new(), allow_edit, warmed: false, in_batch: false }
+        Server { roots, cfg: None, ed, assets, lib, tt: crate::ui_timetable::TimetableUi::new(), allow_edit, warmed: false, switches_for: usize::MAX, in_batch: false, shooter: None, imagery_src: None }
     }
 
     /// Open a map (its global.cfg), dropping the one open.
@@ -272,6 +282,13 @@ impl Server {
             "inspect" => self.inspect(a),
             "terrain" => self.terrain(a),
             "render" => self.render(a),
+            "shot" => self.shot(a),
+            "raster" => self.raster(a),
+            "road_type" => self.edit(|s| s.road_type_make(a)),
+            "plate" => self.edit(|s| s.plate_make(a)),
+            "lay_spline" => self.edit(|s| s.lay_spline(a)),
+            "complex_junction" => self.edit(|s| s.complex_junction(a)),
+            "street_check" => if a.bool("fix").unwrap_or(false) { self.edit(|s| s.street_check(a)) } else { self.wait_lib(); self.street_check(a).map(Out::Json) },
             "timetable" => self.timetable(a),
             "editor_state" => self.editor_state(),
             "reload" => self.reload(),
@@ -285,6 +302,8 @@ impl Server {
             "redo" => self.edit(|s| s.undo_redo(a, false)),
             // in one call
             "draw_road" => self.edit(|s| s.draw_road(a)),
+            "build_streets" => self.edit(|s| s.build_streets(a)),
+            "auto_junctions" => self.edit(|s| s.auto_junctions(a)),
             "roundabout" => self.edit(|s| s.roundabout(a)),
             "bus_pocket" => self.edit(|s| s.bus_pocket(a)),
             "place_objects" => self.edit(|s| s.place_objects(a)),
@@ -295,6 +314,10 @@ impl Server {
             "ramp" => self.edit(|s| s.ramp(a)),
             "water" => self.edit(|s| s.water(a)),
             "paint" => self.edit(|s| s.paint(a)),
+            "paint_area" => self.edit(|s| s.paint_area(a)),
+            "track_beds" => self.edit(|s| s.track_beds(a)),
+            "ground_under" => self.edit(|s| s.ground_under(a)),
+            "form_ground" => self.edit(|s| s.form_ground(a)),
             "plant" => self.edit(|s| s.plant(a)),
             "edit_object" => self.edit(|s| s.edit_object(a)),
             "edit_spline" => self.edit(|s| s.edit_spline(a)),
@@ -321,6 +344,7 @@ impl Server {
         let stop = a.bool("stop_on_error").unwrap_or(true);
         let label = a.str("label").unwrap_or("Agent's batch").to_string();
         self.in_batch = true;
+        let before = self.before();
         let mark = self.ed.history.mark();
         let mut results = Vec::new();
         let mut failed = 0;
@@ -341,9 +365,11 @@ impl Server {
             }
         }
         self.in_batch = false;
+        self.settle();
+        let changes = self.changes(&before);
         self.ed.history.commit();
         self.ed.history.merge_since(mark, &label);
-        Ok(json!({ "done": results.len() - failed, "failed": failed, "of": calls.len(), "results": results }).into())
+        Ok(json!({ "done": results.len() - failed, "failed": failed, "of": calls.len(), "results": results, "changes": changes }).into())
     }
 
     // ---------------------------------------------------------------------------- points
@@ -415,6 +441,12 @@ impl Server {
             std::thread::sleep(Duration::from_millis(20));
         }
         self.lib.poll();
+        // (the switches on offer, as the window finds them once the library is read: without
+        // them Auto-Switch has nothing to lay where a track branches)
+        if self.switches_for != self.lib.assets.len() {
+            self.switches_for = self.lib.assets.len();
+            self.ed.switch_catalogue = crate::switches::catalogue(&self.lib);
+        }
     }
 
     /// The models asked for are read and the editor has done what waited for them.
@@ -572,8 +604,24 @@ impl Server {
         self.wait_lib();
         self.warm();
         self.ed.toasts.clear();
+        // (inside a batch the map is not looked through before and after every call: on a
+        // whole city that is most of the time a batch of thousands of small edits takes; the
+        // batch tells what it changed once, at its end)
+        if self.in_batch {
+            let r = f(self);
+            omsi_cfg::content_changed();
+            self.assets.forget_failed();
+            if self.assets.pending > 0 {
+                self.settle();
+            }
+            return r.map(|v| v.into());
+        }
         let before = self.before();
         let r = f(self);
+        // (an edit may have written files: road types, junction plates, their pictures; the
+        // cached directory listings and misses are read again)
+        omsi_cfg::content_changed();
+        self.assets.forget_failed();
         self.settle();
         let mut changes = self.changes(&before);
         let v = r?;

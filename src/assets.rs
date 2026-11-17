@@ -236,6 +236,8 @@ pub enum Slot<T> {
 
 /// Everything loaded so far, keyed by lower-case paths.
 pub struct Assets {
+    /// How many pictures have arrived so far (one coming in between two looks is still seen).
+    pub textures_arrived: u64,
     tx: mpsc::Sender<Req>,
     rx: mpsc::Receiver<Resp>,
     pub objects: HashMap<String, Slot<ObjectModel>>,
@@ -280,7 +282,7 @@ impl Assets {
                 }
             });
         }
-        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, omsi, content }
+        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, textures_arrived: 0, omsi, content }
     }
 
     pub(crate) fn resolve(&self, rel: &str) -> PathBuf {
@@ -317,6 +319,36 @@ impl Assets {
             }
             if matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
+            }
+            self.poll();
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    }
+
+    /// Every object and spline model of a map asked for and waited for (at most `ms`): what
+    /// looks at all of them at once (a check) must not take one still loading for none.
+    pub fn load_map_models(&mut self, doc: &crate::doc::Document, ms: u64) {
+        let start = std::time::Instant::now();
+        let mut objects = std::collections::HashSet::new();
+        let mut splines = std::collections::HashSet::new();
+        for t in doc.tiles.values() {
+            for o in &t.tile.objects {
+                objects.insert(o.file.to_lowercase());
+            }
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                splines.insert(s.file.to_lowercase());
+            }
+        }
+        loop {
+            let mut waiting = false;
+            for f in &objects {
+                waiting |= self.object(f).is_none() && !matches!(self.objects.get(f), Some(Slot::Failed));
+            }
+            for f in &splines {
+                waiting |= self.spline(f).is_none() && !matches!(self.splines.get(f), Some(Slot::Failed));
+            }
+            if !waiting || start.elapsed().as_millis() as u64 > ms {
+                return;
             }
             self.poll();
             std::thread::sleep(std::time::Duration::from_millis(5));
@@ -418,12 +450,18 @@ impl Assets {
                     self.splines.insert(k, m.map(Slot::Ready).unwrap_or(Slot::Failed));
                 }
                 Resp::Texture(p, t) => {
+                    self.textures_arrived += 1;
                     self.textures.insert(p.clone(), t.map(Slot::Ready).unwrap_or(Slot::Failed));
                     self.new_textures.push(p);
                 }
             }
         }
         any
+    }
+
+    /// Pictures asked for and not arrived yet (diagnostics).
+    pub fn textures_loading(&self) -> Vec<String> {
+        self.textures.iter().filter(|(_, s)| matches!(s, Slot::Loading)).map(|(p, _)| p.display().to_string()).collect()
     }
 
     /// The picture could not be read (missing, cut short, a format nothing reads).
@@ -444,6 +482,21 @@ impl Assets {
     pub fn forget_object(&mut self, rel: &str, dir: &Path) {
         self.objects.remove(&rel.to_lowercase());
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
+    }
+
+    /// Forget one spline type's model, and the pictures in its folder, so they are read
+    /// again (its files were written anew).
+    pub fn forget_spline(&mut self, rel: &str, dir: &Path) {
+        self.splines.remove(&rel.to_lowercase());
+        self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
+    }
+
+    /// Forget what could not be read (files may have been written since): tried again when
+    /// next asked for.
+    pub fn forget_failed(&mut self) {
+        self.objects.retain(|_, s| !matches!(s, Slot::Failed));
+        self.splines.retain(|_, s| !matches!(s, Slot::Failed));
+        self.textures.retain(|_, s| !matches!(s, Slot::Failed));
     }
 
     /// Forget everything (after an import changed files on disk).

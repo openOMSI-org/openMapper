@@ -327,6 +327,12 @@ impl Server {
             return Err("`ids` is needed".into());
         }
         self.wait_lib();
+        // (the models of the objects asked about, read first: their boxes are given)
+        let files: Vec<String> = match self.ed.doc.as_ref() {
+            Some(d) => ids.iter().filter_map(|id| d.tiles.values().find_map(|t| t.tile.objects.iter().find(|o| o.id == *id).map(|o| o.file.clone()))).collect(),
+            None => Vec::new(),
+        };
+        let boxes: std::collections::HashMap<String, (glam::Vec3, glam::Vec3)> = files.iter().filter_map(|f| self.assets.object_wait(f, 3000).map(|m| (f.clone(), (m.lo, m.hi)))).collect();
         let d = self.doc()?;
         let mut out = Vec::new();
         for id in ids {
@@ -342,6 +348,10 @@ impl Server {
                     });
                     if let Some(p) = o.parent_id {
                         v["attached_to"] = json!({ "object": p, "point": o.attach_index });
+                    }
+                    // (the model's box in its own frame: x across, y along, z up)
+                    if let Some((lo, hi)) = boxes.get(&o.file) {
+                        v["model_box"] = json!({ "lo": [number(lo.x as f64), number(lo.y as f64), number(lo.z as f64)], "hi": [number(hi.x as f64), number(hi.y as f64), number(hi.z as f64)] });
                     }
                     if let Some(p) = o.var_parent {
                         v["var_parent"] = json!(p);

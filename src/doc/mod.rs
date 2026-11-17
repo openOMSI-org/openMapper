@@ -416,13 +416,23 @@ impl Document {
     /// IDCode that is already in use: a new spline would then be the same one as a road
     /// that is already there, drawn on top of it, and deleting it would take that road.
     pub fn new_id(&mut self) -> i64 {
-        let highest = self.highest_id();
-        if self.global.next_id_code <= highest {
-            self.global.next_id_code = highest + 1;
+        // (the map is looked through for its highest IDCode only when the next one is not the
+        // one this map was last left at here: one after another, as a build lays a city's
+        // roads, they are counted on without reading every object again each time)
+        thread_local! {
+            static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
+        }
+        let me = self as *const Document as usize;
+        if ISSUED.with(|c| c.get()) != (me, self.global.next_id_code) {
+            let highest = self.highest_id();
+            if self.global.next_id_code <= highest {
+                self.global.next_id_code = highest + 1;
+            }
         }
         let id = self.global.next_id_code.max(1);
         self.global.next_id_code = id + 1;
         self.global_dirty = true;
+        ISSUED.with(|c| c.set((me, self.global.next_id_code)));
         id
     }
 

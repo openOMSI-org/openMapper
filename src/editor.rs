@@ -590,6 +590,9 @@ pub struct Editor {
     pub auto_terrain: bool,
     /// Where a new road meets or crosses another one, cut both and put a junction there.
     pub auto_junctions: bool,
+    /// While Auto-Junction is run over the map's own roads: places (a grid of 16 m cells) where
+    /// the map's author made a junction of their own (AI paths laid through it), left as they are.
+    pub(crate) aj_keep: Option<std::collections::HashSet<(i64, i64)>>,
     /// Roads of different width are joined by a taper (Auto-Adapt).
     pub auto_adapt: bool,
     /// Where a track branches off another, put a switch there (off: the tracks just meet).
@@ -636,6 +639,9 @@ pub struct Editor {
     pub plant_mix: Vec<String>,
     /// How the ground is painted along the selected roads (their properties).
     pub paint_along: crate::roadpaint::Along,
+    /// Roads from OpenStreetMap built even where they run along roads the map has (an
+    /// interchange's carriageways and ramps lie close side by side).
+    pub osm_keep_overlaps: bool,
     /// Where a ramp of the Terrain tool starts (its first click).
     pub ramp_start: Option<DVec3>,
     /// The plant brush fills (or clears) an outline clicked round instead of painting.
@@ -829,6 +835,7 @@ impl Default for Editor {
             follow_ground: true,
             keep_ground_under_roads: true,
             auto_junctions: true,
+            aj_keep: None,
             auto_adapt: true,
             auto_terrain: true,
             auto_switches: true,
@@ -852,6 +859,7 @@ impl Default for Editor {
             plant_spacing: 6.0,
             plant_mix: Vec::new(),
             paint_along: Default::default(),
+            osm_keep_overlaps: false,
             ramp_start: None,
             plant_area: false,
             plant_outline: Vec::new(),
@@ -3757,7 +3765,7 @@ impl Editor {
         let shape = crate::switches::Shape::of(&model)?;
         let (mut pos, out) = shape.world(shape.branch, toe, heading);
         pos.z = self.doc.as_ref().map(|d| d.ground(pos.truncate())).unwrap_or(toe.z);
-        let plan = crate::switches::Plan { rel, toe, heading, length: shape.length(), origin: shape.origin(toe, heading) };
+        let plan = crate::switches::Plan { rel, toe, heading, length: shape.length(), origin: shape.origin(toe, heading), turned: shape.turned };
         Some((plan, (pos, out)))
     }
 
@@ -4223,12 +4231,23 @@ impl Editor {
     /// The splines of a road, cut into pieces (`roads::split`), put into the map, linked to
     /// what its ends meet; inside an open step that keeps every tile.
     fn lay_road(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
+        self.lay_road_with(assets, rel, pieces, z0, z1, start, end, half, None)
+    }
+
+    /// As `lay_road`, with the heights and grades at the joints given (a designed profile: the
+    /// ground is then not brought to the road, the road keeps its own heights).
+    #[allow(clippy::too_many_arguments)]
+    fn lay_road_with(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64, given: Option<Vec<(f64, f64)>>) -> Option<Vec<(TileKey, i64)>> {
         let pieces = pieces.to_vec();
+        let designed = given.is_some();
         // (the heights before the map is borrowed to be written: with Surface on, the whole
         // road takes the surface under it, not only its two ends)
-        let profile = {
-            let doc = self.doc.as_ref()?;
-            self.road_heights(assets, doc, &pieces, z0, z1)
+        let profile = match given {
+            Some(p) if p.len() == pieces.len() + 1 => p,
+            _ => {
+                let doc = self.doc.as_ref()?;
+                self.road_heights(assets, doc, &pieces, z0, z1)
+            }
         };
         let doc = self.doc.as_mut()?;
         let mut made: Vec<(TileKey, i64)> = Vec::new();
@@ -4236,7 +4255,16 @@ impl Editor {
         let mut curves = Vec::new();
         let mut chain = 0.0;
         for (i, p) in pieces.iter().enumerate() {
-            let k = tile_of(p.start);
+            // (a piece cut at the map's north or east edge starts on the line between a tile
+            // and the one beyond it, which the map may not have: the tile it runs into then)
+            let mut k = tile_of(p.start);
+            if !doc.tiles.contains_key(&k) {
+                let (s, c) = p.heading.to_radians().sin_cos();
+                k = tile_of(p.start + DVec2::new(s, c) * (p.length * 0.5).min(0.5));
+            }
+            if !doc.tiles.contains_key(&k) {
+                continue;
+            }
             let org = tile_origin(k);
             let sp = piece_spline(rel, p, &profile, i, org);
             let sp = MapSpline {
@@ -4250,7 +4278,7 @@ impl Editor {
             };
             chain += p.length;
             curves.push(omsi_geometry::SplineCurve::from_map(&sp, org));
-            let t = doc.tiles.get_mut(&k).unwrap();
+            let Some(t) = doc.tiles.get_mut(&k) else { continue };
             t.tile.splines.push(sp);
             t.touch_content();
             made.push((k, ids[i]));
@@ -4299,7 +4327,7 @@ impl Editor {
             }
         }
         // (a road laid on a surface keeps that surface: the ground under it is not raised up to it)
-        if self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
+        if !designed && self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
             conform_ground(doc, &curves, half);
         }
         // (the step stays open: the caller may cut the road it joined, in the same step)
@@ -4395,7 +4423,7 @@ impl Editor {
                 (0..=n).map(move |i| c.point_at(s.length * i as f64 / n as f64).truncate())
             }).collect();
             // (a tram's track lies on its street: only roads are checked so)
-            if !track && samples.iter().filter(|p| near_old(**p)).count() * 2 > samples.len() {
+            if !track && !self.osm_keep_overlaps && samples.iter().filter(|p| near_old(**p)).count() * 2 > samples.len() {
                 continue;
             }
             self.road_type = Some(rel.clone());
@@ -4638,7 +4666,9 @@ impl Editor {
                 }
                 continue;
             }
-            let arms: Vec<crate::junction::Arm> = c.iter().filter_map(|&i| doc.trim(all[i].0, all[i].1, all[i].2, r)).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+            // (each cut back as far as its corners ask, and clear of the other roads' roadways)
+            let back = crate::junction::cut_back(doc, assets, &c.iter().map(|&i| Some((all[i].0, all[i].1, all[i].2))).collect::<Vec<_>>(), r);
+            let arms: Vec<crate::junction::Arm> = c.iter().zip(&back).filter_map(|(&i, b)| doc.trim(all[i].0, all[i].1, all[i].2, *b)).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
             if arms.len() < 3 {
                 continue;
             }
@@ -4648,7 +4678,7 @@ impl Editor {
                     made += 1;
                     if follow {
                         let e = arm_ends_world(doc, &arms);
-                        let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                        let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                         conform_disc(doc, centre, reach, &e);
                     }
                 }
@@ -4662,6 +4692,12 @@ impl Editor {
     /// Cut the roads where a newly built road `made` crosses one or meets one's middle, and
     /// fill each meeting point with a junction object.
     fn make_junctions(&mut self, assets: &mut Assets, made: &[(TileKey, i64)], half: f64, start_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, end_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>) -> usize {
+        self.make_junctions_with(assets, made, half, start_mid, end_mid, true)
+    }
+
+    /// As `make_junctions`; `orphans`: the junctions that lost an arm are made again here (a
+    /// run over many roads does that once, at its end).
+    fn make_junctions_with(&mut self, assets: &mut Assets, made: &[(TileKey, i64)], half: f64, start_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, end_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, orphans: bool) -> usize {
         let (Some(content), asphalt) = (self.content_dir.clone(), self.asphalt.clone()) else { return 0 };
         let follow = self.follow_ground;
         let adapt = self.auto_adapt;
@@ -4694,8 +4730,11 @@ impl Editor {
                 count += 1;
                 continue;
             }
-            let arms = [p.and_then(|p| doc.trim(p.0, p.1, p.2, r)), q.and_then(|q| doc.trim(q.0, q.1, q.2, r)), doc.trim(nk, nid, at_end, r)];
-            log::debug!("T junction at {at:.1} on {id} (r {r:.1}): arms {:?}", arms);
+            // (each cut back as far as its corners ask, and clear of the other roads' roadways:
+            // the road run in stops at the kerb of a wide one whatever the corner style)
+            let back = crate::junction::cut_back(doc, assets, &[p, q, Some((nk, nid, at_end))], r);
+            let arms = [p.and_then(|p| doc.trim(p.0, p.1, p.2, back[0])), q.and_then(|q| doc.trim(q.0, q.1, q.2, back[1])), doc.trim(nk, nid, at_end, back[2])];
+            log::debug!("T junction at {at:.1} on {id} (r {r:.1}, cut back {back:.1?}): arms {:?}", arms);
             for x in arms.iter().flatten() {
                 if let Some(sp) = doc.spline(x.0, x.1) {
                     let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(x.0));
@@ -4714,7 +4753,7 @@ impl Editor {
                         count += 1;
                         if follow {
                             let ends = arm_ends_world(doc, &arms);
-                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                             conform_disc(doc, centre, reach, &ends);
                         }
                     }
@@ -4733,6 +4772,10 @@ impl Editor {
                 let c1 = omsi_geometry::SplineCurve::from_map(s1, tile_origin(*k1));
                 let p1 = crate::junction::polyline(&c1);
                 for (k2, t) in &doc.tiles {
+                    // (only the tiles this piece can reach)
+                    if !roads::tile_near(tile_origin(*k2), tile_size(), c1.start.truncate(), s1.length + 60.0) {
+                        continue;
+                    }
                     for s2 in t.tile.splines.iter().filter(|s| !s.deleted && !ours.iter().any(|o| o.1.id == s.id)) {
                         if skip.contains(&(s1.id, s2.id)) {
                             continue;
@@ -4764,6 +4807,16 @@ impl Editor {
                             if linked && joints.iter().any(|j| (*j - pt).length() < 1.5) {
                                 continue;
                             }
+                            // (over the map's own roads: an author's junction is left, and so is a
+                            // crossing at under 30°, where one road runs into the other alongside)
+                            if let Some(keep) = &self.aj_keep {
+                                let cut = (roads::norm_deg(c1.heading_at(a1) - c2.heading_at(a2) + 180.0) - 180.0).abs();
+                                let cut = cut.min(180.0 - cut);
+                                if aj_kept(keep, pt) || cut < 30.0 {
+                                    skip.push((s1.id, s2.id));
+                                    continue;
+                                }
+                            }
                             found = Some((*k1, s1.id, a1, *k2, s2.id, a2, DVec3::new(pt.x, pt.y, z2), m.half_width as f64));
                             break 'search;
                         }
@@ -4794,7 +4847,9 @@ impl Editor {
                 count += 1;
                 continue;
             }
-            let arms = [p1.and_then(|x| doc.trim(x.0, x.1, x.2, r)), q1.and_then(|x| doc.trim(x.0, x.1, x.2, r)), p2.and_then(|x| doc.trim(x.0, x.1, x.2, r)), q2.and_then(|x| doc.trim(x.0, x.1, x.2, r))];
+            // (each cut back as far as its corners ask, and clear of the other road's roadway)
+            let back = crate::junction::cut_back(doc, assets, &[p1, q1, p2, q2], r);
+            let arms = [p1.and_then(|x| doc.trim(x.0, x.1, x.2, back[0])), q1.and_then(|x| doc.trim(x.0, x.1, x.2, back[1])), p2.and_then(|x| doc.trim(x.0, x.1, x.2, back[2])), q2.and_then(|x| doc.trim(x.0, x.1, x.2, back[3]))];
             for a in arms.iter().take(2).flatten() {
                 mine.push(a.1);
             }
@@ -4807,7 +4862,7 @@ impl Editor {
                         count += 1;
                         if follow {
                             let ends = arm_ends_world(doc, &arms);
-                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                             conform_disc(doc, centre, reach, &ends);
                         }
                     }
@@ -4820,11 +4875,214 @@ impl Editor {
         }
         // a junction made before whose arm road this one trimmed away (a short road between
         // the two): made again for the roads it still holds, or a joint of two
+        if !orphans {
+            return count;
+        }
         for id in self.orphaned_junctions(assets) {
             log::debug!("junction {id} lost an arm: made again");
             self.rebuild_junction(assets, id);
         }
         count
+    }
+
+    /// Auto-junction over the roads already on the map, as if each had just been drawn with
+    /// the Roads tool and Auto-Junction on: an end of it run into another road's middle is a T
+    /// junction, a place where it crosses another road an X junction (a road 2.5 m above or
+    /// below is a bridge, left as it is; an end at a junction object's connector is joined
+    /// already). In a circle, or the whole map. One undo step. (roads gone over, junctions made)
+    pub fn auto_junctions_on_map(&mut self, assets: &mut Assets, area: Option<(DVec2, f64)>) -> (usize, usize) {
+        let Some(doc) = self.doc.as_ref() else { return (0, 0) };
+        self.history.begin(tr("Junctions where the roads meet", "Перекрёстки, где дороги встречаются"));
+        let keys: Vec<TileKey> = doc.tiles.keys().copied().collect();
+        for k in &keys {
+            self.history.touch_tile(doc, *k);
+        }
+        let inside = |p: DVec2| area.map(|(c, r)| (p - c).length() <= r).unwrap_or(true);
+        // the author's own junctions: where AI paths (splines with lanes and nothing drawn) run,
+        // the place is made already; every 16 m cell within 12 m of one is left as it is
+        let mut keep: std::collections::HashSet<(i64, i64)> = Default::default();
+        for (k, t) in &doc.tiles {
+            let org = tile_origin(*k);
+            for sp in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 0.1) {
+                if !assets.spline(&sp.file).map(|m| m.is_ai_path()).unwrap_or(false) {
+                    continue;
+                }
+                let c = omsi_geometry::SplineCurve::from_map(sp, org);
+                let n = (sp.length / 4.0).ceil().max(1.0) as usize;
+                for i in 0..=n {
+                    let q = c.point_at(sp.length * i as f64 / n as f64).truncate();
+                    for dx in -12..=12 {
+                        for dy in -12..=12 {
+                            if dx * dx + dy * dy > 144 || dx % 4 != 0 || dy % 4 != 0 {
+                                continue;
+                            }
+                            let r = q + DVec2::new(dx as f64, dy as f64);
+                            keep.insert(((r.x / 16.0).floor() as i64, (r.y / 16.0).floor() as i64));
+                        }
+                    }
+                }
+            }
+        }
+        // the roads: chains of linked road splines, each by one of its pieces (the pieces are
+        // cut and renamed as the junctions are made: a chain is found again from any piece left)
+        let mut seeds: Vec<Vec<(TileKey, i64)>> = Vec::new();
+        {
+            let mut links: std::collections::HashMap<i64, (i64, i64, TileKey)> = Default::default();
+            let mut road: Vec<i64> = Vec::new();
+            for (k, t) in &doc.tiles {
+                let org = tile_origin(*k);
+                for s in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 0.1) {
+                    let Some(m) = assets.spline(&s.file) else { continue };
+                    if !m.joinable() || m.is_track() || !inside(DVec2::new(org.x + s.pos[0], org.y + s.pos[1])) {
+                        continue;
+                    }
+                    links.insert(s.id, (s.prev_id, s.next_id, *k));
+                    road.push(s.id);
+                }
+            }
+            let mut seen: std::collections::HashSet<i64> = Default::default();
+            for id in road {
+                if !seen.insert(id) {
+                    continue;
+                }
+                let mut chain = vec![(links[&id].2, id)];
+                for dir in [0, 1] {
+                    let mut cur = id;
+                    for _ in 0..2000 {
+                        let Some(&(p, n, _)) = links.get(&cur) else { break };
+                        let next = if dir == 0 { p } else { n };
+                        if next == 0 || !links.contains_key(&next) || !seen.insert(next) {
+                            break;
+                        }
+                        chain.push((links[&next].2, next));
+                        cur = next;
+                    }
+                }
+                seeds.push(chain);
+            }
+        }
+        let (mut roads_done, mut made) = (0, 0);
+        let was = self.road_type.clone();
+        self.aj_keep = Some(keep);
+        for seed in seeds {
+            let Some(doc) = self.doc.as_ref() else { break };
+            // (a piece of it still there, and its whole chain from there, in order)
+            let Some((k0, s0)) = seed.iter().find_map(|(k, id)| find_near(doc, Some(*k), *id, false)) else { continue };
+            let mut chain: Vec<(TileKey, i64)> = vec![(k0, s0.id)];
+            let (mut back_k, mut back) = (k0, s0.clone());
+            for _ in 0..2000 {
+                if back.prev_id == 0 {
+                    break;
+                }
+                let Some((k, p)) = find_near(doc, Some(back_k), back.prev_id, true) else { break };
+                if chain.iter().any(|c| c.1 == p.id) {
+                    break;
+                }
+                chain.insert(0, (k, p.id));
+                (back_k, back) = (k, p.clone());
+            }
+            let (mut fwd_k, mut fwd) = (k0, s0.clone());
+            for _ in 0..2000 {
+                if fwd.next_id == 0 {
+                    break;
+                }
+                let Some((k, n)) = find_near(doc, Some(fwd_k), fwd.next_id, true) else { break };
+                if chain.iter().any(|c| c.1 == n.id) {
+                    break;
+                }
+                chain.push((k, n.id));
+                (fwd_k, fwd) = (k, n.clone());
+            }
+            let file = s0.file.clone();
+            let Some(model) = assets.spline(&file) else { continue };
+            let half = model.half_width as f64;
+            // its free ends that run into another road's middle
+            let (first, last) = (chain[0], *chain.last().unwrap());
+            let ids: Vec<i64> = chain.iter().map(|c| c.1).collect();
+            let start_mid = if back.prev_id == 0 { self.road_middle_at(assets, first, false, &ids) } else { None };
+            let end_mid = if fwd.next_id == 0 { self.road_middle_at(assets, last, true, &ids) } else { None };
+            self.road_type = Some(file);
+            made += self.make_junctions_with(assets, &chain, half, start_mid, end_mid, false);
+            roads_done += 1;
+        }
+        self.road_type = was;
+        self.aj_keep = None;
+        for id in self.orphaned_junctions(assets) {
+            self.rebuild_junction(assets, id);
+        }
+        self.history.commit();
+        (roads_done, made)
+    }
+
+    /// Where a road's free end (`at_end` of spline `e`) runs into another road's middle: that
+    /// road's spline, how far along it, its half width, and the point on its line. None when the
+    /// end is at a junction object's connector, near the other road's own end, or 2.5 m above
+    /// or below it.
+    fn road_middle_at(&self, assets: &mut Assets, e: (TileKey, i64), at_end: bool, own: &[i64]) -> Option<(((i32, i32), i64, f64, f64), DVec3)> {
+        let doc = self.doc.as_ref()?;
+        let sp = doc.spline(e.0, e.1)?;
+        let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(e.0));
+        let p3 = if at_end { c.end_point() } else { c.point_at(0.0) };
+        let p = p3.truncate();
+        if self.aj_keep.as_ref().map(|k| aj_kept(k, p)).unwrap_or(false) {
+            return None;
+        }
+        let out = if at_end { c.heading_at(sp.length) } else { roads::norm_deg(c.heading_at(0.0) + 180.0) };
+        // (an end at a junction object's connector is an arm of it already)
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let k = (e.0 .0 + dx, e.0 .1 + dy);
+                let Some(t) = doc.tiles.get(&k) else { continue };
+                for o in &t.tile.objects {
+                    let Some(model) = assets.object(&o.file) else { continue };
+                    if model.helpers.is_empty() {
+                        continue;
+                    }
+                    let world = doc.object_world(k, o, model.abs_height);
+                    let m = object_matrix(DVec3::ZERO, o.rot);
+                    if model.helpers.iter().any(|(h, _)| ((world + m.transform_point3(Vec3::new(h[0], h[1], h[2])).as_dvec3()).truncate() - p).length() < 2.0) {
+                        return None;
+                    }
+                }
+            }
+        }
+        let mut best: Option<(f64, ((i32, i32), i64, f64, f64), DVec3)> = None;
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let k = (e.0 .0 + dx, e.0 .1 + dy);
+                let Some(t) = doc.tiles.get(&k) else { continue };
+                let org = tile_origin(k);
+                for s in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 2.0 && !own.contains(&s.id)) {
+                    if s.prev_id == e.1 || s.next_id == e.1 || sp.prev_id == s.id || sp.next_id == s.id {
+                        continue;
+                    }
+                    let Some(m) = assets.spline(&s.file) else { continue };
+                    if !m.joinable() || m.is_track() {
+                        continue;
+                    }
+                    let hw = m.half_width as f64;
+                    let Some((along, _)) = selection::on_spline(s, org, p) else { continue };
+                    if along < 1.0 || along > s.length - 1.0 {
+                        continue;
+                    }
+                    let oc = omsi_geometry::SplineCurve::from_map(s, org);
+                    let q = oc.point_at(along);
+                    let d = (q.truncate() - p).length();
+                    if d > hw + 1.0 || (q.z - p3.z).abs() > 2.5 {
+                        continue;
+                    }
+                    // (run in alongside, at under 30°: a slip road meeting the road, not a T)
+                    let cut = (roads::norm_deg(out - oc.heading_at(along) + 180.0) - 180.0).abs();
+                    if cut.min(180.0 - cut) < 30.0 {
+                        continue;
+                    }
+                    if best.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                        best = Some((d, (k, s.id, along, hw), q));
+                    }
+                }
+            }
+        }
+        best.map(|b| (b.1, b.2))
     }
 
     /// openMapper's junctions with an arm no road ends at any more.
@@ -9016,7 +9274,7 @@ impl Editor {
     }
 
     /// Keep every tile within `reach` of the points before the ground there changes.
-    fn touch_around(&mut self, pts: &[DVec2], reach: f64) {
+    pub(crate) fn touch_around(&mut self, pts: &[DVec2], reach: f64) {
         let Some(doc) = self.doc.as_ref() else { return };
         let mut keys: Vec<TileKey> = Vec::new();
         for p in pts {
@@ -9570,6 +9828,43 @@ fn ball(out: &mut Vec<OverlayPoint>, c: DVec3, r: f64, color: [f32; 4]) {
 /// two (the others too short to keep): a smooth piece of the first one's road between them.
 /// A new junction's options from its roads' styles: lights if any road asks for them, a
 /// zebra on every arm if any road does.
+/// A spline end as recorded when it was laid: the same if its spline is still there, else the
+/// free end lying where it was (its spline was cut back at its other end and made anew).
+fn relocate_end(doc: &Document, e: (TileKey, i64, bool), at: Option<(DVec2, f64)>) -> Option<(TileKey, i64, bool)> {
+    if doc.spline(e.0, e.1).is_some() {
+        return Some(e);
+    }
+    // (several roads end at one node: the one running the same way there)
+    let (at, heading) = at?;
+    let same = |h: f64| (roads::norm_deg(h - heading + 180.0) - 180.0).abs() < 3.0;
+    for (k, t) in &doc.tiles {
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(*k));
+            // (an end is found as the same kind of end: a start stays a start)
+            if !e.2 && s.prev_id == 0 && (c.point_at(0.0).truncate() - at).length() < 0.05 && same(c.heading_at(0.0)) {
+                return Some((*k, s.id, false));
+            }
+            if e.2 && s.next_id == 0 && (c.end_point().truncate() - at).length() < 0.05 && same(c.heading_at(s.length)) {
+                return Some((*k, s.id, true));
+            }
+        }
+    }
+    None
+}
+
+/// What a plate made from given road ends is asked to have over the road styles' defaults.
+#[derive(Debug, Clone, Default)]
+pub struct PlateAsk {
+    /// Traffic lights.
+    pub lights: Option<bool>,
+    /// Zebra crossings on these arms (indices into the ends as given).
+    pub crossings: Option<Vec<usize>>,
+    /// How far every road is cut back (m; 0: the roads already end where the plate begins).
+    pub back: Option<f64>,
+    /// How far each road is cut back, one by one in the order of the ends (over `back`).
+    pub backs: Option<Vec<f64>>,
+}
+
 fn style_options(doc: &Document, styles: &crate::road_maker::Styles, arms: &[crate::junction::Arm], centre: DVec3) -> crate::junction::Options {
     let st: Vec<crate::road_maker::JunctionStyle> = arms.iter().filter_map(|a| doc.spline(a.key, a.id)).map(|s| styles.get(&s.file)).collect();
     let mut o = crate::junction::Options { lights: st.iter().any(|s| s.lights), ..Default::default() };
@@ -15005,6 +15300,77 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// A road run into a wide one-way road whose roadway lies mostly to one side of its line
+    /// (8.3 m to its left, 4.55 m to its right, three lanes: as Chuguev's `3polos.sli`), with
+    /// the tightest corner style: the road run in ends at the wide road's kerb, not in its
+    /// lanes, and so does the arm its own wide side reaches over; the arm on its narrow side
+    /// keeps the style's tight cut.
+    #[test]
+    fn a_road_into_a_wide_one_sided_road_stops_at_its_kerb() {
+        let content = std::env::temp_dir().join(format!("om-one-sided-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&content);
+        std::fs::create_dir_all(&content).unwrap();
+        let rel = "Splines\\Test\\3lanes_one_sided.sli";
+        let lane = |x: f32| omsi_scenery::PathDef { kind: 0, start: [x, 0.1, 0.0], width: 3.75, direction: 0, ..Default::default() };
+        let pt = |x: f32, u: f32| omsi_scenery::SplineProfilePoint { x, z: 0.1, u, v_scale: 0.167 };
+        let model = crate::assets::SplineModel {
+            def: omsi_scenery::Spline { profiles: vec![omsi_scenery::SplineProfile { texture: 0, points: vec![pt(-8.3, 0.995), pt(4.55, 0.005)] }], paths: vec![lane(-5.625), lane(-1.875), lane(1.875)], ..Default::default() },
+            materials: Vec::new(),
+            half_width: 8.3,
+        };
+        let mut assets = Assets::new(content.join("no-omsi"), content.clone());
+        assets.splines.insert(rel.to_lowercase(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let mut doc = flat_map(1);
+        doc.dir = content.join("maps").join("OneSided");
+        let mut ed = Editor::default();
+        ed.content_dir = Some(content.clone());
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        ed.road_type = Some(rel.into());
+        ed.road_styles.set(rel, crate::road_maker::JunctionStyle { corner: 0.5, ..Default::default() });
+        let lib = Library::default();
+        let click = |ed: &mut Editor, a: &mut Assets, x: f64, y: f64| {
+            ed.cursor = Some(DVec3::new(x, y, 0.0));
+            ed.plan_road(a);
+            ed.road_click(a, &lib);
+            ed.tick(a, 0.0, false);
+        };
+        // east along y = 150 (its wide side north), then a branch run in from the north
+        // (heading south: its wide side east)
+        click(&mut ed, &mut assets, 60.0, 150.0);
+        click(&mut ed, &mut assets, 240.0, 150.0);
+        ed.right_click();
+        click(&mut ed, &mut assets, 150.0, 260.0);
+        click(&mut ed, &mut assets, 150.0, 151.0);
+        ed.right_click();
+        for _ in 0..20 { ed.tick(&mut assets, 0.0, false); }
+        let doc = ed.doc.as_ref().unwrap();
+        let t = &doc.tiles[&(0, 0)].tile;
+        let j: Vec<_> = t.objects.iter().filter(|o| o.file.contains("junction_")).collect();
+        assert_eq!(j.len(), 1);
+        let centre = DVec2::new(j[0].pos[0], j[0].pos[1]);
+        let ends: Vec<DVec2> = t
+            .splines
+            .iter()
+            .filter(|s| !s.deleted)
+            .flat_map(|s| {
+                let c = omsi_geometry::SplineCurve::from_map(s, tile_origin((0, 0)));
+                [(s.prev_id == 0).then(|| c.point_at(0.0).truncate()), (s.next_id == 0).then(|| c.end_point().truncate())]
+            })
+            .flatten()
+            .filter(|p| (*p - centre).length() < 25.0)
+            .collect();
+        assert_eq!(ends.len(), 3, "{ends:?}");
+        let north = ends.iter().find(|p| p.y > 152.0).expect("the branch's end");
+        let east = ends.iter().find(|p| p.x > centre.x + 1.0).expect("the east arm's end");
+        let west = ends.iter().find(|p| p.x < centre.x - 1.0).expect("the west arm's end");
+        // (the corner style's cut: (8.3 * 1.15 + 4) * 0.5 = 6.77 m)
+        assert!(north.y - 150.0 >= 8.3 + 0.3, "the branch ends {:.2} m from the wide road's line, inside its 8.3 m", north.y - 150.0);
+        assert!(east.x - centre.x >= 8.3 + 0.3, "the east arm ends {:.2} m out, under the branch's wide side", east.x - centre.x);
+        assert!(centre.x - west.x < 7.5, "the west arm keeps the tight corner: {:.2} m", centre.x - west.x);
+        let _ = std::fs::remove_dir_all(&content);
+    }
+
     #[test]
     fn a_road_into_another_makes_a_t_junction() {
         let road_s = std::env::var("TJ_MAIN").unwrap_or("Splines\\Marcel\\str_2spur_8m_borkumer1.sli".into());
@@ -15348,5 +15714,919 @@ mod tests {
             eprintln!("grab follow (chain) {i}: {:?}", t.elapsed());
         }
         ed.grab_cancel();
+    }
+}
+
+/// The length of a road from one end along its linked pieces (m, at most 200).
+/// Whether `p` lies within 12 m of a place an author's junction was found at (see `aj_keep`).
+fn aj_kept(keep: &std::collections::HashSet<(i64, i64)>, p: DVec2) -> bool {
+    let c = ((p.x / 16.0).floor() as i64, (p.y / 16.0).floor() as i64);
+    keep.contains(&c)
+}
+
+/// A spline by its IDCode, looked for first in the tiles round `near` (a linked piece lies in
+/// the same tile or the next), then (`everywhere`) in all of them.
+fn find_near(doc: &Document, near: Option<TileKey>, id: i64, everywhere: bool) -> Option<(TileKey, &MapSpline)> {
+    if id == 0 {
+        return None;
+    }
+    if let Some(k) = near {
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let q = (k.0 + dx, k.1 + dy);
+                if let Some(s) = doc.tiles.get(&q).and_then(|t| t.tile.splines.iter().find(|s| s.id == id && !s.deleted)) {
+                    return Some((q, s));
+                }
+            }
+        }
+    }
+    if everywhere { doc.find_spline(id) } else { None }
+}
+
+fn chain_length(doc: &Document, k: TileKey, id: i64, from_end: bool) -> f64 {
+    let mut total = 0.0;
+    let (mut k, mut id, mut fwd) = (k, id, !from_end);
+    for _ in 0..20 {
+        let Some(s) = doc.spline(k, id) else { break };
+        total += s.length;
+        let next = if fwd { s.next_id } else { s.prev_id };
+        if next == 0 || total > 200.0 {
+            break;
+        }
+        let Some((nk, ns)) = doc.tiles.iter().find_map(|(tk, t)| t.tile.splines.iter().find(|x| x.id == next && !x.deleted).map(|x| (*tk, x))) else { break };
+        // (going on the same way when the next piece starts where this one ended)
+        fwd = ns.prev_id == id;
+        k = nk;
+        id = next;
+    }
+    total
+}
+
+/// The spline types a street model is built with.
+#[derive(Clone, Debug, Default)]
+pub struct StreetTypes {
+    /// By class (0 main, 1 street, 2 service): two-way type and one-way type.
+    pub road: [(String, String); 3],
+    pub path: String,
+    /// Types with their carriageway widths: a street takes the nearest to its (measured) width.
+    pub choices: Vec<crate::street_model::TypeChoice>,
+    /// Make each street's own type with the road maker from these textures (roadway, paving).
+    pub make: Option<(std::path::PathBuf, std::path::PathBuf)>,
+    /// The ground layer laid under hardstanding: an apron at each dead end of a street, and the
+    /// car parks and paved yards given in `paved`.
+    pub apron: Option<usize>,
+    /// Paved areas (closed outlines, world): car parks, yards.
+    pub paved: Vec<Vec<DVec2>>,
+    /// The designed heights of the roads where they leave the ground: the streets are laid at
+    /// them, so their plates are made for the heights the roads end up at.
+    pub heights: Option<std::sync::Arc<crate::street_model::Heights>>,
+}
+
+/// A merge (or diverge) as it is laid: its long plate runs `lu` metres back up the main road
+/// from the model's node and `ld` on down it; the slip road ends (or starts) at `at`, beside
+/// the plate's upstream end (a merge) or downstream end (a diverge), running `heading`; it
+/// leaves its own course `approach` metres from there.
+#[derive(Clone, Copy, Debug)]
+pub struct MergePlan {
+    pub m: crate::street_model::Merge,
+    pub lu: f64,
+    pub ld: f64,
+    pub at: DVec2,
+    pub heading: f64,
+    pub approach: f64,
+}
+
+/// The merges of the model as they can be laid with these types (one that has no room is
+/// left out: an ordinary junction is made there).
+pub fn merge_plans(net: &crate::street_model::Network, typ: &[Option<(String, f64)>], assets: &mut Assets) -> Vec<MergePlan> {
+    let len = |si: usize| net.streets[si].axis.windows(2).map(|w| (w[1] - w[0]).length()).sum::<f64>();
+    let mut out: Vec<MergePlan> = Vec::new();
+    let mut taken: std::collections::HashSet<(usize, bool)> = Default::default();
+    for m in &net.merges {
+        let beside = if m.diverge { m.main_out } else { m.main_in };
+        let (Some(main_t), Some(ramp_t), Some(_), Some(_)) = (&typ[beside], &typ[m.ramp], &typ[m.main_in], &typ[m.main_out]) else { continue };
+        let (Some(me), Some(re)) = (assets.spline(&main_t.0).and_then(|x| crate::pocket::extent(&x)), assets.spline(&ramp_t.0).and_then(|x| crate::pocket::extent(&x))) else { continue };
+        // (edge to edge: the main road's outer edge on the slip road's side, the slip road's
+        // edge on the main road's side; the splines run the way their traffic does)
+        let o = if m.right { me.1 as f64 - re.0 as f64 } else { re.1 as f64 - me.0 as f64 };
+        let t = (net.way_at(m.main_in, true, 15.0) + net.way_at(m.main_out, false, 15.0)).normalize_or_zero();
+        if t == DVec2::ZERO {
+            continue;
+        }
+        let class = net.streets[m.main_in].class.min(net.streets[m.main_out].class);
+        let full = if class == 0 { 60.0 } else { 36.0 };
+        let (mut lu, mut ld) = if m.diverge { (full * 0.6, full * 0.4) } else { (full * 0.4, full * 0.6) };
+        let f = 1f64.min(0.45 * len(m.main_in) / lu).min(0.45 * len(m.main_out) / ld);
+        lu *= f;
+        ld *= f;
+        if lu + ld < 14.0 {
+            continue;
+        }
+        // (the slip road leaves its course this far before its end, and keeps the rest: as far
+        // as it has room for, at most half of it, the other half being its other end's)
+        // (a short slip road: the plate's part beside it shortened to what it has room for)
+        let approach = ((if m.diverge { ld } else { lu }) + 30.0).max(o * 4.0).min(0.48 * len(m.ramp));
+        let bend = o.max(8.0);
+        let room = approach - bend;
+        if room < 6.0 {
+            continue;
+        }
+        if m.diverge { ld = ld.min(room) } else { lu = lu.min(room) }
+        if lu + ld < 14.0 || !taken.insert((m.ramp, !m.diverge)) {
+            continue;
+        }
+        let nrm = if m.right { DVec2::new(t.y, -t.x) } else { DVec2::new(-t.y, t.x) };
+        let p = net.nodes[m.node];
+        let at = if m.diverge { p + t * ld + nrm * o } else { p - t * lu + nrm * o };
+        out.push(MergePlan { m: *m, lu, ld, at, heading: roads::heading_of(t), approach });
+    }
+    out
+}
+
+/// A slip road's axis with its ends brought alongside the main roads: the axis kept up to
+/// `approach` metres from such an end, fitted, and carried on from there by two arcs to the
+/// end given (where, which way). `ends`: for its start and for its end.
+fn slip_axis(axis: &[DVec2], class: u8, ends: [Option<(DVec2, f64, f64)>; 2]) -> Option<Vec<Seg>> {
+    let total: f64 = axis.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+    // (the point `d` metres along)
+    let at = |d: f64| -> (usize, DVec2) {
+        let mut run = 0.0;
+        for (i, w) in axis.windows(2).enumerate() {
+            let l = (w[1] - w[0]).length();
+            if run + l >= d {
+                return (i, w[0] + (w[1] - w[0]) * ((d - run) / l.max(1e-9)));
+            }
+            run += l;
+        }
+        (axis.len() - 2, axis[axis.len() - 1])
+    };
+    let a = ends[0].map(|e| e.2).unwrap_or(0.0);
+    let b = total - ends[1].map(|e| e.2).unwrap_or(0.0);
+    if b - a < 5.0 {
+        return None;
+    }
+    let (ia, pa) = at(a);
+    let (ib, pb) = at(b);
+    let mut kept: Vec<DVec2> = vec![pa];
+    kept.extend(axis[ia + 1..=ib].iter().copied().filter(|q| (*q - pa).length() > 0.5 && (*q - pb).length() > 0.5));
+    kept.push(pb);
+    let mut segs = crate::street_model::fit_g1(&kept, class);
+    if segs.is_empty() {
+        return None;
+    }
+    let link = |p: DVec2, hp: f64, q: DVec2, hq: f64| -> Option<Vec<Seg>> {
+        roads::biarc(p, hp, q, hq).filter(|s| s.iter().all(|g| g.radius == 0.0 || g.radius.abs() > 15.0)).or_else(|| crate::ed_author::chain_through(&[p, q], Some(hp), Some(hq)).ok())
+    };
+    if let Some((p, h, _)) = ends[0] {
+        let first = segs[0];
+        let mut lead = link(p, h, first.start, first.heading)?;
+        lead.extend(segs);
+        segs = lead;
+    }
+    if let Some((p, h, _)) = ends[1] {
+        let last = *segs.last().unwrap();
+        segs.extend(link(last.end(), last.end_heading(), p, h)?);
+    }
+    Some(segs)
+}
+
+/// What `build_streets` made.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+pub struct StreetReport {
+    pub loops_merged: usize,
+    /// The paved areas (aprons at dead ends, car parks): outlines in world metres.
+    pub hardstanding: Vec<Vec<[f64; 2]>>,
+    pub aprons: usize,
+    pub trees_off_paving: usize,
+    pub paved: usize,
+    pub streets: usize,
+    pub pieces: usize,
+    pub plates: usize,
+    /// Merges and diverges laid as slip roads alongside, with their long plates.
+    pub merges: usize,
+    /// Merges and diverges the model has (those with no room are ordinary junctions), and
+    /// where those laid alongside are.
+    pub merges_found: usize,
+    pub merge_at: Vec<[f64; 2]>,
+    /// Drives and yard roads ended at a street's edge, with no plate.
+    pub drives: usize,
+    pub joined: usize,
+    pub paths: usize,
+    pub skipped: Vec<String>,
+}
+
+impl Editor {
+    /// A junction plate from road ends given by the street model (the arms are named, never
+    /// searched for): three or more ends cut back and plated; two ends joined (in line: linked;
+    /// at an angle or of different widths: a bend or a taper). Whether anything was made.
+    pub fn plate_from_ends(&mut self, assets: &mut Assets, ends: &[(TileKey, i64, bool)]) -> Result<bool, String> {
+        self.plate_from_ends_with(assets, ends, &PlateAsk::default())
+    }
+
+    /// As `plate_from_ends`, with what is asked for over the road styles' defaults.
+    pub fn plate_from_ends_with(&mut self, assets: &mut Assets, ends: &[(TileKey, i64, bool)], ask: &PlateAsk) -> Result<bool, String> {
+        let (Some(content), asphalt) = (self.content_dir.clone(), self.asphalt.clone()) else { return Err("no content folder".into()) };
+        let styles = self.road_styles.clone();
+        let (follow, adapt) = (self.follow_ground, self.auto_adapt);
+        let Some(doc) = self.doc.as_ref() else { return Err("no map".into()) };
+        // each end: where, which way it points out of its road, its half width
+        let mut info: Vec<(TileKey, i64, bool, DVec3, f64, f64)> = Vec::new();
+        for &(k, id, at_end) in ends {
+            let Some(sp) = doc.spline(k, id) else { continue };
+            let half = assets.spline(&sp.file).map(|m| m.half_width as f64).unwrap_or(3.0);
+            let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(k));
+            if at_end {
+                info.push((k, id, true, c.end_point(), roads::norm_deg(c.heading_at(sp.length) + 180.0), half));
+            } else {
+                info.push((k, id, false, c.point_at(0.0), c.heading_at(0.0), half));
+            }
+        }
+        if info.len() < 2 {
+            return Err(format!("{} of {} ends found", info.len(), ends.len()));
+        }
+        let centre = info.iter().map(|e| e.3).sum::<DVec3>() / info.len() as f64;
+        let headings: Vec<f64> = info.iter().map(|e| e.4).collect();
+        let sharpest = headings.iter().enumerate().flat_map(|(i, a)| headings.iter().skip(i + 1).map(move |b| (roads::norm_deg(a - b + 180.0) - 180.0).abs())).fold(180.0f64, f64::min);
+        let halves: Vec<f64> = info.iter().map(|e| e.5).collect();
+        let doc = self.doc.as_mut().unwrap();
+        if info.len() == 2 {
+            let step = (halves[0] - halves[1]).abs();
+            // in line and of one width: the two roads simply go on into each other; where they
+            // do not meet exactly (a step or a kink, however small), both are cut back a little
+            // and a smooth piece of the same road laid between them
+            // (of one width at any angle: a bend of the road itself, never a plate)
+            if step < 0.25 {
+                let gap = (info[0].3 - info[1].3).length();
+                let kink = 180.0 - sharpest;
+                if gap < 0.02 && kink < 0.3 {
+                    return Ok(crate::check::apply_link(doc, (info[0].0, info[0].1, info[0].2), (info[1].0, info[1].1, info[1].2)));
+                }
+                let shortest = info.iter().map(|e| chain_length(doc, e.0, e.1, e.2)).fold(f64::MAX, f64::min);
+                // (room for an arc of twice the road's half width, at least 4 m, round the bend)
+                let r = (2.0 * halves[0]).max(4.0);
+                let back = (r * (kink.to_radians() * 0.5).tan() + 0.5 + gap * 4.0).min(shortest * 0.4);
+                let file = doc.spline(info[0].0, info[0].1).map(|s| s.file.clone()).unwrap_or_default();
+                let cut: Vec<(TileKey, i64, bool)> = info.iter().filter_map(|e| if back > 0.05 { doc.trim(e.0, e.1, e.2, back) } else { Some((e.0, e.1, e.2)) }).collect();
+                if cut.len() != 2 {
+                    return Err("joint: a road could not be cut back".into());
+                }
+                let (Some(a), Some(b)) = (crate::ed_author::end_of(doc, cut[0]), crate::ed_author::end_of(doc, cut[1])) else { return Err("joint: ends lost".into()) };
+                let segs = crate::ed_author::chain_through(&[a.0.truncate(), b.0.truncate()], Some(a.1), Some(roads::norm_deg(b.1 + 180.0)))?;
+                crate::ed_author::lay_chain_in(doc, &file, &segs, Some(cut[0]), Some(cut[1]), 0.0)?;
+                return Ok(true);
+            }
+            let back = if adapt && step >= 0.25 { taper_back(step) } else { halves.iter().cloned().fold(3.0, f64::max) + 2.0 };
+            // (never more than 40 % of the shorter road: a short piece is not eaten by its joint)
+            let shortest = info.iter().filter_map(|e| doc.spline(e.0, e.1).map(|_s| chain_length(doc, e.0, e.1, e.2))).fold(f64::MAX, f64::min);
+            let back = match ask.back {
+                Some(b) => b.max(0.0),
+                None => back.min(shortest * 0.4).max(1.0),
+            };
+            let arms: Vec<crate::junction::Arm> = info.iter().filter_map(|e| if back > 0.01 { doc.trim(e.0, e.1, e.2, back) } else { Some((e.0, e.1, e.2)) }).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+            if arms.len() != 2 {
+                return Err(format!("joint: {} arms left after cutting back {back:.1} m", arms.len()));
+            }
+            join_two(doc, assets, adapt, follow, &content, asphalt.as_deref(), &arms[0], &arms[1]);
+            return Ok(true);
+        }
+        let corner = info.iter().filter_map(|e| doc.spline(e.0, e.1).map(|s| styles.get(&s.file).corner)).fold(1.0f64, f64::max).clamp(0.5, 3.0);
+        let r = crate::junction::radius_at(&halves, sharpest.max(20.0)) * corner;
+        // (paths meet in a small paved plate: a fixed short cut-back, not the roads' clearance)
+        let footway = halves.iter().all(|h| *h <= 2.5);
+        let back = if footway { vec![2.5; info.len()] } else { crate::junction::cut_back(doc, assets, &info.iter().map(|e| Some((e.0, e.1, e.2))).collect::<Vec<_>>(), r) };
+        // (no arm is cut back by more than 45 % of its road: an arm is never eaten by its plate)
+        let back: Vec<f64> = match (&ask.backs, ask.back) {
+            // (asked for, end by end: a merge's long plate)
+            (Some(b), _) if b.len() == info.len() => b.iter().map(|x| x.max(0.0)).collect(),
+            // (asked for: the roads already end where the plate is to begin, or this far back)
+            (_, Some(b)) => vec![b.max(0.0); info.len()],
+            _ => info.iter().zip(back).map(|(e, b)| b.min(chain_length(doc, e.0, e.1, e.2) * 0.45).max(0.5)).collect(),
+        };
+        let arm_dbg: Vec<(i64, bool, f64, f64, i64, i64)> = info.iter().map(|e| { let s = doc.spline(e.0, e.1); (e.1, e.2, (chain_length(doc, e.0, e.1, e.2) * 10.0).round() / 10.0, s.map(|s| (s.length * 10.0).round() / 10.0).unwrap_or(-1.0), s.map(|s| s.prev_id).unwrap_or(0), s.map(|s| s.next_id).unwrap_or(0)) }).collect();
+        let arms: Vec<crate::junction::Arm> = info.iter().zip(&back).filter_map(|(e, b)| if *b > 0.01 { doc.trim(e.0, e.1, e.2, *b) } else { Some((e.0, e.1, e.2)) }).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+        if arms.len() < 3 {
+            return Err(format!("{} of {} arms left after cutting back {:?} (arms: {:?})", arms.len(), info.len(), back.iter().map(|b| (b * 10.0).round() / 10.0).collect::<Vec<_>>(), arm_dbg));
+        }
+        let mut opts = style_options(doc, &styles, &arms, centre);
+        if let Some(l) = ask.lights {
+            opts.lights = l;
+        }
+        if let Some(c) = &ask.crossings {
+            // (by the arms as given: the heading out of the junction along each)
+            opts.crossings = c.iter().filter_map(|&i| info.get(i)).map(|e| roads::heading_of(e.3.truncate() - centre.truncate())).collect();
+        }
+        match crate::junction::make_with(doc, assets, &content, asphalt.as_deref(), centre, &arms, &opts) {
+            Ok(_) => {
+                if follow {
+                    let e = arm_ends_world(doc, &arms);
+                    let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
+                    conform_disc(doc, centre, reach, &e);
+                }
+                Ok(true)
+            }
+            Err(e) => Err(format!("plate: {e}")),
+        }
+    }
+
+    /// The street model built: every street laid as its fitted axis (one road, tangent-continuous,
+    /// never snapped to anything near), plates where three or more streets meet at a model node,
+    /// streets of one node joined, paths laid and linked where they meet. One undo step.
+    pub fn build_streets(&mut self, assets: &mut Assets, net: &crate::street_model::Network, types: &StreetTypes) -> StreetReport {
+        let mut rep = StreetReport::default();
+        let t0 = Instant::now();
+        let files: Vec<String> = types.road.iter().flat_map(|t| [t.0.clone(), t.1.clone()]).chain([types.path.clone()]).chain(types.choices.iter().map(|c| c.file.clone())).filter(|f| !f.is_empty()).collect();
+        for f in &files {
+            while assets.spline(f).is_none() && !assets.spline_failed(f) && t0.elapsed().as_secs() < 20 {
+                assets.poll();
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+        }
+        let Some(doc) = self.doc.as_ref() else { return rep };
+        self.history.begin(tr("Streets from the street model", "Улицы по модели улиц"));
+        let keys: Vec<TileKey> = doc.tiles.keys().copied().collect();
+        for k in keys {
+            self.history.touch_tile(doc, k);
+        }
+        self.history.touch_global(doc);
+        // the axis kept within the map: pieces outside left out, the one across the edge cut there
+        let inside = |doc: &Document, p: DVec2| doc.tiles.contains_key(&tile_of(p));
+        let mut at_node: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+        // (where each end was laid: a spline cut back at its other end is made anew with another
+        // IDCode, and its end here is then found again by its place)
+        let mut end_pos: std::collections::HashMap<(TileKey, i64, bool), (DVec2, f64)> = Default::default();
+        let mut made_types: std::collections::HashSet<String> = Default::default();
+        let mut laid: Vec<(usize, Vec<(TileKey, i64)>, f64, f64)> = Vec::new(); // street, splines, length, half
+        // each street's type first (a merge lays its slip road by both roads' widths)
+        let mut typ: Vec<Option<(String, f64)>> = vec![None; net.streets.len()];
+        for (si, s) in net.streets.iter().enumerate() {
+            let (two, one) = &types.road[s.class.min(2) as usize];
+            let made_type = match (&types.make, &self.content_dir) {
+                (Some((asph, pave)), Some(content)) => {
+                    let spec = crate::street_model::road_spec(s, asph, pave);
+                    let rel = format!("Splines\\openMapper\\{}.sli", spec.file_stem());
+                    if !made_types.contains(&rel) {
+                        match spec.write(content) {
+                            Ok(r) => {
+                                made_types.insert(r.clone());
+                                let t1 = Instant::now();
+                                while assets.spline(&r).is_none() && !assets.spline_failed(&r) && t1.elapsed().as_secs() < 10 {
+                                    assets.poll();
+                                    std::thread::sleep(std::time::Duration::from_millis(10));
+                                }
+                            }
+                            Err(e) => rep.skipped.push(format!("type {}: {e}", spec.name)),
+                        }
+                    }
+                    made_types.contains(&rel).then_some(rel)
+                }
+                _ => None,
+            };
+            let picked = made_type.or_else(|| crate::street_model::choose(s, &types.choices).map(|c| c.file.clone()));
+            let fallback = if s.oneway { one.clone() } else { two.clone() };
+            let rel = &picked.unwrap_or(fallback);
+            let Some(model) = assets.spline(rel) else { rep.skipped.push(format!("no type {rel}")); continue };
+            typ[si] = Some((rel.clone(), model.half_width as f64));
+        }
+        let plans = merge_plans(net, &typ, assets);
+        rep.merges_found = net.merges.len();
+        // (slip roads' ends laid alongside the main road: street and end -> where, which way)
+        let mut slip: std::collections::HashMap<(usize, bool), (DVec2, f64, f64)> = Default::default();
+        for p in &plans {
+            slip.insert((p.m.ramp, !p.m.diverge), (p.at, p.heading, p.approach));
+        }
+        let mut slip_failed: std::collections::HashSet<usize> = Default::default();
+        // (one height for each node, for every street meeting there: from the design where it
+        // takes a road there off the ground, else the ground. Each street is then laid from its
+        // node's height, coming to its own profile no steeper than 6 %)
+        let mut node_z: std::collections::HashMap<usize, f64> = Default::default();
+        if let (Some(d), Some(doc)) = (types.heights.as_ref().filter(|h| !h.is_empty()), self.doc.as_ref()) {
+            let mut acc: std::collections::HashMap<usize, (f64, usize)> = Default::default();
+            for (si, st) in net.streets.iter().enumerate() {
+                if typ[si].is_none() || st.axis.len() < 2 {
+                    continue;
+                }
+                for (k, at_end) in [(0usize, false), (1usize, true)] {
+                    let n = st.ends[k];
+                    let p = net.nodes[n];
+                    let h = roads::heading_of(net.way_at(si, at_end, 10.0));
+                    if let Some(z) = d.at_on(p, h, &st.ways).filter(|z| (z - doc.ground(p)).abs() > 0.05) {
+                        let e = acc.entry(n).or_insert((0.0, 0));
+                        e.0 += z;
+                        e.1 += 1;
+                    }
+                }
+            }
+            node_z = acc.into_iter().map(|(n, (z, c))| (n, z / c as f64)).collect();
+        }
+        // (the ends of the merges' roads: street and end -> the spline end laid there)
+        let mut merge_end: std::collections::HashMap<(usize, bool), (TileKey, i64, bool)> = Default::default();
+        // (each end laid at a node: its street's class and its type's half width)
+        let mut end_info: std::collections::HashMap<(TileKey, i64, bool), (u8, f64)> = Default::default();
+        let merge_arm: std::collections::HashSet<(usize, bool)> = plans.iter().flat_map(|p| [(p.m.main_in, true), (p.m.main_out, false), (p.m.ramp, !p.m.diverge)]).collect();
+        for (si, s) in net.streets.iter().enumerate() {
+            let Some((rel, half)) = typ[si].clone() else { continue };
+            let rel = &rel;
+            // (the axis runs exactly from node to node: whatever moved its ends a little — the
+            // imagery's shifts, the joints' smoothing — an end off its node is an end left free)
+            let mut axis = s.axis.clone();
+            if axis.len() >= 2 {
+                let n = axis.len();
+                axis[0] = net.nodes[s.ends[0]];
+                axis[n - 1] = net.nodes[s.ends[1]];
+            }
+            let mut segs = crate::street_model::fit_g1(&axis, s.class);
+            // (a slip road's end at a merge: brought alongside the main road, edge to edge)
+            let ends_to = [slip.get(&(si, false)).copied(), slip.get(&(si, true)).copied()];
+            if ends_to.iter().any(|e| e.is_some()) {
+                match slip_axis(&axis, s.class, ends_to) {
+                    Some(g) => segs = g,
+                    None => {
+                        slip_failed.insert(si);
+                    }
+                }
+            }
+            let target = |at_end: bool| -> DVec2 {
+                match (slip_failed.contains(&si), ends_to[at_end as usize]) {
+                    (false, Some((p, _, _))) => p,
+                    _ => net.nodes[s.ends[at_end as usize]],
+                }
+            };
+            let Some(doc) = self.doc.as_ref() else { break };
+            let mut kept: Vec<Seg> = Vec::new();
+            let (mut cut0, mut cut1) = (false, false);
+            for (i, g) in segs.iter().enumerate() {
+                let (a, b) = (inside(doc, g.start), inside(doc, g.end()));
+                match (a, b) {
+                    (true, true) => kept.push(*g),
+                    (true, false) | (false, true) => {
+                        // halve to the edge
+                        let (mut lo, mut hi) = if a { (0.0, g.length) } else { (g.length, 0.0) };
+                        for _ in 0..30 {
+                            let m = (lo + hi) * 0.5;
+                            if inside(doc, g.point(m)) { lo = m } else { hi = m }
+                        }
+                        let back = if a { (lo - 0.3).max(0.0) } else { (lo + 0.3).min(g.length) };
+                        let piece = if a { g.piece(0.0, back) } else { g.piece(back, g.length) };
+                        if piece.length > 0.5 {
+                            kept.push(piece);
+                        }
+                        if a { cut1 = true } else { cut0 = i == 0 || cut0 || true }
+                    }
+                    _ => {
+                        if kept.is_empty() { cut0 = true } else { cut1 = true }
+                    }
+                }
+            }
+            if kept.len() < 1 {
+                continue;
+            }
+            // (a street leaving the map and coming back is two roads, never one linked across
+            // the gap)
+            let mut runs: Vec<Vec<Seg>> = Vec::new();
+            for g in kept {
+                match runs.last_mut() {
+                    Some(r) if (r.last().unwrap().end() - g.start).length() < 0.05 => r.push(g),
+                    _ => runs.push(vec![g]),
+                }
+            }
+            let _ = (cut0, cut1);
+            for run in runs {
+                let Some(doc) = self.doc.as_ref() else { break };
+                // (where the design takes the road off the ground, it is laid at the designed
+                // heights in pieces of 15 m, which follow its vertical curves)
+                let design = types.heights.as_ref().filter(|h| !h.is_empty());
+                let off = |p: DVec2, h: f64| design.and_then(|d| d.at_on(p, h, &s.ways)).filter(|z| (z - doc.ground(p)).abs() > 0.05);
+                let (r0, r1) = (run[0].start, run.last().unwrap().end());
+                let end_z = |at_end: bool, q: DVec2| -> Option<f64> {
+                    let n = s.ends[at_end as usize];
+                    if (q - net.nodes[n]).length() < 0.5 { node_z.get(&n).copied() } else { None }
+                };
+                let (nz0, nz1) = (end_z(false, r0), end_z(true, r1));
+                let leaves = design.is_some() && (nz0.is_some() || nz1.is_some() || run.iter().any(|g| (0..=4).any(|k| { let d = g.length * k as f64 / 4.0; off(g.point(d), g.heading_at(d)).is_some() })));
+                let pieces = roads::split(&run, if leaves { 15.0 } else { 50.0 });
+                let (q0, q1) = (pieces[0].start, pieces.last().unwrap().end());
+                let (z0, z1) = (doc.ground(q0), doc.ground(q1));
+                let given = leaves.then(|| {
+                    let mut at: Vec<(DVec2, f64)> = pieces.iter().map(|g| (g.start, g.heading)).collect();
+                    at.push((q1, pieces.last().unwrap().end_heading()));
+                    let mut z: Vec<f64> = at.iter().map(|(p, h)| off(*p, *h).unwrap_or_else(|| doc.ground(*p))).collect();
+                    let mut s = vec![0.0];
+                    for g in &pieces {
+                        s.push(s.last().unwrap() + g.length);
+                    }
+                    // (from the nodes' heights, no steeper than 6 % onto its own profile; between
+                    // two nodes too far apart in height for that, straight from the one to the other)
+                    let total = *s.last().unwrap();
+                    for i in 0..z.len() {
+                        let (mut lo, mut hi) = (f64::MIN, f64::MAX);
+                        if let Some(a) = nz0 {
+                            lo = lo.max(a - 0.06 * s[i]);
+                            hi = hi.min(a + 0.06 * s[i]);
+                        }
+                        if let Some(b) = nz1 {
+                            lo = lo.max(b - 0.06 * (total - s[i]));
+                            hi = hi.min(b + 0.06 * (total - s[i]));
+                        }
+                        z[i] = if lo <= hi {
+                            z[i].clamp(lo, hi)
+                        } else {
+                            let (a, b) = (nz0.unwrap_or(z[i]), nz1.unwrap_or(z[i]));
+                            a + (b - a) * s[i] / total.max(0.01)
+                        };
+                    }
+                    let n = z.len();
+                    (0..n).map(|i| {
+                        let (a, b) = (i.saturating_sub(1), (i + 1).min(n - 1));
+                        let g = if b > a { (z[b] - z[a]) / (s[b] - s[a]).max(0.1) * 100.0 } else { 0.0 };
+                        (z[i], g.clamp(-8.0, 8.0))
+                    }).collect::<Vec<(f64, f64)>>()
+                });
+                let start = Anchor { pos: DVec3::new(q0.x, q0.y, z0), heading: pieces[0].heading, ..Default::default() };
+                let Some(made) = self.lay_road_with(assets, rel, &pieces, z0, z1, start, None, half, given) else { continue };
+                rep.streets += 1;
+                rep.pieces += made.len();
+                laid.push((si, made.clone(), pieces.iter().map(|g| g.length).sum(), half));
+                let Some(doc) = self.doc.as_ref() else { break };
+                // (an end is the street's at its node when the node is on the map and the laid
+                // road reaches it)
+                let node_in = |n: usize| inside(doc, net.nodes[n]);
+                if let Some(f) = made.first().filter(|_| node_in(s.ends[0]) && (q0 - target(false)).length() < 0.5) {
+                    if merge_arm.contains(&(si, false)) {
+                        merge_end.insert((si, false), (f.0, f.1, false));
+                    } else {
+                        at_node.entry(s.ends[0]).or_default().push((f.0, f.1, false));
+                    }
+                    end_pos.insert((f.0, f.1, false), (q0, pieces[0].heading));
+                    end_info.insert((f.0, f.1, false), (s.class, half));
+                }
+                if let Some(l) = made.last().filter(|_| node_in(s.ends[1]) && (q1 - target(true)).length() < 0.5) {
+                    if merge_arm.contains(&(si, true)) {
+                        merge_end.insert((si, true), (l.0, l.1, true));
+                    } else {
+                        at_node.entry(s.ends[1]).or_default().push((l.0, l.1, true));
+                    }
+                    end_pos.insert((l.0, l.1, true), (q1, pieces.last().unwrap().end_heading()));
+                    end_info.insert((l.0, l.1, true), (s.class, half));
+                }
+            }
+        }
+        // the merges: their three ends, or (a slip road that could not be laid alongside, an
+        // end missing) an ordinary junction of what there is
+        let mut merge_jobs: Vec<(Vec<(TileKey, i64, bool)>, Vec<f64>, usize)> = Vec::new();
+        for p in &plans {
+            let arms = [(p.m.main_in, true), (p.m.main_out, false), (p.m.ramp, !p.m.diverge)];
+            let got: Vec<Option<(TileKey, i64, bool)>> = arms.iter().map(|a| merge_end.get(a).copied()).collect();
+            if !slip_failed.contains(&p.m.ramp) && got.iter().all(|g| g.is_some()) {
+                merge_jobs.push((got.into_iter().flatten().collect(), vec![p.lu, p.ld, 0.0], p.m.node));
+            } else {
+                at_node.entry(p.m.node).or_default().extend(got.into_iter().flatten());
+                rep.skipped.push(format!("merge at ({:.1}, {:.1}) laid as a junction", net.nodes[p.m.node].x, net.nodes[p.m.node].y));
+            }
+        }
+        for (ends, backs, n) in merge_jobs {
+            let Some(doc) = self.doc.as_ref() else { break };
+            let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).collect();
+            if ends.len() != 3 {
+                rep.skipped.push(format!("merge at ({:.1}, {:.1}): {} of 3 ends found", net.nodes[n].x, net.nodes[n].y, ends.len()));
+                continue;
+            }
+            let ask = PlateAsk { backs: Some(backs), ..Default::default() };
+            match self.plate_from_ends_with(assets, &ends, &ask) {
+                Ok(true) => {
+                    rep.merges += 1;
+                    rep.merge_at.push([net.nodes[n].x, net.nodes[n].y]);
+                }
+                Ok(false) => {}
+                Err(e) => rep.skipped.push(format!("merge at ({:.1}, {:.1}): {e}", net.nodes[n].x, net.nodes[n].y)),
+            }
+        }
+        // junctions closer than two of them need: one complex junction. A street joining two
+        // junction nodes and shorter than both their corners ask for is taken out and the nodes
+        // are made one, with all the other arms.
+        let mut root: Vec<usize> = (0..net.nodes.len()).collect();
+        fn find(r: &mut Vec<usize>, x: usize) -> usize {
+            let mut x = x;
+            while r[x] != x {
+                r[x] = r[r[x]];
+                x = r[x];
+            }
+            x
+        }
+        let mut gone: std::collections::HashSet<(TileKey, i64)> = Default::default();
+        for (si, made, len, half) in &laid {
+            let s = &net.streets[*si];
+            let (a, b) = (s.ends[0], s.ends[1]);
+            let deg = |n: usize| at_node.get(&n).map(|v| v.len()).unwrap_or(0);
+            // (and only while the junction made of them stays compact: a plate grows with the
+            // distance between the nodes it joins)
+            if a != b && deg(a) >= 3 && deg(b) >= 3 && *len < (2.0 * (half + 9.0)).min(20.0) {
+                let (ra, rb) = (find(&mut root, a), find(&mut root, b));
+                root[ra] = rb;
+                gone.extend(made.iter().copied());
+            }
+        }
+        // a small loop of service roads (a bus turning loop, a drive round a yard island, all
+        // under 150 m round): one junction of its outer arms, its pieces taken out — the plate
+        // then lies over the whole loop with its island, as such places are paved
+        {
+            let len_of: std::collections::HashMap<usize, f64> = laid.iter().map(|(si, _, len, _)| (*si, *len)).collect();
+            let adj = |n: usize| -> Vec<(usize, usize, f64)> {
+                laid.iter().filter_map(|(si, _, len, _)| {
+                    let st = &net.streets[*si];
+                    if st.class < 2 || st.ends[0] == st.ends[1] {
+                        return None;
+                    }
+                    if st.ends[0] == n { Some((*si, st.ends[1], *len)) } else if st.ends[1] == n { Some((*si, st.ends[0], *len)) } else { None }
+                }).collect()
+            };
+            let mut in_loop: std::collections::HashSet<usize> = Default::default();
+            for (si, _, len, _) in &laid {
+                let st = &net.streets[*si];
+                if st.class < 2 || st.ends[0] == st.ends[1] || *len > 80.0 {
+                    continue;
+                }
+                let (a, b) = (st.ends[0], st.ends[1]);
+                // another way from b back to a, at most three streets, the loop under 150 m
+                let mut stack: Vec<(usize, f64, Vec<usize>)> = vec![(b, *len, vec![*si])];
+                while let Some((n, l, path)) = stack.pop() {
+                    if n == a && path.len() >= 2 {
+                        in_loop.extend(path.iter().copied());
+                        continue;
+                    }
+                    if path.len() >= 4 {
+                        continue;
+                    }
+                    for (sj, m, lj) in adj(n) {
+                        if !path.contains(&sj) && l + lj < 150.0 {
+                            let mut p2 = path.clone();
+                            p2.push(sj);
+                            stack.push((m, l + lj, p2));
+                        }
+                    }
+                }
+            }
+            let _ = len_of;
+            // (each loop taken as one junction only when three or more roads come in from outside:
+            // a loop that is the end of a single drive stays as it is)
+            let mut lr: Vec<usize> = (0..net.nodes.len()).collect();
+            for si in &in_loop {
+                let st = &net.streets[*si];
+                let (ra, rb) = (find(&mut lr, st.ends[0]), find(&mut lr, st.ends[1]));
+                if ra != rb {
+                    lr[ra] = rb;
+                }
+            }
+            let loop_streets: std::collections::HashSet<usize> = in_loop.clone();
+            let mut outer: std::collections::HashMap<usize, usize> = Default::default();
+            for (si, _, _, _) in &laid {
+                if loop_streets.contains(si) {
+                    continue;
+                }
+                let st = &net.streets[*si];
+                for e in st.ends {
+                    if loop_streets.iter().any(|l| net.streets[*l].ends.contains(&e)) {
+                        *outer.entry(find(&mut lr, e)).or_default() += 1;
+                    }
+                }
+            }
+            // (and only a compact one: its nodes within 40 m of one another — a wider loop made one
+            // plate spreads asphalt over the lawns between its roads)
+            let mut spread: std::collections::HashMap<usize, (DVec2, DVec2)> = Default::default();
+            for si in &in_loop {
+                for e in net.streets[*si].ends {
+                    let r = find(&mut lr, e);
+                    let p = net.nodes[e];
+                    let b = spread.entry(r).or_insert((p, p));
+                    b.0 = b.0.min(p);
+                    b.1 = b.1.max(p);
+                }
+            }
+            for (si, made, _, _) in &laid {
+                if in_loop.contains(si) {
+                    let st = &net.streets[*si];
+                    if outer.get(&find(&mut lr, st.ends[0])).copied().unwrap_or(0) < 3 {
+                        continue;
+                    }
+                    if spread.get(&find(&mut lr, st.ends[0])).map(|b| (b.1 - b.0).length() > 38.0).unwrap_or(true) {
+                        continue;
+                    }
+                    let (ra, rb) = (find(&mut root, st.ends[0]), find(&mut root, st.ends[1]));
+                    if ra != rb {
+                        root[ra] = rb;
+                    }
+                    gone.extend(made.iter().copied());
+                    rep.loops_merged += 1;
+                }
+            }
+        }
+        if !gone.is_empty() {
+            if let Some(doc) = self.doc.as_mut() {
+                for (k, id) in &gone {
+                    doc.delete_spline(*k, *id);
+                }
+            }
+        }
+        let mut merged: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+        for (n, v) in at_node.into_iter() {
+            let r = find(&mut root, n);
+            merged.entry(r).or_default().extend(v.into_iter().filter(|e| !gone.contains(&(e.0, e.1))));
+        }
+        // the nodes: plates where three or more meet, joints where two do
+        let mut nodes: Vec<(usize, Vec<(TileKey, i64, bool)>)> = merged.into_iter().filter(|(_, v)| v.len() >= 2).collect();
+        nodes.sort_by_key(|(n, _)| *n);
+        for (n, ends) in nodes {
+            // (a street with both its ends in one junction lies inside it: taken out)
+            let mut ends = ends;
+            // (a long one — a turning loop leaving the junction and coming back to it — stays: its
+            // two ends are two arms)
+            let twice: Vec<(TileKey, i64)> = match self.doc.as_ref() {
+                Some(doc) => ends.iter().filter(|e| ends.iter().filter(|o| (o.0, o.1) == (e.0, e.1)).count() > 1 && chain_length(doc, e.0, e.1, e.2) < 30.0).map(|e| (e.0, e.1)).collect(),
+                None => Vec::new(),
+            };
+            if !twice.is_empty() {
+                if let Some(doc) = self.doc.as_mut() {
+                    for (k, id) in &twice {
+                        doc.delete_spline(*k, *id);
+                    }
+                }
+                ends.retain(|e| !twice.contains(&(e.0, e.1)));
+            }
+            // (drives and yard roads coming into a street that goes on through: each ends at the
+            // street's outer edge, as a drive meets a kerb, and the street is joined straight on,
+            // with no plate)
+            let class_of = |e: &(TileKey, i64, bool)| end_info.get(e).map(|x| x.0).unwrap_or(1);
+            let road: Vec<(TileKey, i64, bool)> = ends.iter().filter(|e| class_of(e) < 2).copied().collect();
+            let drives: Vec<(TileKey, i64, bool)> = ends.iter().filter(|e| class_of(e) >= 2).copied().collect();
+            if road.len() >= 2 && !drives.is_empty() {
+                let edge = road.iter().filter_map(|e| end_info.get(e).map(|x| x.1)).fold(0.0, f64::max);
+                if let Some(doc) = self.doc.as_mut() {
+                    for e in &drives {
+                        let Some(e2) = relocate_end(doc, *e, end_pos.get(e).copied()) else { continue };
+                        let back = (edge + 0.2).min(chain_length(doc, e2.0, e2.1, e2.2) * 0.8);
+                        if back > 0.3 {
+                            doc.trim(e2.0, e2.1, e2.2, back);
+                        }
+                        rep.drives += 1;
+                    }
+                }
+                ends = road;
+            } else if ends.len() >= 3 && road.is_empty() {
+                // (yard roads only: one going on nearly straight through, the others ending at
+                // its edge, as a drive meets it; a plate only where none goes straight on)
+                let out = |e: &(TileKey, i64, bool)| end_pos.get(e).map(|(_, h)| if e.2 { roads::norm_deg(h + 180.0) } else { *h });
+                let mut best: Option<(usize, usize, f64)> = None;
+                for a in 0..ends.len() {
+                    for b in a + 1..ends.len() {
+                        let (Some(ha), Some(hb)) = (out(&ends[a]), out(&ends[b])) else { continue };
+                        let off = (180.0 - (roads::norm_deg(ha - hb + 180.0) - 180.0).abs()).abs();
+                        if off < 30.0 && best.map_or(true, |x| off < x.2) {
+                            best = Some((a, b, off));
+                        }
+                    }
+                }
+                if let Some((a, b, _)) = best {
+                    let through = vec![ends[a], ends[b]];
+                    let edge = through.iter().filter_map(|e| end_info.get(e).map(|x| x.1)).fold(0.0, f64::max);
+                    if let Some(doc) = self.doc.as_mut() {
+                        for (i, e) in ends.iter().enumerate() {
+                            if i == a || i == b {
+                                continue;
+                            }
+                            let Some(e2) = relocate_end(doc, *e, end_pos.get(e).copied()) else { continue };
+                            let back = (edge + 0.2).min(chain_length(doc, e2.0, e2.1, e2.2) * 0.8);
+                            if back > 0.3 {
+                                doc.trim(e2.0, e2.1, e2.2, back);
+                            }
+                            rep.drives += 1;
+                        }
+                    }
+                    ends = through;
+                }
+            }
+            let Some(doc) = self.doc.as_ref() else { break };
+            let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).fold(Vec::new(), |mut v, e| { if !v.contains(&e) { v.push(e) } v });
+            if ends.len() < 2 {
+                continue;
+            }
+            match self.plate_from_ends(assets, &ends) {
+                Ok(true) => if ends.len() >= 3 { rep.plates += 1 } else { rep.joined += 1 },
+                Ok(false) => {}
+                Err(e) => rep.skipped.push(format!("node ({:.1}, {:.1}), {} ends: {e}", net.nodes[n].x, net.nodes[n].y, ends.len())),
+            }
+        }
+        // the paths: the path network's pieces, plates where three or more meet, joints where two do
+        if let Some(pm) = assets.spline(&types.path) {
+            let half = pm.half_width as f64;
+            let mut at_pnode: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+            for (p, ab) in &net.path_edges {
+                // (across a car park or a paved yard people walk anywhere: no path laid there)
+                let samples: Vec<DVec2> = p.windows(2).flat_map(|w| { let n = ((w[1] - w[0]).length().ceil() as usize).max(1); (0..n).map(move |i| w[0] + (w[1] - w[0]) * (i as f64 / n as f64)) }).collect();
+                let paved = samples.iter().filter(|q| types.paved.iter().any(|a| crate::ed_author::inside_ring(a, **q))).count();
+                if !samples.is_empty() && paved * 10 >= samples.len() * 6 {
+                    rep.skipped.push(format!("path across paving at ({:.0}, {:.0}) left out", p[0].x, p[0].y));
+                    continue;
+                }
+                let segs = crate::street_model::fit_g1(p, 3);
+                let Some(doc) = self.doc.as_ref() else { break };
+                if segs.is_empty() || segs.iter().any(|g| !inside(doc, g.start) || !inside(doc, g.end())) {
+                    continue;
+                }
+                let pieces = roads::split(&segs, 50.0);
+                let (q0, q1) = (pieces[0].start, pieces.last().unwrap().end());
+                let (z0, z1) = (doc.ground(q0), doc.ground(q1));
+                let start = Anchor { pos: DVec3::new(q0.x, q0.y, z0), heading: pieces[0].heading, ..Default::default() };
+                if let Some(made) = self.lay_road(assets, &types.path, &pieces, z0, z1, start, None, half) {
+                    rep.paths += 1;
+                    if let (Some(f), Some(l)) = (made.first(), made.last()) {
+                        at_pnode.entry(ab[0]).or_default().push((f.0, f.1, false));
+                        at_pnode.entry(ab[1]).or_default().push((l.0, l.1, true));
+                        end_pos.insert((f.0, f.1, false), (q0, pieces[0].heading));
+                        end_pos.insert((l.0, l.1, true), (q1, pieces.last().unwrap().end_heading()));
+                    }
+                }
+            }
+            let mut pn: Vec<(usize, Vec<(TileKey, i64, bool)>)> = at_pnode.into_iter().filter(|(_, v)| v.len() >= 2).collect();
+            pn.sort_by_key(|(n, _)| *n);
+            for (n, ends) in pn {
+                let Some(doc) = self.doc.as_ref() else { break };
+                let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).fold(Vec::new(), |mut v, e| { if !v.contains(&e) { v.push(e) } v });
+                if ends.len() < 2 {
+                    continue;
+                }
+                match self.plate_from_ends(assets, &ends) {
+                    Ok(true) => if ends.len() >= 3 { rep.plates += 1 } else { rep.joined += 1 },
+                    Ok(false) => {}
+                    Err(e) => rep.skipped.push(format!("path node ({:.1}, {:.1}): {e}", net.path_nodes[n].x, net.path_nodes[n].y)),
+                }
+            }
+        }
+        // hardstanding: an apron where a street ends with nothing there (a yard drive ends on a
+        // paved place, never in the grass), and the paved areas given
+        {
+            let mut polys: Vec<Vec<DVec2>> = types.paved.clone();
+            rep.paved = polys.len();
+            if let Some(doc) = self.doc.as_ref() {
+                for (si, s) in net.streets.iter().enumerate() {
+                    for (end, n) in [(0usize, s.ends[0]), (1usize, s.ends[1])] {
+                        if net.degree(n) != 1 || !inside(doc, net.nodes[n]) {
+                            continue;
+                        }
+                        // (the axis's last stretch: which way the street runs out there)
+                        let ax = &s.axis;
+                        let (p, q) = if end == 0 { (ax[0], ax[1.min(ax.len() - 1)]) } else { (ax[ax.len() - 1], ax[ax.len().saturating_sub(2)]) };
+                        let d = (p - q).normalize_or_zero();
+                        if d == DVec2::ZERO {
+                            continue;
+                        }
+                        // (a turning head: a disc round the end, a little beyond it, not a slab)
+                        let rr = (s.width * 0.5 + 1.5).max(4.5);
+                        let c = p + d * (rr * 0.5);
+                        polys.push((0..24).map(|k| { let t = k as f64 / 24.0 * std::f64::consts::TAU; c + DVec2::new(t.cos(), t.sin()) * rr }).collect());
+                        rep.aprons += 1;
+                        let _ = si;
+                    }
+                }
+            }
+            rep.hardstanding = polys.iter().map(|p| p.iter().map(|q| [(q.x * 100.0).round() / 100.0, (q.y * 100.0).round() / 100.0]).collect()).collect();
+            if let Some(doc) = self.doc.as_mut() {
+                if let Some(layer) = types.apron {
+                    if let Err(e) = crate::ed_author::paint_areas_in(doc, layer, &polys, 1.5, false) {
+                        rep.skipped.push(format!("aprons: {e}"));
+                    }
+                }
+                // (no tree grows on the paving)
+                for (k, t) in doc.tiles.iter_mut() {
+                    let org = tile_origin(*k);
+                    let before = t.tile.objects.len();
+                    t.tile.objects.retain(|o| !(crate::street_check::is_tree_file(&o.file) && polys.iter().any(|p| crate::ed_author::inside_ring(p, org + DVec2::new(o.pos[0], o.pos[1])))));
+                    if t.tile.objects.len() != before {
+                        rep.trees_off_paving += before - t.tile.objects.len();
+                        t.touch_content();
+                    }
+                }
+            }
+        }
+        self.finish_step();
+        rep
+    }
+}
+
+#[cfg(test)]
+mod slip_tests {
+    use super::*;
+
+    #[test]
+    fn a_slip_road_is_brought_alongside_ending_where_and_how_it_is_asked_to() {
+        // a slip road coming in from the south-west towards (200, 0), to end at (176, -9.5)
+        // running east beside the main road
+        let axis: Vec<DVec2> = (0..=20).map(|i| { let t = i as f64 / 20.0; DVec2::new(20.0 + 180.0 * t, -90.0 * (1.0 - t) * (1.0 - t)) }).collect();
+        let end = DVec2::new(176.0, -9.5);
+        let segs = slip_axis(&axis, 0, [None, Some((end, 90.0, 60.0))]).expect("laid");
+        let last = segs.last().unwrap();
+        assert!((last.end() - end).length() < 0.01, "{:?}", last.end());
+        assert!((roads::norm_deg(last.end_heading() - 90.0 + 180.0) - 180.0).abs() < 0.5, "{}", last.end_heading());
+        // tangent-continuous all along, its start where the road starts
+        assert!(crate::street_model::max_break(&segs) < 0.1 && crate::street_model::max_gap(&segs) < 0.05);
+        assert!((segs[0].start - axis[0]).length() < 0.01);
     }
 }

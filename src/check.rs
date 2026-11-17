@@ -895,6 +895,22 @@ fn short(file: &str) -> String {
     file.rsplit(['\\', '/']).next().unwrap_or(file).to_string()
 }
 
+/// Two free spline ends linked (inside a step the caller has open). Whether they were.
+pub fn apply_link(doc: &mut Document, a: End, b: End) -> bool {
+    let free = |doc: &Document, e: &End| doc.spline(e.0, e.1).map(|s| if e.2 { s.next_id == 0 } else { s.prev_id == 0 }).unwrap_or(false);
+    if !(free(doc, &a) && free(doc, &b) && a.1 != b.1) {
+        return false;
+    }
+    for (me, other) in [(a, b), (b, a)] {
+        let Some(t) = doc.tiles.get_mut(&me.0) else { return false };
+        if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == me.1 && !s.deleted) {
+            if me.2 { s.next_id = other.1 } else { s.prev_id = other.1 }
+        }
+        t.touch_content();
+    }
+    true
+}
+
 /// Put an issue right (as one step that can be undone). Returns whether anything changed.
 pub fn apply(ed: &mut Editor, fix: &Fix) -> bool {
     // (made at the next tick, which has the road models)

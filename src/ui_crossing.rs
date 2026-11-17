@@ -36,7 +36,7 @@ const GRAB: f32 = 9.0;
 /// every join, so nearest-first took the neighbour's disc and dragged the wrong path.
 fn end_at(sheet: &Sheet, picked: Option<usize>, pos: Pos2, to_screen: &dyn Fn(DVec2) -> Pos2) -> Option<(usize, bool)> {
     let mut best: Option<(f32, usize, bool)> = None;
-    let mut consider = |i: usize, at_end: bool, q: DVec3, best: &mut Option<(f32, usize, bool)>| {
+    let consider = |i: usize, at_end: bool, q: DVec3, best: &mut Option<(f32, usize, bool)>| {
         let d = to_screen(q.truncate()).distance(pos);
         if d <= GRAB && best.map(|b| d < b.0).unwrap_or(true) {
             *best = Some((d, i, at_end));
