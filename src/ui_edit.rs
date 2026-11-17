@@ -133,6 +133,23 @@ pub fn paint_ruler(ctx: &egui::Context, ed: &Editor, cam: &crate::camera::Camera
     painter.galley(r.min + Vec2::new(5.0, 2.0), galley, Color32::BLACK);
 }
 
+/// A road piece's links as two buttons: the piece joined at its start and at its end, each
+/// selected with a click (`,` and `.`). Which was clicked: false the start, true the end.
+pub fn linked_steps(ui: &mut egui::Ui, has_prev: bool, has_next: bool) -> Option<bool> {
+    let mut out = None;
+    ui.horizontal(|ui| {
+        let prev = ui.add_enabled(has_prev, egui::Button::new(format!("◀ {}", tr("start", "начало"))).small()).on_hover_text(tr("Select the piece joined at its start (,)", "Выбрать кусок у его начала (,)"));
+        let next = ui.add_enabled(has_next, egui::Button::new(format!("{} ▶", tr("end", "конец"))).small()).on_hover_text(tr("Select the piece joined at its end (.)", "Выбрать кусок у его конца (.)"));
+        if prev.clicked() {
+            out = Some(false);
+        }
+        if next.clicked() {
+            out = Some(true);
+        }
+    });
+    out
+}
+
 pub fn knife_help() -> &'static str {
     tr("Knife (K): a click on a road cuts it there, as often as you like; the pieces' lengths shown at the cursor, on whole grid steps with grid snapping on · right-click or Esc: off", "Нож (K): клик по дороге разрезает её в этом месте, сколько угодно раз; длины кусков видны у курсора, с привязкой к сетке — по целым шагам сетки · правый клик или Esc: выключить")
 }

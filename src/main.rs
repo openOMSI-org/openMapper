@@ -86,6 +86,7 @@ mod road_ends;
 mod street_check;
 mod ed_author;
 mod ed_ground;
+mod ed_walk;
 mod switches;
 mod texts;
 mod timetable;

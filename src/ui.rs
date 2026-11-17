@@ -2340,6 +2340,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     // ends held)
     let mut spline_extra: Option<(f64, f64, u8)> = None;
     let mut whole_road = false;
+    // (the piece joined at the start (false) or the end (true), to select)
+    let mut step: Option<bool> = None;
     let mut knife = false;
     let mut join_next = false;
     let mut reverse = false;
@@ -2697,7 +2699,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         });
                     });
                     prop_row(ui, tr("Linked", "Связи"), |ui| {
-                        ui.label(format!("{} / {}", if s.prev_id != 0 { tr("start", "начало") } else { "-" }, if s.next_id != 0 { tr("end", "конец") } else { "-" }));
+                        step = crate::ui_edit::linked_steps(ui, s.prev_id != 0, s.next_id != 0);
                     });
                     prop_row(ui, tr("Mirrored", "Зеркально"), |ui| {
                         let mut m = s.mirror;
@@ -3032,6 +3034,10 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         Sel::Spline(k, id) => {
             if whole_road {
                 ed.select_chain(k, id);
+                return;
+            }
+            if let Some(forward) = step {
+                ed.select_linked(forward, false);
                 return;
             }
             if knife {

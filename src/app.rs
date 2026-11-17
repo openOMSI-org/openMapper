@@ -2384,6 +2384,9 @@ impl App {
             }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
+            Cmd::NextPiece | Cmd::PrevPiece => {
+                self.ed.select_linked(c == Cmd::NextPiece, shift);
+            }
             Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
