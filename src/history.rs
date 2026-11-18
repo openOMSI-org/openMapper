@@ -116,7 +116,7 @@ impl History {
     /// Drop from the steps kept since the last call the tiles they did not change: many edits
     /// keep every tile of the map, as they cannot tell beforehand which they will reach, and
     /// each such step would else hold a copy of the whole map.
-    fn settle(&mut self, doc: &Document) {
+    pub fn settle(&mut self, doc: &Document) {
         for s in self.undo.iter_mut().filter(|s| !s.settled) {
             s.tiles.retain(|k, old| !unchanged(old.as_ref(), doc.tiles.get(k)));
             s.settled = true;

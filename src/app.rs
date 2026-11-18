@@ -2916,6 +2916,11 @@ impl App {
             self.ed.detach_lanes(assets, roots);
             self.ed.pick_ai_path_near(assets, at);
         }
+        // (an edit that kept every tile lets go of the copies it did not need at once, not with
+        // the next edit: on a city that is a copy of the whole map held meanwhile)
+        if let Some(doc) = self.ed.doc.as_ref() {
+            self.ed.history.settle(doc);
+        }
         if let Some(assets) = self.assets.as_mut() {
             self.ed.tick(assets, dt, self.mouse.left && !self.mouse.over_ui);
             if let Some(roots) = &self.roots {
