@@ -15,7 +15,8 @@ version from this file.
 - **The ruler measures areas**: `Shift`+click the corners of an outline for its area and perimeter.
 - **Go to a tile** from Find in map (`tile 3 -2`).
 - Windows keep their places and sizes from one start to the next (View > Put the windows back in their first places); panels keep their widths.
-- A command search box in the toolbar. Empty lists say what to do. Every key the interface shows is the one set in the controls.
+- **Material Symbols for every action**, the same icon wherever it shows: every menu entry, panel, window, button and command of the search has one, and no symbol is drawn as text any more (they showed as empty boxes).
+- A command search box in the toolbar, with commands it lacked. Empty lists say what to do. Every key the interface shows is the one set in the controls.
 - The MCP server: `shot` (the map in 3D without a window, with labels and imagery to compare), `raster`, the street model (`build_streets`, `auto_junctions`, `street_check`), authoring by hand (`road_type`, `plate`, `lay_spline`, `complex_junction`), the ground formed from what lies on it (`form_ground`, `track_beds`, `paint_area`, `ground_under`), the trolleybus wire, and the scripts project (`script`, which also runs the scripts).
 
 ### Changed
