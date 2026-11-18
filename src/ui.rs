@@ -15,14 +15,8 @@ use crate::icons::{self, Icon};
 use crate::install::{MapEntry, Prefs};
 use crate::library::{Category, Kind, Library};
 use crate::render::Thumb;
+use crate::theme::{self, pal};
 
-pub const ACCENT: Color32 = Color32::from_rgb(232, 122, 50);
-const BG: Color32 = Color32::from_rgb(36, 37, 40);
-const BG_DARK: Color32 = Color32::from_rgb(27, 28, 30);
-pub(crate) const BG_FIELD: Color32 = Color32::from_rgb(22, 23, 25);
-const BORDER: Color32 = Color32::from_rgb(18, 18, 20);
-const HEADER: Color32 = Color32::from_rgb(45, 46, 50);
-pub(crate) const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
 
 /// `s` cut to `max` characters with an ellipsis: a button holding a long name would widen its panel.
 pub(crate) fn short(s: &str, max: usize) -> String {
@@ -33,6 +27,11 @@ pub(crate) fn short(s: &str, max: usize) -> String {
     format!("{cut}…")
 }
 
+/// `s` cut short to what fits the width left, less `reserve` points (about 7 a character).
+pub(crate) fn fit(ui: &egui::Ui, s: &str, reserve: f32) -> String {
+    short(s, ((ui.available_width() - reserve) / 7.0).max(8.0) as usize)
+}
+
 /// A label that breaks anywhere to fit the panel: a long name or path without spaces would
 /// otherwise push the panel wider than its range and break the layout.
 pub(crate) fn long_label(ui: &mut egui::Ui, text: &str, style: egui::TextStyle, color: Color32) -> egui::Response {
@@ -40,7 +39,6 @@ pub(crate) fn long_label(ui: &mut egui::Ui, text: &str, style: egui::TextStyle, 
     job.wrap.break_anywhere = true;
     ui.add(egui::Label::new(job).wrap())
 }
-pub(crate) const SELECT: Color32 = Color32::from_rgb(64, 86, 122);
 
 /// What the interface asks the application to do.
 pub enum Action {
@@ -138,6 +136,8 @@ pub enum Action {
     SetStreamTiles(u32),
     /// The interface's zoom (1 = as the system has it).
     SetScale(f32),
+    /// The interface's colours.
+    SetTheme(theme::Choice),
     FocusSelection,
     /// Star a catalogue entry or take its star away.
     ToggleFavourite(String),
@@ -408,50 +408,68 @@ pub struct Status {
 
 pub fn style(ctx: &egui::Context) {
     ctx.set_fonts(icons::fonts());
-    let mut v = egui::Visuals::dark();
-    v.panel_fill = BG;
-    v.window_fill = BG;
-    v.faint_bg_color = Color32::from_rgb(40, 41, 45);
-    v.extreme_bg_color = BG_FIELD;
-    v.text_edit_bg_color = Some(BG_FIELD);
-    v.code_bg_color = BG_DARK;
-    v.window_stroke = Stroke::new(1.0, BORDER);
+    for (t, p) in [(egui::Theme::Dark, &theme::DARK), (egui::Theme::Light, &theme::LIGHT)] {
+        ctx.set_visuals_of(t, visuals(p));
+        ctx.style_mut_of(t, |s| {
+            s.spacing.item_spacing = Vec2::new(6.0, 4.0);
+            s.spacing.button_padding = Vec2::new(7.0, 3.0);
+            s.spacing.interact_size = Vec2::new(36.0, 22.0);
+            s.spacing.slider_width = 150.0;
+            s.spacing.menu_margin = Margin::same(4);
+            s.spacing.window_margin = Margin::same(10);
+            use egui::{FontId, TextStyle};
+            s.text_styles.insert(TextStyle::Body, FontId::proportional(13.0));
+            s.text_styles.insert(TextStyle::Button, FontId::proportional(13.0));
+            s.text_styles.insert(TextStyle::Small, FontId::proportional(11.0));
+            s.text_styles.insert(TextStyle::Heading, FontId::proportional(16.0));
+            s.interaction.tooltip_delay = 10.0;
+        });
+    }
+}
+
+/// egui's look made from one of the palettes.
+fn visuals(p: &theme::Palette) -> egui::Visuals {
+    let mut v = if p.light { egui::Visuals::light() } else { egui::Visuals::dark() };
+    v.panel_fill = p.panel;
+    v.window_fill = p.window;
+    v.faint_bg_color = p.row_alt;
+    v.extreme_bg_color = p.field;
+    v.text_edit_bg_color = Some(p.field);
+    v.code_bg_color = p.bar;
+    v.window_stroke = Stroke::new(1.0, p.border);
     v.window_corner_radius = CornerRadius::same(4);
     v.menu_corner_radius = CornerRadius::same(3);
-    v.window_shadow = egui::Shadow { offset: [0, 4], blur: 12, spread: 0, color: Color32::from_black_alpha(110) };
-    v.popup_shadow = egui::Shadow { offset: [0, 2], blur: 6, spread: 0, color: Color32::from_black_alpha(100) };
-    v.selection.bg_fill = SELECT;
-    v.selection.stroke = Stroke::new(1.0, Color32::WHITE);
-    v.hyperlink_color = ACCENT;
-    v.widgets.noninteractive.bg_fill = BG;
-    v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, Color32::from_rgb(24, 24, 27));
-    v.widgets.inactive.bg_fill = Color32::from_rgb(56, 58, 63);
-    v.widgets.inactive.weak_bg_fill = Color32::from_rgb(52, 54, 59);
-    v.widgets.inactive.bg_stroke = Stroke::new(1.0, Color32::from_rgb(24, 24, 27));
-    v.widgets.hovered.weak_bg_fill = Color32::from_rgb(66, 68, 74);
-    v.widgets.hovered.bg_fill = Color32::from_rgb(70, 72, 78);
-    v.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_rgb(90, 92, 100));
-    v.widgets.active.weak_bg_fill = Color32::from_rgb(78, 80, 88);
-    v.widgets.active.bg_fill = Color32::from_rgb(78, 80, 88);
+    // (a light window needs a wider, fainter shadow to lift off the panels)
+    v.window_shadow = egui::Shadow { offset: [0, 4], blur: if p.light { 16 } else { 12 }, spread: 0, color: p.shadow };
+    v.popup_shadow = egui::Shadow { offset: [0, 2], blur: if p.light { 8 } else { 6 }, spread: 0, color: p.shadow };
+    v.selection.bg_fill = p.selection;
+    v.selection.stroke = Stroke::new(1.0, p.selection_text);
+    v.hyperlink_color = p.accent;
+    v.warn_fg_color = p.warn;
+    v.error_fg_color = p.error;
+    v.widgets.noninteractive.bg_fill = p.panel;
+    v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, p.separator);
+    v.widgets.inactive.bg_fill = p.widget;
+    v.widgets.inactive.weak_bg_fill = p.button;
+    v.widgets.inactive.bg_stroke = Stroke::new(1.0, p.widget_stroke);
+    v.widgets.hovered.weak_bg_fill = p.button_hover;
+    v.widgets.hovered.bg_fill = p.widget_hover;
+    v.widgets.hovered.bg_stroke = Stroke::new(1.0, p.widget_stroke_hover);
+    v.widgets.active.weak_bg_fill = p.widget_active;
+    v.widgets.active.bg_fill = p.widget_active;
+    if p.light {
+        v.widgets.open.weak_bg_fill = p.widget_active;
+        v.widgets.noninteractive.fg_stroke.color = p.text;
+        v.widgets.inactive.fg_stroke.color = p.text;
+        v.widgets.hovered.fg_stroke.color = p.text_strong;
+        v.widgets.active.fg_stroke.color = p.text_strong;
+        v.widgets.open.fg_stroke.color = p.text_strong;
+        v.widgets.active.bg_stroke = Stroke::new(1.0, p.widget_stroke_hover);
+    }
     for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
         w.corner_radius = CornerRadius::same(3);
     }
-    ctx.set_visuals_of(egui::Theme::Dark, v);
-    ctx.style_mut_of(egui::Theme::Dark, |s| {
-        s.spacing.item_spacing = Vec2::new(6.0, 4.0);
-        s.spacing.button_padding = Vec2::new(7.0, 3.0);
-        s.spacing.interact_size = Vec2::new(36.0, 22.0);
-        s.spacing.slider_width = 150.0;
-        s.spacing.menu_margin = Margin::same(4);
-        s.spacing.window_margin = Margin::same(10);
-        use egui::{FontId, TextStyle};
-        s.text_styles.insert(TextStyle::Body, FontId::proportional(13.0));
-        s.text_styles.insert(TextStyle::Button, FontId::proportional(13.0));
-        s.text_styles.insert(TextStyle::Small, FontId::proportional(11.0));
-        s.text_styles.insert(TextStyle::Heading, FontId::proportional(16.0));
-        s.interaction.tooltip_delay = 10.0;
-    });
-    ctx.set_theme(egui::Theme::Dark);
+    v
 }
 
 /// Note help for the status bar when the mouse is over `r`.
@@ -464,24 +482,24 @@ fn help(st: &mut UiState, r: &egui::Response, text: impl Into<String>) {
 /// A flat toolbar button with an icon; `on` draws it pressed.
 fn tool_button(ui: &mut egui::Ui, icon: Icon, on: bool, enabled: bool) -> egui::Response {
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(30.0, 28.0), if enabled { Sense::click() } else { Sense::hover() });
-    let fill = if on {
-        Color32::from_rgb(70, 74, 82)
+    let fill = if (on || resp.is_pointer_button_down_on()) && enabled {
+        pal().pressed
     } else if resp.hovered() && enabled {
-        Color32::from_rgb(56, 58, 64)
+        pal().hover
     } else {
         Color32::TRANSPARENT
     };
     ui.painter().rect_filled(rect, CornerRadius::same(3), fill);
     if on {
-        ui.painter().rect_stroke(rect, CornerRadius::same(3), Stroke::new(1.0, Color32::from_rgb(98, 102, 112)), egui::StrokeKind::Inside);
-        ui.painter().line_segment([rect.left_bottom() + Vec2::new(4.0, -1.5), rect.right_bottom() + Vec2::new(-4.0, -1.5)], Stroke::new(2.0, ACCENT));
+        ui.painter().rect_stroke(rect, CornerRadius::same(3), Stroke::new(1.0, pal().pressed_stroke), egui::StrokeKind::Inside);
+        ui.painter().line_segment([rect.left_bottom() + Vec2::new(4.0, -1.5), rect.right_bottom() + Vec2::new(-4.0, -1.5)], Stroke::new(2.0, pal().accent));
     }
     let fg = if !enabled {
-        Color32::from_gray(85)
+        pal().text_off
     } else if on {
-        Color32::WHITE
+        pal().text_strong
     } else {
-        Color32::from_gray(205)
+        pal().text
     };
     icons::paint(ui.painter(), icon, rect.center(), 20.0, fg);
     resp
@@ -489,33 +507,38 @@ fn tool_button(ui: &mut egui::Ui, icon: Icon, on: bool, enabled: bool) -> egui::
 
 /// A check box drawn with Material Symbols' own boxes (egui's are drawn with lines).
 pub(crate) fn check(ui: &mut egui::Ui, on: &mut bool, text: impl Into<egui::WidgetText>) -> egui::Response {
-    let galley = text.into().into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Button);
-    let (icon, gap) = (18.0, 6.0);
-    let size = Vec2::new(icon + gap + galley.size().x, galley.size().y.max(icon + 2.0));
-    let (rect, mut resp) = ui.allocate_exact_size(size, Sense::click());
+    let mut resp = boxed_label(ui, text, if *on { Icon::CheckOn } else { Icon::CheckOff }, *on);
     if resp.clicked() {
         *on = !*on;
         resp.mark_changed();
     }
-    let vis = ui.style().interact(&resp);
-    let col = if *on { ACCENT } else { vis.fg_stroke.color };
-    icons::paint(ui.painter(), if *on { Icon::CheckOn } else { Icon::CheckOff }, egui::pos2(rect.left() + icon * 0.5, rect.center().y), icon + 2.0, col);
-    let text_color = vis.text_color();
-    ui.painter().galley(egui::pos2(rect.left() + icon + gap, rect.center().y - galley.size().y * 0.5), galley, text_color);
     resp
 }
 
 /// A radio button drawn with Material Symbols' own circles.
 fn radio(ui: &mut egui::Ui, on: bool, text: impl Into<egui::WidgetText>) -> egui::Response {
-    let galley = text.into().into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Button);
+    boxed_label(ui, text, if on { Icon::RadioOn } else { Icon::RadioOff }, on)
+}
+
+/// A box or circle and its text. A long text wraps in the panel as egui's own labels do
+/// instead of widening it; the box stays by its first line.
+fn boxed_label(ui: &mut egui::Ui, text: impl Into<egui::WidgetText>, icon_of: Icon, on: bool) -> egui::Response {
     let (icon, gap) = (18.0, 6.0);
+    let galley = text.into().into_galley(ui, Some(ui.wrap_mode()), (ui.available_width() - icon - gap).max(40.0), egui::TextStyle::Button);
     let size = Vec2::new(icon + gap + galley.size().x, galley.size().y.max(icon + 2.0));
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let vis = ui.style().interact(&resp);
-    let col = if on { ACCENT } else { vis.fg_stroke.color };
-    icons::paint(ui.painter(), if on { Icon::RadioOn } else { Icon::RadioOff }, egui::pos2(rect.left() + icon * 0.5, rect.center().y), icon + 2.0, col);
+    let col = if on { pal().accent } else { vis.fg_stroke.color };
+    let lines = galley.rows.len().max(1) as f32;
+    let (mid, top) = if lines > 1.0 {
+        let row = galley.size().y / lines;
+        (rect.top() + row * 0.5, rect.top())
+    } else {
+        (rect.center().y, rect.center().y - galley.size().y * 0.5)
+    };
+    icons::paint(ui.painter(), icon_of, egui::pos2(rect.left() + icon * 0.5, mid), icon + 2.0, col);
     let text_color = vis.text_color();
-    ui.painter().galley(egui::pos2(rect.left() + icon + gap, rect.center().y - galley.size().y * 0.5), galley, text_color);
+    ui.painter().galley(egui::pos2(rect.left() + icon + gap, top), galley, text_color);
     resp
 }
 
@@ -531,14 +554,14 @@ fn combo_icon(ui: &egui::Ui, rect: egui::Rect, vis: &egui::style::WidgetVisuals,
 }
 
 pub(crate) fn section(ui: &mut egui::Ui, title: &str) {
-    Frame::new().fill(HEADER).inner_margin(Margin::symmetric(8, 4)).show(ui, |ui| {
+    Frame::new().fill(pal().header).inner_margin(Margin::symmetric(8, 4)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        ui.label(RichText::new(title.to_uppercase()).small().strong().color(Color32::from_gray(190)));
+        ui.label(RichText::new(title.to_uppercase()).small().strong().color(pal().text));
     });
 }
 
 fn panel_frame() -> Frame {
-    Frame::new().fill(BG).inner_margin(Margin::ZERO).stroke(Stroke::new(1.0, BORDER))
+    Frame::new().fill(pal().panel).inner_margin(Margin::ZERO).stroke(Stroke::new(1.0, pal().border))
 }
 
 fn menu_item(ui: &mut egui::Ui, icon: Option<Icon>, text: &str, shortcut: &str, enabled: bool) -> bool {
@@ -568,12 +591,23 @@ fn lang_menu(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
             }
         }
     });
+    ui.menu_button(tr("Theme", "Тема"), |ui| theme_choice(ui, actions));
+}
+
+/// The three themes as radio buttons (View > Theme, the settings, the welcome card).
+fn theme_choice(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
+    let now = theme::Choice::current(ui.ctx());
+    for c in theme::Choice::ALL {
+        if radio(ui, now == c, c.name()).clicked() && now != c {
+            actions.push(Action::SetTheme(c));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------- start page
 
 pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Option<&std::path::Path>, actions: &mut Vec<Action>) {
-    egui::Panel::top("menu").frame(Frame::new().fill(BG_DARK).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
+    egui::Panel::top("menu").frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(tr("File", "Файл"), |ui| {
                 if menu_item(ui, Some(Icon::NewFile), tr("New map…", "Новая карта…"), "", omsi.is_some()) {
@@ -611,28 +645,28 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
             });
         });
     });
-    egui::Panel::bottom("status").exact_size(22.0).frame(Frame::new().fill(BG_DARK).inner_margin(Margin::symmetric(8, 3))).show(root, |ui| {
+    egui::Panel::bottom("status").exact_size(22.0).frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(8, 3))).show(root, |ui| {
         ui.horizontal(|ui| {
             match omsi {
-                Some(p) => ui.label(RichText::new(format!("OMSI 2: {}", p.display())).small().color(TEXT_DIM)),
-                None => ui.label(RichText::new(tr("OMSI 2 not found", "OMSI 2 не найдена")).small().color(Color32::from_rgb(230, 150, 90))),
+                Some(p) => ui.label(RichText::new(format!("OMSI 2: {}", p.display())).small().color(pal().text_dim)),
+                None => ui.label(RichText::new(tr("OMSI 2 not found", "OMSI 2 не найдена")).small().color(pal().warn)),
             };
         });
     });
     // (the settings open here too, before any map is chosen)
     controls(&root.ctx().clone(), st, prefs, actions);
-    egui::CentralPanel::default().frame(Frame::new().fill(Color32::from_rgb(30, 31, 34))).show(root, |ui| {
+    egui::CentralPanel::default().frame(Frame::new().fill(pal().backdrop)).show(root, |ui| {
         ui.vertical_centered(|ui| {
             ui.add_space((ui.available_height() * 0.5 - 230.0).max(20.0));
-            Frame::new().fill(BG).stroke(Stroke::new(1.0, BORDER)).corner_radius(CornerRadius::same(4)).show(ui, |ui| {
+            Frame::new().fill(pal().panel).stroke(Stroke::new(1.0, pal().border)).corner_radius(CornerRadius::same(4)).show(ui, |ui| {
                 ui.set_width(660.0);
-                Frame::new().fill(HEADER).inner_margin(Margin::symmetric(16, 12)).show(ui, |ui| {
+                Frame::new().fill(pal().header).inner_margin(Margin::symmetric(16, 12)).show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     ui.horizontal(|ui| {
-                        ui.label(Icon::Map.text(30.0).color(ACCENT));
+                        ui.label(Icon::Map.text(30.0).color(pal().accent));
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("openMapper").size(20.0).strong().color(Color32::WHITE));
-                            ui.label(RichText::new(format!("{} · v{}", tr("Map editor for openOMSI", "Редактор карт для openOMSI"), env!("CARGO_PKG_VERSION"))).small().color(TEXT_DIM));
+                            ui.label(RichText::new("openMapper").size(20.0).strong().color(pal().text_strong));
+                            ui.label(RichText::new(format!("{} · v{}", tr("Map editor for openOMSI", "Редактор карт для openOMSI"), env!("CARGO_PKG_VERSION"))).small().color(pal().text_dim));
                         });
                     });
                 });
@@ -650,7 +684,7 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
                         ui.vertical(|ui| {
                             ui.set_width(430.0);
                             ui.label(RichText::new(tr("Maps", "Карты")).strong());
-                            Frame::new().fill(BG_FIELD).stroke(Stroke::new(1.0, BORDER)).show(ui, |ui| {
+                            Frame::new().fill(pal().field).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
                                 ui.set_width(ui.available_width());
                                 egui::ScrollArea::vertical().min_scrolled_height(340.0).max_height(340.0).auto_shrink([false, false]).show(ui, |ui| {
                                     // a recent map of the installation that was since saved opens
@@ -683,7 +717,7 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
                                     for (i, (name, cfg, kind)) in rows.iter().enumerate() {
                                         let on = st.welcome_pick.as_ref() == Some(cfg);
                                         let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 54.0), Sense::click());
-                                        let fill = if on { SELECT } else if resp.hovered() { Color32::from_gray(40) } else if i % 2 == 1 { Color32::from_rgb(28, 29, 32) } else { Color32::TRANSPARENT };
+                                        let fill = pal().row_fill(on, resp.hovered(), i % 2 == 1);
                                         ui.painter().rect_filled(rect, CornerRadius::ZERO, fill);
                                         let pic = egui::Rect::from_min_size(rect.min + Vec2::new(6.0, 5.0), Vec2::new(70.0, 44.0));
                                         if !st.welcome_pictures.contains_key(cfg) && !read_one && ui.is_rect_visible(rect) {
@@ -711,13 +745,13 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
                                                 ui.painter().image(t.id(), pic, uv, Color32::WHITE);
                                             }
                                             _ => {
-                                                ui.painter().rect_filled(pic, CornerRadius::same(2), Color32::from_rgb(36, 38, 42));
-                                                icons::paint(ui.painter(), Icon::Map, pic.center(), 22.0, if on { Color32::WHITE } else { TEXT_DIM });
+                                                ui.painter().rect_filled(pic, CornerRadius::same(2), pal().thumb);
+                                                icons::paint(ui.painter(), Icon::Map, pic.center(), 22.0, pal().text_dim);
                                             }
                                         }
-                                        ui.painter().text(egui::pos2(pic.right() + 10.0, rect.top() + 18.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(14.0), Color32::from_gray(235));
+                                        ui.painter().text(egui::pos2(pic.right() + 10.0, rect.top() + 18.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(14.0), pal().row_text(on));
                                         let folder = cfg.parent().and_then(|d| d.file_name()).map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
-                                        ui.painter().text(egui::pos2(pic.right() + 10.0, rect.top() + 37.0), egui::Align2::LEFT_CENTER, format!("{kind} · {folder}"), egui::FontId::proportional(11.0), TEXT_DIM);
+                                        ui.painter().text(egui::pos2(pic.right() + 10.0, rect.top() + 37.0), egui::Align2::LEFT_CENTER, format!("{kind} · {folder}"), egui::FontId::proportional(11.0), pal().text_dim);
                                         resp.clone().on_hover_text(cfg.display().to_string());
                                         if resp.clicked() {
                                             st.welcome_pick = Some(cfg.clone());
@@ -770,10 +804,14 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
                             if ui.add(egui::Button::new(icons::labelled(Icon::Import, tr("Import assets…", "Импорт ассетов…"))).min_size(w)).clicked() {
                                 actions.push(Action::Import);
                             }
+                            // (picked here on the first start; View > Theme later)
+                            ui.add_space(14.0);
+                            ui.label(RichText::new(tr("Theme", "Тема")).strong());
+                            theme_choice(ui, actions);
                         });
                     });
                     ui.add_space(4.0);
-                    ui.label(RichText::new(tr("Double-click a map to open it. Maps of OMSI 2 are saved as a copy into openOMSI's content folder; the original stays untouched.", "Двойной клик: открыть карту. Карты OMSI 2 сохраняются копией в папку контента openOMSI; оригинал не меняется.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Double-click a map to open it. Maps of OMSI 2 are saved as a copy into openOMSI's content folder; the original stays untouched.", "Двойной клик: открыть карту. Карты OMSI 2 сохраняются копией в папку контента openOMSI; оригинал не меняется.")).small().color(pal().text_dim));
                 });
             });
         });
@@ -787,7 +825,7 @@ fn about(ctx: &egui::Context, st: &mut UiState) {
         ui.label(RichText::new(format!("openMapper {}", env!("CARGO_PKG_VERSION"))).strong());
         ui.label(tr("A simple map editor for openOMSI.", "Простой редактор карт для openOMSI."));
         ui.hyperlink_to("openomsi.org", "https://openomsi.org/");
-        ui.label(RichText::new("Icons: Material Symbols (Google, Apache 2.0)").small().color(TEXT_DIM));
+        ui.label(RichText::new("Icons: Material Symbols (Google, Apache 2.0)").small().color(pal().text_dim));
     });
     st.about_open = open;
 }
@@ -835,7 +873,7 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
         let rect = ui.max_rect();
         let resp = ui.interact(rect, Id::new("viewport"), Sense::hover());
         view = (rect, resp.contains_pointer());
-        ui.painter().rect_stroke(rect, CornerRadius::ZERO, Stroke::new(1.0, BORDER), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(rect, CornerRadius::ZERO, Stroke::new(1.0, pal().border), egui::StrokeKind::Inside);
         if let (Some(doc), Some(cam)) = (&ed.doc, status.cam) {
             if let Some(p) = st.minimap.show(ui, rect, doc, lib, cam, ed.moving()) {
                 actions.push(Action::LookAt(p));
@@ -849,10 +887,11 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
         egui::Area::new(Id::new("view 2d 3d")).fixed_pos(at).order(egui::Order::Middle).show(&ctx, |ui| {
             let (rect, resp) = ui.allocate_exact_size(Vec2::splat(34.0), Sense::click());
             let p = ui.painter();
-            p.circle_filled(rect.center(), 17.0, if resp.hovered() { Color32::from_rgb(70, 74, 82) } else { Color32::from_rgb(46, 49, 55) });
-            p.circle_stroke(rect.center(), 17.0, Stroke::new(1.5, if st.view_2d { ACCENT } else { Color32::from_gray(150) }));
-            p.text(rect.center(), egui::Align2::CENTER_CENTER, if st.view_2d { "3D" } else { "2D" }, egui::FontId::proportional(13.0), Color32::WHITE);
-            if resp.on_hover_text(if st.view_2d { tr("Back to the 3D view (0)", "Вернуться в 3D (0)") } else { tr("The plan view from above, north up (0)", "Вид сверху, север вверху (0)") }).clicked() {
+            p.circle_filled(rect.center(), 17.0, if resp.is_pointer_button_down_on() { pal().widget_active } else if resp.hovered() { pal().widget_hover } else { pal().window });
+            p.circle_stroke(rect.center(), 17.0, Stroke::new(1.5, if st.view_2d { pal().accent } else { pal().widget_stroke_hover }));
+            p.text(rect.center(), egui::Align2::CENTER_CENTER, if st.view_2d { "3D" } else { "2D" }, egui::FontId::proportional(13.0), pal().text_strong);
+            let key = crate::controls::key_hint(crate::controls::Cmd::View2d);
+            if resp.on_hover_text(if st.view_2d { format!("{}{key}", tr("Back to the 3D view", "Вернуться в 3D")) } else { format!("{}{key}", tr("The plan view from above, north up", "Вид сверху, север вверху")) }).clicked() {
                 st.view_2d = !st.view_2d;
             }
         });
@@ -884,7 +923,9 @@ pub(crate) fn let_time_run(st: &mut UiState, on: bool) {
 
 #[allow(clippy::too_many_arguments)]
 fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bool, can_redo: bool, game_found: bool, prefs: &Prefs, actions: &mut Vec<Action>) {
-    egui::Panel::top("menu").frame(Frame::new().fill(BG_DARK).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
+    // (the keys as the user set them, not the defaults)
+    use crate::controls::{key_text as key, Cmd};
+    egui::Panel::top("menu").frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(tr("File", "Файл"), |ui| {
                 if menu_item(ui, Some(Icon::NewFile), tr("New map…", "Новая карта…"), "", true) {
@@ -896,7 +937,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 ui.menu_button(icons::labelled(Icon::Map, tr("Recent maps", "Недавние карты")), |ui| {
                     let recent: Vec<PathBuf> = prefs.recent.iter().map(PathBuf::from).filter(|p| p.is_file()).collect();
                     if recent.is_empty() {
-                        ui.label(RichText::new(tr("(none)", "(нет)")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("(none)", "(нет)")).color(pal().text_dim));
                     }
                     for p in recent {
                         let name = p.parent().and_then(|d| d.file_name()).map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
@@ -906,7 +947,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     }
                 });
                 ui.separator();
-                if menu_item(ui, Some(Icon::Save), tr("Save", "Сохранить"), "Ctrl+S", true) {
+                if menu_item(ui, Some(Icon::Save), tr("Save", "Сохранить"), &key(Cmd::Save), true) {
                     actions.push(Action::Save);
                 }
                 if menu_item(ui, None, tr("Reload from disk", "Загрузить с диска"), "", ed.doc.as_ref().map(|d| !d.fresh).unwrap_or(false)) {
@@ -940,24 +981,24 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     Some(l) => format!("{} «{l}»", tr("Undo", "Отменить")),
                     None => tr("Undo", "Отменить").to_string(),
                 };
-                if menu_item(ui, Some(Icon::Undo), &undo, "Ctrl+Z", can_undo) {
+                if menu_item(ui, Some(Icon::Undo), &undo, &key(Cmd::Undo), can_undo) {
                     actions.push(Action::Undo);
                 }
-                if menu_item(ui, Some(Icon::Redo), tr("Redo", "Повторить"), "Ctrl+Shift+Z", can_redo) {
+                if menu_item(ui, Some(Icon::Redo), tr("Redo", "Повторить"), &key(Cmd::Redo), can_redo) {
                     actions.push(Action::Redo);
                 }
                 ui.separator();
                 let any = ed.selected.is_some();
-                if menu_item(ui, None, tr("Cut", "Вырезать"), "Ctrl+X", any) {
+                if menu_item(ui, None, tr("Cut", "Вырезать"), &key(Cmd::Cut), any) {
                     actions.push(Action::Cut);
                 }
-                if menu_item(ui, Some(Icon::Copy), tr("Copy", "Копировать"), "Ctrl+C", any) {
+                if menu_item(ui, Some(Icon::Copy), tr("Copy", "Копировать"), &key(Cmd::Copy), any) {
                     actions.push(Action::Copy);
                 }
-                if menu_item(ui, Some(Icon::Paste), tr("Paste", "Вставить"), "Ctrl+V", ed.clip.is_some()) {
+                if menu_item(ui, Some(Icon::Paste), tr("Paste", "Вставить"), &key(Cmd::Paste), ed.clip.is_some()) {
                     actions.push(Action::Paste);
                 }
-                if menu_item(ui, None, tr("Duplicate", "Дублировать"), "Ctrl+D", any) {
+                if menu_item(ui, None, tr("Duplicate", "Дублировать"), &key(Cmd::Duplicate), any) {
                     actions.push(Action::Duplicate);
                 }
                 if menu_item(ui, Some(Icon::History), tr("Edit history…", "История правок…"), "", true) {
@@ -966,17 +1007,17 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 if menu_item(ui, Some(Icon::Objects), tr("Groups for other maps…", "Группы для других карт…"), "", true) {
                     st.groups.open = true;
                 }
-                if menu_item(ui, Some(Icon::Search), tr("Find in map…", "Поиск по карте…"), "Ctrl+F", true) {
+                if menu_item(ui, Some(Icon::Search), tr("Find in map…", "Поиск по карте…"), &key(Cmd::Find), true) {
                     st.find.show();
                 }
-                if menu_item(ui, Some(Icon::Search), tr("Search for a command…", "Поиск команды…"), "Ctrl+K", true) {
+                if menu_item(ui, Some(Icon::Search), tr("Search for a command…", "Поиск команды…"), &key(Cmd::Commands), true) {
                     st.palette.show();
                 }
-                if menu_item(ui, Some(Icon::SelectAll), tr("Select all", "Выбрать всё"), "Ctrl+A", true) {
+                if menu_item(ui, Some(Icon::SelectAll), tr("Select all", "Выбрать всё"), &key(Cmd::SelectAll), true) {
                     actions.push(Action::SelectAll);
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Delete), tr("Delete", "Удалить"), "Del", ed.selected.is_some()) {
+                if menu_item(ui, Some(Icon::Delete), tr("Delete", "Удалить"), &key(Cmd::Delete), ed.selected.is_some()) {
                     ed.delete_selected();
                 }
                 if menu_item(ui, None, tr("Deselect", "Снять выделение"), "Esc", ed.selected.is_some()) {
@@ -998,8 +1039,8 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         }
                     }
                 });
-                check(ui, &mut st.minimap.open, icons::labelled(Icon::Map, tr("Overview map (M)", "Обзорная карта (M)")));
-                check(ui, &mut st.assets.open, icons::labelled(Icon::Objects, tr("Assets (B)", "Ассеты (B)")));
+                check(ui, &mut st.minimap.open, icons::labelled(Icon::Map, &format!("{}{}", tr("Overview map", "Обзорная карта"), crate::controls::key_hint(Cmd::Overview))));
+                check(ui, &mut st.assets.open, icons::labelled(Icon::Objects, &format!("{}{}", tr("Assets", "Ассеты"), crate::controls::key_hint(Cmd::Assets))));
                 crate::ui_geo::view_menu(ui, &mut st.geo);
                 if menu_item(ui, Some(Icon::Terrain), tr("Flatten the terrain (roads follow)", "Убрать рельеф (дороги подстроятся)"), "", true) {
                     actions.push(Action::FlattenTerrain);
@@ -1007,11 +1048,16 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 if menu_item(ui, Some(Icon::Flag), tr("Saved views…", "Сохранённые виды…"), "Ctrl+1…9", true) {
                     st.views.open = !st.views.open;
                 }
-                if menu_item(ui, Some(Icon::Focus), tr("Go to selection", "К выделенному"), "F", ed.selected.is_some()) {
+                if menu_item(ui, Some(Icon::Focus), tr("Go to selection", "К выделенному"), &key(Cmd::Focus), ed.selected.is_some()) {
                     actions.push(Action::FocusSelection);
                 }
-                if menu_item(ui, Some(Icon::Save), tr("Save a picture of the view", "Сохранить картинку вида"), "F12", true) {
+                if menu_item(ui, Some(Icon::Save), tr("Save a picture of the view", "Сохранить картинку вида"), &key(Cmd::Picture), true) {
                     actions.push(Action::ViewPicture);
+                }
+                // (the windows come back where they were left; this is the way out for one
+                // left somewhere awkward)
+                if menu_item(ui, None, tr("Put the windows back in their first places", "Вернуть окна на исходные места"), "", true) {
+                    ui.ctx().memory_mut(|m| m.reset_areas());
                 }
                 ui.separator();
                 lang_menu(ui, actions);
@@ -1048,7 +1094,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetStreamTiles(n));
                         }
                     }
-                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(pal().text_dim));
                 });
                 ui.menu_button(tr("Time of day", "Время суток"), |ui| {
                     if radio(ui, st.daytime.is_none(), tr("Plain day (as the game by day)", "Обычный день (как в игре днём)")).clicked() {
@@ -1076,7 +1122,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     // day while the clock flows, and the lamps' programs - at 1x as before, so
                     // the normal case is untouched)
                     ui.separator();
-                    ui.label(RichText::new(tr("Speed, for testing (the sun and the lamps' cycle)", "Скорость, для проверки (солнце и цикл светофоров)")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Speed, for testing (the sun and the lamps' cycle)", "Скорость, для проверки (солнце и цикл светофоров)")).small().color(pal().text_dim));
                     ui.horizontal(|ui| {
                         for speed in crate::render::daylight::SPEEDS {
                             let hint = match speed as u32 {
@@ -1119,7 +1165,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                             actions.push(Action::SetGraphicsApi(a));
                         }
                     }
-                    ui.label(RichText::new(tr("DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).", "DirectX 12 обычно лучший выбор на Windows; если выбранный API не запустится, openMapper вернётся к автоматическому. Применяется после перезапуска (OPENMAPPER_BACKEND=dx12 на один запуск).")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).", "DirectX 12 обычно лучший выбор на Windows; если выбранный API не запустится, openMapper вернётся к автоматическому. Применяется после перезапуска (OPENMAPPER_BACKEND=dx12 на один запуск).")).small().color(pal().text_dim));
                 });
                 ui.menu_button(tr("Graphics quality", "Качество графики"), |ui| {
                     let now = crate::render::quality::Quality::from_code(&prefs.graphics);
@@ -1132,7 +1178,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
             });
             ui.menu_button(tr("Tools", "Инструменты"), |ui| {
                 for t in Tool::ALL {
-                    if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(t.key()).selected(ed.tool == t)).clicked() {
+                    if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(crate::controls::key_text(tool_cmd(t))).selected(ed.tool == t)).clicked() {
                         ed.set_tool(t);
                     }
                 }
@@ -1180,16 +1226,16 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     let n = ed.remake_all_junctions();
                     ed.toast(format!("{} {n}", tr("Junctions made again:", "Перекрёстков перестроено:")));
                 }
-                if menu_item(ui, Some(Icon::Bus), tr("Lines and timetable…", "Линии и расписание…"), "L", true) {
+                if menu_item(ui, Some(Icon::Bus), tr("Lines and timetable…", "Линии и расписание…"), &key(Cmd::Lines), true) {
                     actions.push(Action::Timetable);
                 }
-                if menu_item(ui, Some(Icon::Traffic), tr("Traffic and AI…", "Трафик и ИИ…"), "T", true) {
+                if menu_item(ui, Some(Icon::Traffic), tr("Traffic and AI…", "Трафик и ИИ…"), &key(Cmd::Traffic), true) {
                     actions.push(Action::Traffic);
                 }
                 if menu_item(ui, Some(Icon::Flag), tr("Depot files (destinations)…", "Файлы депо (конечные)…"), "", true) {
                     actions.push(Action::Depots);
                 }
-                if menu_item(ui, Some(Icon::Layers), tr("Satellite and terrain…", "Спутник и рельеф…"), "I", true) {
+                if menu_item(ui, Some(Icon::Layers), tr("Satellite and terrain…", "Спутник и рельеф…"), &key(Cmd::Imagery), true) {
                     actions.push(Action::Geo);
                 }
                 if menu_item(ui, Some(Icon::Road), tr("From OpenStreetMap…", "Из OpenStreetMap…"), "", true) {
@@ -1202,7 +1248,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     actions.push(Action::MergeTiles);
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Play), tr("Test drive in openOMSI", "Тест-драйв в openOMSI"), "F5", game_found) {
+                if menu_item(ui, Some(Icon::Play), tr("Test drive in openOMSI", "Тест-драйв в openOMSI"), &key(Cmd::TestDrive), game_found) {
                     actions.push(Action::Play);
                 }
                 play_here_items(ui, game_found, actions);
@@ -1229,7 +1275,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
 }
 
 fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bool, can_redo: bool, game_found: bool, actions: &mut Vec<Action>) {
-    egui::Panel::top("toolbar").frame(Frame::new().fill(BG).inner_margin(Margin::symmetric(6, 3)).stroke(Stroke::new(1.0, BORDER))).show(root, |ui| {
+    // (the help names the keys as the user set them)
+    use crate::controls::{key_hint, key_text, Cmd};
+    egui::Panel::top("toolbar").frame(Frame::new().fill(pal().panel).inner_margin(Margin::symmetric(6, 3)).stroke(Stroke::new(1.0, pal().border))).show(root, |ui| {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
             let r = tool_button(ui, Icon::NewFile, false, true);
@@ -1245,9 +1293,9 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             let dirty = ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
             let r = tool_button(ui, Icon::Save, false, true);
             if dirty {
-                ui.painter().circle_filled(r.rect.right_top() + Vec2::new(-6.0, 6.0), 3.0, ACCENT);
+                ui.painter().circle_filled(r.rect.right_top() + Vec2::new(-6.0, 6.0), 3.0, pal().accent);
             }
-            help(st, &r, if dirty { tr("Save (Ctrl+S): there are unsaved changes", "Сохранить (Ctrl+S): есть несохранённые изменения") } else { tr("Save (Ctrl+S)", "Сохранить (Ctrl+S)") });
+            help(st, &r, format!("{}{}{}", tr("Save", "Сохранить"), key_hint(Cmd::Save), if dirty { tr(": there are unsaved changes", ": есть несохранённые изменения") } else { "" }));
             if r.clicked() {
                 actions.push(Action::Save);
             }
@@ -1258,12 +1306,12 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             }
             ui.separator();
             let r = tool_button(ui, Icon::Undo, false, can_undo);
-            help(st, &r, format!("{} (Ctrl+Z){}", tr("Undo", "Отменить"), ed.history.undo_label().map(|l| format!(": {l}")).unwrap_or_default()));
+            help(st, &r, format!("{}{}{}", tr("Undo", "Отменить"), key_hint(Cmd::Undo), ed.history.undo_label().map(|l| format!(": {l}")).unwrap_or_default()));
             if r.clicked() {
                 actions.push(Action::Undo);
             }
             let r = tool_button(ui, Icon::Redo, false, can_redo);
-            help(st, &r, tr("Redo (Ctrl+Shift+Z)", "Повторить (Ctrl+Shift+Z)"));
+            help(st, &r, format!("{}{}", tr("Redo", "Повторить"), key_hint(Cmd::Redo)));
             if r.clicked() {
                 actions.push(Action::Redo);
             }
@@ -1271,7 +1319,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             for t in Tool::ALL {
                 let on = ed.tool == t && (t != Tool::Select || ed.xform == crate::editor::Xform::Select);
                 let r = tool_button(ui, t.icon(), on, true);
-                help(st, &r, format!("{} ({})", t.label(), t.key()));
+                help(st, &r, format!("{}{}", t.label(), key_hint(tool_cmd(t))));
                 if r.clicked() {
                     ed.set_tool(t);
                     if t == Tool::Select {
@@ -1282,7 +1330,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                 if t == Tool::Select {
                     for x in crate::editor::Xform::ALL.into_iter().skip(1) {
                         let r = tool_button(ui, x.icon(), ed.tool == Tool::Select && ed.xform == x, true);
-                        help(st, &r, x.label());
+                        help(st, &r, format!("{}{}", x.label(), x.cmd().map(key_hint).unwrap_or_default()));
                         if r.clicked() {
                             ed.set_tool(Tool::Select);
                             ed.xform = if ed.xform == x { crate::editor::Xform::Select } else { x };
@@ -1290,7 +1338,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                     }
                     let snap_on = ed.vertex_snap.is_some();
                     let r = tool_button(ui, Icon::Focus, snap_on, true);
-                    help(st, &r, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"));
+                    help(st, &r, format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), key_hint(Cmd::SnapVertex)));
                     if r.clicked() {
                         if snap_on {
                             ed.cancel_vertex_snap();
@@ -1300,7 +1348,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                     }
                     let edge_snap_on = ed.edge_snap.is_some();
                     let r_edge = tool_button(ui, Icon::Line, edge_snap_on, true);
-                    help(st, &r_edge, tr("Snap edge to edge (L)", "Привязать ребро к ребру (L)"));
+                    help(st, &r_edge, format!("{}{}", tr("Snap edge to edge", "Привязать ребро к ребру"), key_hint(Cmd::SnapEdge)));
                     if r_edge.clicked() {
                         if edge_snap_on {
                             ed.cancel_edge_snap();
@@ -1312,12 +1360,12 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             }
             ui.separator();
             let r = tool_button(ui, Icon::Tiles, ed.show_grid, true);
-            help(st, &r, tr("Tile grid (G)", "Сетка тайлов (G)"));
+            help(st, &r, format!("{}{}", tr("Tile grid", "Сетка тайлов"), key_hint(Cmd::TileGrid)));
             if r.clicked() {
                 ed.show_grid = !ed.show_grid;
             }
             let r = tool_button(ui, Icon::Objects, st.assets.open, true);
-            help(st, &r, tr("Assets: every object and road type, with pictures (B)", "Ассеты: все объекты и типы дорог с картинками (B)"));
+            help(st, &r, format!("{}{}", tr("Assets: every object and road type, with pictures", "Ассеты: все объекты и типы дорог с картинками"), key_hint(Cmd::Assets)));
             if r.clicked() {
                 st.assets.open = !st.assets.open;
             }
@@ -1326,17 +1374,51 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                 let running = crate::drive::running();
                 let label = if running { icons::labelled(Icon::Error, tr("Close test drive", "Закрыть тест-драйв")) } else { icons::labelled(Icon::Play, tr("Test drive", "Тест-драйв")) };
                 let r = ui.add_enabled(game_found, egui::Button::new(label));
-                help(st, &r, if running { tr("Close the openOMSI session started from here (F5)", "Закрыть сессию openOMSI, запущенную отсюда (F5)") } else if game_found { tr("Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI (F5)", "Выбрать место старта, транспорт, время и погоду и проехать карту в openOMSI (F5)") } else { tr("openOMSI was not found: install it to test maps", "openOMSI не найден: установите его, чтобы проверять карты") });
+                help(st, &r, if running { format!("{}{}", tr("Close the openOMSI session started from here", "Закрыть сессию openOMSI, запущенную отсюда"), key_hint(Cmd::TestDrive)) } else if game_found { format!("{}{}", tr("Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI", "Выбрать место старта, транспорт, время и погоду и проехать карту в openOMSI"), key_hint(Cmd::TestDrive)) } else { tr("openOMSI was not found: install it to test maps", "openOMSI не найден: установите его, чтобы проверять карты").to_string() });
                 if r.clicked() {
                     actions.push(Action::Play);
                 }
                 r.context_menu(|ui| play_here_items(ui, game_found, actions));
                 if let Some(d) = &ed.doc {
-                    ui.label(RichText::new(d.display_name()).color(TEXT_DIM));
+                    ui.label(RichText::new(d.display_name()).color(pal().text_dim));
+                }
+                ui.add_space(8.0);
+                if search_box(ui, &key_text(Cmd::Commands)).clicked() {
+                    st.palette.show();
                 }
             });
         });
     });
+}
+
+/// What looks like a search field in the toolbar and opens the command search: Ctrl+K is
+/// quicker than the menus, but nobody finds a key they were not shown.
+fn search_box(ui: &mut egui::Ui, key: &str) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(Vec2::new(190.0, 24.0), Sense::click());
+    let p = ui.painter();
+    let edge = if resp.hovered() { pal().widget_stroke_hover } else { pal().widget_stroke };
+    p.rect(rect, CornerRadius::same(4), pal().field, Stroke::new(1.0, edge), egui::StrokeKind::Inside);
+    icons::paint(p, Icon::Search, rect.left_center() + Vec2::new(13.0, 0.0), 16.0, pal().text_dim);
+    p.text(rect.left_center() + Vec2::new(26.0, 0.0), egui::Align2::LEFT_CENTER, tr("Search commands", "Поиск команд"), egui::FontId::proportional(12.5), pal().text_dim);
+    p.text(rect.right_center() - Vec2::new(8.0, 0.0), egui::Align2::RIGHT_CENTER, key, egui::FontId::proportional(11.0), pal().text_off);
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp.on_hover_text(tr("Every command of the menus by its name", "Любая команда из меню по её названию"))
+}
+
+/// The command that picks a tool, for the key it is on.
+fn tool_cmd(t: Tool) -> crate::controls::Cmd {
+    use crate::controls::Cmd;
+    match t {
+        Tool::Select => Cmd::ToolSelect,
+        Tool::Roads => Cmd::ToolRoads,
+        Tool::Objects => Cmd::ToolObjects,
+        Tool::Logic => Cmd::ToolLogic,
+        Tool::Terrain => Cmd::ToolTerrain,
+        Tool::Paint => Cmd::ToolPaint,
+        Tool::Tiles => Cmd::ToolTiles,
+    }
 }
 
 /// Test drives from somewhere else than the first start point (Map menu, and a right-click
@@ -1352,14 +1434,19 @@ fn play_here_items(ui: &mut egui::Ui, game_found: bool, actions: &mut Vec<Action
 
 fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, ed: &mut Editor, status: &Status) {
     ed.toasts.retain(|t| t.at.elapsed().as_secs_f32() < 8.0);
-    egui::Panel::bottom("status").exact_size(22.0).frame(Frame::new().fill(BG_DARK).inner_margin(Margin::symmetric(8, 3))).show(root, |ui| {
+    egui::Panel::bottom("status").exact_size(22.0).frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(8, 3))).show(root, |ui| {
         ui.horizontal(|ui| {
             // the help of what the mouse is over, else the newest message, else the tool's
             let (text, color) = match (ed.toasts.last(), help_line) {
-                (_, Some(h)) => (h, Color32::from_gray(210)),
-                (Some(t), None) => (t.text.clone(), if t.error { Color32::from_rgb(240, 120, 100) } else { Color32::from_rgb(150, 210, 140) }),
-                (None, None) => (String::new(), TEXT_DIM),
+                (_, Some(h)) => (h, pal().text),
+                (Some(t), None) => (t.text.clone(), if t.error { pal().error } else { pal().ok }),
+                // (with nothing to say, where more is to be found: chosen below by the room left)
+                (None, None) => (String::new(), pal().text_dim),
             };
+            let idle = [
+                tr("Right-click the view for what can be done there; Search commands finds the rest", "Правый клик по виду: что можно сделать там; «Поиск команд» найдёт остальное"),
+                tr("Right-click the view: its menu", "Правый клик по виду: его меню"),
+            ];
             // (the facts on the right first; the help gets what is left, cut short)
             // The bar scales with the window: what does not fit goes in this order, the tile
             // numbers' details and counts first, then the cursor, and the switches fold into a
@@ -1424,31 +1511,31 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 // (the clock is both the readout and the button: a click starts or stops the
                 // hour the sun is lit at, as View > Time of day's "let time run")
-                let c = if st.time_flows { ACCENT } else { TEXT_DIM };
+                let c = if st.time_flows { pal().accent } else { pal().text_dim };
                 let r = ui.add(egui::Button::new(RichText::new(&clock).small().monospace().color(c)).frame(false)).on_hover_text(clock_tip);
                 if r.clicked() {
                     let_time_run(st, !st.time_flows);
                 }
                 ui.separator();
                 if show_gpu {
-                    ui.label(RichText::new(&status.gpu).small().color(Color32::from_gray(95)));
+                    ui.label(RichText::new(&status.gpu).small().color(pal().text_dim));
                     ui.separator();
                 }
                 if let Some(t) = &loading {
-                    ui.label(RichText::new(t).small().color(TEXT_DIM));
+                    ui.label(RichText::new(t).small().color(pal().text_dim));
                     ui.spinner();
                     ui.separator();
                 }
                 if let (true, Some(t)) = (show_counts, &counts) {
-                    ui.label(RichText::new(t).small().color(TEXT_DIM));
+                    ui.label(RichText::new(t).small().color(pal().text_dim));
                     ui.separator();
                 }
                 if let Some(r) = readout {
-                    ui.label(RichText::new(r).small().strong().color(ACCENT));
+                    ui.label(RichText::new(r).small().strong().color(pal().accent));
                     ui.separator();
                 }
                 if let (true, Some(t)) = (show_cursor, &cursor) {
-                    ui.label(RichText::new(t).small().monospace().color(TEXT_DIM));
+                    ui.label(RichText::new(t).small().monospace().color(pal().text_dim));
                 }
                 if ed.doc.is_some() {
                     ui.separator();
@@ -1456,8 +1543,13 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
                 }
                 ui.separator();
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                    let r = ui.add(egui::Label::new(RichText::new(&text).small().color(color)).truncate());
-                    r.on_hover_text(&text);
+                    // (an idle hint is said whole or in short, never cut off; help and messages
+                    // are cut short and shown whole under the mouse)
+                    let text = if text.is_empty() { idle.iter().find(|t| small_w(ui, t, false) - sep <= ui.available_width()).map(|t| t.to_string()).unwrap_or_default() } else { text };
+                    if !text.is_empty() {
+                        let r = ui.add(egui::Label::new(RichText::new(&text).small().color(color)).truncate());
+                        r.on_hover_text(&text);
+                    }
                 });
             });
         });
@@ -1490,7 +1582,7 @@ fn tool_panel(
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1501,7 +1593,7 @@ fn tool_panel(
                         }
                     }
                     let edge_on = ed.edge_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(edge_on))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {
@@ -1533,10 +1625,10 @@ fn tool_panel(
             ui.label(tr("Click beside the map to add a 300 × 300 m tile. Right-click a tile to remove it.", "Клик рядом с картой: добавить тайл 300 × 300 м. Правый клик по тайлу: удалить."));
             ui.add_space(6.0);
             egui::Grid::new("tiles").num_columns(2).show(ui, |ui| {
-                ui.label(RichText::new(tr("Tiles", "Тайлов")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Tiles", "Тайлов")).color(pal().text_dim));
                 ui.label(n.to_string());
                 ui.end_row();
-                ui.label(RichText::new(tr("Area", "Площадь")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Area", "Площадь")).color(pal().text_dim));
                 ui.label(format!("{:.2} km²", n as f64 * crate::doc::tile_size().powi(2) / 1e6));
                 ui.end_row();
             });
@@ -1563,12 +1655,12 @@ fn tool_panel(
                 st.outliner.panel(ui, ed, lib, actions);
                 return;
             }
-            ui.label(RichText::new(tr("Click an object or a road in the view to see and change it on the right.", "Кликните объект или дорогу в окне вида: свойства появятся справа.")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Click an object or a road in the view to see and change it on the right.", "Кликните объект или дорогу в окне вида: свойства появятся справа.")).color(pal().text_dim));
             ui.add_space(8.0);
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1579,7 +1671,7 @@ fn tool_panel(
                         }
                     }
                     let edge_on = ed.edge_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(edge_on))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {
@@ -1593,7 +1685,7 @@ fn tool_panel(
                 ui.add_space(8.0);
             }
             for t in Tool::ALL.iter().skip(1) {
-                if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(t.key()).min_size(Vec2::new(ui.available_width(), 24.0))).clicked() {
+                if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(crate::controls::key_text(tool_cmd(*t))).min_size(Vec2::new(ui.available_width(), 24.0))).clicked() {
                     ed.set_tool(*t);
                 }
             }
@@ -1618,7 +1710,7 @@ fn logic_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libra
         }
     });
     ui.add_space(4.0);
-    ui.label(RichText::new(ed.logic.hint()).small().color(TEXT_DIM));
+    ui.label(RichText::new(ed.logic.hint()).small().color(pal().text_dim));
     // (stops, start points and car parks go to the kerb or the lane by themselves: switchable)
     if matches!(ed.logic, LogicMode::Stops | LogicMode::Start | LogicMode::Parking) {
         check(ui, &mut ed.align_to_road, tr("Line up with the nearest road (Shift: put it freely)", "Выравнивать по ближайшей дороге (Shift: ставить свободно)"));
@@ -1651,7 +1743,7 @@ fn logic_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libra
                 }
             });
             if ed.path_edit {
-                ui.label(RichText::new(tr("Click a path to pick it: every point is a dot to drag (the small ones in the middle of a piece bend it). Double-click the path to put a point in. Click a dot, then Del, to take that point out; Del with no dot picked deletes the whole path (Ctrl+Z brings it back). Lanes of roads and junctions belong to their road type: use Edit its AI lanes on the road.", "Клик по пути выбирает его: каждая точка это кружок, который можно тянуть (маленькие в середине куска изгибают его). Двойной клик по пути ставит точку. Клик по кружку, затем Del: убрать эту точку; Del без выбранной точки удаляет весь путь (Ctrl+Z вернёт). Полосы дорог и перекрёстков принадлежат типу дороги: используйте «Править полосы ИИ» у дороги.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Click a path to pick it: every point is a dot to drag (the small ones in the middle of a piece bend it). Double-click the path to put a point in. Click a dot, then Del, to take that point out; Del with no dot picked deletes the whole path (Ctrl+Z brings it back). Lanes of roads and junctions belong to their road type: use Edit its AI lanes on the road.", "Клик по пути выбирает его: каждая точка это кружок, который можно тянуть (маленькие в середине куска изгибают его). Двойной клик по пути ставит точку. Клик по кружку, затем Del: убрать эту точку; Del без выбранной точки удаляет весь путь (Ctrl+Z вернёт). Полосы дорог и перекрёстков принадлежат типу дороги: используйте «Править полосы ИИ» у дороги.")).small().color(pal().text_dim));
                 let armed = ed.path_connect_on();
                 let label = if armed { tr("Click the other point (Esc cancels)", "Щёлкните другую точку (Esc отменяет)") } else { tr("Connect to", "Соединить с") };
                 if ui.add(egui::Button::new(icons::labelled(Icon::Route, label)).selected(armed)).clicked() {
@@ -1727,7 +1819,10 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         ui.label(tr("Search", "Поиск"));
         ui.horizontal(|ui| {
             let drop = logic.is_none();
-            let w = (ui.available_width() - if drop { 28.0 } else { 0.0 }).max(40.0);
+            // (room for the dropper button and the gap before it: less, and the row pushed the
+            // panel wider every frame until it reached its widest)
+            let button = 16.0 + ui.spacing().button_padding.x * 2.0 + ui.spacing().item_spacing.x + 2.0;
+            let w = (ui.available_width() - if drop { button } else { 0.0 }).max(40.0);
             ui.add(egui::TextEdit::singleline(&mut st.search).desired_width(w));
             if drop {
                 let armed = match (kind, ed.sample) {
@@ -1758,7 +1853,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         crate::ui_edit::pocket_options(ui, ed);
         check(ui, &mut ed.keep_drawing, tr("Go on drawing from the end of the road just built", "Продолжать рисовать с конца построенной дороги"));
         check(ui, &mut ed.snap_roads, tr("Join road ends, roads and junction pieces near the cursor", "Пристыковывать к концам дорог, дорогам и деталям перекрёстков у курсора"));
-        ui.label(RichText::new(tr("Hold Ctrl while drawing to join nothing. Cables, fences and footpaths never join roads or junctions.", "Удерживайте Ctrl при рисовании, чтобы ничего не присоединять. Кабели, заборы и тропы никогда не присоединяются к дорогам и перекрёсткам.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("Hold Ctrl while drawing to join nothing. Cables, fences and footpaths never join roads or junctions.", "Удерживайте Ctrl при рисовании, чтобы ничего не присоединять. Кабели, заборы и тропы никогда не присоединяются к дорогам и перекрёсткам.")).small().color(pal().text_dim));
         check(ui, &mut ed.auto_junctions, tr("Make junctions where roads meet", "Делать перекрёстки, где дороги встречаются"));
         if ed.auto_junctions {
             check(ui, &mut ed.use_custom, tr("Use my custom junctions where they fit", "Ставить мои перекрёстки, где они подходят")).on_hover_text(tr("Custom junctions saved from the complex junction editor with Use in automatic junctions on", "Свои перекрёстки, сохранённые в редакторе сложных перекрёстков с включённым «Использовать в авто-перекрёстках»"));
@@ -1769,8 +1864,8 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         check(ui, &mut ed.inherit_type, tr("Go on with the type of the road I start from", "Продолжать типом дороги, от которой начинаю"));
         let current = ed.road_type.as_deref().map(|r| lib.find(r).map(|a| a.name.clone()).unwrap_or_else(|| r.to_string()));
         ui.horizontal(|ui| {
-            ui.label(RichText::new(tr("Building with:", "Строится:")).color(TEXT_DIM));
-            ui.label(RichText::new(current.unwrap_or_else(|| tr("nothing chosen", "ничего не выбрано").to_string())).strong().color(Color32::WHITE));
+            ui.label(RichText::new(tr("Building with:", "Строится:")).color(pal().text_dim));
+            ui.label(RichText::new(current.unwrap_or_else(|| tr("nothing chosen", "ничего не выбрано").to_string())).strong().color(pal().text_strong));
         });
     } else {
         check(ui, &mut ed.align_to_road, tr("Line up with the nearest road (Shift: put it freely)", "Выравнивать по ближайшей дороге (Shift: ставить свободно)"));
@@ -1804,7 +1899,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                 }
             });
             if let Some(n) = ed.plant_outline_estimate() {
-                ui.label(RichText::new(format!("{} {n} {}", tr("About", "Около"), tr("plants (Enter: plant)", "растений (Enter: посадить)"))).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{} {n} {}", tr("About", "Около"), tr("plants (Enter: plant)", "растений (Enter: посадить)"))).small().color(pal().text_dim));
             }
             egui::Grid::new("plants").num_columns(2).spacing(Vec2::new(8.0, 4.0)).show(ui, |ui| {
                 if !ed.plant_area {
@@ -1817,9 +1912,9 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                 ui.end_row();
             });
             if ed.plant_mix.is_empty() {
-                ui.label(RichText::new(tr("Sows the object chosen below. Right-click entries: \"Add to the plant mix\" to sow several at random. Clearing takes trees and the mix's objects.", "Сажает объект, выбранный ниже. Правый клик по пунктам: «Добавить в смесь», чтобы сажать несколько вперемешку. Кисть «Убирать» убирает деревья и объекты смеси.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Sows the object chosen below. Right-click entries: \"Add to the plant mix\" to sow several at random. Clearing takes trees and the mix's objects.", "Сажает объект, выбранный ниже. Правый клик по пунктам: «Добавить в смесь», чтобы сажать несколько вперемешку. Кисть «Убирать» убирает деревья и объекты смеси.")).small().color(pal().text_dim));
             } else {
-                ui.label(RichText::new(tr("Mix (picked at random):", "Смесь (вперемешку):")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Mix (picked at random):", "Смесь (вперемешку):")).small().color(pal().text_dim));
                 let mut drop = None;
                 for (i, rel) in ed.plant_mix.iter().enumerate() {
                     ui.horizontal(|ui| {
@@ -1848,29 +1943,33 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         }
     }
     let items: Vec<&crate::library::Asset> = lib.filter(kind, *cat, &st.search).filter(|a| belongs(a)).collect();
-    ui.label(RichText::new(if lib.scanning { tr("reading OMSI 2…", "чтение OMSI 2…").to_string() } else { format!("{} {}", items.len(), tr("items", "шт.")) }).small().color(TEXT_DIM));
+    // (the list fills as the scan goes: what is there is counted, the rest said to be coming)
+    let count = format!("{} {}", items.len(), tr("items", "шт."));
+    ui.label(RichText::new(if lib.scanning { format!("{count} · {}", tr("more as OMSI 2 is read…", "ещё будут, пока читается OMSI 2…")) } else { count }).small().color(pal().text_dim));
     let avail = ui.available_height();
     let searching = !st.search.trim().is_empty();
-    Frame::new().fill(BG_FIELD).stroke(Stroke::new(1.0, BORDER)).show(ui, |ui| {
+    Frame::new().fill(pal().field).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
         ui.set_min_height(avail - 6.0);
         ui.set_width(ui.available_width());
         if items.is_empty() {
-            ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).color(TEXT_DIM));
+            // (an empty list says why, and what to do)
+            let why = if lib.scanning {
+                tr("Reading the content of OMSI 2…", "Читается контент OMSI 2…")
+            } else if searching {
+                tr("Nothing found: try fewer letters, or Everything in Show", "Ничего не найдено: попробуйте меньше букв или «Всё» в списке «Показать»")
+            } else {
+                tr("Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)", "Ничего такого нет: выберите «Всё» в списке «Показать» или импортируйте ассеты (Файл > Импорт ассетов)")
+            };
+            Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
+                ui.label(RichText::new(why).color(pal().text_dim));
+            });
             return;
         }
         let mut row = |ui: &mut egui::Ui, a: &crate::library::Asset, i: usize, st: &mut UiState, ed: &mut Editor| {
             let h = 40.0;
             let on = selected.as_deref().map(|s| s.eq_ignore_ascii_case(&a.rel)).unwrap_or(false);
             let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), h), Sense::click());
-            let fill = if on {
-                SELECT
-            } else if resp.hovered() {
-                Color32::from_gray(40)
-            } else if i % 2 == 1 {
-                Color32::from_rgb(26, 27, 30)
-            } else {
-                Color32::TRANSPARENT
-            };
+            let fill = pal().row_fill(on, resp.hovered(), i % 2 == 1);
             ui.painter().rect_filled(rect, CornerRadius::ZERO, fill);
             let img = egui::Rect::from_min_size(rect.min + Vec2::new(3.0, 2.0), Vec2::splat(h - 4.0));
             match thumbs.get(&a.rel.to_lowercase()) {
@@ -1878,17 +1977,17 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                     egui::Image::new((t.id, img.size())).paint_at(ui, img);
                 }
                 Some(None) => {
-                    icons::paint(ui.painter(), a.category.icon(), img.center(), 20.0, Color32::from_gray(90));
+                    icons::paint(ui.painter(), a.category.icon(), img.center(), 20.0, pal().text_off);
                 }
                 None => {
                     wanted.push((a.rel.clone(), kind == Kind::Spline));
-                    ui.painter().rect_filled(img.shrink(11.0), CornerRadius::same(2), Color32::from_gray(40));
+                    ui.painter().rect_filled(img.shrink(11.0), CornerRadius::same(2), pal().thumb);
                 }
             }
-            ui.painter().text(rect.min + Vec2::new(h + 6.0, 12.0), egui::Align2::LEFT_CENTER, &a.name, egui::FontId::proportional(13.0), Color32::from_gray(230));
+            ui.painter().text(rect.min + Vec2::new(h + 6.0, 12.0), egui::Align2::LEFT_CENTER, &a.name, egui::FontId::proportional(13.0), pal().row_text(on));
             let starred = st.favourites.iter().any(|f| f.eq_ignore_ascii_case(&a.rel));
             if starred {
-                icons::paint(ui.painter(), Icon::Star, rect.right_center() - Vec2::new(14.0, 0.0), 15.0, ACCENT);
+                icons::paint(ui.painter(), Icon::Star, rect.right_center() - Vec2::new(14.0, 0.0), 15.0, pal().accent);
             }
             let mut sub = a.category.label().to_string();
             if searching && !a.dir.is_empty() {
@@ -1897,7 +1996,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             if a.from_content {
                 sub.push_str(&format!(" · {}", tr("mod", "мод")));
             }
-            ui.painter().text(rect.min + Vec2::new(h + 6.0, 28.0), egui::Align2::LEFT_CENTER, sub, egui::FontId::proportional(11.0), TEXT_DIM);
+            ui.painter().text(rect.min + Vec2::new(h + 6.0, 28.0), egui::Align2::LEFT_CENTER, sub, egui::FontId::proportional(11.0), pal().text_dim);
             if resp.hovered() {
                 st.status_help = Some(format!("{} · {}", a.rel, tr("right-click: star it", "правый клик: в избранное")));
             }
@@ -1979,7 +2078,9 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             let open_all = tree.len() <= 2;
             for (top, subs) in &tree {
                 let n: usize = subs.values().map(|v| v.len()).sum();
-                egui::CollapsingHeader::new(RichText::new(format!("{top}   ({n})")).strong()).icon(group_icon).id_salt(("cat-dir", kind == Kind::Spline, top)).default_open(open_all).show(ui, |ui| {
+                // (a long folder name with no spaces cannot wrap: cut short, it no longer pushes
+                // the panel wider as the scan finds it)
+                egui::CollapsingHeader::new(RichText::new(format!("{}   ({n})", fit(ui, top, 80.0))).strong()).icon(group_icon).id_salt(("cat-dir", kind == Kind::Spline, top)).default_open(open_all).show(ui, |ui| {
                     for (sub, list) in subs {
                         let mut draw = |ui: &mut egui::Ui| {
                             for (i, a) in list.iter().enumerate() {
@@ -1989,7 +2090,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                         if sub.is_empty() {
                             draw(ui);
                         } else {
-                            egui::CollapsingHeader::new(format!("{sub}   ({})", list.len())).icon(group_icon).id_salt(("cat-sub", kind == Kind::Spline, top, sub)).show(ui, |ui| draw(ui));
+                            egui::CollapsingHeader::new(format!("{}   ({})", fit(ui, sub, 90.0), list.len())).icon(group_icon).id_salt(("cat-sub", kind == Kind::Spline, top, sub)).show(ui, |ui| draw(ui));
                         }
                     }
                 });
@@ -2036,7 +2137,7 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
         help(st, &r, h);
     }
     if ed.terrain_mode == TerrainMode::AlongSpline {
-        ui.label(RichText::new(tr("The brush size is how far either side of the spline the ground is brought to its height.", "Размер кисти — как далеко в обе стороны от сплайна земля приводится к его высоте.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("The brush size is how far either side of the spline the ground is brought to its height.", "Размер кисти — как далеко в обе стороны от сплайна земля приводится к его высоте.")).small().color(pal().text_dim));
         if ui.button(icons::labelled(Icon::Road, tr("Align the selected splines", "Земля по выбранным сплайнам"))).clicked() {
             let which: Vec<_> = ed.selection().into_iter().filter_map(|s| match s {
                 Sel::Spline(k, id) => Some((k, id)),
@@ -2096,9 +2197,9 @@ fn terrain_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, actions: 
             } else {
                 tr("Click the river's middle line from its source on and finish on the last point (or Enter). Water in OMSI lies at one level for a tile: a river runs level.", "Кликайте по осевой реки от истока и завершите на последней точке (или Enter). Вода в OMSI на одном уровне для тайла: река течёт ровно.")
             };
-            ui.label(RichText::new(hint).small().color(TEXT_DIM));
+            ui.label(RichText::new(hint).small().color(pal().text_dim));
         } else {
-            ui.label(RichText::new(tr("The water's level is set where a stroke starts: start at the bank.", "Уровень воды берётся там, где начат мазок: начинайте у берега.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The water's level is set where a stroke starts: start at the bank.", "Уровень воды берётся там, где начат мазок: начинайте у берега.")).small().color(pal().text_dim));
         }
     }
     if water_by_hand {
@@ -2125,14 +2226,14 @@ fn paint_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, swatches: &
     let mut remove: Option<usize> = None;
     let mut move_layer: Option<bool> = None;
     let n = doc.global.ground_textures.len();
-    Frame::new().fill(BG_FIELD).stroke(Stroke::new(1.0, BORDER)).show(ui, |ui| {
+    Frame::new().fill(pal().field).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
         ui.set_width(ui.available_width());
         ui.spacing_mut().item_spacing.y = 0.0;
         for i in 0..n {
             let g = &doc.global.ground_textures[i];
             let on = ed.paint_layer == i;
             let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 38.0), Sense::click());
-            ui.painter().rect_filled(rect, CornerRadius::ZERO, if on { SELECT } else if resp.hovered() { Color32::from_gray(40) } else { Color32::TRANSPARENT });
+            ui.painter().rect_filled(rect, CornerRadius::ZERO, pal().row_fill(on, resp.hovered(), false));
             let sw = egui::Rect::from_min_size(rect.min + Vec2::new(3.0, 3.0), Vec2::splat(32.0));
             match swatches.get(&g.texture.to_lowercase()) {
                 Some(h) => {
@@ -2141,9 +2242,9 @@ fn paint_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, swatches: &
                 None => wanted.push(g.texture.clone()),
             }
             let name = std::path::Path::new(&g.texture.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-            ui.painter().text(rect.min + Vec2::new(42.0, 12.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(13.0), Color32::from_gray(230));
+            ui.painter().text(rect.min + Vec2::new(42.0, 12.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(13.0), pal().row_text(on));
             let sub = if i == 0 { tr("base ground", "основа").to_string() } else { format!("{} {}", tr("layer", "слой"), i) };
-            ui.painter().text(rect.min + Vec2::new(42.0, 27.0), egui::Align2::LEFT_CENTER, sub, egui::FontId::proportional(11.0), TEXT_DIM);
+            ui.painter().text(rect.min + Vec2::new(42.0, 27.0), egui::Align2::LEFT_CENTER, sub, egui::FontId::proportional(11.0), pal().text_dim);
             if resp.hovered() {
                 st.status_help = Some(g.texture.clone());
             }
@@ -2256,7 +2357,7 @@ fn paint_panel(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, swatches: &
 // ---------------------------------------------------------------------------- right panel
 
 pub(crate) fn prop_row(ui: &mut egui::Ui, name: &str, add: impl FnOnce(&mut egui::Ui)) {
-    ui.label(RichText::new(name).color(TEXT_DIM));
+    ui.label(RichText::new(name).color(pal().text_dim));
     add(ui);
     ui.end_row();
 }
@@ -2295,7 +2396,7 @@ fn history_window(ctx: &egui::Context, st: &mut UiState, ed: &Editor, actions: &
     let (undo, redo) = ed.history.steps();
     let mut open = st.history_open;
     egui::Window::new(icons::labelled(Icon::History, tr("Edit history", "История правок"))).id(egui::Id::new("edit history")).open(&mut open).default_pos([340.0, 120.0]).default_size([300.0, 380.0]).resizable(true).show(ctx, |ui| {
-        ui.label(RichText::new(tr("Click a step to go back to just after it", "Клик по шагу: вернуться к состоянию сразу после него")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("Click a step to go back to just after it", "Клик по шагу: вернуться к состоянию сразу после него")).small().color(pal().text_dim));
         ui.separator();
         egui::ScrollArea::vertical().auto_shrink([false, false]).stick_to_bottom(true).show(ui, |ui| {
             if ui.selectable_label(undo.is_empty(), RichText::new(tr("Opened", "Открыто")).italics()).clicked() {
@@ -2308,7 +2409,7 @@ fn history_window(ctx: &egui::Context, st: &mut UiState, ed: &Editor, actions: &
                 }
             }
             for (i, l) in redo.iter().enumerate() {
-                if ui.selectable_label(false, RichText::new(*l).color(TEXT_DIM)).clicked() {
+                if ui.selectable_label(false, RichText::new(*l).color(pal().text_dim)).clicked() {
                     actions.extend((0..i + 1).map(|_| Action::Redo));
                 }
             }
@@ -2379,8 +2480,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 let o = &o;
                 let a = lib.find(&o.file);
                 let name = a.map(|a| a.name.clone()).unwrap_or_else(|| o.file.rsplit('\\').next().unwrap_or("").to_string());
-                long_label(ui, &name, egui::TextStyle::Body, Color32::WHITE);
-                long_label(ui, &o.file, egui::TextStyle::Small, TEXT_DIM);
+                long_label(ui, &name, egui::TextStyle::Body, pal().text_strong);
+                long_label(ui, &o.file, egui::TextStyle::Small, pal().text_dim);
                 // its textures' PBR maps: made here (Configure) or not yet (Create)
                 let made = st.pbr_made.as_ref().filter(|(rel, _)| rel.eq_ignore_ascii_case(&o.file)).map(|(_, m)| *m).unwrap_or(false);
                 let label = if made { tr("Configure PBR", "Настроить PBR") } else { tr("Create PBR", "Создать PBR") };
@@ -2441,7 +2542,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         });
                         if !abs {
                             prop_row(ui, "", |ui| {
-                                ui.label(RichText::new(format!("{} {:.2} m", tr("above the ground:", "над землёй:"), o.pos[2])).small().color(TEXT_DIM)).on_hover_text(tr("OMSI keeps this object's height above the ground under it: moved elsewhere it stays as high above the ground there", "OMSI хранит высоту этого объекта над землёй под ним: перенесённый в другое место, он остаётся на той же высоте над землёй"));
+                                ui.label(RichText::new(format!("{} {:.2} m", tr("above the ground:", "над землёй:"), o.pos[2])).small().color(pal().text_dim)).on_hover_text(tr("OMSI keeps this object's height above the ground under it: moved elsewhere it stays as high above the ground there", "OMSI хранит высоту этого объекта над землёй под ним: перенесённый в другое место, он остаётся на той же высоте над землёй"));
                             });
                         }
                     }
@@ -2523,13 +2624,13 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     }
                 }
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(v_armed))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(v_armed))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
                         toggle_vertex_snap = true;
                     }
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(e_armed))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(e_armed))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {
@@ -2558,7 +2659,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     ui.add_space(6.0);
                     ui.label(RichText::new(if is_stop { tr("Stop name", "Название остановки") } else if tree { tr("This tree", "Это дерево") } else { tr("Texts", "Тексты") }).strong());
                     if !is_stop && !tree && !names.is_empty() {
-                        ui.label(RichText::new(tr("Shown on the object (@ starts a new line)", "Видны на объекте (@ — новая строка)")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Shown on the object (@ starts a new line)", "Видны на объекте (@ — новая строка)")).small().color(pal().text_dim));
                     }
                     let n = if is_stop { 1 } else { labels.len().max(names.len()).max(1) };
                     while labels.len() < n {
@@ -2568,7 +2669,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     egui::Grid::new("labels").num_columns(2).spacing(Vec2::new(8.0, 4.0)).show(ui, |ui| {
                         for (i, l) in labels.iter_mut().take(n).enumerate() {
                             let name = names.get(i).filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| format!("{} {}", tr("Text", "Текст"), i + 1));
-                            ui.label(RichText::new(name).color(TEXT_DIM));
+                            ui.label(RichText::new(name).color(pal().text_dim));
                             if ui.add(egui::TextEdit::singleline(l).desired_width(f32::INFINITY)).changed() {
                                 any = true;
                             }
@@ -2620,7 +2721,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         // written from there)
                         let imported = o.file.to_lowercase().contains("\\imported\\") && !o.file.to_lowercase().contains("\\openmapper\\");
                         if !info.pieces.is_empty() {
-                            ui.label(RichText::new(format!("{} ({})", tr("Parts", "Части"), info.pieces.len())).color(TEXT_DIM));
+                            ui.label(RichText::new(format!("{} ({})", tr("Parts", "Части"), info.pieces.len())).color(pal().text_dim));
                         }
                         for (pi, piece) in info.pieces.iter().enumerate() {
                             egui::CollapsingHeader::new(RichText::new(format!("{} {} · {} {}", tr("Part", "Часть"), pi + 1, piece.triangles, tr("triangles", "треугольников"))).small()).id_salt(("piece", pi)).show(ui, |ui| {
@@ -2645,10 +2746,10 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                                 }
                             });
                         }
-                        ui.label(RichText::new(tr("Textures", "Текстуры")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Textures", "Текстуры")).color(pal().text_dim));
                         for (name, pbr) in &info.textures {
                             if *pbr {
-                                long_label(ui, &format!("{name} · PBR"), egui::TextStyle::Small, ACCENT);
+                                long_label(ui, &format!("{name} · PBR"), egui::TextStyle::Small, pal().accent);
                             } else {
                                 long_label(ui, name, egui::TextStyle::Small, ui.visuals().text_color());
                             }
@@ -2659,8 +2760,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
             Sel::Spline(k, id) => {
                 let Some(s) = doc.spline(k, id) else { return };
                 let a = lib.find(&s.file);
-                ui.label(RichText::new(a.map(|a| a.name.clone()).unwrap_or_else(|| s.file.clone())).strong().color(Color32::WHITE));
-                ui.label(RichText::new(&s.file).small().color(TEXT_DIM));
+                ui.label(RichText::new(a.map(|a| a.name.clone()).unwrap_or_else(|| s.file.clone())).strong().color(pal().text_strong));
+                ui.label(RichText::new(&s.file).small().color(pal().text_dim));
                 let made = st.pbr_made.as_ref().filter(|(rel, _)| rel.eq_ignore_ascii_case(&s.file)).map(|(_, m)| *m).unwrap_or(false);
                 let r = ui.button(icons::labelled(Icon::Layers, if made { tr("Configure PBR", "Настроить PBR") } else { tr("Create PBR", "Создать PBR") }));
                 help(st, &r, tr("Normal, roughness, metal and shadow maps made from the road type's textures", "Карты нормалей, шероховатости, металла и теней из текстур типа дороги"));
@@ -3161,10 +3262,10 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
         crate::descriptions::editor(ui, doc, &mut ed.history);
         if doc.global.entry_points.is_empty() {
             ui.add_space(6.0);
-            ui.label(RichText::new(tr("No start point yet: place one (Game logic > Start points) so the bus has somewhere to appear in openOMSI.", "Нет точки старта: поставьте её (Служебное > Точки старта), чтобы автобусу было где появиться в openOMSI.")).small().color(Color32::from_rgb(230, 170, 100)));
+            ui.label(RichText::new(tr("No start point yet: place one (Game logic > Start points) so the bus has somewhere to appear in openOMSI.", "Нет точки старта: поставьте её (Служебное > Точки старта), чтобы автобусу было где появиться в openOMSI.")).small().color(pal().warn));
         }
         ui.add_space(8.0);
-        ui.label(RichText::new(tr("Picture", "Картинка")).color(TEXT_DIM));
+        ui.label(RichText::new(tr("Picture", "Картинка")).color(pal().text_dim));
         let looked = st.map_picture_looked.map(|t| t.elapsed().as_secs_f32() < 1.0).unwrap_or(false);
         if !looked || st.map_picture.is_none() {
             st.map_picture_looked = Some(std::time::Instant::now());
@@ -3186,7 +3287,7 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
                 ui.add(egui::Image::new((t.id(), Vec2::new(w, w * 280.0 / 370.0))));
             }
             None => {
-                ui.label(RichText::new(tr("None yet: openOMSI shows it where maps are chosen.", "Пока нет: openOMSI показывает её при выборе карты.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("None yet: openOMSI shows it where maps are chosen.", "Пока нет: openOMSI показывает её при выборе карты.")).small().color(pal().text_dim));
             }
         }
         let r = ui.button(icons::labelled(Icon::Import, tr("Import your thumbnail", "Импортировать свою картинку")));
@@ -3200,7 +3301,7 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
             actions.push(Action::SetMapCamera);
         }
         ui.add_space(6.0);
-        ui.label(RichText::new(format!("{}:\n{}", tr("Saved to", "Сохраняется в"), doc.dir.display())).small().color(TEXT_DIM));
+        ui.label(RichText::new(format!("{}:\n{}", tr("Saved to", "Сохраняется в"), doc.dir.display())).small().color(pal().text_dim));
     });
     let after = (doc.global.friendly_name.clone(), doc.global.description.clone(), doc.global.left_hand_traffic);
     if before != after {
@@ -3233,14 +3334,14 @@ fn texture_picker(ctx: &egui::Context, st: &mut UiState, files: &[String], swatc
         let q = search.to_lowercase();
         let list: Vec<&String> = files.iter().filter(|f| f.to_lowercase().contains(&q)).collect();
         let cols = 5;
-        Frame::new().fill(BG_FIELD).stroke(Stroke::new(1.0, BORDER)).show(ui, |ui| {
+        Frame::new().fill(pal().field).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
             egui::ScrollArea::vertical().max_height(380.0).auto_shrink([false, false]).show_rows(ui, 94.0, list.len().div_ceil(cols), |ui, range| {
                 for r in range {
                     ui.horizontal(|ui| {
                         for f in list.iter().skip(r * cols).take(cols) {
                             let (rect, resp) = ui.allocate_exact_size(Vec2::new(86.0, 90.0), Sense::click());
                             if resp.hovered() {
-                                ui.painter().rect_filled(rect, CornerRadius::same(2), SELECT);
+                                ui.painter().rect_filled(rect, CornerRadius::same(2), pal().hover);
                             }
                             let img = egui::Rect::from_min_size(rect.min + Vec2::new(5.0, 3.0), Vec2::splat(76.0));
                             match swatches.get(&f.to_lowercase()) {
@@ -3250,7 +3351,7 @@ fn texture_picker(ctx: &egui::Context, st: &mut UiState, files: &[String], swatc
                                 None => wanted.push((*f).clone()),
                             }
                             let name = f.rsplit('\\').next().unwrap_or(f);
-                            ui.painter().text(egui::pos2(rect.center().x, rect.max.y - 5.0), egui::Align2::CENTER_CENTER, name.chars().take(14).collect::<String>(), egui::FontId::proportional(10.0), Color32::from_gray(200));
+                            ui.painter().text(egui::pos2(rect.center().x, rect.max.y - 5.0), egui::Align2::CENTER_CENTER, name.chars().take(14).collect::<String>(), egui::FontId::proportional(10.0), pal().text);
                             if resp.clicked() {
                                 chosen = Some((*f).clone());
                             }
@@ -3290,10 +3391,10 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
             1 => settings_graphics(ui, prefs, actions),
             2 => camera_tuning(ui, prefs, actions),
             3 => {
-        ui.label(RichText::new(tr("Keyboard", "Клавиатура")).strong().color(ACCENT));
+        ui.label(RichText::new(tr("Keyboard", "Клавиатура")).strong().color(pal().accent));
         let preset = crate::controls::Preset::of(&prefs.keys_set, prefs.omsi_controls);
         ui.horizontal(|ui| {
-            ui.label(RichText::new(tr("Keys", "Клавиши")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Keys", "Клавиши")).color(pal().text_dim));
             for p in crate::controls::Preset::ALL {
                 let r = ui.add(egui::Button::new(p.label()).selected(preset == p).min_size(Vec2::new(0.0, 22.0)));
                 let h = match p {
@@ -3307,10 +3408,10 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
                 }
             }
         });
-        ui.label(RichText::new(tr("Click a key, then press the new one (Esc: leave it). A key already in use is taken from its command.", "Нажмите на клавишу, затем новую (Esc: оставить). Занятая клавиша отбирается у своей команды.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("Click a key, then press the new one (Esc: leave it). A key already in use is taken from its command.", "Нажмите на клавишу, затем новую (Esc: оставить). Занятая клавиша отбирается у своей команды.")).small().color(pal().text_dim));
         let map = crate::controls::Keymap::of(&prefs.keys, preset);
         ui.horizontal(|ui| {
-            ui.label(RichText::new(tr("Find", "Найти")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("Find", "Найти")).color(pal().text_dim));
             ui.add(egui::TextEdit::singleline(&mut st.key_filter).desired_width(160.0).hint_text(tr("a command or a key", "команда или клавиша")));
         });
         let filter = st.key_filter.trim().to_lowercase();
@@ -3370,9 +3471,9 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
         egui::Grid::new("keys").striped(true).num_columns(2).show(ui, |ui| {
             for (k, v) in rows {
                 if v.is_empty() {
-                    ui.label(RichText::new(*k).strong().color(ACCENT));
+                    ui.label(RichText::new(*k).strong().color(pal().accent));
                 } else {
-                    ui.label(RichText::new(*k).color(Color32::from_gray(230)));
+                    ui.label(RichText::new(*k).color(pal().text_strong));
                 }
                 ui.label(*v);
                 ui.end_row();
@@ -3388,7 +3489,7 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
 
 /// Settings > General: language, interface size, how the camera and tiles behave.
 fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
-    ui.label(RichText::new(tr("Interface", "Интерфейс")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Interface", "Интерфейс")).strong().color(pal().accent));
     ui.horizontal(|ui| {
         ui.label(tr("Language", "Язык"));
         egui::ComboBox::from_id_salt("settings language").selected_text(i18n::LANGUAGES.iter().find(|l| l.lang == i18n::get()).map(|l| l.name).unwrap_or("")).height(420.0).show_ui(ui, |ui| {
@@ -3399,6 +3500,10 @@ fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>)
             }
         });
     });
+    ui.horizontal(|ui| {
+        ui.label(tr("Theme", "Тема"));
+        theme_choice(ui, actions);
+    });
     let mut zoom = ui.ctx().zoom_factor();
     ui.horizontal(|ui| {
         ui.label(tr("Interface size", "Размер интерфейса"));
@@ -3407,7 +3512,7 @@ fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>)
         }
     });
     ui.add_space(8.0);
-    ui.label(RichText::new(tr("Camera and mouse", "Камера и мышь")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Camera and mouse", "Камера и мышь")).strong().color(pal().accent));
     let unity = prefs.camera != "map";
     if radio(ui, unity, tr("Unity: right button looks round and W A S D fly, middle pans, Alt orbits", "Unity: правая кнопка оглядывает и W A S D летят, средняя двигает, Alt вращает")).clicked() {
         actions.push(Action::SetCamera("fly".into()));
@@ -3420,7 +3525,7 @@ fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>)
         actions.push(Action::SetOmsiControls(omsi));
     }
     ui.add_space(8.0);
-    ui.label(RichText::new(tr("Big maps", "Большие карты")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Big maps", "Большие карты")).strong().color(pal().accent));
     let mut streaming = prefs.tile_streaming == Some(true);
     if ui.checkbox(&mut streaming, tr("Load a part of the tiles at a time (like OMSI 2's editor)", "Загружать часть тайлов (как в редакторе OMSI 2)")).clicked() {
         actions.push(Action::SetTileStreaming(streaming));
@@ -3440,7 +3545,7 @@ fn settings_general(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>)
 
 /// Settings > Graphics: the graphics API and the quality.
 fn settings_graphics(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
-    ui.label(RichText::new(tr("Graphics API", "Графический API")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Graphics API", "Графический API")).strong().color(pal().accent));
     let now = crate::gpu::Api::of(&prefs.graphics_api);
     for a in crate::gpu::Api::ALL.into_iter().filter(|a| a.here()) {
         let name = if a == crate::gpu::Api::Auto { tr("Auto (the best the system has)", "Авто (лучший из доступных)") } else { a.label() };
@@ -3448,9 +3553,9 @@ fn settings_graphics(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>
             actions.push(Action::SetGraphicsApi(a));
         }
     }
-    ui.label(RichText::new(tr("Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.", "Применяется после перезапуска. Если выбранный API не запустится, openMapper вернётся к Авто. OPENMAPPER_BACKEND=dx12 задаёт его на один запуск.")).small().color(TEXT_DIM));
+    ui.label(RichText::new(tr("Takes effect after a restart. If the chosen API cannot start, openMapper falls back to Auto. OPENMAPPER_BACKEND=dx12 sets it for one run.", "Применяется после перезапуска. Если выбранный API не запустится, openMapper вернётся к Авто. OPENMAPPER_BACKEND=dx12 задаёт его на один запуск.")).small().color(pal().text_dim));
     ui.add_space(8.0);
-    ui.label(RichText::new(tr("Quality", "Качество")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Quality", "Качество")).strong().color(pal().accent));
     let q = crate::render::quality::Quality::from_code(&prefs.graphics);
     for c in crate::render::quality::Quality::ALL {
         if radio(ui, q == c, c.label()).clicked() {
@@ -3461,7 +3566,7 @@ fn settings_graphics(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>
 
 /// The camera's speeds and sensitivities (View > Controls).
 fn camera_tuning(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
-    ui.label(RichText::new(tr("Camera speed", "Скорость камеры")).strong().color(ACCENT));
+    ui.label(RichText::new(tr("Camera speed", "Скорость камеры")).strong().color(pal().accent));
     let mut t = prefs.cam_tune;
     let mut changed = false;
     let mut row = |ui: &mut egui::Ui, name: &str, hint: &str, slider: egui::Slider<'_>| {
@@ -3509,7 +3614,7 @@ pub fn confirm_unsaved(ctx: &egui::Context, st: &mut UiState, actions: &mut Vec<
     egui::Window::new(tr("Unsaved changes", "Несохранённые изменения")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(330.0);
         ui.horizontal(|ui| {
-            ui.label(Icon::Info.text(28.0).color(ACCENT));
+            ui.label(Icon::Info.text(28.0).color(pal().accent));
             ui.label(tr("The map has changes that are not saved. Save them first?", "На карте есть несохранённые изменения. Сохранить их?"));
         });
         ui.separator();
@@ -3558,7 +3663,7 @@ mod tests {
     #[test]
     fn a_long_name_without_spaces_stays_in_its_panel() {
         let name = "&#1050;&#1091;&#1073;&#1080;&#1082;&#1050;&#1091;&#1073;&#1080;&#1082;&#1050;&#1091;&#1073;&#1080;&#1082;&#1050;&#1091;&#1073;&#1080;&#1082;";
-        let wrapped = width_in_panel(|ui| long_label(ui, name, egui::TextStyle::Small, Color32::WHITE));
+        let wrapped = width_in_panel(|ui| long_label(ui, name, egui::TextStyle::Small, pal().text_strong));
         assert!(wrapped <= 251.0, "{wrapped}");
         // (a plain label overflows: that was the bug)
         let plain = width_in_panel(|ui| ui.label(name));

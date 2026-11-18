@@ -95,6 +95,7 @@ mod trolley_kit;
 mod ui_trolley;
 mod switches;
 mod texts;
+mod theme;
 mod timetable;
 mod traffic;
 mod sysfont;

@@ -10,7 +10,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Receiver;
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 
 use crate::doc::{tile_origin, Sel};
 use crate::editable;
@@ -1103,7 +1103,7 @@ impl ScriptsUi {
             for l in &self.console {
                 let color = match l.kind {
                     LineKind::Print => ui.visuals().text_color(),
-                    LineKind::Screen => Color32::from_rgb(90, 170, 230),
+                    LineKind::Screen => crate::theme::pal().info,
                     LineKind::Warn => ui.visuals().warn_fg_color,
                     LineKind::Error => ui.visuals().error_fg_color,
                     LineKind::Note | LineKind::Result => ui.visuals().weak_text_color(),

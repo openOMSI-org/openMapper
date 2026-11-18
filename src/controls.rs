@@ -186,6 +186,8 @@ pub enum Cmd {
     XformMove,
     XformRotate,
     XformScale,
+    SnapVertex,
+    SnapEdge,
     EditMesh,
     JoinObjects,
     Ruler,
@@ -219,7 +221,7 @@ use Cmd::*;
 
 pub const ALL: &[Cmd] = &[
     Forward, Back, Left, Right, TurnLeft, TurnRight, LookDown, View2d, Focus, TileGrid, Overview, Assets, Lines, Traffic, Imagery, ToolSelect, ToolRoads, ToolObjects, ToolLogic,
-    ToolTerrain, ToolPaint, ToolTiles, NewObject, XformMove, XformRotate, XformScale, EditMesh, JoinObjects, Rotate, Ruler, Knife, CompleteTo, BuildRoad, Confirm, BrushSmaller, BrushLarger, Delete, Group, Ungroup, Copy, Cut, Paste, Duplicate, SelectAll, Undo,
+    ToolTerrain, ToolPaint, ToolTiles, NewObject, XformMove, XformRotate, XformScale, SnapVertex, SnapEdge, EditMesh, JoinObjects, Rotate, Ruler, Knife, CompleteTo, BuildRoad, Confirm, BrushSmaller, BrushLarger, Delete, Group, Ungroup, Copy, Cut, Paste, Duplicate, SelectAll, Undo,
     Redo, Save, Find, Commands, TestDrive, Picture, Polygon, PolygonClick, NextPiece, PrevPiece,
 ];
 
@@ -282,6 +284,8 @@ impl Cmd {
             PolygonClick => "polygon_click",
             NextPiece => "next_piece",
             PrevPiece => "prev_piece",
+            SnapVertex => "snap_vertex",
+            SnapEdge => "snap_edge",
         }
     }
 
@@ -342,6 +346,8 @@ impl Cmd {
             PrevPiece => tr("Select the previous road piece (joined at its start; Shift: add it)", "Выбрать предыдущий кусок дороги (у начала; Shift: добавить)"),
             Polygon => tr("Polygon: fill the selected splines, or click its corners", "Многоугольник: заполнить выделенные сплайны или кликать по углам"),
             PolygonClick => tr("Polygon: click its corners", "Многоугольник: кликать по углам"),
+            SnapVertex => tr("Snap vertex to vertex", "Привязать вершину к вершине"),
+            SnapEdge => tr("Snap edge to edge", "Привязать ребро к ребру"),
         }
     }
 
@@ -402,6 +408,9 @@ impl Cmd {
             PolygonClick => Chord { code: KeyCode::KeyP, ctrl: false, shift: true },
             NextPiece => Chord::key(KeyCode::Period),
             PrevPiece => Chord::key(KeyCode::Comma),
+            // (V and L alone are the move handles and the Lines window)
+            SnapVertex => Chord { code: KeyCode::KeyV, ctrl: false, shift: true },
+            SnapEdge => Chord { code: KeyCode::KeyL, ctrl: false, shift: true },
         }
     }
 
@@ -484,6 +493,28 @@ impl Keymap {
     pub fn is_key(&self, cmd: Cmd, code: KeyCode) -> bool {
         self.chord(cmd).is_some_and(|k| k.code == code)
     }
+}
+
+/// The keys as the user has them, for the interface to name (set by the app each frame).
+static SHOWN: std::sync::Mutex<Vec<(Cmd, Option<Chord>)>> = std::sync::Mutex::new(Vec::new());
+
+/// The keys the interface names from now on.
+pub fn show_keys(map: &Keymap) {
+    if let Ok(mut s) = SHOWN.lock() {
+        s.clone_from(&map.0);
+    }
+}
+
+/// A command's key as the user has it, for a menu ("" : it has none).
+pub fn key_text(cmd: Cmd) -> String {
+    let shown = SHOWN.lock().ok().and_then(|s| s.iter().find(|(c, _)| *c == cmd).map(|(_, k)| *k));
+    shown.unwrap_or(Some(cmd.default())).map(|k| k.text()).unwrap_or_default()
+}
+
+/// " (key)" to put after a name in a help line ("" : no key).
+pub fn key_hint(cmd: Cmd) -> String {
+    let k = key_text(cmd);
+    if k.is_empty() { k } else { format!(" ({k})") }
 }
 
 /// Puts a command on a key (None: on none) in the settings' list; whatever had the key

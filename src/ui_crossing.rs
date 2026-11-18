@@ -17,16 +17,15 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::library::Library;
+use crate::theme::{self, pal};
 
+// (drawn on the editor's dark map; `theme::readable` makes them text on the panels)
 const STREET: Color32 = Color32::from_rgb(232, 190, 96);
 const FOOTWAY: Color32 = Color32::from_rgb(104, 184, 224);
 const RAIL: Color32 = Color32::from_rgb(196, 148, 208);
 const PICKED: Color32 = Color32::from_rgb(255, 148, 40);
 const HANDLE: Color32 = Color32::from_rgb(238, 238, 238);
 const SNAPPED: Color32 = Color32::from_rgb(96, 208, 128);
-const DIM: Color32 = Color32::from_gray(150);
-const BAD: Color32 = Color32::from_rgb(240, 110, 96);
-const GOOD: Color32 = Color32::from_rgb(120, 200, 130);
 
 /// How near a click must be to an end to take it (pixels).
 const GRAB: f32 = 9.0;
@@ -2916,8 +2915,8 @@ impl CrossingPaths {
                                     self.frame_on_map = true;
                                 }
                             });
-                            ui.label(RichText::new(tr("Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly", "Щёлкните путь на карте, чтобы выбрать его. Тяните конец — он притягивается к концу другого пути (своего или соседнего объекта), с Ctrl — свободно. Притянутый конец принимает направление и уклон того пути, так что они сходятся плавно")).small().color(DIM));
-                            ui.label(RichText::new(tr("Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here", "Ближние пути нарисованы бледнее: чужих объектов и полосы самих дорог. К их концу можно присоединиться, но отсюда они не меняются")).small().color(DIM));
+                            ui.label(RichText::new(tr("Click a path on the map to pick it. Drag an end there to move it: it snaps to another path's end - the crossing's own or a nearby object's - and Ctrl keeps it free. A snapped end takes that path's way and rise, so the two meet smoothly", "Щёлкните путь на карте, чтобы выбрать его. Тяните конец — он притягивается к концу другого пути (своего или соседнего объекта), с Ctrl — свободно. Притянутый конец принимает направление и уклон того пути, так что они сходятся плавно")).small().color(pal().text_dim));
+                            ui.label(RichText::new(tr("Nearby paths are drawn paler: another object's, and the roads' own lanes. An end can be joined to theirs, but they are not changed from here", "Ближние пути нарисованы бледнее: чужих объектов и полосы самих дорог. К их концу можно присоединиться, но отсюда они не меняются")).small().color(pal().text_dim));
                             ui.separator();
                             self.paths_side(ui, ed, &mut sheet);
                         });
@@ -3104,7 +3103,7 @@ impl CrossingPaths {
                 } else {
                     tr("as a new file (a copy is made on saving)", "новым файлом (копия делается при сохранении)")
                 };
-                ui.label(RichText::new(note).small().color(DIM));
+                ui.label(RichText::new(note).small().color(pal().text_dim));
                 ui.separator();
                 if ui.selectable_label(self.tab == Tab::Paths, paths).clicked() {
                     self.tab = Tab::Paths;
@@ -3120,7 +3119,7 @@ impl CrossingPaths {
             });
         }
         if let Some((msg, bad)) = &self.message {
-            ui.label(RichText::new(msg).small().color(if *bad { BAD } else { GOOD }));
+            ui.label(RichText::new(msg).small().color(if *bad { pal().error } else { pal().ok }));
         }
     }
 
@@ -3193,9 +3192,9 @@ impl CrossingPaths {
     fn no_target(&mut self, ui: &mut egui::Ui, ed: &mut Editor, roots: Option<&Roots>, lib: &Library) {
         ui.add_space(4.0);
         ui.label(RichText::new(tr("Pick a crossing object of the map", "Возьмите объект перекрёстка на карте")).strong());
-        ui.label(RichText::new(tr("The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.", "Здесь правят пути, блокировки и программу светофора готового перекрёстка. Сохранение пишет собственный файл объекта, прежний остаётся рядом как .bak; вместо этого можно сделать копию объекта.")).small().color(DIM));
+        ui.label(RichText::new(tr("The paths, the blocking and the traffic light program of an existing crossing are edited here. A save writes the object's own file, the file as it stood kept as a .bak beside it; a copy of the object can be made instead.", "Здесь правят пути, блокировки и программу светофора готового перекрёстка. Сохранение пишет собственный файл объекта, прежний остаётся рядом как .bak; вместо этого можно сделать копию объекта.")).small().color(pal().text_dim));
         if let Some((msg, bad)) = &self.message {
-            ui.colored_label(if *bad { BAD } else { DIM }, msg);
+            ui.colored_label(if *bad { pal().error } else { pal().text_dim }, msg);
         }
         ui.add_space(6.0);
         let mut pick = None;
@@ -3252,11 +3251,11 @@ impl CrossingPaths {
         let complete_to = self.complete_to;
         let start_hint = tr("Start a new path at the end of a path nearby. Click one of the green circles", "Начать новый путь у конца соседнего пути. Щёлкните зелёный кружок");
         let complete_hint = tr("Carry the picked path on to a nearby path's end: the picked path keeps its end, way and rise, and one piece or two join them. Click one of the green circles", "Продолжить выбранный путь до конца соседнего: у выбранного остаются конец, направление и уклон, а соединяют их один или два отрезка. Щёлкните зелёный кружок");
-        if ui.selectable_label(from_nearby, RichText::new(tr("Start from a nearby path", "Начать от соседнего пути")).small().color(if from_nearby { SNAPPED } else { DIM })).on_hover_text(start_hint).clicked() {
+        if ui.selectable_label(from_nearby, RichText::new(tr("Start from a nearby path", "Начать от соседнего пути")).small().color(if from_nearby { theme::readable(SNAPPED) } else { pal().text_dim })).on_hover_text(start_hint).clicked() {
             let on = !self.from_nearby;
             self.set_from_nearby(on);
         }
-        if ui.selectable_label(complete_to, RichText::new(tr("Complete to a nearby path", "Довести до соседнего пути")).small().color(if complete_to { SNAPPED } else { DIM })).on_hover_text(complete_hint).clicked() {
+        if ui.selectable_label(complete_to, RichText::new(tr("Complete to a nearby path", "Довести до соседнего пути")).small().color(if complete_to { theme::readable(SNAPPED) } else { pal().text_dim })).on_hover_text(complete_hint).clicked() {
             let on = !self.complete_to;
             self.set_complete_to(on);
         }
@@ -3271,7 +3270,7 @@ impl CrossingPaths {
             let total = self.link_report.len();
             egui::CollapsingHeader::new(RichText::new(format!("{} ({ok}/{total})", tr("Link check", "Проверка соединений"))).small()).id_salt("crossing link check").default_open(ok < total).show(ui, |ui| {
                 for n in &self.link_report {
-                    ui.label(RichText::new(format!("{} {} {}", if n.ok { "✓" } else { "✗" }, n.who, n.why)).small().color(if n.ok { GOOD } else { BAD }));
+                    ui.label(RichText::new(format!("{} {} {}", if n.ok { "✓" } else { "✗" }, n.who, n.why)).small().color(if n.ok { pal().ok } else { pal().error }));
                 }
             });
         }
@@ -3288,7 +3287,7 @@ impl CrossingPaths {
         // (the way round a join is made: automatic takes the widest arcs it finds, which can
         // be the long way round a corner; left and right say which way to go instead)
         ui.horizontal(|ui| {
-            ui.label(RichText::new(tr("The way a join turns", "Куда поворачивает соединение")).small().color(DIM));
+            ui.label(RichText::new(tr("The way a join turns", "Куда поворачивает соединение")).small().color(pal().text_dim));
             for (v, text) in [(Side::Auto, tr("Automatic", "Автоматически")), (Side::Left, tr("Left", "Налево")), (Side::Right, tr("Right", "Направо"))] {
                 if ui.selectable_label(self.side == v, RichText::new(text).small()).clicked() {
                     self.set_side(v);
@@ -3319,7 +3318,7 @@ impl CrossingPaths {
                     // (Ctrl adds a path to the pick, Shift takes the run from the last one:
                     // a junction's paths are set alike in groups - kind, width, the way they
                     // turn, the light they wait at)
-                    let label = ui.selectable_label(on || also, RichText::new(text).color(kind_color(p.kind())));
+                    let label = ui.selectable_label(on || also, RichText::new(text).color(theme::readable(kind_color(p.kind()))));
                     if label.clicked() {
                         let (add, run) = ui.input(|k| (k.modifiers.command || k.modifiers.ctrl, k.modifiers.shift));
                         self.pick_path(i, add || run, run);
@@ -3365,10 +3364,10 @@ impl CrossingPaths {
         ui.separator();
         let mut helper_gone = None;
         egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Spline helpers", "Точки привязки сплайнов"), sheet.crossing.helpers.len())).strong()).id_salt("crossing helpers").default_open(false).show(ui, |ui| {
-            ui.label(RichText::new(tr("Where a road of the map snaps onto the crossing. x, height, forward in the object's frame", "Где дорога карты пристыковывается к перекрёстку. x, высота, вперёд в системе объекта")).small().color(DIM));
+            ui.label(RichText::new(tr("Where a road of the map snaps onto the crossing. x, height, forward in the object's frame", "Где дорога карты пристыковывается к перекрёстку. x, высота, вперёд в системе объекта")).small().color(pal().text_dim));
             for (n, h) in sheet.crossing.helpers.iter_mut().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(format!("#{n}")).small().color(DIM));
+                    ui.label(RichText::new(format!("#{n}")).small().color(pal().text_dim));
                     changed |= ui.add(egui::TextEdit::singleline(&mut h.spline).desired_width(120.0)).on_hover_text(tr("The road type it takes (a `.sli`)", "Тип дороги, который он принимает (`.sli`)")).changed();
                     if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
                         helper_gone = Some(n);
@@ -3465,7 +3464,7 @@ impl CrossingPaths {
         let mut changed = false;
         ui.separator();
         ui.label(RichText::new(format!("{} ({})", tr("Paths picked", "Выбрано путей"), sel.len())).strong());
-        ui.label(RichText::new(tr("Set what they share. A path's own numbers are edited one at a time", "Задайте общее. Собственные числа пути правятся по одному")).small().color(DIM));
+        ui.label(RichText::new(tr("Set what they share. A path's own numbers are edited one at a time", "Задайте общее. Собственные числа пути правятся по одному")).small().color(pal().text_dim));
         let n = sel.len();
         let set = |paths: &mut Vec<Path>, done: &mut bool, f: &dyn Fn(&mut Path)| {
             for q in &sel {
@@ -3485,7 +3484,7 @@ impl CrossingPaths {
         let clear = sel.iter().all(|q| sheet.crossing.paths.get(*q).is_some_and(|p| p.crossing_problem));
         let several = tr("Several", "Несколько");
         egui::Grid::new("crossing shared numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
-            ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
+            ui.label(RichText::new(tr("Kind", "Тип")).small().color(pal().text_dim));
             let k = kinds.iter().next().copied().unwrap_or(0);
             let mut clicked = None;
             egui::ComboBox::from_id_salt("crossing shared kind").selected_text(if kinds.len() > 1 { several.to_string() } else { kind_name(k).to_string() }).width(150.0).show_ui(ui, |ui| {
@@ -3499,7 +3498,7 @@ impl CrossingPaths {
                 set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[8] = v as f32);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Width", "Ширина")).small().color(DIM));
+            ui.label(RichText::new(tr("Width", "Ширина")).small().color(pal().text_dim));
             let mut w = sel.first().and_then(|q| sheet.crossing.paths.get(*q)).map(|p| p.v[9]).unwrap_or(0.0);
             let mixed = widths.len() > 1;
             let r = ui.add(egui::DragValue::new(&mut w).speed(0.05).range(0.0..=30.0).suffix(" m").prefix(if mixed { "~ " } else { "" }));
@@ -3507,7 +3506,7 @@ impl CrossingPaths {
                 set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[9] = w);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(DIM));
+            ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(pal().text_dim));
             let mut d = ways.iter().next().copied().unwrap_or(0);
             let mut clicked = None;
             egui::ComboBox::from_id_salt("crossing shared direction").selected_text(if ways.len() > 1 { several.to_string() } else { direction_name(d).to_string() }).width(150.0).show_ui(ui, |ui| {
@@ -3522,7 +3521,7 @@ impl CrossingPaths {
                 set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[10] = v as f32);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(DIM));
+            ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(pal().text_dim));
             let mut t = turns.iter().next().copied().unwrap_or(TURN_NONE);
             let mut clicked = None;
             egui::ComboBox::from_id_salt("crossing shared turn").selected_text(if turns.len() > 1 { several.to_string() } else { turn_name(t).to_string() }).width(150.0).show_ui(ui, |ui| {
@@ -3537,7 +3536,7 @@ impl CrossingPaths {
                 set(&mut sheet.crossing.paths, &mut changed, &|p| p.v[11] = v as f32);
             }
             ui.end_row();
-            ui.label(RichText::new(tr("Light", "Светофор")).small().color(DIM));
+            ui.label(RichText::new(tr("Light", "Светофор")).small().color(pal().text_dim));
             let names: Vec<(i32, String)> = std::iter::once((-1, tr("None", "Нет").to_string())).chain(sheet.crossing.lights.iter().enumerate().map(|(q, l)| (q as i32, format!("#{q} {}", if l.name.trim().is_empty() { "-" } else { l.name.trim() })))).collect();
             let cur = lights.iter().next().copied().unwrap_or(-1);
             let mut clicked = None;
@@ -3599,7 +3598,7 @@ impl CrossingPaths {
             let crossing = &mut sheet.crossing;
             let p = &mut crossing.paths[i];
             egui::Grid::new("crossing numbers").num_columns(2).spacing([8.0, 3.0]).show(ui, |ui| {
-                ui.label(RichText::new(tr("Start point", "Начало")).small().color(DIM));
+                ui.label(RichText::new(tr("Start point", "Начало")).small().color(pal().text_dim));
                 ui.horizontal(|ui| {
                     // (four numbers and a rotation in one row: narrow fields, so the row fits
                     // the panel instead of widening the window every frame)
@@ -3616,7 +3615,7 @@ impl CrossingPaths {
                 ui.end_row();
                 // (the end, as the file gives it: x and y move the end itself, z is the slopes'
                 // doing - typing one sets both slopes to the rise it asks for)
-                ui.label(RichText::new(tr("End point", "Конец")).small().color(DIM));
+                ui.label(RichText::new(tr("End point", "Конец")).small().color(pal().text_dim));
                 let mut end = p.end();
                 let (mut ex, mut ey, mut ez) = (end.x, end.y, end.z);
                 ui.horizontal(|ui| {
@@ -3641,21 +3640,21 @@ impl CrossingPaths {
                     }
                 });
                 ui.end_row();
-                ui.label(RichText::new(tr("Radius", "Радиус")).small().color(DIM));
+                ui.label(RichText::new(tr("Radius", "Радиус")).small().color(pal().text_dim));
                 let mut r = p.radius();
                 if ui.add(egui::DragValue::new(&mut r).speed(0.1).suffix(" m")).on_hover_text(tr("0 is a straight line, above 0 turns right, below 0 left", "0 — прямая, больше 0 — направо, меньше 0 — налево")).changed() {
                     p.v[4] = r as f32;
                     changed = true;
                 }
                 ui.end_row();
-                ui.label(RichText::new(tr("Length", "Длина")).small().color(DIM));
+                ui.label(RichText::new(tr("Length", "Длина")).small().color(pal().text_dim));
                 let mut l = p.length();
                 if ui.add(egui::DragValue::new(&mut l).speed(0.1).range(0.0..=2000.0).suffix(" m")).changed() {
                     p.v[5] = l as f32;
                     changed = true;
                 }
                 ui.end_row();
-                ui.label(RichText::new(tr("Slope", "Уклон")).small().color(DIM));
+                ui.label(RichText::new(tr("Slope", "Уклон")).small().color(pal().text_dim));
                 ui.horizontal(|ui| {
                     let mut a = p.slope_start() * 100.0;
                     let mut b = p.slope_end() * 100.0;
@@ -3676,16 +3675,16 @@ impl CrossingPaths {
                 ui.end_row();
                 // (whether this path lies on the deck, over it or under it - a path sunk into
                 // the mesh is drawn red on the map, and this is by how much)
-                ui.label(RichText::new(tr("Surface", "Поверхность")).small().color(DIM));
+                ui.label(RichText::new(tr("Surface", "Поверхность")).small().color(pal().text_dim));
                 ui.label(RichText::new(format!("{sink:+.2} m")).small().color(if sink < -0.02 {
-                    Color32::from_rgb(230, 90, 110)
+                    theme::readable(Color32::from_rgb(230, 90, 110))
                 } else if sink > 0.05 {
-                    Color32::from_rgb(206, 190, 120)
+                    theme::readable(Color32::from_rgb(206, 190, 120))
                 } else {
-                    DIM
+                    pal().text_dim
                 }));
                 ui.end_row();
-                ui.label(RichText::new(tr("Kind", "Тип")).small().color(DIM));
+                ui.label(RichText::new(tr("Kind", "Тип")).small().color(pal().text_dim));
                 let mut k = p.v[8] as i32;
                 let before = k;
                 egui::ComboBox::from_id_salt("crossing kind").selected_text(kind_name(k)).width(150.0).show_ui(ui, |ui| {
@@ -3696,10 +3695,10 @@ impl CrossingPaths {
                 p.v[8] = k as f32;
                 changed |= k != before;
                 ui.end_row();
-                ui.label(RichText::new(tr("Width", "Ширина")).small().color(DIM));
+                ui.label(RichText::new(tr("Width", "Ширина")).small().color(pal().text_dim));
                 changed |= ui.add(egui::DragValue::new(&mut p.v[9]).speed(0.05).range(0.0..=30.0).suffix(" m")).changed();
                 ui.end_row();
-                ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(DIM));
+                ui.label(RichText::new(tr("Direction", "Направление движения")).small().color(pal().text_dim));
                 let mut d = p.v[10] as i32;
                 let before = d;
                 egui::ComboBox::from_id_salt("crossing direction").selected_text(direction_name(d)).width(150.0).show_ui(ui, |ui| {
@@ -3710,7 +3709,7 @@ impl CrossingPaths {
                 p.v[10] = d as f32;
                 changed |= d != before;
                 ui.end_row();
-                ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(DIM));
+                ui.label(RichText::new(tr("Turn signal", "Поворот")).small().color(pal().text_dim));
                 let mut t = p.v[11] as i32;
                 let before = t;
                 egui::ComboBox::from_id_salt("crossing turn").selected_text(turn_name(t)).width(150.0).show_ui(ui, |ui| {
@@ -3721,7 +3720,7 @@ impl CrossingPaths {
                 p.v[11] = t as f32;
                 changed |= t != before;
                 ui.end_row();
-                ui.label(RichText::new(tr("Light", "Светофор")).small().color(DIM));
+                ui.label(RichText::new(tr("Light", "Светофор")).small().color(pal().text_dim));
                 let names: Vec<(i32, String)> = std::iter::once((-1, tr("None", "Нет").to_string())).chain(crossing.lights.iter().enumerate().map(|(n, l)| (n as i32, format!("#{n} {}", if l.name.trim().is_empty() { "-" } else { l.name.trim() })))).collect();
                 let mut cur = p.light.unwrap_or(-1);
                 let before = cur;
@@ -3824,7 +3823,7 @@ impl CrossingPaths {
         });
         // (below the row, where it wraps: in the row it would not, and the window would grow to
         // its length)
-        ui.label(RichText::new(tr("Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans", "Тяните конец, чтобы сдвинуть его. Притягивается к концу другого пути; с Ctrl — свободно. Притянутый конец принимает и направление, и уклон другого пути, так что они сходятся плавно. Колесо — масштаб, правая/средняя кнопка — сдвиг")).small().color(DIM));
+        ui.label(RichText::new(tr("Drag an end to move it. Snaps to another path's end; hold Ctrl to move it freely. A snapped end takes the other path's way and rise too, so the two meet smoothly. Wheel zooms, right or middle drag pans", "Тяните конец, чтобы сдвинуть его. Притягивается к концу другого пути; с Ctrl — свободно. Притянутый конец принимает и направление, и уклон другого пути, так что они сходятся плавно. Колесо — масштаб, правая/средняя кнопка — сдвиг")).small().color(pal().text_dim));
     }
 
     /// The light page's left side: which light, which of its phases, what that phase shows,
@@ -3845,7 +3844,7 @@ impl CrossingPaths {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(tr("Traffic light", "Светофор")).strong());
                 let shown = self.light.map(|i| i + 1).unwrap_or(0);
-                ui.label(RichText::new(format!("{shown} / {count}")).monospace().small().color(DIM));
+                ui.label(RichText::new(format!("{shown} / {count}")).monospace().small().color(pal().text_dim));
                 if ui.add_enabled(self.light.is_some_and(|i| i > 0), egui::Button::new("<").small()).clicked() {
                     self.light = self.light.map(|i| i - 1);
                     self.phase = Some(0);
@@ -3868,7 +3867,7 @@ impl CrossingPaths {
             });
             if let Some(i) = self.light {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(tr("Name", "Имя")).small().color(DIM));
+                    ui.label(RichText::new(tr("Name", "Имя")).small().color(pal().text_dim));
                     ui.add(egui::TextEdit::singleline(&mut sheet.crossing.lights[i].name).desired_width(ui.available_width()));
                 });
                 ui.horizontal(|ui| {
@@ -3880,11 +3879,11 @@ impl CrossingPaths {
                     if let Some(c) = sheet.crossing.cycle.as_mut() {
                         ui.add(egui::DragValue::new(c).speed(0.5).range(1.0..=600.0).suffix(" s"));
                     } else {
-                        ui.label(RichText::new(format!("{len:.0} s")).monospace().small().color(DIM));
+                        ui.label(RichText::new(format!("{len:.0} s")).monospace().small().color(pal().text_dim));
                     }
                 });
             } else if count == 0 {
-                ui.label(RichText::new(tr("A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to", "Перекрёстку со светофором нужны головки на карте: игра запускает программу, только если к ней привязаны головки")).small().color(DIM));
+                ui.label(RichText::new(tr("A crossing with lights needs the signal heads on the map: the game only runs a program that heads are linked to", "Перекрёстку со светофором нужны головки на карте: игра запускает программу, только если к ней привязаны головки")).small().color(pal().text_dim));
             }
         });
 
@@ -3902,7 +3901,7 @@ impl CrossingPaths {
                 ui.set_min_width(width - 12.0);
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(tr("Phase", "Фаза")).strong());
-                    ui.label(RichText::new(format!("{} / {n}", self.phase.map(|p| p + 1).unwrap_or(0))).monospace().small().color(DIM));
+                    ui.label(RichText::new(format!("{} / {n}", self.phase.map(|p| p + 1).unwrap_or(0))).monospace().small().color(pal().text_dim));
                     if ui.add_enabled(self.phase.is_some_and(|p| p > 0), egui::Button::new("<").small()).clicked() {
                         self.phase = self.phase.map(|p| p - 1);
                     }
@@ -3926,7 +3925,7 @@ impl CrossingPaths {
                     // (the states laid out three to a row, as the crossing editor's own list)
                     egui::Grid::new("crossing aspects").num_columns(3).spacing([8.0, 0.0]).max_col_width(width / 3.0 - 12.0).show(ui, |ui| {
                         for code in 0..=12 {
-                            let label = RichText::new(format!("{code} {}", aspect_symbol(code))).small().color(aspect_color(code));
+                            let label = RichText::new(format!("{code} {}", aspect_symbol(code))).small().color(theme::readable(aspect_color(code)));
                             ui.radio_value(&mut state, code, label).on_hover_text(format!("{} ({})", aspect_name(code), aspect_symbol(code)));
                             if code % 3 == 2 {
                                 ui.end_row();
@@ -3939,7 +3938,7 @@ impl CrossingPaths {
                     let mut det = sheet.crossing.lights[i].approach_dist;
                     let mut on = det.is_some();
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(tr("Duration", "Длительность")).small().color(DIM));
+                        ui.label(RichText::new(tr("Duration", "Длительность")).small().color(pal().text_dim));
                         ui.add(egui::DragValue::new(&mut sheet.crossing.lights[i].phases[p].duration).speed(0.2).range(0.0..=900.0).suffix(" s"));
                         ui.separator();
                         if ui.checkbox(&mut on, tr("Detector", "Мелдер")).on_hover_text(tr("`[approachdist]`: how far before the stop line a vehicle registers a request", "`[approachdist]`: за сколько метров до стоп-линии машина запрашивает")).changed() {
@@ -3953,7 +3952,7 @@ impl CrossingPaths {
                     let sum = sheet.crossing.phases_sum();
                     let len = sheet.crossing.cycle_len();
                     if (sum - len).abs() > 0.5 {
-                        ui.label(RichText::new(tr("The phases do not add up to the cycle: the last one holds to its end", "Фазы не складываются в цикл: последняя длится до его конца")).small().color(DIM));
+                        ui.label(RichText::new(tr("The phases do not add up to the cycle: the last one holds to its end", "Фазы не складываются в цикл: последняя длится до его конца")).small().color(pal().text_dim));
                     }
                 }
             });
@@ -3964,7 +3963,7 @@ impl CrossingPaths {
         egui::ScrollArea::vertical().id_salt("crossing light list").max_height(96.0).auto_shrink([false, true]).show(ui, |ui| {
             for (k, l) in sheet.crossing.lights.iter().enumerate() {
                 let name = if l.name.trim().is_empty() { tr("(no name)", "(без имени)") } else { l.name.trim() };
-                let color = l.phases.first().map(|p| aspect_color(p.state)).unwrap_or(DIM);
+                let color = l.phases.first().map(|p| theme::readable(aspect_color(p.state))).unwrap_or(pal().text_dim);
                 if ui.selectable_label(self.light == Some(k), RichText::new(format!("{k}: {name}")).color(color)).clicked() {
                     self.light = Some(k);
                     self.phase = Some(0);
@@ -3977,7 +3976,7 @@ impl CrossingPaths {
             let mut stop_gone = None;
             for (n, s) in sheet.crossing.stops.iter_mut().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(tr("stop", "стоп")).small().color(DIM));
+                    ui.label(RichText::new(tr("stop", "стоп")).small().color(pal().text_dim));
                     ui.add(egui::DragValue::new(&mut s[0]).speed(0.2).prefix("L"));
                     ui.add(egui::DragValue::new(&mut s[1]).speed(0.2).suffix(" s"));
                     ui.add(egui::DragValue::new(&mut s[2]).range(0.0..=1.0).speed(0.1).prefix("req "));
@@ -3992,7 +3991,7 @@ impl CrossingPaths {
             let mut jump_gone = None;
             for (n, j) in sheet.crossing.jumps.iter_mut().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(tr("jump", "переход")).small().color(DIM));
+                    ui.label(RichText::new(tr("jump", "переход")).small().color(pal().text_dim));
                     ui.add(egui::DragValue::new(&mut j[0]).speed(0.2).prefix("L"));
                     ui.add(egui::DragValue::new(&mut j[1]).speed(0.2).suffix(" s"));
                     ui.add(egui::DragValue::new(&mut j[2]).range(0.0..=1.0).speed(0.1).prefix("req "));
@@ -4014,7 +4013,7 @@ impl CrossingPaths {
         let cycle = sheet.crossing.cycle_len();
         ui.horizontal(|ui| {
             ui.label(RichText::new(tr("Timeline", "Временная диаграмма")).strong());
-            ui.label(RichText::new(format!("{cycle:.0} s")).monospace().small().color(DIM));
+            ui.label(RichText::new(format!("{cycle:.0} s")).monospace().small().color(pal().text_dim));
             if ui.small_button("−").on_hover_text(tr("Zoom out", "Отдалить")).clicked() {
                 self.sec_px = (self.sec_px / 1.25).clamp(3.0, 80.0);
                 self.sec_fit = false;
@@ -4033,7 +4032,7 @@ impl CrossingPaths {
             let room = (ui.available_width() - GUTTER - 24.0).max(120.0);
             self.sec_px = (room / cycle).clamp(2.0, 40.0);
         }
-        ui.label(RichText::new(tr("Click a block to edit that phase; drag its right edge to change how long it lasts", "Нажмите на блок, чтобы править эту фазу; потяните его правый край, чтобы изменить её длительность")).small().color(DIM));
+        ui.label(RichText::new(tr("Click a block to edit that phase; drag its right edge to change how long it lasts", "Нажмите на блок, чтобы править эту фазу; потяните его правый край, чтобы изменить её длительность")).small().color(pal().text_dim));
 
         let rows = sheet.crossing.lights.len();
         let size = Vec2::new((GUTTER + cycle * self.sec_px + 18.0).max(ui.available_width()), HEAD + rows.max(1) as f32 * ROW_H + 2.0);
@@ -4046,7 +4045,7 @@ impl CrossingPaths {
             let p = ui.painter_at(rect);
             let x = |t: f32| rect.left() + GUTTER + t * self.sec_px;
             let top = rect.top() + HEAD;
-            p.rect_filled(rect, egui::CornerRadius::ZERO, Color32::from_rgb(26, 28, 26));
+            p.rect_filled(rect, egui::CornerRadius::ZERO, pal().view);
             p.rect_filled(egui::Rect::from_min_max(rect.min, Pos2::new(rect.right(), top)), egui::CornerRadius::ZERO, Color32::from_rgb(38, 41, 38));
 
             // the seconds: a line each, a number every five
@@ -4057,7 +4056,7 @@ impl CrossingPaths {
                 let xa = x(t);
                 p.line_segment([Pos2::new(xa, rect.top()), Pos2::new(xa, rect.bottom())], Stroke::new(1.0, Color32::from_white_alpha(if major { 42 } else { 14 })));
                 if major && self.sec_px >= 7.0 || (t % 10.0).abs() < 1e-3 {
-                    p.text(Pos2::new(xa + 2.0, rect.top() + 2.0), egui::Align2::LEFT_TOP, format!("{t:.0}"), egui::FontId::monospace(9.0), DIM);
+                    p.text(Pos2::new(xa + 2.0, rect.top() + 2.0), egui::Align2::LEFT_TOP, format!("{t:.0}"), egui::FontId::monospace(9.0), pal().view_text_dim);
                 }
                 t += tick;
             }
@@ -4076,7 +4075,7 @@ impl CrossingPaths {
                 p.line_segment([Pos2::new(rect.left(), row.bottom()), Pos2::new(rect.right(), row.bottom())], Stroke::new(1.0, Color32::from_white_alpha(18)));
                 let l = &sheet.crossing.lights[i];
                 let name = if l.name.trim().is_empty() { "-" } else { l.name.trim() };
-                p.text(Pos2::new(rect.left() + 5.0, y0 + ROW_H / 2.0), egui::Align2::LEFT_CENTER, format!("{i}  {name}"), egui::FontId::monospace(9.0), if self.light == Some(i) { HANDLE } else { DIM });
+                p.text(Pos2::new(rect.left() + 5.0, y0 + ROW_H / 2.0), egui::Align2::LEFT_CENTER, format!("{i}  {name}"), egui::FontId::monospace(9.0), if self.light == Some(i) { HANDLE } else { pal().view_text_dim });
                 p.line_segment([Pos2::new(rect.left() + GUTTER, y0), Pos2::new(rect.left() + GUTTER, y0 + ROW_H)], Stroke::new(1.0, Color32::from_white_alpha(28)));
                 for s in segs.iter().filter(|s| s.light == i) {
                     let block = egui::Rect::from_min_max(
@@ -4351,7 +4350,7 @@ impl CrossingPaths {
         let to_screen = move |p: DVec2| Pos2::new(rect.center().x + ((p.x - centre.x) * scale as f64) as f32, rect.center().y - ((p.y - centre.y) * scale as f64) as f32);
         let from_screen = move |q: Pos2| DVec2::new(centre.x + (q.x - rect.center().x) as f64 / scale as f64, centre.y - (q.y - rect.center().y) as f64 / scale as f64);
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 3.0, Color32::from_rgb(30, 34, 31));
+        painter.rect_filled(rect, 3.0, pal().view);
         // the object itself, so the crossing is seen under the paths
         {
             if let Some((_, tris, _)) = &self.footprint {

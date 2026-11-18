@@ -6,10 +6,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 
 use crate::doc::safe::Op;
 use crate::i18n::tr;
+use crate::theme::pal;
 
 /// The languages offered (OMSI's codes) and their names.
 pub const LANGS: &[(&str, &str)] = &[("ENG", "English"), ("DEU", "Deutsch"), ("FRA", "Français"), ("RUS", "Русский"), ("UKR", "Українська"), ("POL", "Polski"), ("CZE", "Čeština"), ("ITA", "Italiano"), ("ESP", "Español"), ("NLD", "Nederlands"), ("HUN", "Magyar")];
@@ -146,7 +147,7 @@ pub fn editor(ui: &mut egui::Ui, doc: &mut crate::doc::Document, history: &mut c
     let mut lang: String = ui.data(|d| d.get_temp::<String>(id)).unwrap_or_default();
     let label = |code: &str| if code.is_empty() { tr("The map's own (global.cfg)", "Своё карты (global.cfg)").to_string() } else { LANGS.iter().find(|l| l.0 == code).map(|l| format!("{} ({code})", l.1)).unwrap_or_else(|| code.to_string()) };
     ui.horizontal(|ui| {
-        ui.label(RichText::new(tr("Description", "Описание")).color(Color32::from_rgb(140, 143, 150)));
+        ui.label(RichText::new(tr("Description", "Описание")).color(pal().text_dim));
         egui::ComboBox::from_id_salt("dsc lang").selected_text(label(&lang)).width(170.0).show_ui(ui, |ui| {
             ui.selectable_value(&mut lang, String::new(), label(""));
             for (code, _) in LANGS {
@@ -170,7 +171,7 @@ pub fn editor(ui: &mut egui::Ui, doc: &mut crate::doc::Document, history: &mut c
             doc.descriptions.remove(&lang);
         }
         if !had {
-            ui.label(RichText::new(tr("Not written yet: it is saved as soon as you type.", "Пока нет: сохранится, как только вы начнёте писать.")).small().color(Color32::from_rgb(140, 143, 150)));
+            ui.label(RichText::new(tr("Not written yet: it is saved as soon as you type.", "Пока нет: сохранится, как только вы начнёте писать.")).small().color(pal().text_dim));
         }
     }
     ui.data_mut(|d| d.insert_temp(id, lang));

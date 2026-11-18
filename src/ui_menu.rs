@@ -1,7 +1,7 @@
 //! The menu a right click in the view opens (the Select tool, and Game logic on one of its
 //! things): copy, paste there, duplicate, delete, group and ungroup, and the like.
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec3;
 
 use crate::editor::Editor;
@@ -9,6 +9,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
 use crate::ui::Action;
+use crate::theme::pal;
 
 /// Where the menu is open: its corner on the screen and the ground point clicked.
 #[derive(Clone, Copy)]
@@ -45,7 +46,7 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 }
                 (None, _) => format!("{} {n}", tr("Selected:", "Выбрано:")),
             };
-            ui.label(RichText::new(title).strong().color(Color32::from_gray(230)));
+            ui.label(RichText::new(title).strong().color(pal().text_strong));
             ui.separator();
             let any = n > 0;
             if item(ui, Icon::Copy, tr("Copy", "Копировать"), "Ctrl+C", any) {

@@ -1,16 +1,15 @@
 //! The Depot files tab of the Traffic and AI window: the map's `.hof` files, made from its
 //! lines with a click, their destinations, stop names and IBIS routes edited here.
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 
 use crate::doc::Document;
 use crate::hof::{self, Hof};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::traffic::File;
+use crate::theme::pal;
 
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
-const WARN: Color32 = Color32::from_rgb(230, 170, 100);
 
 #[derive(Clone, Copy, PartialEq, Default)]
 enum Part {
@@ -34,7 +33,7 @@ fn small_button(ui: &mut egui::Ui, icon: Icon, hint: &str) -> bool {
 }
 
 fn hint(ui: &mut egui::Ui, text: &str) {
-    ui.label(RichText::new(text).small().color(TEXT_DIM));
+    ui.label(RichText::new(text).small().color(pal().text_dim));
 }
 
 /// A file name for a new depot file: the map's folder's, else with a number.
@@ -125,7 +124,7 @@ impl HofUi {
         ui.add_space(4.0);
         let has_trips = doc.timetable.trips.iter().any(|t| t.stations.len() >= 2);
         if doc.traffic.depots.is_empty() {
-            ui.label(RichText::new(tr("The map has no depot file.", "У карты нет файла депо.")).color(WARN));
+            ui.label(RichText::new(tr("The map has no depot file.", "У карты нет файла депо.")).color(pal().warn));
             ui.horizontal(|ui| {
                 if ui.add_enabled(has_trips, egui::Button::new(icons::labelled(Icon::Add, tr("Make one from the lines", "Создать по линиям")))).on_disabled_hover_text(tr("The map has no trips yet (Map > Lines and timetable)", "У карты ещё нет рейсов (Карта > Линии и расписание)")).clicked() {
                     self.add(doc, true);
@@ -164,7 +163,7 @@ impl HofUi {
         let need = missing(&doc.traffic.depots[i], doc);
         if need != (0, 0, 0) {
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(format!("{} {} {}, {} {}, {} {}", tr("The lines need", "Линиям не хватает:"), need.0, tr("destinations", "конечных"), need.1, tr("stops", "остановок"), need.2, tr("routes", "маршрутов"))).color(WARN));
+                ui.label(RichText::new(format!("{} {} {}, {} {}, {} {}", tr("The lines need", "Линиям не хватает:"), need.0, tr("destinations", "конечных"), need.1, tr("stops", "остановок"), need.2, tr("routes", "маршрутов"))).color(pal().warn));
                 if ui.button(icons::labelled(Icon::Add, tr("Add them", "Добавить"))).on_hover_text(tr("What is there stays as it is", "Существующее не меняется")).clicked() {
                     doc.traffic.depots[i].fill_from(&doc.timetable);
                 }
@@ -176,9 +175,9 @@ impl HofUi {
         ui.horizontal_wrapped(|ui| {
             let users: Vec<String> = doc.traffic.depots().filter(|g| g.hof.as_deref().unwrap_or("").eq_ignore_ascii_case(&file)).map(|g| g.name.clone()).collect();
             if users.is_empty() {
-                ui.label(RichText::new(tr("No depot group uses it.", "Ни одна группа депо его не использует.")).color(WARN));
+                ui.label(RichText::new(tr("No depot group uses it.", "Ни одна группа депо его не использует.")).color(pal().warn));
             } else {
-                ui.label(RichText::new(format!("{} {}", tr("Used by the depot", "Используется депо"), users.join(", "))).color(TEXT_DIM));
+                ui.label(RichText::new(format!("{} {}", tr("Used by the depot", "Используется депо"), users.join(", "))).color(pal().text_dim));
             }
             let others: Vec<usize> = doc.traffic.groups.iter().enumerate().filter(|(_, g)| g.is_depot && !g.hof.as_deref().unwrap_or("").eq_ignore_ascii_case(&file)).map(|(k, _)| k).collect();
             if !others.is_empty() && ui.button(tr("Use it for every depot", "Для всех депо")).on_hover_text(tr("The AI's depot groups (Vehicle groups tab) take their buses' destinations from it", "Группы депо ИИ (вкладка «Группы машин») берут из него конечные своих автобусов")).clicked() {
@@ -207,7 +206,7 @@ impl HofUi {
                             doc.traffic.depots[i].file = t;
                         }
                     } else {
-                        ui.label(RichText::new(tr("not a usable name", "недопустимое имя")).color(WARN));
+                        ui.label(RichText::new(tr("not a usable name", "недопустимое имя")).color(pal().warn));
                     }
                 }
             });
@@ -254,7 +253,7 @@ impl HofUi {
 fn texts(ui: &mut egui::Ui, id: (&str, usize), strings: &mut [String], label: fn(usize) -> String) {
     egui::Grid::new(id).num_columns(2).spacing(Vec2::new(8.0, 2.0)).show(ui, |ui| {
         for (k, s) in strings.iter_mut().enumerate() {
-            ui.label(RichText::new(label(k)).small().color(TEXT_DIM));
+            ui.label(RichText::new(label(k)).small().color(pal().text_dim));
             ui.add(egui::TextEdit::singleline(s).font(egui::TextStyle::Monospace).desired_width(200.0));
             ui.end_row();
         }
@@ -270,12 +269,12 @@ fn termini(ui: &mut egui::Ui, h: &mut Hof, f: &str) {
         }
         let twice = codes.iter().filter(|c| **c == t.code).count() > 1;
         let title = format!("{:>3}   {}{}", t.code, t.ident, if t.all_exit { "  ·  ".to_string() + tr("nobody gets on", "без посадки") } else { String::new() });
-        egui::CollapsingHeader::new(RichText::new(title).color(if twice { WARN } else { ui.visuals().text_color() })).id_salt(("hof terminus", k)).show(ui, |ui| {
+        egui::CollapsingHeader::new(RichText::new(title).color(if twice { pal().warn } else { ui.visuals().text_color() })).id_salt(("hof terminus", k)).show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(tr("Code", "Код"));
                 ui.add(egui::DragValue::new(&mut t.code).range(0..=999));
                 if twice {
-                    ui.label(RichText::new(tr("another destination has this code", "этот код есть у другой конечной")).color(WARN));
+                    ui.label(RichText::new(tr("another destination has this code", "этот код есть у другой конечной")).color(pal().warn));
                 }
             });
             ui.horizontal(|ui| {
@@ -337,7 +336,7 @@ fn routes(ui: &mut egui::Ui, h: &mut Hof, f: &str) {
             continue;
         }
         let title = format!("{:>5}   {} {}  »  {}", r.code, tr("line", "линия"), r.line.trim(), to.clone().unwrap_or_else(|| "?".into()));
-        egui::CollapsingHeader::new(RichText::new(title).color(if to.is_none() { WARN } else { ui.visuals().text_color() })).id_salt(("hof route", k)).default_open(k == 0 && f.is_empty()).show(ui, |ui| {
+        egui::CollapsingHeader::new(RichText::new(title).color(if to.is_none() { pal().warn } else { ui.visuals().text_color() })).id_salt(("hof route", k)).default_open(k == 0 && f.is_empty()).show(ui, |ui| {
             egui::Grid::new(("hof route grid", k)).num_columns(2).spacing(Vec2::new(8.0, 3.0)).show(ui, |ui| {
                 ui.label(tr("Code", "Код"));
                 ui.add(egui::TextEdit::singleline(&mut r.code).desired_width(80.0)).on_hover_text(tr("What the driver types: the line's number and two digits (7601: line 76, route 01)", "Что набирает водитель: номер линии и две цифры (7601: линия 76, маршрут 01)"));
@@ -363,9 +362,9 @@ fn routes(ui: &mut egui::Ui, h: &mut Hof, f: &str) {
             let n = r.stops.len();
             egui::Grid::new(("hof route stops", k)).num_columns(3).spacing(Vec2::new(6.0, 2.0)).show(ui, |ui| {
                 for (j, s) in r.stops.iter().enumerate() {
-                    ui.label(RichText::new(format!("{:>2}.", j + 1)).monospace().color(TEXT_DIM));
+                    ui.label(RichText::new(format!("{:>2}.", j + 1)).monospace().color(pal().text_dim));
                     let unknown = !known.contains(&s.trim().to_lowercase());
-                    let l = ui.label(if unknown { RichText::new(s).color(WARN) } else { RichText::new(s) });
+                    let l = ui.label(if unknown { RichText::new(s).color(pal().warn) } else { RichText::new(s) });
                     if unknown {
                         l.on_hover_text(tr("Not in the Stops list: the displays have no texts for it", "Нет в списке остановок: у табло нет для неё текстов"));
                     }

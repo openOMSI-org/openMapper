@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 
 use crate::i18n::tr;
 use crate::install::Prefs;
+use crate::theme::pal;
 
 const LATEST: &str = "https://api.github.com/repos/openOMSI-org/openMapper/releases/latest";
 const PAGE: &str = "https://github.com/openOMSI-org/openMapper/releases/latest";
@@ -204,7 +205,7 @@ impl Updater {
                 State::Installed(v) => {
                     ui.label(format!("{} {v}", tr("Installed version", "Установлена версия")));
                     if unsaved {
-                        ui.label(RichText::new(tr("openMapper restarts when you save the map.", "openMapper перезапустится, когда вы сохраните карту.")).color(crate::ui::TEXT_DIM));
+                        ui.label(RichText::new(tr("openMapper restarts when you save the map.", "openMapper перезапустится, когда вы сохраните карту.")).color(pal().text_dim));
                     }
                 }
                 State::Checking(_) => {
@@ -217,7 +218,7 @@ impl Updater {
                     ui.label(tr("This is the newest version.", "Это самая новая версия."));
                 }
                 State::Failed(e) => {
-                    ui.colored_label(egui::Color32::from_rgb(230, 120, 100), e);
+                    ui.colored_label(pal().error, e);
                     ui.hyperlink_to(tr("Download it from GitHub by hand", "Скачать вручную с GitHub"), PAGE);
                 }
                 State::Idle => {}

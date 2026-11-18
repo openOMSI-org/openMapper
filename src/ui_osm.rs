@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec2;
 
 use crate::doc::{tile_of, tile_origin, tile_size};
@@ -15,7 +15,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
 use crate::osm::{self, Class};
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 pub struct OsmUi {
     pub open: bool,
@@ -200,13 +200,13 @@ impl OsmUi {
         let derived = self.derived.as_ref().map(|d| d.1.clone()).unwrap_or_default();
         let mut open = self.open;
         egui::Window::new(icons::labelled(Icon::Road, tr("From OpenStreetMap", "Из OpenStreetMap"))).id(egui::Id::new("osm roads")).open(&mut open).default_pos([360.0, 110.0]).default_size([390.0, 700.0]).resizable(true).vscroll(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("The streets of the map's place built as roads with junctions where they meet, its bus stops, lines, trees and woods. Best on tiles with no roads yet: roads lying on ones the map has are left out.", "Улицы места карты, построенные дорогами с перекрёстками, её остановки, линии, деревья и леса. Лучше на тайлах без дорог: дороги поверх уже имеющихся пропускаются.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The streets of the map's place built as roads with junctions where they meet, its bus stops, lines, trees and woods. Best on tiles with no roads yet: roads lying on ones the map has are left out.", "Улицы места карты, построенные дорогами с перекрёстками, её остановки, линии, деревья и леса. Лучше на тайлах без дорог: дороги поверх уже имеющихся пропускаются.")).small().color(pal().text_dim));
             ui.add_space(4.0);
             let Some(g) = georef else {
-                ui.label(RichText::new(tr("The map does not lie on the Earth yet: place it in Satellite and terrain (Map menu, I) first.", "Карта ещё не привязана к Земле: сначала разместите её в «Спутник и рельеф» (меню Карта, I).")).color(Color32::from_rgb(230, 170, 100)));
+                ui.label(RichText::new(tr("The map does not lie on the Earth yet: place it in Satellite and terrain (Map menu, I) first.", "Карта ещё не привязана к Земле: сначала разместите её в «Спутник и рельеф» (меню Карта, I).")).color(pal().warn));
                 return;
             };
-            ui.label(RichText::new(tr("Load the terrain heights first (Satellite and terrain): the roads follow the ground as it is when they are built.", "Сначала загрузите высоты рельефа («Спутник и рельеф»): дороги ложатся на землю такой, какая она при постройке.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Load the terrain heights first (Satellite and terrain): the roads follow the ground as it is when they are built.", "Сначала загрузите высоты рельефа («Спутник и рельеф»): дороги ложатся на землю такой, какая она при постройке.")).small().color(pal().text_dim));
             let busy = self.rx.is_some();
             ui.horizontal(|ui| {
                 let r = ui.add_enabled(!busy && tiles > 0, egui::Button::new(icons::labelled(Icon::Import, tr("Download for the map's tiles", "Загрузить для тайлов карты"))));
@@ -245,7 +245,7 @@ impl OsmUi {
                 }
             });
             if let Some((t, err)) = &self.status {
-                ui.label(RichText::new(t).small().color(if *err { Color32::from_rgb(230, 120, 100) } else { TEXT_DIM }));
+                ui.label(RichText::new(t).small().color(if *err { pal().error } else { pal().text_dim }));
             }
             let Some((_, roads)) = &self.roads else { return };
             ui.add_space(6.0);
@@ -256,11 +256,11 @@ impl OsmUi {
                     let on = self.include.entry(c).or_insert(false);
                     ui.vertical(|ui| {
                         crate::ui::check(ui, on, c.label()).on_hover_text(c.hint());
-                        ui.label(RichText::new(format!("{} · {:.1} km", of.len(), km.max(0.0))).small().color(TEXT_DIM));
+                        ui.label(RichText::new(format!("{} · {:.1} km", of.len(), km.max(0.0))).small().color(pal().text_dim));
                     });
                     let now = self.types.get(&c).cloned();
                     let name = now.as_ref().map(|t| lib.find(t).map(|a| a.name.clone()).unwrap_or_else(|| t.clone())).unwrap_or_else(|| tr("no type chosen", "тип не выбран").into());
-                    ui.label(RichText::new(name).color(if now.is_some() { Color32::WHITE } else { TEXT_DIM }));
+                    ui.label(RichText::new(name).color(if now.is_some() { pal().text_strong } else { pal().text_dim }));
                     let pick = ed.road_type.clone();
                     let r = ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small());
                     let r = r.on_hover_text(tr("The road type chosen in the Roads tool's catalogue", "Тип дороги, выбранный в каталоге инструмента «Дороги»"));
@@ -275,10 +275,10 @@ impl OsmUi {
                 let n = roads.iter().filter(|r| r.oneway && self.include.get(&r.class).copied().unwrap_or(false)).count();
                 ui.vertical(|ui| {
                     ui.label(tr("One-way roads", "Односторонние")).on_hover_text(tr("Each carriageway of a dual road and one-way streets: with a one-way road type they lie side by side as they should; with none chosen they get their kind's", "Каждая половина дороги с разделительной полосой и улицы с односторонним движением: с односторонним типом они лежат рядом, как надо; без выбора — тип своего вида"));
-                    ui.label(RichText::new(format!("{n}")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(format!("{n}")).small().color(pal().text_dim));
                 });
                 let name = self.oneway_type.as_ref().map(|t| lib.find(t).map(|a| a.name.clone()).unwrap_or_else(|| t.clone())).unwrap_or_else(|| tr("as their kind", "как у их вида").into());
-                ui.label(RichText::new(name).color(if self.oneway_type.is_some() { Color32::WHITE } else { TEXT_DIM }));
+                ui.label(RichText::new(name).color(if self.oneway_type.is_some() { pal().text_strong } else { pal().text_dim }));
                 ui.horizontal(|ui| {
                     let pick = ed.road_type.clone();
                     if ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small()).clicked() {
@@ -294,9 +294,9 @@ impl OsmUi {
             let stops_in = &derived.stops;
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.with_stops, tr("Bus stops", "Остановки"));
-                ui.label(RichText::new(format!("{}", stops_in.len())).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{}", stops_in.len())).small().color(pal().text_dim));
                 let name = self.stop_type.as_ref().map(|t| lib.find(t).map(|a| a.name.clone()).unwrap_or_else(|| t.clone())).unwrap_or_else(|| tr("no stop object", "объект не выбран").into());
-                ui.label(RichText::new(name).color(if self.stop_type.is_some() { Color32::WHITE } else { TEXT_DIM }));
+                ui.label(RichText::new(name).color(if self.stop_type.is_some() { pal().text_strong } else { pal().text_dim }));
                 let pick = ed.object_type.clone().filter(|t| lib.find(t).map(|a| a.is_bus_stop).unwrap_or(false));
                 let r = ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small());
                 if r.on_hover_text(tr("The stop chosen in Game logic > Bus stops", "Остановка, выбранная в «Игровая логика > Остановки»")).clicked() {
@@ -311,22 +311,22 @@ impl OsmUi {
                 numbers.sort();
                 numbers.dedup();
                 let shown: Vec<&str> = numbers.iter().take(8).copied().collect();
-                ui.label(RichText::new(format!("{} {}{}", lines_in.len(), shown.join(", "), if numbers.len() > 8 { "…" } else { "" })).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{} {}{}", lines_in.len(), shown.join(", "), if numbers.len() > 8 { "…" } else { "" })).small().color(pal().text_dim));
             });
             // trees and woods, with the plant mix (or the tree chosen)
             let (trees, rows, woods, ha) = (&derived.trees, &derived.rows, &derived.woods, derived.ha);
             let mix: Vec<String> = if !ed.plant_mix.is_empty() { ed.plant_mix.clone() } else { ed.object_type.iter().filter(|t| lib.find(t).map(|a| a.category == crate::library::Category::Trees).unwrap_or(false)).cloned().collect() };
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.with_trees, tr("Trees and woods", "Деревья и леса")).on_hover_text(tr("Single trees, rows of them and woods, planted with the plant mix (Objects tool > Plant brush) or the tree chosen; none on a road", "Отдельные деревья, ряды и леса, засаженные смесью растений (инструмент «Объекты» > Кисть растений) или выбранным деревом; не на дорогах"));
-                ui.label(RichText::new(format!("{} · {} · {:.1} ha", trees.len(), rows.len(), ha)).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{} · {} · {:.1} ha", trees.len(), rows.len(), ha)).small().color(pal().text_dim));
             });
             if self.with_trees {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(if mix.is_empty() { tr("no plants chosen", "растения не выбраны").to_string() } else { format!("{} {}", mix.len(), tr("kinds of plants", "видов растений")) }).color(if mix.is_empty() { TEXT_DIM } else { Color32::WHITE }));
+                    ui.label(RichText::new(if mix.is_empty() { tr("no plants chosen", "растения не выбраны").to_string() } else { format!("{} {}", mix.len(), tr("kinds of plants", "видов растений")) }).color(if mix.is_empty() { pal().text_dim } else { pal().text_strong }));
                     ui.label(tr("apart in woods", "шаг в лесу"));
                     ui.add(egui::DragValue::new(&mut self.tree_spacing).range(3.0..=40.0).speed(0.2).suffix(" m"));
                     // (a wood of a hectare is some 10000 / spacing² trees)
-                    ui.label(RichText::new(format!("≈ {}", (ha * 10_000.0 / (self.tree_spacing * self.tree_spacing)) as usize + trees.len())).small().color(TEXT_DIM));
+                    ui.label(RichText::new(format!("≈ {}", (ha * 10_000.0 / (self.tree_spacing * self.tree_spacing)) as usize + trees.len())).small().color(pal().text_dim));
                 });
             }
             // buildings, with the models of a catalogue folder
@@ -334,9 +334,9 @@ impl OsmUi {
             let pool = pool_of(lib, &self.building_dirs);
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.with_buildings, tr("Buildings", "Здания")).on_hover_text(tr("Each outline filled with the model of the folder chosen whose ground plan comes nearest, its front to the nearest road; an outline no model fits is left out", "Каждый контур заполняется моделью выбранной папки с самым похожим планом, фасадом к ближайшей дороге; контуры, которым ничто не подходит, пропускаются"));
-                ui.label(RichText::new(format!("{}", outlines.len())).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{}", outlines.len())).small().color(pal().text_dim));
                 let name = if self.building_dirs.is_empty() { tr("no folder", "папка не выбрана").to_string() } else { format!("{} ({})", self.building_dirs.join(", "), pool.len()) };
-                ui.label(RichText::new(name).color(if self.building_dirs.is_empty() { TEXT_DIM } else { Color32::WHITE }));
+                ui.label(RichText::new(name).color(if self.building_dirs.is_empty() { pal().text_dim } else { pal().text_strong }));
                 let pick = ed.object_type.as_ref().and_then(|t| lib.find(t)).filter(|a| a.category == crate::library::Category::Objects).map(|a| a.dir.clone());
                 let can = pick.as_ref().map(|p| !self.building_dirs.contains(p)).unwrap_or(false);
                 let r = ui.add_enabled(can, egui::Button::new(tr("+ its folder", "+ его папка")).small());
@@ -351,7 +351,7 @@ impl OsmUi {
             let areas_in = derived.water_in;
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.with_water, tr("Water", "Вода")).on_hover_text(tr("Lakes and rivers: the ground inside them lowered below the banks, and the tiles they lie on given water a little under the banks' height (OMSI's water is one level for a tile: low ground elsewhere on it is flooded too)", "Озёра и реки: земля внутри опускается ниже берегов, тайлам ставится вода чуть ниже берегов (вода OMSI одна на тайл: низкие места на нём тоже затопит)"));
-                ui.label(RichText::new(format!("{areas_in}")).small().color(TEXT_DIM));
+                ui.label(RichText::new(format!("{areas_in}")).small().color(pal().text_dim));
                 if self.with_water {
                     ui.label(tr("deep", "глубина"));
                     ui.add(egui::DragValue::new(&mut self.water_depth).range(0.5..=10.0).speed(0.1).suffix(" m"));
@@ -373,12 +373,12 @@ impl OsmUi {
             let missing = !wants.is_empty();
             let count = roads.iter().filter(|r| wanted.iter().any(|w| w.0 == r.class)).count();
             if missing {
-                ui.label(RichText::new(tr("To build, choose (or untick):", "Чтобы построить, выберите (или снимите галочку):")).small().color(Color32::from_rgb(230, 170, 100)));
+                ui.label(RichText::new(tr("To build, choose (or untick):", "Чтобы построить, выберите (или снимите галочку):")).small().color(pal().warn));
                 for w in &wants {
-                    ui.label(RichText::new(format!("• {w}")).small().color(Color32::from_rgb(230, 170, 100)));
+                    ui.label(RichText::new(format!("• {w}")).small().color(pal().warn));
                 }
             }
-            ui.label(RichText::new(tr("A one-way street is built the way it runs in OpenStreetMap: give it a one-way road type", "Улица с односторонним движением строится в направлении OpenStreetMap: дайте ей односторонний тип дороги")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("A one-way street is built the way it runs in OpenStreetMap: give it a one-way road type", "Улица с односторонним движением строится в направлении OpenStreetMap: дайте ей односторонний тип дороги")).small().color(pal().text_dim));
             let stops_n = if self.with_stops { stops_in.len() } else { 0 };
             let r = ui.add_enabled(!missing && (count + stops_n > 0 || self.with_trees || self.with_buildings || self.with_water), egui::Button::new(icons::labelled(Icon::Road, &format!("{} ({count} · {stops_n})", tr("Build", "Построить")))));
             if r.clicked() {

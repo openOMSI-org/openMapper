@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::camera::Camera;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SavedView {
@@ -109,14 +109,14 @@ impl Views {
         let mut open = self.open;
         let mut changed = false;
         egui::Window::new(icons::labelled(Icon::Focus, tr("Saved views", "Сохранённые виды"))).id(egui::Id::new("saved views")).open(&mut open).default_pos([360.0, 140.0]).resizable(false).show(ctx, |ui| {
-            ui.label(RichText::new(tr("Places of the map to come back to: Ctrl+1…9 goes to the first nine, Ctrl+Shift+1…9 keeps the view there", "Места карты, к которым удобно возвращаться: Ctrl+1…9 ведёт к первым девяти, Ctrl+Shift+1…9 запоминает вид туда")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Places of the map to come back to: Ctrl+1…9 goes to the first nine, Ctrl+Shift+1…9 keeps the view there", "Места карты, к которым удобно возвращаться: Ctrl+1…9 ведёт к первым девяти, Ctrl+Shift+1…9 запоминает вид туда")).small().color(pal().text_dim));
             if ui.button(icons::labelled(Icon::Add, tr("Keep this view", "Запомнить этот вид"))).clicked() {
                 let n = self.list.len();
                 self.store(n, cam);
             }
             ui.separator();
             if self.list.is_empty() {
-                ui.label(RichText::new(tr("None yet", "Пока нет")).italics().color(TEXT_DIM));
+                ui.label(RichText::new(tr("None yet", "Пока нет")).italics().color(pal().text_dim));
             }
             let mut remove = None;
             let mut retake = None;
@@ -126,7 +126,7 @@ impl Views {
                 for (i, v) in self.list.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
                         let key = if i < 9 { format!("{}", i + 1) } else { " ".into() };
-                        ui.label(RichText::new(key).monospace().color(TEXT_DIM));
+                        ui.label(RichText::new(key).monospace().color(pal().text_dim));
                         if ui.button(icons::labelled(Icon::Focus, tr("Go", "К нему"))).clicked() {
                             v.apply(cam);
                         }
@@ -159,7 +159,7 @@ impl Views {
                 changed = true;
             }
             if let Some(e) = &self.error {
-                ui.colored_label(egui::Color32::from_rgb(235, 110, 90), e);
+                ui.colored_label(pal().error, e);
             }
         });
         self.open = open;

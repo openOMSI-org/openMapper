@@ -3,12 +3,13 @@
 //! height profile, a junction's lights) a note that says how to get to it. Typing filters,
 //! the arrows choose, `Enter` runs it.
 
-use egui::{Color32, Key, Modifiers, RichText, Sense, Vec2};
+use egui::{Key, Modifiers, RichText, Sense, Vec2};
 
 use crate::editor::{Editor, LogicMode, Tool};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
-use crate::ui::{Action, UiState, TEXT_DIM};
+use crate::ui::{Action, UiState};
+use crate::theme::pal;
 
 type Run = fn(&mut UiState, &mut Editor, &mut Vec<Action>);
 
@@ -31,6 +32,12 @@ macro_rules! lang_cmd {
     ($l:ident, $name:literal, $words:literal) => {
         Command { icon: Icon::Settings, name: $name, words: concat!("language interface язык интерфейс ", $words), key: "", run: |_, _, a| a.push(Action::SetLang(crate::i18n::Lang::$l)) }
     };
+}
+
+/// A command's key as the user has it: the list names the default keys, and one the user
+/// moved is shown where it is now.
+fn shown_key(default: &str) -> String {
+    crate::controls::ALL.iter().find(|c| c.default().text() == default).map(|c| crate::controls::key_text(*c)).unwrap_or_else(|| default.to_string())
 }
 
 fn commands() -> Vec<Command> {
@@ -85,14 +92,14 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Road, "Previous road piece", "Предыдущий кусок дороги", "previous spline linked chain walk back предыдущий сплайн связанный цепочка", ",", |_, ed, _| {
             ed.select_linked(false, false);
         }),
-        cmd!(Icon::Focus, "Snap vertex to vertex", "Привязать вершину к вершине", "snap vertex align object привязка вершина", "V", |_, ed, _| {
+        cmd!(Icon::Focus, "Snap vertex to vertex", "Привязать вершину к вершине", "snap vertex align object привязка вершина", "Shift+V", |_, ed, _| {
             if ed.vertex_snap.is_some() {
                 ed.cancel_vertex_snap();
             } else {
                 ed.start_vertex_snap();
             }
         }),
-        cmd!(Icon::Line, "Snap edge to edge", "Привязать ребро к ребру", "snap edge align line object привязка ребро линия", "L", |_, ed, _| {
+        cmd!(Icon::Line, "Snap edge to edge", "Привязать ребро к ребру", "snap edge align line object привязка ребро линия", "Shift+L", |_, ed, _| {
             if ed.edge_snap.is_some() {
                 ed.cancel_edge_snap();
             } else {
@@ -350,24 +357,24 @@ pub fn window(ctx: &egui::Context, st: &mut UiState, ed: &mut Editor, actions: &
             }
             ui.add_space(4.0);
             if list.is_empty() {
-                ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).italics().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).italics().color(pal().text_dim));
             }
             egui::ScrollArea::vertical().max_height(380.0).show(ui, |ui| {
                 for (i, c) in list.iter().enumerate() {
                     let on = i == p.chosen;
                     let (rect, resp) = ui.allocate_exact_size(Vec2::new(width, 24.0), Sense::click());
                     if on {
-                        ui.painter().rect_filled(rect, 3.0, crate::ui::SELECT);
+                        ui.painter().rect_filled(rect, 3.0, pal().selection);
                         if down || up {
                             ui.scroll_to_rect(rect, None);
                         }
                     } else if resp.hovered() {
-                        ui.painter().rect_filled(rect, 3.0, Color32::from_gray(45));
+                        ui.painter().rect_filled(rect, 3.0, pal().hover);
                     }
-                    icons::paint(ui.painter(), c.icon, rect.left_center() + Vec2::new(12.0, 0.0), 15.0, Color32::from_gray(210));
-                    ui.painter().text(rect.left_center() + Vec2::new(28.0, 0.0), egui::Align2::LEFT_CENTER, c.name, egui::FontId::proportional(13.5), Color32::from_gray(235));
+                    icons::paint(ui.painter(), c.icon, rect.left_center() + Vec2::new(12.0, 0.0), 15.0, if on { pal().selection_text } else { pal().text });
+                    ui.painter().text(rect.left_center() + Vec2::new(28.0, 0.0), egui::Align2::LEFT_CENTER, c.name, egui::FontId::proportional(13.5), pal().row_text(on));
                     if !c.key.is_empty() {
-                        ui.painter().text(rect.right_center() - Vec2::new(8.0, 0.0), egui::Align2::RIGHT_CENTER, c.key, egui::FontId::proportional(11.5), TEXT_DIM);
+                        ui.painter().text(rect.right_center() - Vec2::new(8.0, 0.0), egui::Align2::RIGHT_CENTER, shown_key(c.key), egui::FontId::proportional(11.5), pal().text_dim);
                     }
                     if resp.clicked() {
                         run = Some(i);

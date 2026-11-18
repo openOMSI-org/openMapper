@@ -3,14 +3,15 @@
 //! of the year.
 
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use omsi_map::global::Season;
 
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
-use crate::ui::{check, prop_row, TEXT_DIM};
+use crate::ui::{check, prop_row};
+use crate::theme::pal;
 
 #[derive(Default)]
 pub struct MapSettings {
@@ -99,7 +100,7 @@ impl MapSettings {
                     prop_row(ui, tr("Tickets", "Билеты"), |ui| choose(ui, "tickets", &mut g.ticket_pack, &lists.1));
                     prop_row(ui, tr("Depot", "Депо"), |ui| {
                         if lists.2.is_empty() && g.standard_depot.is_empty() {
-                            ui.label(RichText::new(tr("none: the map has no depot group (Traffic and AI)", "нет: у карты нет группы депо (Трафик и ИИ)")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("none: the map has no depot group (Traffic and AI)", "нет: у карты нет группы депо (Трафик и ИИ)")).color(pal().text_dim));
                         } else {
                             choose(ui, "depot", &mut g.standard_depot, &lists.2);
                         }
@@ -126,7 +127,7 @@ impl MapSettings {
                 });
                 ui.add_space(10.0);
                 ui.label(RichText::new(tr("Seasons", "Времена года")).strong());
-                ui.label(RichText::new(tr("Summer where none is set. The days count from 1 January.", "Где ничего не задано — лето. Дни считаются от 1 января.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Summer where none is set. The days count from 1 January.", "Где ничего не задано — лето. Дни считаются от 1 января.")).small().color(pal().text_dim));
                 let mut remove = None;
                 for (i, s) in g.seasons.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
@@ -151,7 +152,7 @@ impl MapSettings {
                     g.seasons.push(Season { kind: 3, start_day: start, end_day: (start + 30).min(370) });
                 }
                 if g.seasons.iter().any(|s| s.end_day <= s.start_day) {
-                    ui.label(RichText::new(tr("A season ends before it starts", "Время года кончается раньше, чем начинается")).color(Color32::from_rgb(230, 160, 60)));
+                    ui.label(RichText::new(tr("A season ends before it starts", "Время года кончается раньше, чем начинается")).color(pal().warn));
                 }
             });
         });

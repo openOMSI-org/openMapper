@@ -12,6 +12,7 @@ use crate::doc::sync::{self, Changes, Stamp};
 use crate::doc::Document;
 use crate::i18n::tr;
 use crate::install::Roots;
+use crate::theme::pal;
 
 /// How often the folder is looked at.
 const EVERY: Duration = Duration::from_secs(2);
@@ -234,7 +235,7 @@ pub fn window(ctx: &egui::Context, sync: &MapSync) -> Option<bool> {
     egui::Window::new(title).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(400.0);
         ui.label(text);
-        ui.label(egui::RichText::new(note).small().color(egui::Color32::GRAY));
+        ui.label(egui::RichText::new(note).small().color(pal().text_dim));
         ui.add_space(8.0);
         ui.horizontal(|ui| {
             if ui.button(yes).clicked() {

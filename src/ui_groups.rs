@@ -4,14 +4,14 @@
 
 use std::path::PathBuf;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 
 use crate::clipboard::Clip;
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 struct Entry {
     name: String,
@@ -63,7 +63,7 @@ impl Groups {
         let mut open = self.open;
         let mut reread = false;
         egui::Window::new(icons::labelled(Icon::Objects, tr("Groups for other maps", "Группы для других карт"))).id(egui::Id::new("groups")).open(&mut open).default_pos([360.0, 120.0]).default_size([340.0, 420.0]).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("A selection kept under a name, to put down again in any map (a stop with its shelter and signs, a crossing with its lights)", "Выделение, сохранённое под именем, чтобы ставить его снова на любой карте (остановка с павильоном и знаками, перекрёсток со светофорами)")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("A selection kept under a name, to put down again in any map (a stop with its shelter and signs, a crossing with its lights)", "Выделение, сохранённое под именем, чтобы ставить его снова на любой карте (остановка с павильоном и знаками, перекрёсток со светофорами)")).small().color(pal().text_dim));
             ui.add_space(4.0);
             let n = ed.selection().len();
             ui.horizontal(|ui| {
@@ -88,17 +88,17 @@ impl Groups {
                 }
             });
             if n == 0 {
-                ui.label(RichText::new(tr("Select what to keep in the view first.", "Сначала выделите в окне вида то, что сохранить.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Select what to keep in the view first.", "Сначала выделите в окне вида то, что сохранить.")).small().color(pal().text_dim));
             }
             ui.separator();
             if entries.is_empty() {
-                ui.label(RichText::new(tr("No groups yet.", "Групп пока нет.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("No groups yet.", "Групп пока нет.")).color(pal().text_dim));
             }
             egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                 for e in entries.iter() {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(&e.name).color(Color32::WHITE));
-                        ui.label(RichText::new(format!("{} {}", e.count, if e.count == 1 { tr("thing", "шт.") } else { tr("things", "шт.") })).small().color(TEXT_DIM));
+                        ui.label(RichText::new(&e.name).color(pal().text_strong));
+                        ui.label(RichText::new(format!("{} {}", e.count, if e.count == 1 { tr("thing", "шт.") } else { tr("things", "шт.") })).small().color(pal().text_dim));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Delete the group (to openMapper's bin)", "Удалить группу (в корзину openMapper)")).clicked() {
                                 let bin = crate::install::content_dir().join("openMapper").join("bin").join("groups");

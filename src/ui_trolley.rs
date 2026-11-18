@@ -4,7 +4,7 @@
 //! (how each is set and where it starts: straight, to the branch or at random) and the
 //! insulators between sections are set here, spans and switches picked in the view.
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use glam::DVec3;
 
 use crate::doc::Sel;
@@ -12,7 +12,8 @@ use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::trolley::{self, Initial, Lay, Mode, Section};
-use crate::ui::{check, prop_row, Action, ACCENT, TEXT_DIM};
+use crate::theme::pal;
+use crate::ui::{check, prop_row, Action};
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 enum Tab {
@@ -110,7 +111,7 @@ impl TrolleyWindow {
         let drawing = &mut ed.wire.drawing;
         let (span_sel, switch_sel) = (&mut ed.wire.span, &mut ed.wire.switch);
         egui::Window::new(icons::labelled(Icon::Bus, tr("Trolleybus wire", "Контактная сеть троллейбуса"))).id(egui::Id::new("trolley wire")).open(&mut open).default_pos([330.0, 90.0]).default_size([460.0, 560.0]).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.", "Контактная сеть для троллейбусов openOMSI (trolley.txt рядом с картой; OMSI 2 его не читает). Без него игра берёт провода из сплайнов карты.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.", "Контактная сеть для троллейбусов openOMSI (trolley.txt рядом с картой; OMSI 2 его не читает). Без него игра берёт провода из сплайнов карты.")).small().color(pal().text_dim));
             if !exists {
                 ui.add_space(6.0);
                 if ui.button(icons::labelled(Icon::Add, tr("Start a wire for this map", "Начать контактную сеть карты"))).clicked() {
@@ -154,7 +155,7 @@ impl TrolleyWindow {
                                     check(ui, &mut self.kit.masts, tr("masts beside the road every", "столбы у дороги через каждые"));
                                     ui.add_enabled(self.kit.masts, egui::DragValue::new(&mut self.kit.mast_step).range(10.0..=80.0).speed(0.5).suffix(" m"));
                                 });
-                                ui.label(RichText::new(tr("Frogs and section insulators are put where the wire has them.", "Стрелки и секционные изоляторы ставятся там, где они есть в сети.")).small().color(TEXT_DIM));
+                                ui.label(RichText::new(tr("Frogs and section insulators are put where the wire has them.", "Стрелки и секционные изоляторы ставятся там, где они есть в сети.")).small().color(pal().text_dim));
                             });
                         });
                     });
@@ -165,9 +166,9 @@ impl TrolleyWindow {
                     }
                     if let Some((_, Some(lanes))) = &self.lanes {
                         ui.add_space(6.0);
-                        ui.label(RichText::new(tr("The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.", "Полосы выбранного объекта (перекрёстка): отметьте, над какими пройдёт провод. Три сходящихся пролёта — стрелка.")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.", "Полосы выбранного объекта (перекрёстка): отметьте, над какими пройдёт провод. Три сходящихся пролёта — стрелка.")).small().color(pal().text_dim));
                         if lanes.is_empty() {
-                            ui.label(RichText::new(tr("It has no street lanes.", "У него нет полос для машин.")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("It has no street lanes.", "У него нет полос для машин.")).color(pal().text_dim));
                         }
                         ui.horizontal_wrapped(|ui| {
                             for (idx, pts) in lanes {
@@ -185,7 +186,7 @@ impl TrolleyWindow {
                             lay_req = Some(Lay2::Lanes(self.chosen.clone()));
                         }
                     } else {
-                        ui.label(RichText::new(tr("Select one junction to lay the wire over its lanes.", "Выберите один перекрёсток, чтобы проложить провод над его полосами.")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Select one junction to lay the wire over its lanes.", "Выберите один перекрёсток, чтобы проложить провод над его полосами.")).small().color(pal().text_dim));
                     }
                     ui.add_space(6.0);
                     match drawing.as_ref().map(|d| d.len()) {
@@ -197,7 +198,7 @@ impl TrolleyWindow {
                         }
                         Some(n) => {
                             ui.horizontal(|ui| {
-                                ui.label(RichText::new(format!("{n} {}", tr("points: click the next in the view", "точек: кликните следующую в окне вида"))).color(ACCENT));
+                                ui.label(RichText::new(format!("{n} {}", tr("points: click the next in the view", "точек: кликните следующую в окне вида"))).color(pal().accent));
                                 if ui.add_enabled(n >= 2, egui::Button::new(tr("Finish", "Готово"))).clicked() {
                                     lay_req = drawing.take().map(Lay2::Drawn);
                                 }
@@ -229,7 +230,7 @@ impl TrolleyWindow {
                     }
                 }
                 Tab::Sections => {
-                    ui.label(RichText::new(tr("Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).", "Участки от одной подстанции. Где они встречаются — мёртвый участок (изолятор).")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).", "Участки от одной подстанции. Где они встречаются — мёртвый участок (изолятор).")).small().color(pal().text_dim));
                     let mut drop = None;
                     for (i, c) in wire.sections.iter_mut().enumerate() {
                         let used = wire.spans.iter().filter(|s| s.section == c.id).count();
@@ -239,7 +240,7 @@ impl TrolleyWindow {
                             check(ui, &mut c.live, tr("live", "под током"));
                             ui.add(egui::DragValue::new(&mut c.feeder_ohm).range(0.0..=5.0).speed(0.005).max_decimals(3).suffix(" Ω")).on_hover_text(tr("The feeder's resistance: the voltage drops with the current", "Сопротивление фидера: напряжение падает с током"));
                             ui.add(egui::DragValue::new(&mut c.regen_kw).range(0.0..=2000.0).speed(1.0).suffix(" kW")).on_hover_text(tr("Power the feeder takes back from a braking bus", "Мощность, которую фидер принимает от тормозящего троллейбуса"));
-                            ui.label(RichText::new(format!("{used} {}", tr("spans", "пролётов"))).small().color(TEXT_DIM));
+                            ui.label(RichText::new(format!("{used} {}", tr("spans", "пролётов"))).small().color(pal().text_dim));
                             if used == 0 && ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
                                 drop = Some(i);
                             }
@@ -276,12 +277,12 @@ impl TrolleyWindow {
                 }
                 Tab::Spans => {
                     let total: f64 = wire.spans.iter().map(|s| s.length()).sum();
-                    ui.label(RichText::new(format!("{} {} · {:.2} km", wire.spans.len(), tr("spans", "пролётов"), total / 1000.0)).color(TEXT_DIM));
+                    ui.label(RichText::new(format!("{} {} · {:.2} km", wire.spans.len(), tr("spans", "пролётов"), total / 1000.0)).color(pal().text_dim));
                     if let Some(i) = *span_sel {
                         let mut drop = false;
                         let sp = &mut wire.spans[i];
                         ui.add_space(4.0);
-                        ui.label(RichText::new(format!("{} {i} · {:.1} m · {} {}", tr("Span", "Пролёт"), sp.length(), sp.points.len(), tr("points", "точек"))).strong().color(ACCENT));
+                        ui.label(RichText::new(format!("{} {i} · {:.1} m · {} {}", tr("Span", "Пролёт"), sp.length(), sp.points.len(), tr("points", "точек"))).strong().color(pal().accent));
                         egui::Grid::new("trolley span").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
                             prop_row(ui, tr("Section", "Секция"), |ui| section_combo(ui, "span section", &wire.sections, &mut sp.section));
                             prop_row(ui, tr("Spacing", "Между проводами"), |ui| {
@@ -320,7 +321,7 @@ impl TrolleyWindow {
                             *span_sel = None;
                         }
                     } else {
-                        ui.label(RichText::new(tr("Pick a span in the view, or in the list.", "Выберите пролёт в окне вида или в списке.")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Pick a span in the view, or in the list.", "Выберите пролёт в окне вида или в списке.")).small().color(pal().text_dim));
                     }
                     ui.separator();
                     egui::ScrollArea::vertical().id_salt("trolley spans").max_height(220.0).show(ui, |ui| {
@@ -335,10 +336,10 @@ impl TrolleyWindow {
                     });
                 }
                 Tab::Switches => {
-                    ui.label(RichText::new(tr("A switch where three spans meet (yellow in the view). Every frog gets one.", "Стрелка там, где сходятся три пролёта (жёлтая точка в окне вида). Она есть у каждой развилки.")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("A switch where three spans meet (yellow in the view). Every frog gets one.", "Стрелка там, где сходятся три пролёта (жёлтая точка в окне вида). Она есть у каждой развилки.")).small().color(pal().text_dim));
                     egui::ScrollArea::vertical().id_salt("trolley switches").max_height(160.0).show(ui, |ui| {
                         if wire.switches.is_empty() {
-                            ui.label(RichText::new(tr("No frogs yet: lay three spans meeting in one point (a branch).", "Развилок пока нет: проложите три пролёта, сходящихся в одной точке (ответвление).")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("No frogs yet: lay three spans meeting in one point (a branch).", "Развилок пока нет: проложите три пролёта, сходящихся в одной точке (ответвление).")).color(pal().text_dim));
                         }
                         for (i, s) in wire.switches.iter().enumerate() {
                             let name = if s.name.trim().is_empty() { format!("{} {i}", tr("Switch", "Стрелка")) } else { s.name.clone() };
@@ -362,7 +363,7 @@ impl TrolleyWindow {
                 ui.separator();
                 for (p, text) in problems.iter().take(6) {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(text).small().color(Color32::from_rgb(230, 160, 60)));
+                        ui.label(RichText::new(text).small().color(pal().warn));
                         if ui.small_button(icons::labelled(Icon::Search, "")).clicked() {
                             actions.push(Action::LookAt(p.truncate()));
                         }
@@ -469,7 +470,7 @@ fn switch_editor(ui: &mut egui::Ui, s: &mut trolley::Switch) {
                     if let Some(c) = s.channel.as_mut() {
                         ui.add(egui::DragValue::new(c).range(0..=999));
                     } else {
-                        ui.label(RichText::new(tr("any", "любой")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("any", "любой")).color(pal().text_dim));
                     }
                 });
                 prop_row(ui, tr("Range", "Дальность"), |ui| {

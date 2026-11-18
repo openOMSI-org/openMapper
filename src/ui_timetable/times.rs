@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::timetable::profile;
+use crate::theme::pal;
 
 /// A profile for a trip that has none (OMSI's editor names it so).
 fn standard(minutes: f32) -> omsi_timetable::TripProfile {
@@ -66,11 +67,11 @@ impl TimetableUi {
             let mut leg: Option<(usize, f32)> = None;
             let mut clear = false;
             egui::CollapsingHeader::new(icons::labelled(Icon::Schedule, tr("Times from stop to stop", "Время от остановки до остановки"))).id_salt(("tt times", lower(name))).default_open(true).show(ui, |ui| {
-                ui.label(RichText::new(tr("The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.", "У каждой остановки можно задать время от предыдущей: следующие времена сдвигаются, а с ними и время рейса. Незаданные времена следуют расстоянию между закреплёнными; на закреплённой остановке автобус, пришедший раньше, ждёт.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.", "У каждой остановки можно задать время от предыдущей: следующие времена сдвигаются, а с ними и время рейса. Незаданные времена следуют расстоянию между закреплёнными; на закреплённой остановке автобус, пришедший раньше, ждёт.")).small().color(pal().text_dim));
                 egui::Grid::new(("tt stop times", lower(name))).num_columns(4).striped(true).spacing(Vec2::new(12.0, 3.0)).show(ui, |ui| {
-                    ui.label(RichText::new(tr("Stop", "Остановка")).small().color(TEXT_DIM));
-                    ui.label(RichText::new(tr("From the stop before", "От предыдущей")).small().color(TEXT_DIM));
-                    ui.label(RichText::new(tr("After departure", "После отправления")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Stop", "Остановка")).small().color(pal().text_dim));
+                    ui.label(RichText::new(tr("From the stop before", "От предыдущей")).small().color(pal().text_dim));
+                    ui.label(RichText::new(tr("After departure", "После отправления")).small().color(pal().text_dim));
                     ui.label("");
                     ui.end_row();
                     for (i, (a, d, fixed)) in times.iter().enumerate() {
@@ -88,7 +89,7 @@ impl TimetableUi {
                         } else {
                             ui.label("");
                         }
-                        ui.label(RichText::new(format!("+{}", mmss(at))).color(if *fixed { Color32::from_gray(235) } else { TEXT_DIM }));
+                        ui.label(RichText::new(format!("+{}", mmss(at))).color(if *fixed { pal().text_strong } else { pal().text_dim }));
                         if i > 0 && i + 1 < n && check(ui, *fixed, tr("fixed", "закреплено")) {
                             set = Some((i, if *fixed { None } else { Some((at * 2.0).round() / 2.0) }));
                         } else if i == 0 || i + 1 == n {
@@ -149,7 +150,7 @@ impl TimetableUi {
         let p = t.profiles.get(self.profile).or(t.profiles.first()).cloned().unwrap_or_default();
         let mut serve: Option<(usize, i32)> = None;
         egui::CollapsingHeader::new(icons::labelled(Icon::Bus, tr("How the stops are served", "Как обслуживаются остановки"))).id_salt(("tt serve", lower(name))).default_open(false).show(ui, |ui| {
-            ui.label(RichText::new(tr("As in OMSI 2's editor. Hover a choice to see what the bus does.", "Как в редакторе OMSI 2. Наведите на вариант, чтобы увидеть, что делает автобус.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("As in OMSI 2's editor. Hover a choice to see what the bus does.", "Как в редакторе OMSI 2. Наведите на вариант, чтобы увидеть, что делает автобус.")).small().color(pal().text_dim));
             egui::Grid::new(("tt serve grid", lower(name))).num_columns(2).striped(true).spacing(Vec2::new(12.0, 3.0)).show(ui, |ui| {
                 for i in 0..n {
                     ui.allocate_ui_with_layout(Vec2::new(220.0, 18.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {

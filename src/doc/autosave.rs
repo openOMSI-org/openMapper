@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{Document, TileKey};
 use crate::i18n::tr;
+use crate::theme::pal;
 
 /// How often the changes are kept (`OPENMAPPER_AUTOSAVE=<seconds>` for checks).
 fn every() -> Duration {
@@ -316,10 +317,10 @@ pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
             meta.name,
             meta.age()
         ));
-        ui.label(egui::RichText::new(tr("The changes kept by the autosave can be brought back. The map itself was not changed.", "Изменения, сохранённые автосохранением, можно вернуть. Сама карта не изменялась.")).small().color(egui::Color32::GRAY));
+        ui.label(egui::RichText::new(tr("The changes kept by the autosave can be brought back. The map itself was not changed.", "Изменения, сохранённые автосохранением, можно вернуть. Сама карта не изменялась.")).small().color(pal().text_dim));
         if meta.disk_newer {
             ui.add_space(4.0);
-            ui.colored_label(egui::Color32::from_rgb(230, 180, 80), tr("The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.", "Файлы карты изменены после этого автосохранения (другой программой, например редактором OMSI 2). Восстановление положит старые тайлы из автосохранения поверх этих изменений."));
+            ui.colored_label(pal().warn, tr("The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.", "Файлы карты изменены после этого автосохранения (другой программой, например редактором OMSI 2). Восстановление положит старые тайлы из автосохранения поверх этих изменений."));
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {

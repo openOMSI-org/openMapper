@@ -377,7 +377,13 @@ impl App {
             renderer.roots = vec![r.content.clone(), r.omsi.clone()];
         }
         let egui_ctx = egui::Context::default();
+        // (not for a picture of the window: it must not depend on how the last run left it)
+        if std::env::var_os("OPENMAPPER_SHOT").is_none() {
+            install::load_ui_memory(&egui_ctx);
+        }
         ui::style(&egui_ctx);
+        // OPENMAPPER_THEME=dark|light|system: that theme for this run (checks of both)
+        crate::theme::Choice::from_code(&std::env::var("OPENMAPPER_THEME").unwrap_or_else(|_| self.prefs.theme.clone())).apply(&egui_ctx);
         if self.prefs.ui_scale > 0.0 {
             egui_ctx.set_zoom_factor(self.prefs.ui_scale.clamp(0.5, 2.0));
         }
@@ -385,7 +391,7 @@ impl App {
         if let Some(z) = std::env::var("OPENMAPPER_UI_SCALE").ok().and_then(|z| z.parse::<f32>().ok()) {
             egui_ctx.set_zoom_factor(z.clamp(0.5, 2.0));
         }
-        let egui_state = egui_winit::State::new(egui_ctx.clone(), egui::ViewportId::ROOT, &window, Some(window.scale_factor() as f32), None, Some(gpu.device.limits().max_texture_dimension_2d as usize));
+        let egui_state = egui_winit::State::new(egui_ctx.clone(), egui::ViewportId::ROOT, &window, Some(window.scale_factor() as f32), window.theme(), Some(gpu.device.limits().max_texture_dimension_2d as usize));
         let egui_renderer = egui_wgpu::Renderer::new(&gpu.device, gpu.config.format, egui_wgpu::RendererOptions { msaa_samples: 1, depth_stencil_format: None, dithering: true, predictable_texture_filtering: false });
         log::info!("graphics: {}", gpu.adapter_name);
         self.gfx = Some(Gfx { window, gpu, renderer, egui_ctx, egui_state, egui_renderer });
@@ -593,6 +599,14 @@ impl App {
             }
         }
         self.hook_edit = std::env::var("OPENMAPPER_EDIT").ok();
+        // OPENMAPPER_UV=1: the UV editor open (on what OPENMAPPER_SHAPE and OPENMAPPER_EDIT made)
+        if std::env::var_os("OPENMAPPER_UV").is_some() {
+            self.ui.uv_open = true;
+        }
+        // OPENMAPPER_ASSETS=1: the assets panel open
+        if std::env::var_os("OPENMAPPER_ASSETS").is_some() {
+            self.ui.assets.open = true;
+        }
         // OPENMAPPER_XFORM=move|rotate|scale: the Select tool's handles shown on the selection
         if let Ok(x) = std::env::var("OPENMAPPER_XFORM") {
             use crate::editor::Xform;
@@ -1960,6 +1974,13 @@ impl App {
                     g.egui_ctx.set_zoom_factor(z);
                 }
             }
+            Action::SetTheme(c) => {
+                self.prefs.theme = c.code().to_string();
+                self.prefs.save();
+                if let Some(g) = &self.gfx {
+                    c.apply(&g.egui_ctx);
+                }
+            }
             Action::Copy => {
                 self.ed.copy(&self.lib);
             }
@@ -2186,30 +2207,6 @@ impl App {
             self.ed.toast(tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"));
             return;
         }
-        if !self.crossing.open
-            && code == Some(KeyCode::KeyV)
-            && !self.keys.ctrl
-            && !self.keys.alt
-        {
-            if self.ed.vertex_snap.is_some() {
-                self.ed.cancel_vertex_snap();
-            } else {
-                self.ed.start_vertex_snap();
-            }
-            return;
-        }
-        if !self.crossing.open
-            && code == Some(KeyCode::KeyL)
-            && !self.keys.ctrl
-            && !self.keys.alt
-        {
-            if self.ed.edge_snap.is_some() {
-                self.ed.cancel_edge_snap();
-            } else {
-                self.ed.start_edge_snap();
-            }
-            return;
-        }
         let ctrl = self.keys.ctrl;
         let shift = self.keys.shift;
         let mut actions = Vec::new();
@@ -2401,6 +2398,20 @@ impl App {
             Cmd::NextPiece | Cmd::PrevPiece => {
                 self.ed.select_linked(c == Cmd::NextPiece, shift);
             }
+            Cmd::SnapVertex if !self.crossing.open => {
+                if self.ed.vertex_snap.is_some() {
+                    self.ed.cancel_vertex_snap();
+                } else {
+                    self.ed.start_vertex_snap();
+                }
+            }
+            Cmd::SnapEdge if !self.crossing.open => {
+                if self.ed.edge_snap.is_some() {
+                    self.ed.cancel_edge_snap();
+                } else {
+                    self.ed.start_edge_snap();
+                }
+            }
             Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
@@ -2446,6 +2457,8 @@ impl App {
             Cmd::Focus => actions.push(Action::FocusSelection),
             Cmd::TestDrive => actions.push(if shift { Action::PlayHere(false) } else { Action::Play }),
             Cmd::Picture => actions.push(Action::ViewPicture),
+            // (the crossing editor has its own use for the keys)
+            Cmd::SnapVertex | Cmd::SnapEdge => {}
         }
     }
 
@@ -3023,8 +3036,10 @@ impl App {
         self.geo.fill_bridge(&mut self.ui.geo, &self.ed);
         self.ui.minimap.imagery = self.geo.minimap_tiles();
         g.renderer.profile.add("ui.before", crate::render::profile::ms(t_ui));
+        crate::controls::show_keys(&Keymap::of(&self.prefs.keys, Preset::of(&self.prefs.keys_set, self.prefs.omsi_controls)));
         let full = g.egui_ctx.run_ui(raw, |ui| {
             let ctx = ui.ctx().clone();
+            crate::theme::sync(&ctx);
             if self.ed.doc.is_none() {
                 ui::welcome(ui, &mut self.ui, &self.prefs, self.roots.as_ref().map(|r| r.omsi.as_path()), &mut actions);
             } else {
@@ -4334,6 +4349,9 @@ impl ApplicationHandler for App {
             crate::doc::autosave::clear(&r.content);
         }
         self.prefs.save();
+        if let (Some(g), None) = (&self.gfx, std::env::var_os("OPENMAPPER_SHOT")) {
+            install::save_ui_memory(&g.egui_ctx);
+        }
     }
 }
 

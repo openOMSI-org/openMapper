@@ -19,15 +19,13 @@ use crate::render::FrameExtras;
 use crate::timetable::network::{Files, Network};
 use crate::timetable::route::{self, Problem, Route, Ways};
 use crate::timetable::{self, clock, Timetable, ALL_DAYS};
-use crate::ui::{Action, ACCENT};
+use crate::ui::Action;
+use crate::theme::pal;
 
 mod times;
 mod trips;
 mod way;
 
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
-const WARN: Color32 = Color32::from_rgb(230, 170, 100);
-const GOOD: Color32 = Color32::from_rgb(120, 200, 130);
 const ROUTE: [f32; 4] = [0.25, 0.75, 1.0, 0.95];
 
 /// How near a click must be to a stop to pick it (m).
@@ -139,7 +137,7 @@ fn check(ui: &mut egui::Ui, on: bool, text: &str) -> bool {
     let size = Vec2::new(24.0 + galley.size().x, galley.size().y.max(20.0));
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let vis = ui.style().interact(&resp);
-    let col = if on { ACCENT } else { vis.fg_stroke.color };
+    let col = if on { pal().accent } else { vis.fg_stroke.color };
     icons::paint(ui.painter(), if on { Icon::CheckOn } else { Icon::CheckOff }, egui::pos2(rect.left() + 9.0, rect.center().y), 20.0, col);
     ui.painter().galley(egui::pos2(rect.left() + 24.0, rect.center().y - galley.size().y * 0.5), galley, vis.text_color());
     resp.clicked()
@@ -156,7 +154,7 @@ fn coloured(mut job: egui::text::LayoutJob, c: Color32) -> egui::text::LayoutJob
 
 fn heading(ui: &mut egui::Ui, text: &str) {
     ui.add_space(6.0);
-    ui.label(RichText::new(text).strong().color(Color32::from_gray(225)));
+    ui.label(RichText::new(text).strong().color(pal().text_strong));
 }
 
 impl TimetableUi {
@@ -504,10 +502,10 @@ impl TimetableUi {
     fn contents(&mut self, ui: &mut egui::Ui, ed: &mut Editor, actions: &mut Vec<Action>) {
         let Some(doc) = ed.doc.as_mut() else { return };
         if self.net.is_none() {
-            ui.label(RichText::new(tr("The roads can't be read without the OMSI 2 folder.", "Без папки OMSI 2 дороги не прочитать.")).color(WARN));
+            ui.label(RichText::new(tr("The roads can't be read without the OMSI 2 folder.", "Без папки OMSI 2 дороги не прочитать.")).color(pal().warn));
         }
         if self.stops.len() < 2 {
-            ui.label(RichText::new(tr("A line needs at least two bus stops on the map: place them with Game logic > Bus stops, beside a road.", "Линии нужны хотя бы две остановки на карте: поставьте их через Служебное > Остановки, рядом с дорогой.")).color(WARN));
+            ui.label(RichText::new(tr("A line needs at least two bus stops on the map: place them with Game logic > Bus stops, beside a road.", "Линии нужны хотя бы две остановки на карте: поставьте их через Служебное > Остановки, рядом с дорогой.")).color(pal().warn));
         }
         ui.horizontal_top(|ui| {
             // the lines
@@ -518,7 +516,7 @@ impl TimetableUi {
                     let mut names: Vec<String> = doc.timetable.lines.iter().map(|l| l.name.clone()).collect();
                     names.sort_by_key(|n| (n.len(), n.to_lowercase()));
                     if names.is_empty() {
-                        ui.label(RichText::new(tr("No lines yet.", "Линий пока нет.")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("No lines yet.", "Линий пока нет.")).color(pal().text_dim));
                     }
                     for n in names {
                         let on = self.line.as_deref() == Some(&n);
@@ -549,7 +547,7 @@ impl TimetableUi {
                             self.line = None;
                             ui.add_space(20.0);
                             ui.label(RichText::new(tr("Pick a line on the left, or make a new one.\n\nA line has trips (a way from stop to stop) and tours (one bus's day: which trip it drives when).", "Выберите линию слева или создайте новую.\n\nУ линии есть рейсы (путь от остановки к остановке) и выходы (день одного автобуса: какой рейс и когда)."))
-                                .color(TEXT_DIM));
+                                .color(pal().text_dim));
                         }
                     }
                 });
@@ -637,13 +635,13 @@ impl TimetableUi {
         }
         let trips = line_trips(&doc.timetable, &doc.timetable.lines[li]);
         if self.tours_tab {
-            ui.label(RichText::new(tr("A tour is one bus's day: the trips it drives, one after the other, and when each leaves.", "Выход — день одного автобуса: рейсы, которые он едет друг за другом, и время отправления каждого.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("A tour is one bus's day: the trips it drives, one after the other, and when each leaves.", "Выход — день одного автобуса: рейсы, которые он едет друг за другом, и время отправления каждого.")).small().color(pal().text_dim));
             self.holidays_panel(ui, &mut doc.timetable);
             ui.add_space(4.0);
             self.tours_panel(ui, doc, li, &trips);
             return;
         }
-        ui.label(RichText::new(tr("A trip is one way along the line: its stops in order. Most lines have two, there and back.", "Рейс: одна поездка по линии: остановки по порядку. Обычно их два: туда и обратно.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("A trip is one way along the line: its stops in order. Most lines have two, there and back.", "Рейс: одна поездка по линии: остановки по порядку. Обычно их два: туда и обратно.")).small().color(pal().text_dim));
         for t in &trips {
             let Some(trip) = doc.timetable.trip(t) else { continue };
             let on = self.trip.as_deref().map(|x| x.eq_ignore_ascii_case(t)).unwrap_or(false);
@@ -732,7 +730,7 @@ impl TimetableUi {
             }
         });
         if !t.stations_legacy.is_empty() {
-            ui.label(RichText::new(tr("This trip runs on a track of its own (a train): its stops are kept as they are.", "Этот рейс идёт по своему пути (поезд): его остановки остаются как есть.")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("This trip runs on a track of its own (a train): its stops are kept as they are.", "Этот рейс идёт по своему пути (поезд): его остановки остаются как есть.")).color(pal().text_dim));
             return;
         }
         let _ = line;
@@ -759,14 +757,14 @@ impl TimetableUi {
         for i in 0..n {
             let id = stations[i];
             ui.horizontal(|ui| {
-                let dot = if i == 0 { GOOD } else if i + 1 == n { Color32::from_rgb(235, 90, 80) } else { Color32::from_gray(220) };
+                let dot = if i == 0 { pal().ok } else if i + 1 == n { pal().error } else { pal().text };
                 ui.label(RichText::new(format!("{:>2}.", i + 1)).color(dot).monospace());
                 let known = self.stops.iter().any(|s| s.id == id);
                 let mut name = self.stop_name(tt, id);
                 if !known {
                     name = format!("{name} ({})", tr("not on the map", "нет на карте"));
                 }
-                ui.add(egui::Label::new(RichText::new(name).color(if known { Color32::from_gray(225) } else { WARN })).truncate()).on_hover_text(format!("ID {id}"));
+                ui.add(egui::Label::new(RichText::new(name).color(if known { pal().text_strong } else { pal().warn })).truncate()).on_hover_text(format!("ID {id}"));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if small_button(ui, Icon::Delete, tr("Take out", "Убрать")) {
                         stations.remove(i);
@@ -792,7 +790,7 @@ impl TimetableUi {
             }
         }
         if n == 0 {
-            ui.label(RichText::new(tr("No stops yet.", "Остановок пока нет.")).color(TEXT_DIM));
+            ui.label(RichText::new(tr("No stops yet.", "Остановок пока нет.")).color(pal().text_dim));
         }
         ui.horizontal(|ui| {
             let label = if self.picking { tr("Done picking", "Готово") } else { tr("Pick stops on the map", "Выбрать на карте") };
@@ -815,7 +813,7 @@ impl TimetableUi {
             }
         });
         if self.picking {
-            ui.label(RichText::new(tr("Click stops on the map (they are marked orange)…", "Кликайте остановки на карте (отмечены оранжевым)…")).color(ACCENT));
+            ui.label(RichText::new(tr("Click stops on the map (they are marked orange)…", "Кликайте остановки на карте (отмечены оранжевым)…")).color(pal().accent));
         }
         if changed {
             let terminus = stations.last().map(|id| self.stop_name(tt, *id));
@@ -859,19 +857,19 @@ impl TimetableUi {
         let shown = shown.as_ref();
         match shown {
             _ if stations.len() < 2 => {
-                ui.label(RichText::new(tr("Add two stops or more: the way between them is found along the roads.", "Добавьте две остановки или больше: путь между ними найдётся по дорогам.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Add two stops or more: the way between them is found along the roads.", "Добавьте две остановки или больше: путь между ними найдётся по дорогам.")).color(pal().text_dim));
             }
             None => {
-                ui.label(RichText::new(tr("Finding the way…", "Ищем путь…")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Finding the way…", "Ищем путь…")).color(pal().text_dim));
             }
             Some(r) if r.ok() => {
                 let along = if r.ways == Some(Ways::Rail) { tr("km along the tracks (blue in the view)", "км по рельсам (синим на карте)") } else { tr("km along the roads (blue in the view)", "км по дорогам (синим на карте)") };
                 let what = if r.by_hand { tr("Way picked by hand:", "Путь выбран вручную:") } else { tr("Route found:", "Путь найден:") };
-                ui.label(RichText::new(format!("{} {:.2} {}", what, r.length() / 1000.0, along)).color(GOOD));
+                ui.label(RichText::new(format!("{} {:.2} {}", what, r.length() / 1000.0, along)).color(pal().ok));
                 for &leg in &r.against {
                     let name_of = |i: usize| stations.get(i).map(|id| self.stop_name(tt, *id)).unwrap_or_default();
                     let text = format!("«{}» – «{}»: {}", name_of(leg), name_of(leg + 1), tr("the way drives a one-way lane against its direction; is a path drawn the wrong way round?", "путь идёт по односторонней полосе против её направления; может, путь нарисован не в ту сторону?"));
-                    ui.label(coloured(icons::labelled(Icon::Warning, &text), WARN));
+                    ui.label(coloured(icons::labelled(Icon::Warning, &text), pal().warn));
                 }
             }
             Some(r) => {
@@ -886,7 +884,7 @@ impl TimetableUi {
                         Problem::NoWay(i) if rail => format!("{} «{}» – «{}»: {}", tr("No way", "Нет пути"), name_of(*i), name_of(*i + 1), tr("the tracks are not joined, or run the other way (see View > AI lanes)", "рельсы не соединены или идут в другую сторону (Вид > Полосы ИИ)")),
                         Problem::NoWay(i) => format!("{} «{}» – «{}»: {}", tr("No way", "Нет пути"), name_of(*i), name_of(*i + 1), tr("the roads are not joined, or run the other way (see View > AI lanes)", "дороги не соединены или идут в другую сторону (Вид > Полосы ИИ)")),
                     };
-                    ui.label(coloured(icons::labelled(Icon::Warning, &text), WARN)).on_hover_text(tr("The trip is saved, but its way is not until this is mended", "Рейс сохранится, а его путь: когда это будет исправлено"));
+                    ui.label(coloured(icons::labelled(Icon::Warning, &text), pal().warn)).on_hover_text(tr("The trip is saved, but its way is not until this is mended", "Рейс сохранится, а его путь: когда это будет исправлено"));
                 }
             }
         }
@@ -908,7 +906,7 @@ impl TimetableUi {
     /// are given (only these, or these with a chance), and a fleet number fixed for a tour.
     fn vehicles_panel(&mut self, ui: &mut egui::Ui, doc: &mut Document, line: &str) {
         use crate::timetable::caruse::{date, TypeMode};
-        ui.label(RichText::new(tr("The AI buses of this line's tours are taken from the depot group; here the vehicles can be limited by date: only some types, mostly some types, or a fleet number for one tour. A line with nothing here takes any vehicle of the group.", "ИИ-автобусы выходов этой линии берутся из группы депо; здесь транспорт можно ограничить по датам: только некоторые типы, преимущественно некоторые типы или парковый номер для одного выхода. Линия без записей берёт любой транспорт группы.")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("The AI buses of this line's tours are taken from the depot group; here the vehicles can be limited by date: only some types, mostly some types, or a fleet number for one tour. A line with nothing here takes any vehicle of the group.", "ИИ-автобусы выходов этой линии берутся из группы депо; здесь транспорт можно ограничить по датам: только некоторые типы, преимущественно некоторые типы или парковый номер для одного выхода. Линия без записей берёт любой транспорт группы.")).small().color(pal().text_dim));
         if self.fleet.is_none() {
             if let Some(roots) = self.roots.clone() {
                 self.fleet = Some(crate::traffic::catalogue::Catalogue::scan(&roots));
@@ -948,10 +946,10 @@ impl TimetableUi {
                     ui.add(egui::DragValue::new(&mut b.1).range(1..=12));
                     ui.add(egui::DragValue::new(&mut b.0).range(1900..=2100));
                     c.use_.valid.1 = date(b.0, b.1, b.2);
-                    ui.label(RichText::new(tr("(day, month, year)", "(день, месяц, год)")).small().color(TEXT_DIM));
+                    ui.label(RichText::new(tr("(day, month, year)", "(день, месяц, год)")).small().color(pal().text_dim));
                 });
                 if c.use_.valid.0 > c.use_.valid.1 {
-                    ui.label(RichText::new(tr("It ends before it starts: the game ignores it", "Оно кончается раньше начала: игра его игнорирует")).small().color(WARN));
+                    ui.label(RichText::new(tr("It ends before it starts: the game ignores it", "Оно кончается раньше начала: игра его игнорирует")).small().color(pal().warn));
                 }
                 // the types
                 let mut mode = c.mode();
@@ -997,7 +995,7 @@ impl TimetableUi {
                 c.set_types(mode, types, chance);
                 // the fleet numbers of single tours
                 ui.add_space(2.0);
-                ui.label(RichText::new(tr("Fleet numbers of single tours", "Парковые номера отдельных выходов")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Fleet numbers of single tours", "Парковые номера отдельных выходов")).small().color(pal().text_dim));
                 let mut drop = None;
                 for (k, (num, tour)) in c.use_.number_tour.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
@@ -1055,7 +1053,7 @@ impl TimetableUi {
                 self.holiday_year = years.iter().copied().find(|y| *y == now).or(years.last().copied()).unwrap_or(now);
             }
             let y = &mut self.holiday_year;
-            ui.label(RichText::new(tr("On a public holiday only the tours with Holidays ticked run; school holidays pick the tours for school holidays or school days.", "В праздник ходят только выходы с отметкой «Праздники»; каникулы выбирают выходы для каникул или учебных дней.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("On a public holiday only the tours with Holidays ticked run; school holidays pick the tours for school holidays or school days.", "В праздник ходят только выходы с отметкой «Праздники»; каникулы выбирают выходы для каникул или учебных дней.")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.label(tr("Year", "Год"));
                 ui.add(egui::DragValue::new(y).range(1900..=2200));
@@ -1144,7 +1142,7 @@ impl TimetableUi {
     fn tours_panel(&mut self, ui: &mut egui::Ui, doc: &mut Document, li: usize, trips: &[String]) {
         let depots: Vec<String> = doc.traffic.depots().map(|d| d.name.clone()).collect();
         if depots.is_empty() {
-            ui.label(RichText::new(tr("The map has no depot (ailists.cfg): only you drive these tours, no AI buses.", "У карты нет депо (ailists.cfg): по выходам ездите только вы, автобусов ИИ не будет.")).small().color(WARN));
+            ui.label(RichText::new(tr("The map has no depot (ailists.cfg): only you drive these tours, no AI buses.", "У карты нет депо (ailists.cfg): по выходам ездите только вы, автобусов ИИ не будет.")).small().color(pal().warn));
             if self.files.exists(crate::traffic::DEPOT_BUS) && ui.button(icons::labelled(Icon::Bus, tr("Add a depot with OMSI 2's MAN buses", "Добавить депо с автобусами MAN из OMSI 2"))).on_hover_text(tr("Its buses run the tours (Map > Traffic and AI shows it)", "Его автобусы ездят по выходам (Карта > Трафик и ИИ)")).clicked() {
                 add_depot(doc);
             }
@@ -1169,12 +1167,12 @@ impl TimetableUi {
         });
         let Some(ti) = self.tour.filter(|i| *i < n) else {
             if n > 0 {
-                ui.label(RichText::new(tr("Pick a tour to see its departures.", "Выберите выход, чтобы увидеть отправления.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("Pick a tour to see its departures.", "Выберите выход, чтобы увидеть отправления.")).color(pal().text_dim));
             }
             return;
         };
         if trips.is_empty() {
-            ui.label(RichText::new(tr("Make a trip first.", "Сначала создайте рейс.")).color(WARN));
+            ui.label(RichText::new(tr("Make a trip first.", "Сначала создайте рейс.")).color(pal().warn));
             return;
         }
         // trip times, for the arrivals and the next departure
@@ -1286,7 +1284,7 @@ impl TimetableUi {
             let mut remove = None;
             let count = tour.trips.len();
             if count == 0 {
-                ui.label(RichText::new(tr("No departures yet: add them above.", "Отправлений пока нет: добавьте их выше.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("No departures yet: add them above.", "Отправлений пока нет: добавьте их выше.")).color(pal().text_dim));
             }
             egui::Grid::new("tt deps").num_columns(5).spacing(Vec2::new(8.0, 3.0)).show(ui, |ui| {
                 for k in 0..count {
@@ -1310,7 +1308,7 @@ impl TimetableUi {
                         }
                         if !others.is_empty() {
                             ui.separator();
-                            ui.label(RichText::new(tr("Other trips", "Другие рейсы")).small().color(TEXT_DIM));
+                            ui.label(RichText::new(tr("Other trips", "Другие рейсы")).small().color(pal().text_dim));
                             for t in &others {
                                 changed |= ui.selectable_value(&mut tr_.trip, t.clone(), t).changed();
                             }
@@ -1334,7 +1332,7 @@ impl TimetableUi {
                         ui.label("");
                     }
                     let arrive = ps.get(tr_.profile.max(0) as usize).or(ps.first()).map(|p| p.1).unwrap_or(0.0);
-                    ui.label(RichText::new(format!("» {}", clock(tr_.departure + arrive))).color(TEXT_DIM));
+                    ui.label(RichText::new(format!("» {}", clock(tr_.departure + arrive))).color(pal().text_dim));
                     if small_button(ui, Icon::Delete, tr("Delete the departure", "Удалить отправление")) {
                         remove = Some(k);
                     }
