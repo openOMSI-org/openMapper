@@ -235,7 +235,7 @@ The complete list. A short overview is in the [README](../README.md).
   the folders its files lie in (Sceneryobjects › Buildings_MC › …), each kind with how many
   there are and each one a click away (selected and flown to); a search by name, file or
   IDCode; a right-click selects every one of a kind or everything in a folder.
-* **Find in map** (Edit menu or `Ctrl+F`): stops and start points by name and a point by its coordinates (`x, y`) to go to; every kind of object and spline the map uses,
+* **Find in map** (Edit menu or `Ctrl+F`): stops and start points by name, a point by its coordinates (`x, y`) and a tile by its place in the grid (`tile 3 -2`, with its number in the map's tile list) to go to; every kind of object and spline the map uses,
   with how many, by name, file or IDCode; select them all, go from one to the next, or replace
   them all with the object (road type) chosen in the catalogue in one undo step.
 * **Texts on objects**: street signs, stop plates and line numbers show their labels in the

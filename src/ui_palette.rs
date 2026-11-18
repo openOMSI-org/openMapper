@@ -52,7 +52,7 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::SelectAll, "Select all", "Выбрать всё", "", "Ctrl+A", |_, _, a| a.push(Action::SelectAll)),
         cmd!(Icon::History, "Edit history…", "История правок…", "undo steps шаги", "", |st, _, _| st.history_open = true),
         cmd!(Icon::Objects, "Groups…", "Группы…", "prefab template шаблон", "", |st, _, _| st.groups.open = true),
-        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop найти заменить остановка", "Ctrl+F", |st, _, _| st.find.show()),
+        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop tile go to найти заменить остановка тайл перейти", "Ctrl+F", |st, _, _| st.find.show()),
         cmd!(Icon::Junction, "Make the junctions again", "Перестроить перекрёстки", "junction plate rebuild asphalt texture перекрёсток плита асфальт текстура", "", |_, ed, _| {
             let n = ed.remake_all_junctions();
             ed.toast(format!("{} {n}", tr("Junctions made again:", "Перекрёстков перестроено:")));
