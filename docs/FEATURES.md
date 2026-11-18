@@ -219,9 +219,7 @@ The complete list. A short overview is in the [README](../README.md).
   ticket pack and money, other texts on a map object and other path rules on a road or object
   from its day.
 * **Map settings** (Map menu), as in OMSI 2's editor: money system, ticket pack, depot,
-  years and year offset, repair time, real rail and the seasons of the year; and which vehicles
-  openOMSI puts on it (buses, trams, railway, metro, trolleybuses: its `[bus_transport]` …
-  keywords, none for any vehicle; OMSI 2 skips them), kept through every save.
+  years and year offset, repair time, real rail and the seasons of the year.
 * **Calendar and place** (Map menu), the map's own files as OMSI 2's editor keeps them:
   where it lies and its time zone (the sun), summer time (EU rules filled in for a span of
   years), public and school holidays by year (the timetable's day types) and the AI cars'

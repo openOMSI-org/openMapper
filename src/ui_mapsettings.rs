@@ -120,9 +120,6 @@ impl MapSettings {
                     prop_row(ui, tr("Rail", "Рельсы"), |ui| {
                         check(ui, &mut g.real_rail, tr("real rail (trams and trains follow their tracks' switches)", "настоящие рельсы (трамваи и поезда идут по стрелкам)"));
                     });
-                    prop_row(ui, tr("Made for", "Для"), |ui| {
-                        crate::transport::row(ui, g);
-                    });
                     prop_row(ui, tr("Helper", "Помощник"), |ui| {
                         check(ui, &mut g.dyn_helper_active, tr("dynamic helper active (the original editor's map option, kept as it is)", "динамический помощник включён (параметр карты из оригинального редактора)"));
                     });

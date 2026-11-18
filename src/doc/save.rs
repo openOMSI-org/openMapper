@@ -340,9 +340,6 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
     if g.left_hand_traffic {
         kw(&mut s, "LHT", &[]);
     }
-    for k in crate::transport::modes(g) {
-        kw(&mut s, k, &[]);
-    }
     if g.background_image.len() == 5 {
         // (OMSI's editor reads six lines here, openOMSI's reader keeps five: without the sixth
         // the original editor takes the next keyword for it and cannot open the map)

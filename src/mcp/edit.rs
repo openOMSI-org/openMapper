@@ -418,22 +418,6 @@ impl Server {
                 let v2 = |k: &str| c.get(k).and_then(|v| v.as_array()).map(|a| DVec2::new(a.first().and_then(|x| x.as_f64()).unwrap_or(0.0), a.get(1).and_then(|x| x.as_f64()).unwrap_or(0.0)));
                 e.array(lib, c.usize("count").unwrap_or(2).clamp(1, 1000), v2("step").unwrap_or(DVec2::new(10.0, 0.0)), c.f64("turn").unwrap_or(0.0), c.usize("rows").unwrap_or(1).clamp(1, 1000), v2("row_step").unwrap_or(DVec2::new(0.0, 10.0)));
             }
-            "transport" => {
-                // (the modes the map is made for; an empty list: any vehicle)
-                let want: Vec<String> = c.get("modes").and_then(|v| v.as_array()).ok_or("`modes` is needed (a list of bus, tram, railway, metro, trolleybus)")?.iter().filter_map(|v| v.as_str()).map(|m| format!("{}_transport", m.trim().to_lowercase())).collect();
-                if let Some(bad) = want.iter().find(|w| !crate::transport::KEYWORDS.contains(&w.as_str())) {
-                    return Err(format!("no mode {}", bad.trim_end_matches("_transport")));
-                }
-                let doc = e.doc.as_mut().ok_or("no map")?;
-                e.history.begin(crate::i18n::tr("Map settings", "Настройки карты"));
-                e.history.touch_global(doc);
-                for k in crate::transport::KEYWORDS {
-                    crate::transport::set(&mut doc.global, k, want.iter().any(|w| w == k));
-                }
-                doc.global_dirty = true;
-                e.history.commit();
-                said = json!(crate::transport::summary(&doc.global));
-            }
             "trolley_wire" | "trolley_from_splines" => {
                 // (the wire over the selected roads' kerb lanes, or read off the map's wire splines)
                 let lay = crate::trolley::Lay {
