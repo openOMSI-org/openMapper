@@ -2673,10 +2673,13 @@ impl CrossingPaths {
 
     /// Open on the selected object, or on a crossing picked from the map's list.
     pub fn request(&mut self, ed: &mut Editor, roots: &Roots, lib: &Library) {
-        // (what is being edited is not dropped for another object)
-        if self.unsaved() && !matches!((ed.selected, self.target), (Some(a), Some(b)) if a == b) {
+        // (what is being edited is not dropped for another object, nor read again from the
+        // file when the same one is asked for: that dropped the edits and their undo)
+        if self.unsaved() {
             self.open = true;
-            self.message = Some((unsaved_text().into(), true));
+            if !matches!((ed.selected, self.target), (Some(a), Some(b)) if a == b) {
+                self.message = Some((unsaved_text().into(), true));
+            }
             return;
         }
         self.sheet = None;
@@ -5154,6 +5157,22 @@ Main
         assert!(!w.open);
         assert!(w.sheet.is_none(), "nothing is left to be shown");
         assert!(!w.ask_close, "the question is put away with the window");
+    }
+
+    /// Asking for the crossing editor on the crossing it holds edits of shows them as they are:
+    /// it read the file again, and the edits and their undo were gone without a word.
+    #[test]
+    fn asking_again_for_the_crossing_being_edited_keeps_the_edits() {
+        let mut w = opened(Tab::Paths);
+        w.sheet.as_mut().unwrap().crossing.paths[0].v[9] = 5.0;
+        w.open = false;
+        let mut ed = Editor::default();
+        ed.selected = w.target;
+        let nowhere = std::env::temp_dir().join("openmapper-crossing-none");
+        let roots = Roots { omsi: nowhere.clone(), content: nowhere };
+        w.request(&mut ed, &roots, &Library::default());
+        assert!(w.open);
+        assert_eq!(w.sheet.as_ref().map(|s| s.crossing.paths[0].v[9]), Some(5.0), "the edit is kept");
     }
 
     /// Leaving the map (closing it, opening another, ending the program) asks about the
