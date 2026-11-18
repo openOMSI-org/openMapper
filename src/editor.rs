@@ -2521,7 +2521,7 @@ impl Editor {
             return;
         }
         // (the Trolleybus wire window picks a span or a switch with a click)
-        if self.wire.picking {
+        if self.wire.picking || self.wire.drawing.is_some() {
             self.wire.click = self.cursor;
             return;
         }

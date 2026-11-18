@@ -25,6 +25,8 @@ enum Tab {
 
 /// What needs the models of the roads and objects: done after the window, with the assets.
 enum Lay2 {
+    /// A span drawn by hand: its points (at the wire's height).
+    Drawn(Vec<DVec3>),
     Roads(Vec<Sel>),
     Lanes(Vec<usize>),
     WireSplines,
@@ -66,6 +68,13 @@ impl TrolleyWindow {
         let mut wire = before.clone().unwrap_or_default();
         let mut exists = before.is_some();
         // a click in the view picks a switch (at a frog) or else a span
+        // (a span being drawn: a click adds a point, on a span's end if it is near one)
+        let lift = |c: DVec3| end_or(&wire, c, lay.height);
+        ed.wire.next = ed.wire.drawing.as_ref().and(ed.cursor).filter(|_| ed.cursor_in_view).map(lift);
+        if let (Some(d), Some(c)) = (ed.wire.drawing.as_mut(), ed.wire.click) {
+            d.push(lift(c));
+            ed.wire.click = None;
+        }
         if let Some(c) = ed.wire.click.take() {
             let frog = trolley::joints(&wire).into_iter().filter(|j| j.ends.len() == 3 && j.pos.truncate().distance(c.truncate()) < 4.0).find_map(|j| trolley::switch_at(&wire, j.pos));
             if let Some(i) = frog {
@@ -98,6 +107,7 @@ impl TrolleyWindow {
         let mut preview: Vec<Vec<DVec3>> = Vec::new();
         let mut open = self.open;
         let picking = &mut ed.wire.picking;
+        let drawing = &mut ed.wire.drawing;
         let (span_sel, switch_sel) = (&mut ed.wire.span, &mut ed.wire.switch);
         egui::Window::new(icons::labelled(Icon::Bus, tr("Trolleybus wire", "Контактная сеть троллейбуса"))).id(egui::Id::new("trolley wire")).open(&mut open).default_pos([330.0, 90.0]).default_size([460.0, 560.0]).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.", "Контактная сеть для троллейбусов openOMSI (trolley.txt рядом с картой; OMSI 2 его не читает). Без него игра берёт провода из сплайнов карты.")).small().color(TEXT_DIM));
@@ -178,6 +188,25 @@ impl TrolleyWindow {
                         ui.label(RichText::new(tr("Select one junction to lay the wire over its lanes.", "Выберите один перекрёсток, чтобы проложить провод над его полосами.")).small().color(TEXT_DIM));
                     }
                     ui.add_space(6.0);
+                    match drawing.as_ref().map(|d| d.len()) {
+                        None => {
+                            if ui.button(icons::labelled(Icon::Line, tr("Draw a span by hand", "Нарисовать пролёт вручную"))).on_hover_text(tr("Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)", "Кликайте его точки в окне вида; начатый или законченный на конце пролёта присоединяется к нему, на середине — ответвляется (стрелка)")).clicked() {
+                                *drawing = Some(Vec::new());
+                                *picking = false;
+                            }
+                        }
+                        Some(n) => {
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new(format!("{n} {}", tr("points: click the next in the view", "точек: кликните следующую в окне вида"))).color(ACCENT));
+                                if ui.add_enabled(n >= 2, egui::Button::new(tr("Finish", "Готово"))).clicked() {
+                                    lay_req = drawing.take().map(Lay2::Drawn);
+                                }
+                                if ui.button(tr("Cancel", "Отмена")).clicked() {
+                                    *drawing = None;
+                                }
+                            });
+                        }
+                    }
                     if ui.button(icons::labelled(Icon::Import, tr("Read the map's wire splines", "Взять провода из сплайнов карты"))).on_hover_text(tr("Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them", "Сплайны в виде пары проводов (троллейбусные карты для OMSI 2): пролёт вдоль каждого, как их читает игра")).clicked() {
                         lay_req = Some(Lay2::WireSplines);
                     }
@@ -358,6 +387,7 @@ impl TrolleyWindow {
             }
             if let Some(req) = lay_req {
                 let new = match req {
+                    Lay2::Drawn(pts) => vec![(trolley::drawn(&mut wire, pts, lay.section), None)],
                     Lay2::Roads(sel) => {
                         for s in &sel {
                             if let Some(f) = match *s { Sel::Spline(k, id) => doc.spline(k, id).map(|x| x.file.clone()), _ => None } {
@@ -475,4 +505,10 @@ fn switch_editor(ui: &mut egui::Ui, s: &mut trolley::Switch) {
             Mode::Fixed => {}
         }
     });
+}
+
+/// Where a click puts the next point of a span drawn by hand: on a span's end near it, else
+/// the wire's height over the ground or road clicked.
+fn end_or(w: &trolley::Wire, c: DVec3, height: f64) -> DVec3 {
+    trolley::end_near(w, c.truncate()).unwrap_or(c + DVec3::Z * height)
 }

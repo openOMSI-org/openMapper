@@ -665,6 +665,59 @@ pub fn or_new(w: Option<&Wire>) -> Wire {
     w.cloned().unwrap_or_else(|| Wire { sections: vec![Section::new(1)], ..Default::default() })
 }
 
+/// The span end within `JOIN` of a point seen from above (a span drawn by hand starts or ends
+/// there and joins it).
+pub fn end_near(w: &Wire, p: DVec2) -> Option<DVec3> {
+    w.spans.iter().filter(|s| s.points.len() >= 2).flat_map(|s| [s.points[0], s.points[s.points.len() - 1]]).filter(|e| e.truncate().distance(p) <= JOIN).min_by(|a, b| a.truncate().distance(p).total_cmp(&b.truncate().distance(p)))
+}
+
+/// The span passing within `reach` of a point (seen from above, away from its ends) cut there
+/// into two, so another can branch off: the point of the cut. The span's first part keeps what
+/// it laid on the map.
+pub fn split_near(w: &mut Wire, p: DVec2, reach: f64) -> Option<DVec3> {
+    let mut best: Option<(usize, usize, f64, f64)> = None;
+    for (i, sp) in w.spans.iter().enumerate() {
+        for (j, s) in sp.points.windows(2).enumerate() {
+            let (a, b) = (s[0].truncate(), s[1].truncate());
+            let ab = b - a;
+            let t = if ab.length_squared() > 1e-9 { ((p - a).dot(ab) / ab.length_squared()).clamp(0.0, 1.0) } else { 0.0 };
+            let d = (a + ab * t).distance(p);
+            if d <= reach && best.is_none_or(|x| d < x.3) {
+                best = Some((i, j, t, d));
+            }
+        }
+    }
+    let (i, j, t, _) = best?;
+    let sp = &w.spans[i];
+    let q = sp.points[j].lerp(sp.points[j + 1], t);
+    if q.distance(sp.points[0]) <= JOIN || q.distance(sp.points[sp.points.len() - 1]) <= JOIN {
+        return None;
+    }
+    let mut second = Span { section: sp.section, spacing: sp.spacing, points: vec![q], laid: Vec::new() };
+    second.points.extend_from_slice(&sp.points[j + 1..]);
+    let first = &mut w.spans[i];
+    first.points.truncate(j + 1);
+    first.points.push(q);
+    w.spans.push(second);
+    Some(q)
+}
+
+/// A span drawn by hand through `pts` (at the wire's height): an end on another span's end
+/// joins it there, an end on another span's middle cuts that span there so this one branches
+/// off (a frog).
+pub fn drawn(w: &mut Wire, mut pts: Vec<DVec3>, section: i32) -> Span {
+    let n = pts.len();
+    for i in [0, n.saturating_sub(1)] {
+        let Some(p) = pts.get(i).map(|p| p.truncate()) else { continue };
+        if let Some(e) = end_near(w, p) {
+            pts[i] = e;
+        } else if let Some(q) = split_near(w, p, 1.5) {
+            pts[i] = q;
+        }
+    }
+    Span { section, points: pts, ..Default::default() }
+}
+
 // ------------------------------------------------------------------------- the view
 
 /// What the view shows of the wire.
@@ -678,6 +731,10 @@ pub struct WireView {
     pub switch: Option<usize>,
     /// Lanes the wire may be laid over, shown while they are chosen.
     pub preview: Vec<Vec<DVec3>>,
+    /// A span being drawn by hand: its points so far (clicks in the view add them).
+    pub drawing: Option<Vec<DVec3>>,
+    /// Where the next point of the span being drawn would go.
+    pub next: Option<DVec3>,
 }
 
 /// A section's colour in the view (they repeat after six).
@@ -722,6 +779,16 @@ pub fn draw(out: &mut crate::render::FrameExtras, cam: &crate::camera::Camera, w
     for l in &view.preview {
         for s in l.windows(2) {
             line(&mut out.overlay, cam, s[0] + DVec3::Z * 0.3, s[1] + DVec3::Z * 0.3, width, [1.0, 1.0, 1.0, 0.9]);
+        }
+    }
+    if let Some(d) = &view.drawing {
+        let mut pts = d.clone();
+        pts.extend(view.next);
+        for s in pts.windows(2) {
+            line(&mut out.overlay, cam, s[0], s[1], width * 1.2, [1.0, 1.0, 1.0, 1.0]);
+        }
+        for p in d {
+            disc(&mut out.overlay, cam, *p, dot * 2.5, [1.0, 1.0, 1.0, 1.0]);
         }
     }
     let js = joints(w);
@@ -801,5 +868,22 @@ mod tests {
         assert_eq!(w.switches.len(), 1);
         assert_eq!(w.sections.len(), 1);
         assert_eq!(span_near(&w, DVec2::new(45.0, 1.0), 2.0), Some(1));
+    }
+
+    /// A span drawn by hand from the middle of another cuts it there: a frog with its switch.
+    #[test]
+    fn a_branch_drawn_off_a_span_makes_a_frog() {
+        let mut w = Wire::default();
+        let a = Span { section: 1, points: vec![DVec3::new(0.0, 0.0, 6.0), DVec3::new(100.0, 0.0, 6.0)], laid: vec![7], ..Default::default() };
+        add_spans(&mut w, vec![(a, ())]);
+        assert_eq!(end_near(&w, DVec2::new(99.5, 0.3)), Some(DVec3::new(100.0, 0.0, 6.0)));
+        assert!(split_near(&mut w, DVec2::new(0.5, 0.5), 2.0).is_none(), "at an end: no cut");
+        let q = split_near(&mut w, DVec2::new(40.0, 1.0), 2.0).unwrap();
+        assert!((q - DVec3::new(40.0, 0.0, 6.0)).length() < 1e-9);
+        assert_eq!((w.spans.len(), w.spans[0].laid.clone(), w.spans[1].laid.len()), (2, vec![7], 0));
+        let branch = Span { section: 1, points: vec![q, DVec3::new(60.0, 30.0, 6.0)], ..Default::default() };
+        add_spans(&mut w, vec![(branch, ())]);
+        assert_eq!(w.switches.len(), 1);
+        assert!(problems(&w).is_empty());
     }
 }

@@ -471,6 +471,28 @@ impl Server {
                 let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
                 said = json!({ "spans_laid": n, "spans": w.spans.len(), "switches": w.switches.len(), "lanes_of_selected": lanes_of, "problems": crate::trolley::problems(w).into_iter().map(|(p, t)| json!({ "at": [p.x, p.y], "problem": t })).collect::<Vec<_>>() });
             }
+            "trolley_span" => {
+                // (a span drawn by hand through points, the wire's height over the ground or road
+                // there; its ends join a span's end or branch off a span's middle)
+                let h = c.f64("height").unwrap_or(5.6);
+                let mut pts = Vec::new();
+                for v in c.get("points").and_then(|v| v.as_array()).ok_or("`points` is needed (two or more)")? {
+                    let p = self.point(v)?;
+                    let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                    pts.push(DVec3::new(p.x, p.y, doc.ground(p) + h));
+                }
+                if pts.len() < 2 {
+                    return Err("`points` needs two or more".into());
+                }
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                let mut after = crate::trolley::or_new(doc.traffic.trolley.as_ref());
+                let span = crate::trolley::drawn(&mut after, pts, c.i64("section").unwrap_or(1) as i32);
+                let added = crate::trolley::add_spans(&mut after, vec![(span, None)]);
+                let kit = crate::trolley_kit::Kit { wires: c.bool("wires").unwrap_or(true), ..Default::default() };
+                crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(&mut self.assets), Some(after), added, Some(kit));
+                let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
+                said = json!({ "spans": w.spans.len(), "switches": w.switches.len() });
+            }
             "trolley_switch" => {
                 // (the switch of the frog nearest a point set as given)
                 let at = self.point(c.get("at").ok_or("`at` is needed")?)?;
