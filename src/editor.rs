@@ -571,6 +571,8 @@ pub struct Editor {
     pub keep_height: bool,
     /// The ruler, when on: its first point and, once clicked, its second.
     pub ruler: Option<(Option<DVec3>, Option<DVec3>)>,
+    /// The corners of an outline the ruler measures (Shift + clicks; see `ruler_area`).
+    pub ruler_area: Vec<DVec3>,
     /// The knife (K): a click on a road cuts it there, until right-click or Esc.
     pub cutting: bool,
     // snapping
@@ -823,6 +825,7 @@ impl Default for Editor {
             session_first_id: i64::MAX,
             row_params: Default::default(),
             ruler: None,
+            ruler_area: Vec::new(),
             cutting: false,
             typed_text: Default::default(),
             straight_lock: false,
@@ -2523,7 +2526,11 @@ impl Editor {
             return;
         }
         // the ruler takes the clicks while it is on: from one point to the next
-        if let (Some(r), Some(c)) = (&mut self.ruler, self.cursor) {
+        if let (true, Some(c)) = (self.ruler.is_some(), self.cursor) {
+            if self.ruler_area_click(c, shift) {
+                return;
+            }
+            let r = self.ruler.as_mut().unwrap();
             *r = match *r {
                 (Some(a), None) => (Some(a), Some(c)),
                 _ => (Some(c), None),
@@ -6516,6 +6523,7 @@ impl Editor {
                 disc(&mut x.overlay, cam, p + lift, w * 2.5, [1.0, 0.85, 0.2, 1.0]);
             }
         }
+        crate::ruler_area::draw(&mut x, cam, self, w);
         if let Some(snap) = &self.vertex_snap {
             let ball_r = (cam.distance * 0.007).clamp(0.06, 1.2);
             let disc_r = (ball_r * 1.6) as f32;
@@ -10790,6 +10798,7 @@ impl Editor {
     /// The ruler on or off.
     pub fn toggle_ruler(&mut self) {
         self.ruler = if self.ruler.is_some() { None } else { Some((None, None)) };
+        self.ruler_area.clear();
     }
 
     /// What the ruler measures: from its first point to its second (or the cursor).

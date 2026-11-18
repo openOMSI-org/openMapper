@@ -88,6 +88,7 @@ mod ed_author;
 mod ed_ground;
 mod ed_walk;
 mod ed_align;
+mod ruler_area;
 mod trolley;
 mod trolley_kit;
 mod ui_trolley;

@@ -221,7 +221,7 @@ fn snap_unit(ui: &mut egui::Ui, ed: &mut Editor, i: usize) {
         }
         3 => {
             let mut on = ed.ruler.is_some();
-            if check(ui, &mut on, RichText::new(tr("Ruler", "Линейка")).small()).on_hover_text(tr("Click two points to measure the distance and gradient between them (U) · right-click: off", "Клик по двум точкам: расстояние и уклон между ними (U) · правый клик: выключить")).changed() {
+            if check(ui, &mut on, RichText::new(tr("Ruler", "Линейка")).small()).on_hover_text(tr("Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off", "Клик по двум точкам: расстояние и уклон между ними (U) · Shift + клики: углы площади (её размер и периметр) · правый клик: выключить")).changed() {
                 ed.toggle_ruler();
             }
         }
@@ -286,6 +286,9 @@ pub fn snap_controls(ui: &mut egui::Ui, ed: &mut Editor, room: f32) {
                 let flat = d.truncate().length();
                 let grade = if flat > 0.01 { format!("{:+.1} %", d.z / flat * 100.0) } else { "-".into() };
                 ui.label(RichText::new(format!("{:.2} m · Δh {:+.2} m · {grade}", flat, d.z)).small().monospace().color(Color32::from_rgb(255, 216, 51)));
+            }
+            if let Some((a, p)) = ed.ruler_measure() {
+                ui.label(RichText::new(format!("{} · {} {p:.1} m", crate::ruler_area::area_text(a), tr("perimeter", "периметр"))).small().monospace().color(Color32::from_rgb(255, 216, 51)));
             }
         }
         for i in 2..shown {

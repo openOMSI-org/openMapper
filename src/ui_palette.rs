@@ -99,7 +99,7 @@ fn commands() -> Vec<Command> {
                 ed.start_edge_snap();
             }
         }),
-        cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient измерить расстояние уклон", "U", |_, ed, _| ed.toggle_ruler()),
+        cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient area perimeter square metres hectares измерить расстояние уклон площадь периметр гектар", "U", |_, ed, _| ed.toggle_ruler()),
         // Map
         cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
         cmd!(Icon::Code, "Scripts…", "Скрипты…", "lua osc script code plugin скрипт код плагин программа", "", |_, _, a| a.push(Action::Scripts)),

@@ -779,6 +779,12 @@ impl App {
                 self.ed.ruler = Some((Some(p(v[0], v[1])), Some(p(v[2], v[3]))));
             }
         }
+        // OPENMAPPER_RULER_AREA=x,y;x,y;…: the ruler's outline through those corners
+        if let (Ok(c), Some(doc)) = (std::env::var("OPENMAPPER_RULER_AREA"), &self.ed.doc) {
+            let pts: Vec<DVec3> = c.split(';').filter_map(|q| q.split_once(',')).filter_map(|(x, y)| Some((x.trim().parse::<f64>().ok()?, y.trim().parse::<f64>().ok()?))).map(|(x, y)| DVec3::new(x, y, doc.ground(DVec2::new(x, y)))).collect();
+            self.ed.ruler = Some((None, None));
+            self.ed.ruler_area = pts;
+        }
         if let Some(s) = std::env::var("OPENMAPPER_GRID").ok().and_then(|s| s.parse::<f64>().ok()) {
             self.ed.snap_grid = true;
             self.ed.grid_step = s;
@@ -3050,6 +3056,7 @@ impl App {
             }
             crate::ui_edit::paint_box(&ctx, &self.ed);
             crate::ui_edit::paint_ruler(&ctx, &self.ed, &self.cam, self.view);
+            crate::ruler_area::paint(&ctx, &self.ed, &self.cam, self.view);
             crate::ui_edit::paint_cut(&ctx, &self.ed, &self.cam, self.view);
             crate::collab::presence::paint(&ctx, &self.collab, &self.ed, &self.cam, self.view);
             crate::ui_menu::show(&ctx, &mut self.ui.view_menu, &mut self.ed, &self.lib, &mut actions);
