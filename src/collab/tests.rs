@@ -180,6 +180,23 @@ fn each_editor_hands_out_idcodes_of_its_own() {
     assert_eq!(c, a + 2 * ID_BLOCK);
 }
 
+/// An editor whose next IDCode is checked against the map does not jump into another's block
+/// because that one put something up there: the two would give out the same IDCodes.
+#[test]
+fn an_editor_stays_in_its_own_block_of_idcodes() {
+    let (_h, mut ana, mut bruno) = session();
+    let mut theirs = 0;
+    bruno.edit((0, 0), |d| {
+        theirs = d.new_id();
+        crate::selection::tests::add_object(d, (0, 0), theirs, 10.0, 10.0);
+    });
+    settle(&mut ana, &mut bruno);
+    assert!(ana.doc.object((0, 0), theirs).is_some());
+    ana.frame();
+    let mine = ana.doc.new_id();
+    assert!(mine < theirs, "Ana's IDCode stays in her block: {mine}, Bruno's {theirs}");
+}
+
 #[test]
 fn a_guest_cannot_change_the_hosts_timetable() {
     let (_h, mut ana, mut bruno) = session();

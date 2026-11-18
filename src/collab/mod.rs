@@ -163,7 +163,7 @@ impl Collab {
         let ip: std::net::IpAddr = if self.lan { std::net::Ipv4Addr::UNSPECIFIED.into() } else { std::net::Ipv4Addr::LOCALHOST.into() };
         let folder = doc.dir.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
         let map = MapInfo { folder, name: doc.global.friendly_name.clone() };
-        let cfg = HostConfig { bind: (ip, self.port).into(), password: self.password.clone(), open, map, next_id: doc.global.next_id_code.max(1), max_peers: MAX_PEERS, ..Default::default() };
+        let cfg = HostConfig { bind: (ip, self.port).into(), password: self.password.clone(), open, map, next_id: doc.global.next_id_code.max(doc.highest_id() + 1), max_peers: MAX_PEERS, ..Default::default() };
         let host = match Host::start(cfg, sync::all_states(doc)) {
             Ok(h) => h,
             Err(e) => {

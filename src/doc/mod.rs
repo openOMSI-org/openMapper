@@ -41,6 +41,11 @@ pub fn tile_of(p: DVec2) -> TileKey {
 
 static REVISION: AtomicU64 = AtomicU64::new(1);
 
+thread_local! {
+    /// The map and the next IDCode `Document::new_id` last left it at (counted on from there).
+    static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
+}
+
 /// A fresh revision number: whatever shows a tile rebuilds it when its number changes.
 pub fn next_rev() -> u64 {
     REVISION.fetch_add(1, Ordering::Relaxed)
@@ -420,9 +425,6 @@ impl Document {
         // (the map is looked through for its highest IDCode only when the next one is not the
         // one this map was last left at here: one after another, as a build lays a city's
         // roads, they are counted on without reading every object again each time)
-        thread_local! {
-            static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
-        }
         let me = self as *const Document as usize;
         if ISSUED.with(|c| c.get()) != (me, self.global.next_id_code) {
             let highest = self.highest_id();
@@ -437,8 +439,15 @@ impl Document {
         id
     }
 
+    /// The next IDCode is this editor's own to count on, as handed out by a shared session (a
+    /// block of its own): `new_id` does not raise it past the map's highest, which may lie in
+    /// another editor's block - it jumped there, and the two gave out the same IDCodes.
+    pub fn own_next_id(&self) {
+        ISSUED.with(|c| c.set((self as *const Document as usize, self.global.next_id_code)));
+    }
+
     /// The greatest IDCode any object or spline on the map already has.
-    fn highest_id(&self) -> i64 {
+    pub(crate) fn highest_id(&self) -> i64 {
         let mut m = 0i64;
         for t in self.tiles.values() {
             for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
