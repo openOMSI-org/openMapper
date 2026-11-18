@@ -353,11 +353,14 @@ impl Assets {
         }
         loop {
             let mut waiting = false;
+            // (a file that is not there is failed under its name with the slashes turned: looked
+            // for under the name as written, it was never seen to have failed, and every map
+            // with a missing model waited the whole time - a minute for the street check)
             for f in &objects {
-                waiting |= self.object(f).is_none() && !matches!(self.objects.get(f), Some(Slot::Failed));
+                waiting |= self.object(f).is_none() && !self.object_failed(f);
             }
             for f in &splines {
-                waiting |= self.spline(f).is_none() && !matches!(self.splines.get(f), Some(Slot::Failed));
+                waiting |= self.spline(f).is_none() && !self.spline_failed(f);
             }
             if !waiting || start.elapsed().as_millis() as u64 > ms {
                 return;
@@ -964,6 +967,22 @@ mod tests {
         assert_eq!(lamps, [crate::editable::Lamp::Red, crate::editable::Lamp::Yellow, crate::editable::Lamp::Green]);
         assert_eq!(m.parts.iter().filter(|p| p.visible.is_none()).count(), 1, "the body is not switched");
         assert!(m.light_head, "it takes its state from a crossing");
+    }
+
+    /// Waiting for a map's models ends once the missing ones have failed, not at the time
+    /// given: a model named with backslashes was never seen to fail.
+    #[test]
+    fn a_missing_model_does_not_hold_the_wait_for_the_maps_models() {
+        let dir = std::env::temp_dir().join(format!("om-missing-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let mut doc = crate::selection::tests::flat_map(1);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 10.0, 10.0, 0.0, 20.0, 0, 0);
+        crate::selection::tests::add_object(&mut doc, (0, 0), 2, 10.0, 10.0);
+        let mut assets = Assets::new(dir.clone(), dir.clone());
+        let t = std::time::Instant::now();
+        assets.load_map_models(&doc, 20_000);
+        assert!(t.elapsed().as_secs() < 10, "waited {:?}", t.elapsed());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A crossing saved in place is read again: its model was kept under its name with the
