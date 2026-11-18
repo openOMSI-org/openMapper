@@ -624,6 +624,13 @@ impl Document {
 
     /// Remove a spline, unlink its neighbours and drop the attachment rows that ran on it.
     pub fn delete_spline(&mut self, k: TileKey, id: i64) {
+        self.delete_spline_known(k, id, &|_| None);
+    }
+
+    /// `delete_spline`, with the tile each linked spline is on known (`tile_of`): its link is
+    /// taken away there instead of looked for across the whole map (a delete of thousands
+    /// looked the map through twice for each).
+    pub fn delete_spline_known(&mut self, k: TileKey, id: i64, tile_of: &dyn Fn(i64) -> Option<TileKey>) {
         let Some(t) = self.tiles.get_mut(&k) else { return };
         let Some(idx) = t.tile.splines.iter().position(|s| s.id == id) else { return };
         let s = t.tile.splines.remove(idx);
@@ -647,7 +654,8 @@ impl Document {
             if other == 0 {
                 continue;
             }
-            for t in self.tiles.values_mut() {
+            let known = tile_of(other);
+            for (_, t) in self.tiles.iter_mut().filter(|(tk, _)| known.is_none_or(|nk| **tk == nk)) {
                 let mut hit = false;
                 for o in t.tile.splines.iter_mut().filter(|o| o.id == other) {
                     if o.prev_id == id {
