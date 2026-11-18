@@ -315,11 +315,17 @@ impl Editor {
         let pts: Vec<DVec2> = moves.iter().step_by(20).map(|(x, y, _)| DVec2::new(*x as f64 * cell, *y as f64 * cell)).collect();
         self.touch_around(&pts, 400.0);
         let Some(doc) = self.doc.as_mut() else { return rep };
-        let mut dummy = crate::history::History::default();
+        // (each tile a sample is set on is kept as it is set: the tiles round every so many
+        // samples missed some, which undo then left as the edit made them)
+        let hist = &mut self.history;
         for (gx, gy, h) in moves {
-            crate::editor::set_world_sample(doc, &mut dummy, gx, gy, n, h);
+            crate::editor::set_world_sample(doc, hist, gx, gy, n, h);
         }
         if let Some(l) = set.layer {
+            // (the paint reaches whichever tiles the surfaces cross)
+            for k in doc.tiles.keys().copied().collect::<Vec<_>>() {
+                hist.touch_tile(doc, k);
+            }
             rep.texels = crate::ed_author::paint_areas_in(doc, l, &bands, 0.5, false).unwrap_or(0);
         }
         self.history.commit();

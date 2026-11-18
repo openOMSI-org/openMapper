@@ -10331,6 +10331,17 @@ impl Editor {
         for a in &arms {
             self.history.touch_tile(doc, a.key);
         }
+        // (and every tile round it: the new pieces, the signal poles and the ground brought
+        // level go on the tiles they stand on, not only where the plate and its arms start)
+        let reach = crate::junction::reach(doc, assets, centre, &arms) + 20.0;
+        let (lo, hi) = (tile_of(centre.truncate() - DVec2::splat(reach)), tile_of(centre.truncate() + DVec2::splat(reach)));
+        for x in lo.0..=hi.0 {
+            for y in lo.1..=hi.1 {
+                if doc.tiles.contains_key(&(x, y)) {
+                    self.history.touch_tile(doc, (x, y));
+                }
+            }
+        }
         self.history.touch_global(doc);
         // its signal heads go with it (new ones are put up for the new plate)
         for (k, c) in crate::junction::children(doc, id) {

@@ -410,7 +410,9 @@ impl Editor {
         let pts: Vec<DVec2> = tracks.iter().step_by(10).map(|t| t.0).collect();
         self.touch_around(&pts, reach + 6.0);
         let Some(doc) = self.doc.as_mut() else { return rep };
-        let mut dummy = crate::history::History::default();
+        // (each tile a sample is set on is kept as it is set: the tiles round every so many
+        // samples missed some, which undo then left as the edit made them)
+        let hist = &mut self.history;
         for gy in (lo.y / cell).floor() as i64..=(hi.y / cell).ceil() as i64 {
             for gx in (lo.x / cell).floor() as i64..=(hi.x / cell).ceil() as i64 {
                 let q = DVec2::new(gx as f64 * cell, gy as f64 * cell);
@@ -431,12 +433,16 @@ impl Editor {
                     }
                 }
                 if (h - old as f64).abs() > 0.005 {
-                    crate::editor::set_world_sample(doc, &mut dummy, gx, gy, n, h as f32);
+                    crate::editor::set_world_sample(doc, hist, gx, gy, n, h as f32);
                     rep.samples += 1;
                 }
             }
         }
         if let Some(l) = layer {
+            // (the paint reaches whichever tiles the beds cross)
+            for k in doc.tiles.keys().copied().collect::<Vec<_>>() {
+                hist.touch_tile(doc, k);
+            }
             rep.texels = paint_areas_in(doc, l, &bands, 1.0, false).unwrap_or(0);
         }
         self.history.commit();
@@ -579,12 +585,14 @@ impl Editor {
         let pts: Vec<DVec2> = cap.keys().step_by(20).map(|(x, y)| DVec2::new(*x as f64 * cell, *y as f64 * cell)).collect();
         self.touch_around(&pts, 400.0);
         let Some(doc) = self.doc.as_mut() else { return 0 };
-        let mut dummy = crate::history::History::default();
+        // (each tile a sample is set on is kept as it is set: the tiles round every so many
+        // samples missed some, which undo then left as the edit made them)
+        let hist = &mut self.history;
         let mut moved = 0;
         for ((gx, gy), z) in cap {
             let Some(old) = crate::editor::world_sample(doc, gx, gy, n) else { continue };
             if (old as f64) > z {
-                crate::editor::set_world_sample(doc, &mut dummy, gx, gy, n, z as f32);
+                crate::editor::set_world_sample(doc, hist, gx, gy, n, z as f32);
                 moved += 1;
             }
         }
