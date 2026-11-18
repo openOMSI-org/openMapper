@@ -498,6 +498,13 @@ pub struct Renderer {
     /// When the list was last collected.
     warm_collect_at: Option<std::time::Instant>,
     chunks: HashMap<TileKey, Chunk>,
+    /// What the splines' instances were made for (`splines_stamp`), the instances, and whether
+    /// every spline was built then.
+    splines_quiet: Option<(u64, Vec<Instance>, bool)>,
+    /// What the ground cut was last found up to date for.
+    cut_quiet: Option<u64>,
+    /// The map's water picture, and the map it was looked for in.
+    water_tex: Option<((std::path::PathBuf, u64), Option<std::path::PathBuf>)>,
     /// `[onlyeditor]` splines of a tile in one mesh. Drawn with the roads when "what the game
     /// does not show" is on, and never into the shadow map.
     editor_chunks: HashMap<TileKey, Chunk>,
@@ -1048,6 +1055,9 @@ impl Renderer {
             warm_missing: false,
             warm_collect_at: None,
             chunks: HashMap::new(),
+            splines_quiet: None,
+            cut_quiet: None,
+            water_tex: None,
             editor_chunks: HashMap::new(),
             builder: build::Builder::new(),
             ghost_spline_meshes: Vec::new(),
@@ -1070,6 +1080,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.scene_key = 0;
         self.tile_groups.clear();
         self.textures.clear();
@@ -1087,6 +1099,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.display.clear();
         self.anchor = DVec3::ZERO;
         self.anchored = false;
@@ -1123,6 +1137,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.scene_key = 0;
         self.tile_groups.clear();
     }
@@ -1422,6 +1438,8 @@ impl Renderer {
                     self.chunks.clear();
                     self.editor_chunks.clear();
                     self.builder.reset();
+                    self.splines_quiet = None;
+                    self.cut_quiet = None;
                     self.scene_key = 0;
                     self.tile_groups.clear();
                 }
@@ -1703,107 +1721,135 @@ impl Renderer {
         t = std::time::Instant::now();
 
         // splines
-        let mut alive: Vec<(TileKey, i64)> = Vec::new();
-        let mut complete = assets.pending == 0;
-        for (key, e) in self.builder.take() {
-            self.note_spline_materials(&e.materials);
-            self.splines.insert(key, e);
-            self.warm_pending = true;
-        }
-        let start = std::time::Instant::now();
-        let mut spline_instances: Vec<Instance> = Vec::new();
-        // (each tile's splines' hashes, made again only when the tile changed)
-        for (k, t) in &disp {
-            let rev = self.display.get(k).map(|d| d.0).unwrap_or(0);
-            if self.spline_hashes.get(k).map(|(r, _)| *r != rev).unwrap_or(true) {
-                let org = tile_origin(*k);
-                let v: Vec<u64> = t.splines.iter().map(|s| spline_hash(s, org)).collect();
-                self.spline_hashes.insert(*k, (rev, std::sync::Arc::new(v)));
-            }
-        }
-        self.spline_hashes.retain(|k, _| self.display.contains_key(k));
-        for (k, t) in &disp {
-            let org = tile_origin(*k);
-            let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
-            let hashes = self.spline_hashes.get(k).map(|(_, v)| v.clone()).unwrap_or_default();
-            for (i, s) in t.splines.iter().enumerate().filter(|(_, s)| !s.deleted && !s.file.trim().is_empty()) {
-                alive.push((*k, s.id));
-                let h = hashes.get(i).copied().unwrap_or_else(|| spline_hash(s, org));
-                let sel = Some(Sel::Spline(*k, s.id));
-                let tint = if extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
-                    SELECTED
-                } else if extras.hover == sel {
-                    HOVERED
-                } else {
-                    [0.0; 4]
-                };
-                let entry_ok = self.splines.get(&(*k, s.id)).map(|e| e.hash == h).unwrap_or(false);
-                if !entry_ok {
-                    let Some(model) = assets.spline(&s.file) else { continue };
-                    // (what is being edited is built at once, so it follows the mouse; the
-                    // rest on the builder's threads)
-                    let editing = extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id));
-                    if editing && start.elapsed().as_millis() < 25 {
-                        self.builder.forget(&(*k, s.id));
-                        let e = build::make_entry(&model, s, org, corner, h);
-                        self.note_spline_materials(&e.materials);
-                        self.splines.insert((*k, s.id), e);
-                        self.warm_pending = true;
-                    } else {
-                        self.builder.request((*k, s.id), h, model, s, org, corner);
-                        complete = false;
-                    }
-                }
-                if let Some(e) = self.splines.get_mut(&(*k, s.id)) {
-                    e.hidden = spline_hidden(e.technical, extras);
-                    e.instance = spline_instances.len() as u32;
-                    spline_instances.push(Instance::new(Mat4::from_translation(corner), tint).surface(SURF_SPLINE));
-                }
-            }
-        }
-        // each tile's water: one quad at its four corner heights, blended over the ground
-        // (an ordinary instance, not a surface: openOMSI's reason, the banks must win)
-        let water_tex = ["texture/water.tga", "Texture/water.tga"].iter().map(|r| doc.dir.join(r)).chain(doc.source.iter().map(|s| s.join("texture").join("water.tga"))).find(|p| p.is_file());
-        for (k, td) in doc.tiles.iter().filter(|(k, _)| is_live(k)) {
-            let Some(w) = td.water else { continue };
-            let key = (*k, WATER);
-            alive.push(key);
-            let org = tile_origin(*k);
-            let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
-            let h = hash_of(&(w.map(f32::to_bits), org.x.to_bits(), org.y.to_bits(), &water_tex));
-            if self.splines.get(&key).map(|e| e.hash != h).unwrap_or(true) {
-                let t = tile_size() as f32;
-                let mut m = MeshData::default();
-                for (i, (x, y)) in [(0.0, 0.0), (t, 0.0), (0.0, t), (t, t)].into_iter().enumerate() {
-                    m.positions.push(Vec3::new(x, y, w[i]));
-                    m.normals.push(Vec3::Z);
-                    m.uvs.push(glam::Vec2::new(x / 40.0, y / 40.0));
-                }
-                m.indices.extend_from_slice(&[0, 1, 2, 2, 1, 3]);
-                m.ranges.push((0, 6, 0));
-                let mut bbox = Aabb::EMPTY;
-                m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
-                let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
-                let mesh = Some(upload_mesh(device, &m));
-                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false });
+        // (nothing they hang on changed since the last frame - the map in view, the selection,
+        // what was built and what came in - and the last frame's instances are this one's: the
+        // walk over every spline in view, and the look round every tile for its ground cut, took
+        // a third of an idle frame on a city)
+        let taken = self.builder.take();
+        let picked = extras.selected_more.iter().fold(extras.selected_more.len() as u64, |a, s| a.wrapping_add(hash_of(s)));
+        let stamp = self.splines_stamp(extras, assets, picked, anchor);
+        let quiet = taken.is_empty() && self.builder.busy() == 0 && self.splines_quiet.as_ref().is_some_and(|q| q.0 == stamp);
+        let (spline_instances, mut complete) = if let (true, Some(q)) = (quiet, &self.splines_quiet) {
+            (q.1.clone(), q.2)
+        } else {
+            let mut alive: Vec<(TileKey, i64)> = Vec::new();
+            let mut complete = assets.pending == 0;
+            for (key, e) in taken {
+                self.note_spline_materials(&e.materials);
+                self.splines.insert(key, e);
                 self.warm_pending = true;
             }
-            if let Some(e) = self.splines.get_mut(&key) {
-                e.instance = spline_instances.len() as u32;
-                spline_instances.push(Instance::new(Mat4::from_translation(corner), [0.0; 4]));
+            let start = std::time::Instant::now();
+            let mut spline_instances: Vec<Instance> = Vec::new();
+            // (each tile's splines' hashes, made again only when the tile changed)
+            for (k, t) in &disp {
+                let rev = self.display.get(k).map(|d| d.0).unwrap_or(0);
+                if self.spline_hashes.get(k).map(|(r, _)| *r != rev).unwrap_or(true) {
+                    let org = tile_origin(*k);
+                    let v: Vec<u64> = t.splines.iter().map(|s| spline_hash(s, org)).collect();
+                    self.spline_hashes.insert(*k, (rev, std::sync::Arc::new(v)));
+                }
             }
-        }
-        if self.splines.len() > alive.len() {
-            let set: std::collections::HashSet<_> = alive.into_iter().collect();
-            self.splines.retain(|k, _| set.contains(k));
-        }
-        complete &= self.builder.busy() == 0;
-        self.profile.count("splines building", self.builder.busy() as u32);
-        self.sync_chunks(device, &disp, extras, &mut spline_instances, anchor);
+            self.spline_hashes.retain(|k, _| self.display.contains_key(k));
+            for (k, t) in &disp {
+                let org = tile_origin(*k);
+                let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
+                let hashes = self.spline_hashes.get(k).map(|(_, v)| v.clone()).unwrap_or_default();
+                for (i, s) in t.splines.iter().enumerate().filter(|(_, s)| !s.deleted && !s.file.trim().is_empty()) {
+                    alive.push((*k, s.id));
+                    let h = hashes.get(i).copied().unwrap_or_else(|| spline_hash(s, org));
+                    let sel = Some(Sel::Spline(*k, s.id));
+                    let tint = if extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
+                        SELECTED
+                    } else if extras.hover == sel {
+                        HOVERED
+                    } else {
+                        [0.0; 4]
+                    };
+                    let entry_ok = self.splines.get(&(*k, s.id)).map(|e| e.hash == h).unwrap_or(false);
+                    if !entry_ok {
+                        let Some(model) = assets.spline(&s.file) else { continue };
+                        // (what is being edited is built at once, so it follows the mouse; the
+                        // rest on the builder's threads)
+                        let editing = extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id));
+                        if editing && start.elapsed().as_millis() < 25 {
+                            self.builder.forget(&(*k, s.id));
+                            let e = build::make_entry(&model, s, org, corner, h);
+                            self.note_spline_materials(&e.materials);
+                            self.splines.insert((*k, s.id), e);
+                            self.warm_pending = true;
+                        } else {
+                            self.builder.request((*k, s.id), h, model, s, org, corner);
+                            complete = false;
+                        }
+                    }
+                    if let Some(e) = self.splines.get_mut(&(*k, s.id)) {
+                        e.hidden = spline_hidden(e.technical, extras);
+                        e.instance = spline_instances.len() as u32;
+                        spline_instances.push(Instance::new(Mat4::from_translation(corner), tint).surface(SURF_SPLINE));
+                    }
+                }
+            }
+            // each tile's water: one quad at its four corner heights, blended over the ground
+            // (an ordinary instance, not a surface: openOMSI's reason, the banks must win)
+            // (looked for on disk once for the map, not in every frame)
+            let water_key = (doc.dir.clone(), doc.global_rev);
+            if self.water_tex.as_ref().is_none_or(|w| w.0 != water_key) {
+                let found = ["texture/water.tga", "Texture/water.tga"].iter().map(|r| doc.dir.join(r)).chain(doc.source.iter().map(|s| s.join("texture").join("water.tga"))).find(|p| p.is_file());
+                self.water_tex = Some((water_key, found));
+            }
+            let water_tex = self.water_tex.as_ref().and_then(|w| w.1.clone());
+            for (k, td) in doc.tiles.iter().filter(|(k, _)| is_live(k)) {
+                let Some(w) = td.water else { continue };
+                let key = (*k, WATER);
+                alive.push(key);
+                let org = tile_origin(*k);
+                let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
+                let h = hash_of(&(w.map(f32::to_bits), org.x.to_bits(), org.y.to_bits(), &water_tex));
+                if self.splines.get(&key).map(|e| e.hash != h).unwrap_or(true) {
+                    let t = tile_size() as f32;
+                    let mut m = MeshData::default();
+                    for (i, (x, y)) in [(0.0, 0.0), (t, 0.0), (0.0, t), (t, t)].into_iter().enumerate() {
+                        m.positions.push(Vec3::new(x, y, w[i]));
+                        m.normals.push(Vec3::Z);
+                        m.uvs.push(glam::Vec2::new(x / 40.0, y / 40.0));
+                    }
+                    m.indices.extend_from_slice(&[0, 1, 2, 2, 1, 3]);
+                    m.ranges.push((0, 6, 0));
+                    let mut bbox = Aabb::EMPTY;
+                    m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
+                    let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
+                    let mesh = Some(upload_mesh(device, &m));
+                    self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false });
+                    self.warm_pending = true;
+                }
+                if let Some(e) = self.splines.get_mut(&key) {
+                    e.instance = spline_instances.len() as u32;
+                    spline_instances.push(Instance::new(Mat4::from_translation(corner), [0.0; 4]));
+                }
+            }
+            if self.splines.len() > alive.len() {
+                let set: std::collections::HashSet<_> = alive.into_iter().collect();
+                self.splines.retain(|k, _| set.contains(k));
+            }
+            complete &= self.builder.busy() == 0;
+            self.profile.count("splines building", self.builder.busy() as u32);
+            self.sync_chunks(device, &disp, extras, &mut spline_instances, anchor);
+            let stamp = self.splines_stamp(extras, assets, picked, anchor);
+            self.splines_quiet = Some((stamp, spline_instances.clone(), complete));
+            (spline_instances, complete)
+        };
 
         self.profile.add("sync.splines", profile::ms(t));
         t = std::time::Instant::now();
-        complete &= self.cut_ground(gpu, doc, assets, &disp);
+        // (the cut is looked at again only when something it hangs on may have changed, or the
+        // last look left one to make)
+        let cut_stamp = hash_of(&(stamp, doc.content_rev(), assets.objects.len(), assets.pending, self.tiles.len()));
+        if !(quiet && self.cut_quiet == Some(cut_stamp)) {
+            let done = self.cut_ground(gpu, doc, assets, &disp);
+            self.cut_quiet = done.then_some(cut_stamp);
+            complete &= done;
+        }
         self.scene_complete = complete;
         if complete {
             self.profile.ready();
@@ -2022,6 +2068,12 @@ impl Renderer {
         let mesh = (!mesh.indices.is_empty()).then(|| upload_mesh(device, &mesh));
         let chunks = if editor { &mut self.editor_chunks } else { &mut self.chunks };
         chunks.insert(key, Chunk { members, mesh, materials, bbox, instance: 0 });
+    }
+
+    /// What the splines' instances hang on, besides the scene's key: the selection (`picked`
+    /// is the extra picks' hash), what is built and loaded, where the map is anchored.
+    fn splines_stamp(&self, extras: &FrameExtras, assets: &Assets, picked: u64, anchor: DVec3) -> u64 {
+        hash_of(&(self.scene_key, extras.selected, extras.hover, picked, self.splines.len(), self.chunks.len(), self.editor_chunks.len(), assets.splines.len(), assets.pending, anchor.x.to_bits(), anchor.y.to_bits()))
     }
 
     /// The ground cut of the tiles whose roads, surfaces or ground changed, made on the
