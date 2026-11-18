@@ -109,8 +109,8 @@ impl TerrainMode {
             TerrainMode::Smooth => Icon::Smooth,
             TerrainMode::Flatten => Icon::Flatten,
             TerrainMode::Roughen => Icon::Terrain,
-            TerrainMode::Ramp => Icon::Route,
-            TerrainMode::Water => Icon::Lower,
+            TerrainMode::Ramp => Icon::Slope,
+            TerrainMode::Water => Icon::Water,
             TerrainMode::AlongSpline => Icon::Road,
         }
     }

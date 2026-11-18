@@ -4,6 +4,7 @@
 use openmapper_mesh::primitives::{Primitive, ALL};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::ui::Action;
 
 pub fn primitive_label(p: &Primitive) -> &'static str {
@@ -352,7 +353,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     if users > 1 {
         ui.horizontal_wrapped(|ui| {
             ui.label(RichText::new(format!("{} {users} {}", tr("Shared by", "Используется"), tr("objects on the map: changes apply to all", "объектами карты: изменения затронут все"))).small().color(pal().warn));
-            if ui.small_button(tr("Make this one single", "Сделать отдельной копией")).clicked() {
+            if ui.small_button(icons::labelled(Icon::LinkOff, tr("Make this one single", "Сделать отдельной копией"))).clicked() {
                 actions.push(Action::Mesh(MeshAction::MakeSingle));
             }
         });
@@ -362,7 +363,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         if ui.add(egui::Button::new(RichText::new(label).strong()).fill(if m.editing { pal().accent } else { pal().widget })).clicked() {
             actions.push(Action::Mesh(MeshAction::ToggleEdit));
         }
-        if ui.button(tr("Export…", "Экспорт…")).on_hover_text(tr("Write it as OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X or O3D", "Записать в OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X или O3D")).clicked() {
+        if ui.button(icons::labelled(Icon::UploadFile, tr("Export…", "Экспорт…"))).on_hover_text(tr("Write it as OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X or O3D", "Записать в OBJ, glTF / GLB, FBX, Collada, USD, STL, PLY, 3MF, OFF, X или O3D")).clicked() {
             actions.push(Action::Mesh(MeshAction::Export));
         }
     });
@@ -420,10 +421,10 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
             }
             touched(m, &r);
             ui.label(RichText::new(format!("{}", m.src.model.parts[i].mesh.faces.len())).small().color(pal().text_dim)).on_hover_text(tr("faces", "граней"));
-            if ui.small_button("⧉").on_hover_text(tr("Duplicate the part", "Дублировать часть")).clicked() {
+            if icons::small(ui, Icon::Duplicate, tr("Duplicate the part", "Дублировать часть")).clicked() {
                 dup = Some(i);
             }
-            if n_parts > 1 && ui.small_button("×").on_hover_text(tr("Delete the part", "Удалить часть")).clicked() {
+            if n_parts > 1 && icons::small(ui, Icon::Delete, tr("Delete the part", "Удалить часть")).clicked() {
                 remove = Some(i);
             }
         });
@@ -444,7 +445,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         m.changed();
     }
     ui.horizontal_wrapped(|ui| {
-        ui.menu_button(tr("Add a shape as a part", "Добавить фигуру как часть"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Shapes, tr("Add a shape as a part", "Добавить фигуру как часть")), |ui| {
             for p in ALL {
                 if ui.button(primitive_label(&p)).clicked() {
                     m.checkpoint();
@@ -463,7 +464,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 }
             }
         });
-        if n_parts > 1 && ui.button(tr("Separate parts into objects", "Разделить части на объекты")).on_hover_text(tr("Each part becomes an object of its own, standing where it stood", "Каждая часть становится отдельным объектом на своём месте")).clicked() {
+        if n_parts > 1 && ui.button(icons::labelled(Icon::Split, tr("Separate parts into objects", "Разделить части на объекты"))).on_hover_text(tr("Each part becomes an object of its own, standing where it stood", "Каждая часть становится отдельным объектом на своём месте")).clicked() {
             actions.push(Action::Mesh(MeshAction::SeparateParts));
         }
     });
@@ -500,10 +501,10 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 let r = ui.checkbox(&mut st.on, RichText::new(modifier_label(&st.modifier)).strong());
                 resp = Some(r);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button("×").on_hover_text(tr("Remove", "Удалить")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Remove", "Удалить")).clicked() {
                         action = Some((k, 0));
                     }
-                    if ui.small_button(tr("Apply", "Применить")).on_hover_text(tr("Make it part of the mesh", "Сделать частью меша")).clicked() {
+                    if ui.small_button(icons::labelled(Icon::Check, tr("Apply", "Применить"))).on_hover_text(tr("Make it part of the mesh", "Сделать частью меша")).clicked() {
                         action = Some((k, 1));
                     }
                     if k + 1 < n_mods && ui.small_button(crate::icons::Icon::Down.text(14.0)).clicked() {
@@ -557,7 +558,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         }
         m.changed();
     }
-    ui.menu_button(tr("Add a modifier", "Добавить модификатор"), |ui| {
+    ui.menu_button(icons::labelled(Icon::Build, tr("Add a modifier", "Добавить модификатор")), |ui| {
         for md in Modifier::all() {
             if ui.button(modifier_label(&md)).clicked() {
                 m.checkpoint();
@@ -588,7 +589,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
             ui.horizontal(|ui| {
                 join(ui.color_edit_button_rgba_unmultiplied(&mut mat.color).on_hover_text(tr("Colour (multiplies the texture)", "Цвет (умножается на текстуру)")));
                 join(ui.add(egui::TextEdit::singleline(&mut mat.name).desired_width(120.0)));
-                if editing && ui.small_button(tr("Assign to selected faces", "Назначить выделенным граням")).clicked() {
+                if editing && ui.small_button(icons::labelled(Icon::Paint, tr("Assign to selected faces", "Назначить выделенным граням"))).clicked() {
                     m.apply(|mesh, s, _| {
                         edit::set_material(mesh, s, i as u32);
                         None
@@ -599,17 +600,17 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                 ui.label(RichText::new(tr("Texture", "Текстура")).color(pal().text_dim));
                 let tex = mat.texture.as_deref().unwrap_or("—");
                 ui.add(egui::Label::new(tex.rsplit(['\\', '/']).next().unwrap_or(tex)).truncate()).on_hover_text(tex);
-                if ui.small_button(tr("Choose…", "Выбрать…")).clicked() {
+                if ui.small_button(icons::labelled(Icon::Open, tr("Choose…", "Выбрать…"))).clicked() {
                     actions.push(Action::Mesh(MeshAction::PickTexture(i, TexSlot::Color)));
                 }
                 if mat.texture.is_some() {
-                    if ui.small_button("×").on_hover_text(tr("No texture", "Без текстуры")).clicked() {
+                    if icons::small(ui, Icon::Close, tr("No texture", "Без текстуры")).clicked() {
                         mat.texture = None;
                         let mut r = ui.label("");
                         r.mark_changed();
                         join(r);
                     }
-                    if ui.small_button(tr("Save as…", "Сохранить как…")).on_hover_text(tr("PNG, JPEG, BMP, TGA, TIFF, WebP or DDS", "PNG, JPEG, BMP, TGA, TIFF, WebP или DDS")).clicked() {
+                    if ui.small_button(icons::labelled(Icon::Save, tr("Save as…", "Сохранить как…"))).on_hover_text(tr("PNG, JPEG, BMP, TGA, TIFF, WebP or DDS", "PNG, JPEG, BMP, TGA, TIFF, WebP или DDS")).clicked() {
                         actions.push(Action::Mesh(MeshAction::ExportTexture(i)));
                     }
                 }
@@ -634,7 +635,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                     }
                 }
             });
-            if n_mats > 1 && ui.small_button(tr("Remove the material", "Удалить материал")).clicked() {
+            if n_mats > 1 && ui.small_button(icons::labelled(Icon::Delete, tr("Remove the material", "Удалить материал"))).clicked() {
                 remove_mat = Some(i);
             }
         });
@@ -658,13 +659,13 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         m.changed();
     }
     ui.horizontal(|ui| {
-        if ui.button(tr("Add a material", "Добавить материал")).clicked() {
+        if ui.button(icons::labelled(Icon::Add, tr("Add a material", "Добавить материал"))).clicked() {
             m.checkpoint();
             let n = m.src.model.materials.len();
             m.src.model.materials.push(Material::colored(&format!("Material{}", n + 1), [0.8, 0.8, 0.8, 1.0]));
             m.changed();
         }
-        if ui.button(tr("Import materials…", "Импорт материалов…")).on_hover_text(tr("From an .mtl, a glTF / GLB / FBX, or the pictures of one PBR material (base colour, normal, roughness, metal, AO...)", "Из .mtl, glTF / GLB / FBX или набора картинок PBR-материала (цвет, нормали, шероховатость, металл, AO...)")).clicked() {
+        if ui.button(icons::labelled(Icon::Import, tr("Import materials…", "Импорт материалов…"))).on_hover_text(tr("From an .mtl, a glTF / GLB / FBX, or the pictures of one PBR material (base colour, normal, roughness, metal, AO...)", "Из .mtl, glTF / GLB / FBX или набора картинок PBR-материала (цвет, нормали, шероховатость, металл, AO...)")).clicked() {
             actions.push(Action::Mesh(MeshAction::ImportMaterial));
         }
     });
@@ -733,7 +734,7 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
                     join(vec3(ui, tr("Facing", "Направление"), &mut l.dir, 0.01));
                 }
             }
-            if ui.small_button(tr("Remove the lamp", "Удалить источник")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Delete, tr("Remove the lamp", "Удалить источник"))).clicked() {
                 remove_light = Some(i);
             }
         });
@@ -751,12 +752,12 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
     }
     ui.horizontal_wrapped(|ui| {
         let top = m.src.model.parts.iter().filter_map(|p| p.mesh.bounds()).fold(0.0f32, |a, b| a.max(b.1.z));
-        if ui.button(tr("Add a glow", "Добавить свечение")).on_hover_text(tr("A lamp's bulb, a lit sign: a glow seen at night", "Лампа, светящаяся вывеска: свечение, видное ночью")).clicked() {
+        if ui.button(icons::labelled(Icon::Light, tr("Add a glow", "Добавить свечение"))).on_hover_text(tr("A lamp's bulb, a lit sign: a glow seen at night", "Лампа, светящаяся вывеска: свечение, видное ночью")).clicked() {
             m.checkpoint();
             m.src.lights.push(Light { pos: glam::Vec3::new(0.0, 0.0, top), ..Default::default() });
             m.changed();
         }
-        if ui.button(tr("Add light on the ground", "Добавить свет на землю")).on_hover_text(tr("The pool of light a street lamp throws at night", "Пятно света от фонаря ночью")).clicked() {
+        if ui.button(icons::labelled(Icon::Light, tr("Add light on the ground", "Добавить свет на землю"))).on_hover_text(tr("The pool of light a street lamp throws at night", "Пятно света от фонаря ночью")).clicked() {
             m.checkpoint();
             m.src.lights.push(Light { kind: LightKind::Ground, pos: glam::Vec3::new(0.0, 0.0, top), ..Default::default() });
             m.changed();
@@ -785,14 +786,14 @@ pub fn object_panel(ui: &mut egui::Ui, ed: &mut Editor, bake: &mut BakeChoice, a
         }
     });
     ui.checkbox(&mut bake.light, tr("Lamps' light at night (light map)", "Ночной свет ламп (карта света)"));
-    if ui.button(tr("Bake", "Запечь")).clicked() {
+    if ui.button(icons::labelled(Icon::Light, tr("Bake", "Запечь"))).clicked() {
         actions.push(Action::Mesh(MeshAction::Bake(*bake)));
     }
     ui.horizontal(|ui| {
-        if ui.add_enabled(m.can_undo(), egui::Button::new(tr("Undo", "Отменить"))).on_hover_text(tr("The object's last change (Ctrl+Z in the edit mode)", "Последнее изменение объекта (Ctrl+Z в режиме редактирования)")).clicked() {
+        if ui.add_enabled(m.can_undo(), egui::Button::new(icons::labelled(Icon::Undo, tr("Undo", "Отменить")))).on_hover_text(tr("The object's last change (Ctrl+Z in the edit mode)", "Последнее изменение объекта (Ctrl+Z в режиме редактирования)")).clicked() {
             m.undo();
         }
-        if ui.add_enabled(m.can_redo(), egui::Button::new(tr("Redo", "Повторить"))).clicked() {
+        if ui.add_enabled(m.can_redo(), egui::Button::new(icons::labelled(Icon::Redo, tr("Redo", "Повторить")))).clicked() {
             m.redo();
         }
     });
@@ -889,10 +890,10 @@ pub fn plain_object_panel(ui: &mut egui::Ui, parts: usize, actions: &mut Vec<Act
         if ui.button(RichText::new(tr("Edit the mesh (Tab)", "Редактировать меш (Tab)")).strong()).on_hover_text(tr("A copy of this object's type of its own is made for it, with its meshes, materials and lamps to edit; the original stays as it is", "Для объекта делается собственная копия типа с мешами, материалами и лампами для редактирования; оригинал не меняется")).clicked() {
             actions.push(Action::Mesh(MeshAction::ToggleEdit));
         }
-        if parts > 1 && ui.button(tr("Separate parts into objects", "Разделить части на объекты")).clicked() {
+        if parts > 1 && ui.button(icons::labelled(Icon::Split, tr("Separate parts into objects", "Разделить части на объекты"))).clicked() {
             actions.push(Action::Mesh(MeshAction::SeparateParts));
         }
-        if ui.button(tr("Export…", "Экспорт…")).clicked() {
+        if ui.button(icons::labelled(Icon::UploadFile, tr("Export…", "Экспорт…"))).clicked() {
             actions.push(Action::Mesh(MeshAction::Export));
         }
     });
@@ -902,16 +903,16 @@ pub fn plain_object_panel(ui: &mut egui::Ui, parts: usize, actions: &mut Vec<Act
 pub fn spline_panel(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
     heading(ui, tr("As a mesh", "Как меш"));
     ui.horizontal_wrapped(|ui| {
-        if ui.button(tr("Copy as an object", "Копия как объект")).on_hover_text(tr("An openMapper object of its shape beside it, to edit as a mesh (vertices, edges, faces)", "Объект openMapper той же формы, чтобы править его как меш (вершины, рёбра, грани)")).clicked() {
+        if ui.button(icons::labelled(Icon::Copy, tr("Copy as an object", "Копия как объект"))).on_hover_text(tr("An openMapper object of its shape beside it, to edit as a mesh (vertices, edges, faces)", "Объект openMapper той же формы, чтобы править его как меш (вершины, рёбра, грани)")).clicked() {
             actions.push(Action::Mesh(MeshAction::SplinesToObject(false)));
         }
-        if ui.button(tr("Replace by an object", "Заменить объектом")).on_hover_text(tr("The same, the spline taken away (its lanes go with it)", "То же, а сплайн удаляется (вместе с полосами)")).clicked() {
+        if ui.button(icons::labelled(Icon::Swap, tr("Replace by an object", "Заменить объектом"))).on_hover_text(tr("The same, the spline taken away (its lanes go with it)", "То же, а сплайн удаляется (вместе с полосами)")).clicked() {
             actions.push(Action::Mesh(MeshAction::SplinesToObject(true)));
         }
-        if ui.button(tr("Polygon from it", "Многоугольник по нему")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+        if ui.button(icons::labelled(Icon::Polygon, tr("Polygon from it", "Многоугольник по нему"))).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
             actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
         }
-        if ui.button(tr("Export…", "Экспорт…")).clicked() {
+        if ui.button(icons::labelled(Icon::UploadFile, tr("Export…", "Экспорт…"))).clicked() {
             actions.push(Action::Mesh(MeshAction::Export));
         }
     });
@@ -925,25 +926,25 @@ pub fn many_panel(ui: &mut egui::Ui, keep: &mut bool, objects: usize, splines: u
     if splines > 0 {
         heading(ui, tr("Splines as a mesh", "Сплайны как меш"));
         ui.horizontal_wrapped(|ui| {
-            if ui.button(tr("Copy as one object", "Копия как один объект")).clicked() {
+            if ui.button(icons::labelled(Icon::Copy, tr("Copy as one object", "Копия как один объект"))).clicked() {
                 actions.push(Action::Mesh(MeshAction::SplinesToObject(false)));
             }
-            if ui.button(tr("Replace by one object", "Заменить одним объектом")).clicked() {
+            if ui.button(icons::labelled(Icon::Swap, tr("Replace by one object", "Заменить одним объектом"))).clicked() {
                 actions.push(Action::Mesh(MeshAction::SplinesToObject(true)));
             }
-            if ui.button(tr("Polygon from them", "Многоугольник по ним")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+            if ui.button(icons::labelled(Icon::Polygon, tr("Polygon from them", "Многоугольник по ним"))).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
                 actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
             }
         });
     }
     if objects < 2 {
-        if ui.button(tr("Export the selection…", "Экспорт выделенного…")).clicked() {
+        if ui.button(icons::labelled(Icon::UploadFile, tr("Export the selection…", "Экспорт выделенного…"))).clicked() {
             actions.push(Action::Mesh(MeshAction::Export));
         }
         return;
     }
     heading(ui, tr("As meshes", "Как меши"));
-    if ui.button(tr("Join into one object (Ctrl+J)", "Объединить в один объект (Ctrl+J)")).on_hover_text(tr("All their parts in the one shown in the properties, the others gone", "Все их части — в объекте из свойств, остальные удаляются")).clicked() {
+    if ui.button(icons::labelled(Icon::Merge, tr("Join into one object (Ctrl+J)", "Объединить в один объект (Ctrl+J)"))).on_hover_text(tr("All their parts in the one shown in the properties, the others gone", "Все их части — в объекте из свойств, остальные удаляются")).clicked() {
         actions.push(Action::Mesh(MeshAction::Join));
     }
     ui.label(RichText::new(tr("Solid modelling (CSG): the object shown in the properties with the others", "Твердотельное моделирование (CSG): объект из свойств с остальными")).small().color(pal().text_dim));
@@ -955,7 +956,7 @@ pub fn many_panel(ui: &mut egui::Ui, keep: &mut bool, objects: usize, splines: u
         }
     });
     ui.checkbox(keep, tr("Keep the cutting objects", "Оставить режущие объекты"));
-    if ui.button(tr("Export the selection…", "Экспорт выделенного…")).clicked() {
+    if ui.button(icons::labelled(Icon::UploadFile, tr("Export the selection…", "Экспорт выделенного…"))).clicked() {
         actions.push(Action::Mesh(MeshAction::Export));
     }
 }
@@ -989,7 +990,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
     let mesh = m.mesh();
     ui.label(RichText::new(format!("{} {} · {} {} · {} {}", mesh.positions.len(), tr("vertices", "вершин"), mesh.edges().len(), tr("edges", "рёбер"), mesh.faces.len(), tr("faces", "граней"))).small().color(pal().text_dim));
     ui.label(RichText::new(format!("{}: {} / {} / {}", tr("Selected", "Выделено"), m.sel.verts.len(), m.sel.edges.len(), m.sel.faces.len())).small().color(pal().text_dim));
-    egui::CollapsingHeader::new(RichText::new(tr("Display", "Показ")).strong().color(pal().text_strong)).id_salt("tab display").default_open(true).show(ui, |ui| {
+    egui::CollapsingHeader::new(icons::heading(Icon::Visible, tr("Display", "Показ"))).id_salt("tab display").default_open(true).show(ui, |ui| {
         ui.checkbox(&mut m.xray, tr("X-ray (Alt+Z): see and pick through the mesh", "Рентген (Alt+Z): видеть и выбирать сквозь меш"));
         ui.checkbox(&mut m.tex_preview, tr("Show the textures", "Показывать текстуры")).on_hover_text(tr("The object's own pictures under the editing shading", "Картинки самого объекта под рабочей заливкой"));
         if m.tex_preview {
@@ -1006,12 +1007,12 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
 
     let view = ed.gizmo_view();
     let Some(m) = ed.mesh.as_mut() else { return };
-    egui::CollapsingHeader::new(RichText::new(tr("Select", "Выделение")).strong().color(pal().text_strong)).id_salt("tab select").default_open(true).show(ui, |ui| {
+    egui::CollapsingHeader::new(icons::heading(Icon::Select, tr("Select", "Выделение"))).id_salt("tab select").default_open(true).show(ui, |ui| {
     ui.horizontal_wrapped(|ui| {
-        if ui.button(tr("All (A)", "Всё (A)")).clicked() {
+        if ui.button(icons::labelled(Icon::SelectAll, tr("All (A)", "Всё (A)"))).clicked() {
             m.sel = edit::Selection::all(m.mesh());
         }
-        if ui.button(tr("None (Alt+A)", "Ничего (Alt+A)")).clicked() {
+        if ui.button(icons::labelled(Icon::Deselect, tr("None (Alt+A)", "Ничего (Alt+A)"))).clicked() {
             m.sel = Default::default();
         }
         if ui.button(tr("Invert (Ctrl+I)", "Инвертировать (Ctrl+I)")).clicked() {
@@ -1030,7 +1031,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
     ui.label(RichText::new(tr("Click, Shift + click to add, drag on nothing for a box, a second click or Alt + click for a loop", "Клик, Shift + клик — добавить, протяжка по пустому — рамка, второй клик или Alt + клик — петля")).small().color(pal().text_dim));
     });
 
-    egui::CollapsingHeader::new(RichText::new(tr("Change", "Изменить")).strong().color(pal().text_strong)).id_salt("tab change").default_open(true).show(ui, |ui| {
+    egui::CollapsingHeader::new(icons::heading(Icon::Edit, tr("Change", "Изменить"))).id_salt("tab change").default_open(true).show(ui, |ui| {
     let start = |m: &mut Session, k: Sizing| {
         if let Some(v) = &view {
             m.start(k, v);
@@ -1066,19 +1067,19 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
         if ui.button(tr("Poke", "Веер из центра")).clicked() {
             m.apply(|mesh, s, _| Some(edit::poke(mesh, s)));
         }
-        if ui.button(tr("Duplicate (Shift+D)", "Дублировать (Shift+D)")).clicked() {
+        if ui.button(icons::labelled(Icon::Duplicate, tr("Duplicate (Shift+D)", "Дублировать (Shift+D)"))).clicked() {
             m.apply(|mesh, s, _| Some(edit::duplicate(mesh, s)));
         }
-        if ui.button(tr("Split (Y)", "Отделить (Y)")).clicked() {
+        if ui.button(icons::labelled(Icon::Cut, tr("Split (Y)", "Отделить (Y)"))).clicked() {
             m.apply(|mesh, s, _| Some(edit::split(mesh, s)));
         }
-        if ui.button(tr("Separate into an object (P)", "В отдельный объект (P)")).clicked() {
+        if ui.button(icons::labelled(Icon::Split, tr("Separate into an object (P)", "В отдельный объект (P)"))).clicked() {
             actions.push(Action::Mesh(MeshAction::SeparateSelected));
         }
-        if ui.button(tr("Spin 360°", "Вращение 360°")).on_hover_text(tr("The selection turned round the object's up axis through its middle, in 12 steps", "Выделенное вращается вокруг вертикальной оси объекта, 12 шагов")).clicked() {
+        if ui.button(icons::labelled(Icon::Rotate, tr("Spin 360°", "Вращение 360°"))).on_hover_text(tr("The selection turned round the object's up axis through its middle, in 12 steps", "Выделенное вращается вокруг вертикальной оси объекта, 12 шагов")).clicked() {
             m.apply(|mesh, s, _| Some(edit::spin(mesh, s, glam::Vec3::Z, glam::Vec3::ZERO, 360.0, 12)));
         }
-        if ui.button(tr("Smooth vertices", "Сгладить вершины")).clicked() {
+        if ui.button(icons::labelled(Icon::Smooth, tr("Smooth vertices", "Сгладить вершины"))).clicked() {
             m.apply(|mesh, s, _| {
                 edit::smooth_vertices(mesh, s, 0.5, 1);
                 None
@@ -1086,7 +1087,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
         }
     });
     ui.horizontal_wrapped(|ui| {
-        ui.menu_button(tr("Merge (M)", "Слить (M)"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Merge, tr("Merge (M)", "Слить (M)")), |ui| {
             for (at, label) in [(MergeAt::Center, tr("At the middle", "В центре")), (MergeAt::First, tr("At the first", "К первой")), (MergeAt::Last, tr("At the last", "К последней")), (MergeAt::Collapse, tr("Collapse each piece", "Стянуть каждый кусок"))] {
                 if ui.button(label).clicked() {
                     m.apply(|mesh, s, _| Some(edit::merge(mesh, s, at)));
@@ -1101,7 +1102,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                 ui.close();
             }
         });
-        ui.menu_button(tr("Delete (X)", "Удалить (X)"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Delete, tr("Delete (X)", "Удалить (X)")), |ui| {
             for (what, label) in [(Delete::Vertices, tr("Vertices", "Вершины")), (Delete::Edges, tr("Edges", "Рёбра")), (Delete::Faces, tr("Faces", "Грани")), (Delete::OnlyFaces, tr("Only faces", "Только грани"))] {
                 if ui.button(label).clicked() {
                     m.apply(|mesh, s, _| Some(edit::delete(mesh, s, what)));
@@ -1122,7 +1123,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                 ui.close();
             }
         });
-        ui.menu_button(tr("Mirror", "Отразить"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Flip, tr("Mirror", "Отразить")), |ui| {
             for a in [Axis::X, Axis::Y, Axis::Z] {
                 if ui.button(format!("{a:?}")).clicked() {
                     let c = edit::selection_center(m.mesh(), &m.sel).unwrap_or_default();
@@ -1157,7 +1158,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                 });
                 ui.close();
             }
-            if ui.button(tr("Flip normals (Alt+N)", "Развернуть нормали (Alt+N)")).clicked() {
+            if ui.button(icons::labelled(Icon::SwapVert, tr("Flip normals (Alt+N)", "Развернуть нормали (Alt+N)"))).clicked() {
                 m.apply(|mesh, s, _| {
                     edit::flip_normals(mesh, s);
                     None
@@ -1214,7 +1215,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
         }
     }
 
-    egui::CollapsingHeader::new(RichText::new(tr("UV map", "UV-развёртка")).strong().color(pal().text_strong)).id_salt("tab uv").default_open(false).show(ui, |ui| {
+    egui::CollapsingHeader::new(icons::heading(Icon::Texture, tr("UV map", "UV-развёртка"))).id_salt("tab uv").default_open(false).show(ui, |ui| {
     ui.horizontal_wrapped(|ui| {
         use openmapper_mesh::uv::Unwrap;
         let faces: Vec<usize> = m.sel.faces.iter().copied().collect();
@@ -1225,7 +1226,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
                 None
             });
         };
-        ui.menu_button(tr("Unwrap", "Развернуть"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Texture, tr("Unwrap", "Развернуть")), |ui| {
             let dir = view.as_ref().map(|v| v.cam.axes().0.as_vec3()).unwrap_or(glam::Vec3::NEG_Z);
             for (how, label) in [
                 (Unwrap::Conformal, tr("By seams (conformal)", "По швам (конформно)")),
@@ -1250,7 +1251,7 @@ pub fn edit_panel(ui: &mut egui::Ui, ed: &mut Editor, uv_open: &mut bool, pics: 
     });
 
     if !m.src.model.materials.is_empty() {
-        egui::CollapsingHeader::new(RichText::new(tr("Materials", "Материалы")).strong().color(pal().text_strong)).id_salt("tab materials").default_open(true).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Paint, tr("Materials", "Материалы"))).id_salt("tab materials").default_open(true).show(ui, |ui| {
             // how many of the selected faces each material has
             let mut used = vec![0usize; m.src.model.materials.len()];
             for &f in &m.sel.faces {
@@ -1301,10 +1302,10 @@ pub fn lamp_makers(ui: &mut egui::Ui, lamps: &mut Vec<Lamp>, actions: &mut Vec<A
     ui.add_space(4.0);
     ui.label(RichText::new(tr("With lamps", "Со светом")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
-        if ui.button(tr("Street lamp", "Фонарь")).on_hover_text(tr("A pole with a lamp that glows and lights the ground at night", "Столб с лампой, светящейся и освещающей землю ночью")).clicked() {
+        if ui.button(icons::labelled(Icon::Light, tr("Street lamp", "Фонарь"))).on_hover_text(tr("A pole with a lamp that glows and lights the ground at night", "Столб с лампой, светящейся и освещающей землю ночью")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewLamp));
         }
-        if ui.button(tr("Signal head", "Светофор")).on_hover_text(tr("A traffic light of the lamps below that a crossing's light program drives", "Светофор из секций ниже, управляемый программой перекрёстка")).clicked() {
+        if ui.button(icons::labelled(Icon::Traffic, tr("Signal head", "Светофор"))).on_hover_text(tr("A traffic light of the lamps below that a crossing's light program drives", "Светофор из секций ниже, управляемый программой перекрёстка")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewSignal(lamps.clone())));
         }
     });
@@ -1329,23 +1330,23 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Picture, light, sound", "Картинка, свет, звук")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
-        if ui.button(tr("Picture / pattern…", "Картинка / паттерн…")).on_hover_text(tr("Choose a picture or a texture: it becomes an object you place, move, turn and scale like any other. Several repeats make a pattern", "Выберите картинку или текстуру: получится объект, который ставится, двигается, поворачивается и масштабируется как любой другой. Несколько повторов дают паттерн")).clicked() {
+        if ui.button(icons::labelled(Icon::Image, tr("Picture / pattern…", "Картинка / паттерн…"))).on_hover_text(tr("Choose a picture or a texture: it becomes an object you place, move, turn and scale like any other. Several repeats make a pattern", "Выберите картинку или текстуру: получится объект, который ставится, двигается, поворачивается и масштабируется как любой другой. Несколько повторов дают паттерн")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewPicture(s.clone())));
         }
-        if ui.button(tr("Light source", "Источник света")).on_hover_text(tr("A lamp that glows and lights the ground round it", "Лампа, которая светится и освещает землю вокруг")).clicked() {
+        if ui.button(icons::labelled(Icon::Light, tr("Light source", "Источник света"))).on_hover_text(tr("A lamp that glows and lights the ground round it", "Лампа, которая светится и освещает землю вокруг")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewLight(s.clone())));
         }
-        if ui.button(tr("Sound source…", "Источник звука…")).on_hover_text(tr("Choose a sound file (.wav): it plays where you put the marker, as far as the radius carries; the marker shows in the editor only", "Выберите звуковой файл (.wav): он звучит там, где стоит маркер, на расстояние радиуса; маркер виден только в редакторе")).clicked() {
+        if ui.button(icons::labelled(Icon::Sound, tr("Sound source…", "Источник звука…"))).on_hover_text(tr("Choose a sound file (.wav): it plays where you put the marker, as far as the radius carries; the marker shows in the editor only", "Выберите звуковой файл (.wav): он звучит там, где стоит маркер, на расстояние радиуса; маркер виден только в редакторе")).clicked() {
             actions.push(Action::Mesh(MeshAction::NewSound(s.clone())));
         }
     });
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Polygon", "Многоугольник")).small().color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
-        if ui.button(tr("Draw a polygon", "Нарисовать многоугольник")).on_hover_text(tr("Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other", "Кликайте по углам на карте; клик по первому углу или Enter замыкает контур, Esc убирает последний угол. Внутренность заполняется объектом, который можно двигать и править как любой другой")).clicked() {
+        if ui.button(icons::labelled(Icon::Polygon, tr("Draw a polygon", "Нарисовать многоугольник"))).on_hover_text(tr("Click its corners on the map; click the first corner or press Enter to close it, Esc takes the last corner back. The inside is filled as an object you can move and edit like any other", "Кликайте по углам на карте; клик по первому углу или Enter замыкает контур, Esc убирает последний угол. Внутренность заполняется объектом, который можно двигать и править как любой другой")).clicked() {
             actions.push(Action::Mesh(MeshAction::PolygonDraw));
         }
-        if ui.button(tr("From the selected splines", "По выделенным сплайнам")).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
+        if ui.button(icons::labelled(Icon::Line, tr("From the selected splines", "По выделенным сплайнам"))).on_hover_text(tr("Fill the outline the selected roads and splines make when they join end to end (kerbs round an island, for instance)", "Заполнить контур, который выделенные дороги и сплайны образуют, смыкаясь концами (например, бордюры вокруг островка)")).clicked() {
             actions.push(Action::Mesh(MeshAction::PolygonFromSplines));
         }
     });
@@ -1358,7 +1359,7 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
                     s.poly_texture = Some(f);
                 }
             }
-            if name.is_some() && ui.small_button("✕").on_hover_text(tr("No texture: a plain colour", "Без текстуры: просто цвет")).clicked() {
+            if name.is_some() && icons::small(ui, Icon::Close, tr("No texture: a plain colour", "Без текстуры: просто цвет")).clicked() {
                 s.poly_texture = None;
             }
         });

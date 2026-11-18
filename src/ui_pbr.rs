@@ -69,7 +69,7 @@ impl PbrWindow {
         }
         let Some(roots) = roots else { return };
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Layers, tr("PBR material", "PBR-материал"))).open(&mut open).resizable(false).default_width(640.0).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Texture, tr("PBR material", "PBR-материал"))).open(&mut open).resizable(false).default_width(640.0).show(ctx, |ui| {
             // which texture
             ui.horizontal(|ui| {
                 let name = |p: &Path| p.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
@@ -147,7 +147,7 @@ impl PbrWindow {
                 ui.add(egui::Slider::new(&mut p.occlusion, 0.0..=1.0));
                 ui.end_row();
             });
-            if ui.small_button(tr("Back to the defaults", "Вернуть по умолчанию")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Restart, tr("Back to the defaults", "Вернуть по умолчанию"))).clicked() {
                 self.params = PbrParams::default();
             }
             if self.foreign {

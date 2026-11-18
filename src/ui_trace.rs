@@ -60,7 +60,7 @@ impl TraceWindow {
             return;
         }
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Route, tr("GPS tracks to trace", "GPS-треки для обводки"))).id(egui::Id::new("trace window")).open(&mut open).default_pos([360.0, 120.0]).default_width(340.0).resizable(false).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Gps, tr("GPS tracks to trace", "GPS-треки для обводки"))).id(egui::Id::new("trace window")).open(&mut open).default_pos([360.0, 120.0]).default_width(340.0).resizable(false).show(ctx, |ui| {
             ui.label(RichText::new(tr("A route recorded on a phone or drawn elsewhere (GPX, KML, GeoJSON), shown in the view in magenta to draw roads along, or built into a road at once", "Маршрут, записанный телефоном или нарисованный в другой программе (GPX, KML, GeoJSON): показан в окне малиновым, чтобы рисовать дороги по нему, или сразу строится дорогой")).small().color(pal().text_dim));
             if georef.is_none() {
                 ui.colored_label(pal().warn, tr("Place the map on the Earth first (Map > Satellite and terrain)", "Сначала поместите карту на Землю (Карта > Спутник и рельеф)"));
@@ -90,10 +90,10 @@ impl TraceWindow {
                     crate::ui::check(ui, &mut t.shown, "");
                     ui.label(RichText::new(&t.name).strong());
                     ui.label(RichText::new(format!("{:.2} km", len / 1000.0)).small().color(pal().text_dim));
-                    if !world.is_empty() && ui.small_button(Icon::Focus.text(13.0)).on_hover_text(tr("Go there", "Перейти туда")).clicked() {
+                    if !world.is_empty() && icons::small(ui, Icon::Focus, tr("Go there", "Перейти туда")).clicked() {
                         look = Some(world[world.len() / 2]);
                     }
-                    if ui.small_button("×").on_hover_text(tr("Forget it", "Убрать")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Forget it", "Убрать")).clicked() {
                         remove = Some(i);
                     }
                 });

@@ -4,7 +4,8 @@ openMapper uses, as a small static font (weight 400, outlined, optical size 20).
 
 The full variable font and its codepoint table are kept in assets/fonts (Apache 2.0, from
 github.com/google/material-design-icons). To add an icon: put its name in ICONS, run
-`python3 tools/subset-icons.py` (needs fonttools), use the name in src/icons.rs.
+`python3 tools/subset-icons.py` (needs fonttools), give src/icons.rs a variant with the
+name and its code (a test checks the two agree and the glyph is in the subset).
 """
 from pathlib import Path
 from fontTools.ttLib import TTFont
@@ -12,17 +13,26 @@ from fontTools.varLib import instancer
 from fontTools import subset
 
 ICONS = """
-arrow_selector_tool road home_work landscape format_paint grid_on
-note_add folder_open save undo redo download settings help play_arrow
-arrow_upward arrow_downward waves horizontal_rule add delete center_focus_strong
-swap_horiz map directions_bus search close check info
-apartment park emoji_objects signpost alt_route directions_car train category
-tram directions_walk fence layers terrain brush ink_eraser
-sensors local_parking route flag volume_up visibility visibility_off traffic
-check_box check_box_outline_blank radio_button_checked radio_button_unchecked chevron_right expand_more
-star history schedule warning error check_circle content_copy content_paste select_all
-open_with rotate_right open_in_full code colorize
-polyline line_curve call_made deployed_code height
+arrow_selector_tool road polyline line_curve call_made deployed_code height home_work
+landscape format_paint grid_on sensors open_with rotate_right rotate_left open_in_full
+colorize adjust brush ink_eraser arrow_upward arrow_downward waves horizontal_rule
+water trending_up elevation roundabout_right content_cut link link_off
+vertical_align_bottom u_turn_left add_road flip swap_horiz swap_vert linear_scale
+horizontal_distribute shuffle pentagon category call_split merge straighten
+auto_fix_high texture image lightbulb map directions_bus directions_car apartment park
+alt_route fork_right tram directions_walk fence layers local_parking route gps_fixed
+flag signpost volume_up traffic cable satellite_alt public view_in_ar construction
+note_add folder_open folder save download upload_file share code build undo redo
+content_copy content_paste library_add select_all deselect ad_group ad_group_off
+inventory_2 add delete edit search keyboard_command_key center_focus_strong bookmark
+photo_camera videocam zoom_in zoom_out fit_screen label settings tune restart_alt
+refresh update settings_backup_restore history hourglass schedule calendar_month
+light_mode ac_unit contrast format_size translate keyboard memory high_quality group
+login logout lock lock_open school info play_arrow stop fact_check verified check
+done_all close block warning error check_circle pause step_over step_into step_out
+bug_report terminal data_object description extension add_box electric_bolt arrow_back
+arrow_forward visibility visibility_off check_box check_box_outline_blank
+radio_button_checked radio_button_unchecked chevron_left chevron_right expand_more star
 """.split()
 
 fonts = Path(__file__).resolve().parent.parent / "assets" / "fonts"

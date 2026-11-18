@@ -1257,10 +1257,10 @@ impl Checker {
         }
         let mut open = self.open;
         let mut fix_now: Vec<(usize, Fix)> = Vec::new();
-        egui::Window::new(icons::labelled(Icon::CheckCircle, tr("Map check", "Проверка карты"))).id(egui::Id::new("map check")).open(&mut open).default_pos([300.0, 90.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::FactCheck, tr("Map check", "Проверка карты"))).id(egui::Id::new("map check")).open(&mut open).default_pos([300.0, 90.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let can = !self.running() && !lib.scanning && ed.doc.is_some();
-                if ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::CheckCircle, tr("Check again", "Проверить снова")))).clicked() {
+                if ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Refresh, tr("Check again", "Проверить снова")))).clicked() {
                     if let Some(doc) = &ed.doc {
                         self.start(doc, lib);
                     }
@@ -1306,7 +1306,7 @@ impl Checker {
                         }
                         ui.label(icon.text(15.0).color(color));
                         let fixable: Vec<usize> = group.clone().filter(|n| list[*n].fix.is_some() && !self.fixed.contains(n)).collect();
-                        if fixable.len() > 1 && ui.small_button(tr("Fix all", "Исправить все")).clicked() {
+                        if fixable.len() > 1 && ui.small_button(icons::labelled(Icon::Build, tr("Fix all", "Исправить все"))).clicked() {
                             for n in fixable {
                                 fix_now.push((n, list[n].fix.clone().unwrap()));
                             }

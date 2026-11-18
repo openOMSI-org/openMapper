@@ -199,7 +199,7 @@ impl OsmUi {
         }
         let derived = self.derived.as_ref().map(|d| d.1.clone()).unwrap_or_default();
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Road, tr("From OpenStreetMap", "Из OpenStreetMap"))).id(egui::Id::new("osm roads")).open(&mut open).default_pos([360.0, 110.0]).default_size([390.0, 700.0]).resizable(true).vscroll(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Public, tr("From OpenStreetMap", "Из OpenStreetMap"))).id(egui::Id::new("osm roads")).open(&mut open).default_pos([360.0, 110.0]).default_size([390.0, 700.0]).resizable(true).vscroll(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("The streets of the map's place built as roads with junctions where they meet, its bus stops, lines, trees and woods. Best on tiles with no roads yet: roads lying on ones the map has are left out.", "Улицы места карты, построенные дорогами с перекрёстками, её остановки, линии, деревья и леса. Лучше на тайлах без дорог: дороги поверх уже имеющихся пропускаются.")).small().color(pal().text_dim));
             ui.add_space(4.0);
             let Some(g) = georef else {
@@ -262,7 +262,7 @@ impl OsmUi {
                     let name = now.as_ref().map(|t| lib.find(t).map(|a| a.name.clone()).unwrap_or_else(|| t.clone())).unwrap_or_else(|| tr("no type chosen", "тип не выбран").into());
                     ui.label(RichText::new(name).color(if now.is_some() { pal().text_strong } else { pal().text_dim }));
                     let pick = ed.road_type.clone();
-                    let r = ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small());
+                    let r = ui.add_enabled(pick.is_some(), egui::Button::new(icons::labelled(Icon::Dropper, tr("Use the chosen", "Взять выбранный"))).small());
                     let r = r.on_hover_text(tr("The road type chosen in the Roads tool's catalogue", "Тип дороги, выбранный в каталоге инструмента «Дороги»"));
                     if r.clicked() {
                         if let Some(p) = pick {
@@ -281,10 +281,10 @@ impl OsmUi {
                 ui.label(RichText::new(name).color(if self.oneway_type.is_some() { pal().text_strong } else { pal().text_dim }));
                 ui.horizontal(|ui| {
                     let pick = ed.road_type.clone();
-                    if ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small()).clicked() {
+                    if ui.add_enabled(pick.is_some(), egui::Button::new(icons::labelled(Icon::Dropper, tr("Use the chosen", "Взять выбранный"))).small()).clicked() {
                         self.oneway_type = pick;
                     }
-                    if self.oneway_type.is_some() && ui.small_button("×").clicked() {
+                    if self.oneway_type.is_some() && icons::small(ui, Icon::Close, tr("None", "Нет")).clicked() {
                         self.oneway_type = None;
                     }
                 });
@@ -298,7 +298,7 @@ impl OsmUi {
                 let name = self.stop_type.as_ref().map(|t| lib.find(t).map(|a| a.name.clone()).unwrap_or_else(|| t.clone())).unwrap_or_else(|| tr("no stop object", "объект не выбран").into());
                 ui.label(RichText::new(name).color(if self.stop_type.is_some() { pal().text_strong } else { pal().text_dim }));
                 let pick = ed.object_type.clone().filter(|t| lib.find(t).map(|a| a.is_bus_stop).unwrap_or(false));
-                let r = ui.add_enabled(pick.is_some(), egui::Button::new(tr("Use the chosen", "Взять выбранный")).small());
+                let r = ui.add_enabled(pick.is_some(), egui::Button::new(icons::labelled(Icon::Dropper, tr("Use the chosen", "Взять выбранный"))).small());
                 if r.on_hover_text(tr("The stop chosen in Game logic > Bus stops", "Остановка, выбранная в «Игровая логика > Остановки»")).clicked() {
                     self.stop_type = pick;
                 }
@@ -339,11 +339,11 @@ impl OsmUi {
                 ui.label(RichText::new(name).color(if self.building_dirs.is_empty() { pal().text_dim } else { pal().text_strong }));
                 let pick = ed.object_type.as_ref().and_then(|t| lib.find(t)).filter(|a| a.category == crate::library::Category::Objects).map(|a| a.dir.clone());
                 let can = pick.as_ref().map(|p| !self.building_dirs.contains(p)).unwrap_or(false);
-                let r = ui.add_enabled(can, egui::Button::new(tr("+ its folder", "+ его папка")).small());
+                let r = ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Add, tr("its folder", "его папка"))).small());
                 if r.on_hover_text(tr("Add the folder of the object chosen in the catalogue (Buildings_MC, …)", "Добавить папку объекта, выбранного в каталоге (Buildings_MC, …)")).clicked() {
                     self.building_dirs.extend(pick);
                 }
-                if !self.building_dirs.is_empty() && ui.small_button("×").clicked() {
+                if !self.building_dirs.is_empty() && icons::small(ui, Icon::Close, tr("None", "Нет")).clicked() {
                     self.building_dirs.clear();
                 }
             });
@@ -380,7 +380,7 @@ impl OsmUi {
             }
             ui.label(RichText::new(tr("A one-way street is built the way it runs in OpenStreetMap: give it a one-way road type", "Улица с односторонним движением строится в направлении OpenStreetMap: дайте ей односторонний тип дороги")).small().color(pal().text_dim));
             let stops_n = if self.with_stops { stops_in.len() } else { 0 };
-            let r = ui.add_enabled(!missing && (count + stops_n > 0 || self.with_trees || self.with_buildings || self.with_water), egui::Button::new(icons::labelled(Icon::Road, &format!("{} ({count} · {stops_n})", tr("Build", "Построить")))));
+            let r = ui.add_enabled(!missing && (count + stops_n > 0 || self.with_trees || self.with_buildings || self.with_water), egui::Button::new(icons::labelled(Icon::Construction, &format!("{} ({count} · {stops_n})", tr("Build", "Построить")))));
             if r.clicked() {
                 let list: Vec<osm::Road> = roads.iter().filter(|r| wanted.iter().any(|w| w.0 == r.class)).cloned().collect();
                 let mut rng = crate::osm_green::shaker();

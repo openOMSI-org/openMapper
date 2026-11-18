@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use egui::{Color32, RichText, Sense, Stroke, Vec2};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::ui::Action;
 use crate::theme::pal;
 
@@ -80,7 +81,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
         f.lists = Some(roots.map(|r| (crate::ui_mapsettings::content_files(r, "Money", "cfg"), crate::ui_mapsettings::content_files(r, "TicketPacks", "cfg"))).unwrap_or_default());
     }
     let mut close = false;
-    egui::Window::new(tr("New map", "Новая карта")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::NewFile, tr("New map", "Новая карта"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(480.0);
         let o = &mut f.options;
         egui::ScrollArea::vertical().max_height(ctx.content_rect().height() * 0.75).show(ui, |ui| {
@@ -194,7 +195,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                 close = true;
             }
             let ok = !f.name.trim().is_empty();
-            if ui.add_enabled(ok, egui::Button::new(tr("Create", "Создать"))).clicked() || (ok && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)) {
+            if ui.add_enabled(ok, egui::Button::new(icons::labelled(Icon::NewFile, tr("Create", "Создать")))).clicked() || (ok && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)) {
                 let friendly = f.name.trim().to_string();
                 // (OMSI 2 opens no map whose folder has a letter outside ASCII)
                 let folder = friendly.split(' ').map(crate::omsi_name::ascii_stem).filter(|w| !w.is_empty()).collect::<Vec<_>>().join(" ");

@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::doc::{tile_origin, Document};
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::theme::pal;
 
@@ -144,7 +145,7 @@ impl Drive {
         let mut go = None;
         let mut open = true;
         let stops = crate::stops::all(doc);
-        egui::Window::new(tr("Test drive", "Тест-драйв")).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Play, tr("Test drive", "Тест-драйв"))).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
             ui.set_width(380.0);
             let spawn = self.spawn.get_or_insert(Spawn::Camera);
             let name_of = |s: &Spawn| match s {
@@ -187,7 +188,7 @@ impl Drive {
                         self.buses.iter().find(|b| b.rel.eq_ignore_ascii_case(&settings.bus)).or(self.buses.first()).map(|b| b.label.clone()).unwrap_or_else(|| tr("No vehicle (on foot)", "Без транспорта (пешком)").to_string())
                     };
                     egui::ComboBox::from_id_salt("drive bus").width(260.0).selected_text(current).show_ui(ui, |ui| {
-                        if ui.selectable_label(settings.on_foot, tr("No vehicle (on foot)", "Без транспорта (пешком)")).clicked() {
+                        if ui.selectable_label(settings.on_foot, icons::labelled(Icon::Walk, tr("No vehicle (on foot)", "Без транспорта (пешком)"))).clicked() {
                             settings.on_foot = true;
                         }
                         for b in &self.buses {

@@ -192,7 +192,7 @@ impl HeightMapUi {
         ui.label(egui::RichText::new(tr("Height map", "Карта высот")).strong());
         ui.label(egui::RichText::new(tr("The ground as a grey picture, to shape in another program and bring back", "Рельеф как серая картинка: обработать в другой программе и вернуть")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
-            if ui.add_enabled(ed.doc.is_some(), egui::Button::new(icons::labelled(Icon::Save, tr("Export…", "Экспорт…")))).clicked() {
+            if ui.add_enabled(ed.doc.is_some(), egui::Button::new(icons::labelled(Icon::UploadFile, tr("Export…", "Экспорт…")))).clicked() {
                 self.export(ed);
             }
             if ui.add_enabled(ed.doc.is_some(), egui::Button::new(icons::labelled(Icon::Import, tr("Import…", "Импорт…")))).clicked() {

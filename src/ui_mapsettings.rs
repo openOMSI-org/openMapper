@@ -93,7 +93,7 @@ impl MapSettings {
         let before = doc.global.clone();
         let g = &mut doc.global;
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Settings, tr("Map settings", "Настройки карты"))).id(egui::Id::new("map settings")).open(&mut open).default_pos([340.0, 100.0]).default_size([440.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Tune, tr("Map settings", "Настройки карты"))).id(egui::Id::new("map settings")).open(&mut open).default_pos([340.0, 100.0]).default_size([440.0, 520.0]).resizable(true).show(ctx, |ui| {
             egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
                 egui::Grid::new("map settings grid").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
                     prop_row(ui, tr("Money", "Валюта"), |ui| choose(ui, "money", &mut g.money_system, &lists.0));
@@ -139,7 +139,7 @@ impl MapSettings {
                         ui.add(egui::DragValue::new(&mut s.start_day).range(0..=370).custom_formatter(|v, _| day_name(v as i32)));
                         ui.label("–");
                         ui.add(egui::DragValue::new(&mut s.end_day).range(0..=370).custom_formatter(|v, _| day_name(v as i32)));
-                        if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                        if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                             remove = Some(i);
                         }
                     });

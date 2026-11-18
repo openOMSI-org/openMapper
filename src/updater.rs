@@ -12,6 +12,7 @@ use egui::RichText;
 use sha2::{Digest, Sha256};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::install::Prefs;
 use crate::theme::pal;
 
@@ -175,7 +176,7 @@ impl Updater {
         let mut set_mode = mode;
         let mut check = false;
         let mut open = true;
-        egui::Window::new(tr("Updates", "Обновления")).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Update, tr("Updates", "Обновления"))).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
             ui.set_max_width(420.0);
             ui.label(format!("{} {}", tr("This version:", "Эта версия:"), env!("CARGO_PKG_VERSION")));
             match &self.state {
@@ -187,7 +188,7 @@ impl Updater {
                         });
                     }
                     ui.horizontal(|ui| {
-                        if ui.button(tr("Install and restart", "Установить и перезапустить")).clicked() {
+                        if ui.button(icons::labelled(Icon::Update, tr("Install and restart", "Установить и перезапустить"))).clicked() {
                             install = Some(r.clone());
                         }
                         if ui.button(tr("Not now", "Не сейчас")).clicked() {
@@ -229,12 +230,12 @@ impl Updater {
                 ui.radio_value(&mut set_mode, Mode::Ask, tr("Offer it to me", "Предлагать установить"));
                 ui.radio_value(&mut set_mode, Mode::Auto, tr("Install it and restart by itself", "Ставить и перезапускаться самому"));
                 ui.radio_value(&mut set_mode, Mode::Off, tr("Never look for updates", "Не проверять обновления"));
-                if ui.add_enabled(!matches!(self.state, State::Checking(_) | State::Installing(..) | State::Installed(_)), egui::Button::new(tr("Check now", "Проверить сейчас"))).clicked() {
+                if ui.add_enabled(!matches!(self.state, State::Checking(_) | State::Installing(..) | State::Installed(_)), egui::Button::new(icons::labelled(Icon::Refresh, tr("Check now", "Проверить сейчас")))).clicked() {
                     check = true;
                 }
             } else if offer {
                 ui.separator();
-                if ui.button(tr("Never offer updates again", "Больше не предлагать обновления")).clicked() {
+                if ui.button(icons::labelled(Icon::Block, tr("Never offer updates again", "Больше не предлагать обновления"))).clicked() {
                     set_mode = Mode::Off;
                 }
             }

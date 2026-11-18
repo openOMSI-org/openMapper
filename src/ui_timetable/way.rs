@@ -78,7 +78,7 @@ impl TimetableUi {
                 self.way_edit = !self.way_edit;
                 self.picking = false;
             }
-            if hand && ui.button(tr("Find the way automatically", "Найти путь автоматически")).on_hover_text(tr("Forget the paths picked: the way is found along the roads again", "Забыть выбранные пути: путь снова найдётся по дорогам")).clicked() {
+            if hand && ui.button(icons::labelled(Icon::Route, tr("Find the way automatically", "Найти путь автоматически"))).on_hover_text(tr("Forget the paths picked: the way is found along the roads again", "Забыть выбранные пути: путь снова найдётся по дорогам")).clicked() {
                 doc.timetable.set_by_hand(name, None);
                 self.way_edit = false;
                 self.shown = None;
@@ -106,15 +106,15 @@ impl TimetableUi {
         }
         let mut remove: Option<Vec<usize>> = None;
         let shown = self.shown.as_ref().filter(|s| s.0 == name).map(|s| s.3.clone());
-        egui::CollapsingHeader::new(format!("{} ({})", tr("Paths of the way", "Пути маршрута"), lanes.len())).id_salt(("tt way paths", lower(name))).default_open(false).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::labelled(Icon::Route, &format!("{} ({})", tr("Paths of the way", "Пути маршрута"), lanes.len()))).id_salt(("tt way paths", lower(name))).default_open(false).show(ui, |ui| {
             // (where the stops are, to trim the way before the first and after the last)
             let stop_at: Vec<usize> = shown.as_ref().filter(|r| r.lanes == lanes).map(|r| r.stops.iter().map(|s| s.0).collect()).unwrap_or_default();
             ui.horizontal(|ui| {
                 if let (Some(&a), Some(&b)) = (stop_at.first(), stop_at.last()) {
-                    if ui.add_enabled(a > 0, egui::Button::new(tr("Cut before the first stop", "Убрать до первой остановки"))).clicked() {
+                    if ui.add_enabled(a > 0, egui::Button::new(icons::labelled(Icon::Cut, tr("Cut before the first stop", "Убрать до первой остановки")))).clicked() {
                         remove = Some(lanes[a..].to_vec());
                     }
-                    if ui.add_enabled(b + 1 < lanes.len(), egui::Button::new(tr("Cut after the last stop", "Убрать после последней остановки"))).clicked() {
+                    if ui.add_enabled(b + 1 < lanes.len(), egui::Button::new(icons::labelled(Icon::Cut, tr("Cut after the last stop", "Убрать после последней остановки")))).clicked() {
                         remove = Some(lanes[..=b].to_vec());
                     }
                 }
@@ -125,9 +125,12 @@ impl TimetableUi {
                     ui.horizontal(|ui| {
                         let what = if lane.spline { tr("spline", "сплайн") } else { tr("object", "объект") };
                         let stop = stop_at.contains(&k);
-                        let text = format!("{:>3}. {} {} · {} {} · {:.0} m{}", k + 1, what, lane.key.id, tr("path", "путь"), lane.key.path, lane.length(), if stop { "  ●" } else { "" });
+                        let text = format!("{:>3}. {} {} · {} {} · {:.0} m", k + 1, what, lane.key.id, tr("path", "путь"), lane.key.path, lane.length());
                         let broken = gaps.iter().any(|g| g.0 == k);
                         ui.label(RichText::new(text).monospace().color(if broken { pal().warn } else { pal().text }));
+                        if stop {
+                            ui.label(Icon::Bus.text(14.0).color(pal().accent)).on_hover_text(tr("A stop on this path", "Остановка на этом пути"));
+                        }
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if small_button(ui, Icon::Delete, tr("Take out", "Убрать")) {
                                 let mut v = lanes.clone();

@@ -553,10 +553,14 @@ fn combo_icon(ui: &egui::Ui, rect: egui::Rect, vis: &egui::style::WidgetVisuals,
     icons::paint(ui.painter(), Icon::ExpandMore, rect.center(), 18.0, vis.fg_stroke.color);
 }
 
-pub(crate) fn section(ui: &mut egui::Ui, title: &str) {
+pub(crate) fn section(ui: &mut egui::Ui, icon: Icon, title: &str) {
     Frame::new().fill(pal().header).inner_margin(Margin::symmetric(8, 4)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        ui.label(RichText::new(title.to_uppercase()).small().strong().color(pal().text));
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 5.0;
+            ui.label(icon.text(14.0).color(pal().text_dim));
+            ui.label(RichText::new(title.to_uppercase()).small().strong().color(pal().text));
+        });
     });
 }
 
@@ -564,17 +568,12 @@ fn panel_frame() -> Frame {
     Frame::new().fill(pal().panel).inner_margin(Margin::ZERO).stroke(Stroke::new(1.0, pal().border))
 }
 
-fn menu_item(ui: &mut egui::Ui, icon: Option<Icon>, text: &str, shortcut: &str, enabled: bool) -> bool {
-    let label = match icon {
-        Some(i) => egui::WidgetText::from(icons::labelled(i, text)),
-        None => egui::WidgetText::from(format!("      {text}")),
-    };
-    let b = egui::Button::new(label).shortcut_text(shortcut);
-    ui.add_enabled(enabled, b).clicked()
+fn menu_item(ui: &mut egui::Ui, icon: Icon, text: &str, shortcut: &str, enabled: bool) -> bool {
+    ui.add_enabled(enabled, egui::Button::new(icons::labelled(icon, text)).shortcut_text(shortcut)).clicked()
 }
 
 fn lang_menu(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
-    ui.menu_button(tr("Language", "Язык"), |ui| {
+    ui.menu_button(icons::labelled(Icon::Translate, tr("Language", "Язык")), |ui| {
         egui::ScrollArea::vertical().max_height(460.0).show(ui, |ui| {
             for lg in i18n::LANGUAGES {
                 if radio(ui, i18n::get() == lg.lang, lg.name).clicked() {
@@ -583,7 +582,7 @@ fn lang_menu(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
             }
         });
     });
-    ui.menu_button(tr("Interface size", "Размер интерфейса"), |ui| {
+    ui.menu_button(icons::labelled(Icon::TextSize, tr("Interface size", "Размер интерфейса")), |ui| {
         let now = ui.ctx().zoom_factor();
         for z in [0.8f32, 0.9, 1.0, 1.1, 1.25, 1.5] {
             if radio(ui, (now - z).abs() < 0.01, format!("{:.0} %", z * 100.0)).clicked() {
@@ -591,7 +590,7 @@ fn lang_menu(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
             }
         }
     });
-    ui.menu_button(tr("Theme", "Тема"), |ui| theme_choice(ui, actions));
+    ui.menu_button(icons::labelled(Icon::Contrast, tr("Theme", "Тема")), |ui| theme_choice(ui, actions));
 }
 
 /// The three themes as radio buttons (View > Theme, the settings, the welcome card).
@@ -610,36 +609,36 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
     egui::Panel::top("menu").frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(tr("File", "Файл"), |ui| {
-                if menu_item(ui, Some(Icon::NewFile), tr("New map…", "Новая карта…"), "", omsi.is_some()) {
+                if menu_item(ui, Icon::NewFile, tr("New map…", "Новая карта…"), "", omsi.is_some()) {
                     st.new_map = Some(Default::default());
                 }
-                if menu_item(ui, Some(Icon::Open), tr("Open map…", "Открыть карту…"), "", omsi.is_some()) {
+                if menu_item(ui, Icon::Open, tr("Open map…", "Открыть карту…"), "", omsi.is_some()) {
                     actions.push(Action::OpenDialog);
                 }
-                if menu_item(ui, Some(Icon::Help), tr("Settings…", "Настройки…"), "Ctrl+,", true) {
+                if menu_item(ui, Icon::Settings, tr("Settings…", "Настройки…"), "Ctrl+,", true) {
                     st.help_open = true;
                 }
-                if menu_item(ui, Some(Icon::Import), tr("Import assets…", "Импорт ассетов…"), "", omsi.is_some()) {
+                if menu_item(ui, Icon::Import, tr("Import assets…", "Импорт ассетов…"), "", omsi.is_some()) {
                     actions.push(Action::Import);
                 }
-                if menu_item(ui, Some(Icon::Walk), tr("Multiplayer…", "Совместная правка…"), "", omsi.is_some()) {
+                if menu_item(ui, Icon::People, tr("Multiplayer…", "Совместная правка…"), "", omsi.is_some()) {
                     actions.push(Action::Multiplayer);
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Settings), tr("OMSI 2 folder…", "Папка OMSI 2…"), "", true) {
+                if menu_item(ui, Icon::Folder, tr("OMSI 2 folder…", "Папка OMSI 2…"), "", true) {
                     actions.push(Action::ChooseOmsi);
                 }
                 ui.separator();
-                if menu_item(ui, None, tr("Quit", "Выход"), "", true) {
+                if menu_item(ui, Icon::Logout, tr("Quit", "Выход"), "", true) {
                     actions.push(Action::Quit);
                 }
             });
             ui.menu_button(tr("View", "Вид"), |ui| lang_menu(ui, actions));
             ui.menu_button(tr("Help", "Справка"), |ui| {
-                if menu_item(ui, Some(Icon::Import), tr("Updates…", "Обновления…"), "", true) {
+                if menu_item(ui, Icon::Update, tr("Updates…", "Обновления…"), "", true) {
                     actions.push(Action::Updates);
                 }
-                if menu_item(ui, Some(Icon::Info), tr("About openMapper", "О программе"), "", true) {
+                if menu_item(ui, Icon::Info, tr("About openMapper", "О программе"), "", true) {
                     st.about_open = true;
                 }
             });
@@ -821,7 +820,7 @@ pub fn welcome(root: &mut egui::Ui, st: &mut UiState, prefs: &Prefs, omsi: Optio
 
 fn about(ctx: &egui::Context, st: &mut UiState) {
     let mut open = st.about_open;
-    egui::Window::new(tr("About openMapper", "О программе")).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Info, tr("About openMapper", "О программе"))).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
         ui.label(RichText::new(format!("openMapper {}", env!("CARGO_PKG_VERSION"))).strong());
         ui.label(tr("A simple map editor for openOMSI.", "Простой редактор карт для openOMSI."));
         ui.hyperlink_to("openomsi.org", "https://openomsi.org/");
@@ -928,10 +927,10 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
     egui::Panel::top("menu").frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(tr("File", "Файл"), |ui| {
-                if menu_item(ui, Some(Icon::NewFile), tr("New map…", "Новая карта…"), "", true) {
+                if menu_item(ui, Icon::NewFile, tr("New map…", "Новая карта…"), "", true) {
                     st.new_map = Some(Default::default());
                 }
-                if menu_item(ui, Some(Icon::Open), tr("Open map…", "Открыть карту…"), "", true) {
+                if menu_item(ui, Icon::Open, tr("Open map…", "Открыть карту…"), "", true) {
                     actions.push(Action::OpenDialog);
                 }
                 ui.menu_button(icons::labelled(Icon::Map, tr("Recent maps", "Недавние карты")), |ui| {
@@ -947,32 +946,32 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     }
                 });
                 ui.separator();
-                if menu_item(ui, Some(Icon::Save), tr("Save", "Сохранить"), &key(Cmd::Save), true) {
+                if menu_item(ui, Icon::Save, tr("Save", "Сохранить"), &key(Cmd::Save), true) {
                     actions.push(Action::Save);
                 }
-                if menu_item(ui, None, tr("Reload from disk", "Загрузить с диска"), "", ed.doc.as_ref().map(|d| !d.fresh).unwrap_or(false)) {
+                if menu_item(ui, Icon::Refresh, tr("Reload from disk", "Загрузить с диска"), "", ed.doc.as_ref().map(|d| !d.fresh).unwrap_or(false)) {
                     actions.push(Action::ReloadFromDisk);
                 }
-                if menu_item(ui, Some(Icon::Copy), tr("Export map for sharing…", "Экспорт карты для обмена…"), "", true) {
+                if menu_item(ui, Icon::Share, tr("Export map for sharing…", "Экспорт карты для обмена…"), "", true) {
                     actions.push(Action::Export);
                 }
-                if menu_item(ui, Some(Icon::Map), tr("Export a plan of the map…", "Экспорт плана карты…"), "", true) {
+                if menu_item(ui, Icon::UploadFile, tr("Export a plan of the map…", "Экспорт плана карты…"), "", true) {
                     actions.push(Action::ExportPlan);
                 }
-                if menu_item(ui, Some(Icon::Import), tr("Import assets…", "Импорт ассетов…"), "", true) {
+                if menu_item(ui, Icon::Import, tr("Import assets…", "Импорт ассетов…"), "", true) {
                     actions.push(Action::Import);
                 }
-                if menu_item(ui, Some(Icon::History), tr("Earlier versions…", "Прошлые версии…"), "", true) {
+                if menu_item(ui, Icon::Backup, tr("Earlier versions…", "Прошлые версии…"), "", true) {
                     st.versions_open = true;
                 }
-                if menu_item(ui, Some(Icon::Walk), tr("Multiplayer…", "Совместная правка…"), "", true) {
+                if menu_item(ui, Icon::People, tr("Multiplayer…", "Совместная правка…"), "", true) {
                     actions.push(Action::Multiplayer);
                 }
                 ui.separator();
-                if menu_item(ui, None, tr("Close map", "Закрыть карту"), "", true) {
+                if menu_item(ui, Icon::Close, tr("Close map", "Закрыть карту"), "", true) {
                     actions.push(Action::Close);
                 }
-                if menu_item(ui, None, tr("Quit", "Выход"), "", true) {
+                if menu_item(ui, Icon::Logout, tr("Quit", "Выход"), "", true) {
                     actions.push(Action::Quit);
                 }
             });
@@ -981,55 +980,55 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     Some(l) => format!("{} «{l}»", tr("Undo", "Отменить")),
                     None => tr("Undo", "Отменить").to_string(),
                 };
-                if menu_item(ui, Some(Icon::Undo), &undo, &key(Cmd::Undo), can_undo) {
+                if menu_item(ui, Icon::Undo, &undo, &key(Cmd::Undo), can_undo) {
                     actions.push(Action::Undo);
                 }
-                if menu_item(ui, Some(Icon::Redo), tr("Redo", "Повторить"), &key(Cmd::Redo), can_redo) {
+                if menu_item(ui, Icon::Redo, tr("Redo", "Повторить"), &key(Cmd::Redo), can_redo) {
                     actions.push(Action::Redo);
                 }
                 ui.separator();
                 let any = ed.selected.is_some();
-                if menu_item(ui, None, tr("Cut", "Вырезать"), &key(Cmd::Cut), any) {
+                if menu_item(ui, Icon::Cut, tr("Cut", "Вырезать"), &key(Cmd::Cut), any) {
                     actions.push(Action::Cut);
                 }
-                if menu_item(ui, Some(Icon::Copy), tr("Copy", "Копировать"), &key(Cmd::Copy), any) {
+                if menu_item(ui, Icon::Copy, tr("Copy", "Копировать"), &key(Cmd::Copy), any) {
                     actions.push(Action::Copy);
                 }
-                if menu_item(ui, Some(Icon::Paste), tr("Paste", "Вставить"), &key(Cmd::Paste), ed.clip.is_some()) {
+                if menu_item(ui, Icon::Paste, tr("Paste", "Вставить"), &key(Cmd::Paste), ed.clip.is_some()) {
                     actions.push(Action::Paste);
                 }
-                if menu_item(ui, None, tr("Duplicate", "Дублировать"), &key(Cmd::Duplicate), any) {
+                if menu_item(ui, Icon::Duplicate, tr("Duplicate", "Дублировать"), &key(Cmd::Duplicate), any) {
                     actions.push(Action::Duplicate);
                 }
-                if menu_item(ui, Some(Icon::History), tr("Edit history…", "История правок…"), "", true) {
+                if menu_item(ui, Icon::History, tr("Edit history…", "История правок…"), "", true) {
                     st.history_open = true;
                 }
-                if menu_item(ui, Some(Icon::Objects), tr("Groups for other maps…", "Группы для других карт…"), "", true) {
+                if menu_item(ui, Icon::Inventory, tr("Groups for other maps…", "Группы для других карт…"), "", true) {
                     st.groups.open = true;
                 }
-                if menu_item(ui, Some(Icon::Search), tr("Find in map…", "Поиск по карте…"), &key(Cmd::Find), true) {
+                if menu_item(ui, Icon::Search, tr("Find in map…", "Поиск по карте…"), &key(Cmd::Find), true) {
                     st.find.show();
                 }
-                if menu_item(ui, Some(Icon::Search), tr("Search for a command…", "Поиск команды…"), &key(Cmd::Commands), true) {
+                if menu_item(ui, Icon::Command, tr("Search for a command…", "Поиск команды…"), &key(Cmd::Commands), true) {
                     st.palette.show();
                 }
-                if menu_item(ui, Some(Icon::SelectAll), tr("Select all", "Выбрать всё"), &key(Cmd::SelectAll), true) {
+                if menu_item(ui, Icon::SelectAll, tr("Select all", "Выбрать всё"), &key(Cmd::SelectAll), true) {
                     actions.push(Action::SelectAll);
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Delete), tr("Delete", "Удалить"), &key(Cmd::Delete), ed.selected.is_some()) {
+                if menu_item(ui, Icon::Delete, tr("Delete", "Удалить"), &key(Cmd::Delete), ed.selected.is_some()) {
                     ed.delete_selected();
                 }
-                if menu_item(ui, None, tr("Deselect", "Снять выделение"), "Esc", ed.selected.is_some()) {
+                if menu_item(ui, Icon::Deselect, tr("Deselect", "Снять выделение"), "Esc", ed.selected.is_some()) {
                     ed.select(None);
                 }
             });
             ui.menu_button(tr("View", "Вид"), |ui| {
-                check(ui, &mut ed.show_grid, tr("Tile grid", "Сетка тайлов"));
+                check(ui, &mut ed.show_grid, icons::labelled(Icon::Tiles, tr("Tile grid", "Сетка тайлов")));
                 let icon = if ed.show_technical { Icon::Visible } else { Icon::Hidden };
                 check(ui, &mut ed.show_technical, icons::labelled(icon, tr("What the game does not show", "То, чего не видно в игре")));
                 check(ui, &mut ed.show_lanes, icons::labelled(Icon::Route, tr("AI lanes", "Полосы ИИ")));
-                check(ui, &mut ed.show_names, icons::labelled(Icon::Bus, tr("Names of stops and start points", "Названия остановок и точек старта")));
+                check(ui, &mut ed.show_names, icons::labelled(Icon::Label, tr("Names of stops and start points", "Названия остановок и точек старта")));
                 ui.menu_button(icons::labelled(Icon::Layers, tr("Show", "Показывать")), |ui| {
                     // (what is hidden cannot be clicked either: handy in a dense town)
                     for (i, name, icon) in [(0, tr("Trees", "Деревья"), Icon::Tree), (1, tr("Objects", "Объекты"), Icon::Building), (2, tr("Roads and splines", "Дороги и сплайны"), Icon::Road)] {
@@ -1042,26 +1041,26 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 check(ui, &mut st.minimap.open, icons::labelled(Icon::Map, &format!("{}{}", tr("Overview map", "Обзорная карта"), crate::controls::key_hint(Cmd::Overview))));
                 check(ui, &mut st.assets.open, icons::labelled(Icon::Objects, &format!("{}{}", tr("Assets", "Ассеты"), crate::controls::key_hint(Cmd::Assets))));
                 crate::ui_geo::view_menu(ui, &mut st.geo);
-                if menu_item(ui, Some(Icon::Terrain), tr("Flatten the terrain (roads follow)", "Убрать рельеф (дороги подстроятся)"), "", true) {
+                if menu_item(ui, Icon::Flatten, tr("Flatten the terrain (roads follow)", "Убрать рельеф (дороги подстроятся)"), "", true) {
                     actions.push(Action::FlattenTerrain);
                 }
-                if menu_item(ui, Some(Icon::Flag), tr("Saved views…", "Сохранённые виды…"), "Ctrl+1…9", true) {
+                if menu_item(ui, Icon::Bookmark, tr("Saved views…", "Сохранённые виды…"), "Ctrl+1…9", true) {
                     st.views.open = !st.views.open;
                 }
-                if menu_item(ui, Some(Icon::Focus), tr("Go to selection", "К выделенному"), &key(Cmd::Focus), ed.selected.is_some()) {
+                if menu_item(ui, Icon::Focus, tr("Go to selection", "К выделенному"), &key(Cmd::Focus), ed.selected.is_some()) {
                     actions.push(Action::FocusSelection);
                 }
-                if menu_item(ui, Some(Icon::Save), tr("Save a picture of the view", "Сохранить картинку вида"), &key(Cmd::Picture), true) {
+                if menu_item(ui, Icon::Camera, tr("Save a picture of the view", "Сохранить картинку вида"), &key(Cmd::Picture), true) {
                     actions.push(Action::ViewPicture);
                 }
                 // (the windows come back where they were left; this is the way out for one
                 // left somewhere awkward)
-                if menu_item(ui, None, tr("Put the windows back in their first places", "Вернуть окна на исходные места"), "", true) {
+                if menu_item(ui, Icon::Restart, tr("Put the windows back in their first places", "Вернуть окна на исходные места"), "", true) {
                     ui.ctx().memory_mut(|m| m.reset_areas());
                 }
                 ui.separator();
                 lang_menu(ui, actions);
-                ui.menu_button(tr("Camera", "Камера"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Video, tr("Camera", "Камера")), |ui| {
                     let unity = prefs.camera != "map";
                     if radio(ui, unity, tr("Unity: right button looks round and W A S D fly, middle pans, Alt orbits", "Unity: правая кнопка оглядывает и W A S D летят, средняя двигает, Alt вращает")).clicked() {
                         actions.push(Action::SetCamera("fly".into()));
@@ -1070,7 +1069,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         actions.push(Action::SetCamera("map".into()));
                     }
                 });
-                ui.menu_button(tr("Preset Key Shortcut (from other applications)", "Готовые наборы клавиш других программ"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Keyboard, tr("Preset Key Shortcut (from other applications)", "Готовые наборы клавиш других программ")), |ui| {
                     let mut on = prefs.omsi_controls;
                     if check(ui, &mut on, tr("OMSI 2's editor: mouse and keys", "Редактор OMSI 2: мышь и клавиши")).on_hover_text(format!("{}
 
@@ -1084,10 +1083,10 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 });
                 let streaming = prefs.tile_streaming == Some(true);
                 let mut all_at_once = !streaming;
-                if check(ui, &mut all_at_once, tr("Load all tiles at once", "Загружать все тайлы сразу")).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные подгружаются, когда вы туда доходите")).clicked() {
+                if check(ui, &mut all_at_once, icons::labelled(Icon::Layers, tr("Load all tiles at once", "Загружать все тайлы сразу"))).on_hover_text(tr("Off: only the tiles round the camera are loaded, as in OMSI 2's editor, and more load as you go there", "Выключено: загружаются только тайлы вокруг камеры, как в редакторе OMSI 2, остальные подгружаются, когда вы туда доходите")).clicked() {
                     actions.push(Action::SetTileStreaming(!all_at_once));
                 }
-                ui.menu_button(tr("Tiles loaded at once", "Тайлов загружено сразу"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Tiles, tr("Tiles loaded at once", "Тайлов загружено сразу")), |ui| {
                     let now = if prefs.stream_tiles == 0 { 100 } else { prefs.stream_tiles };
                     for (n, hint) in [(9u32, tr("about 500 m round the camera", "около 500 м вокруг камеры")), (25, tr("about 850 m", "около 850 м")), (49, tr("about 1.2 km", "около 1,2 км")), (100, tr("about 1.7 km (the usual)", "около 1,7 км (обычно)")), (225, tr("about 2.5 km", "около 2,5 км"))] {
                         if radio(ui, streaming && now == n, format!("{n}  ·  {hint}")).clicked() {
@@ -1096,7 +1095,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     }
                     ui.label(RichText::new(tr("A big or very detailed map is lighter with fewer tiles: the others load as you go there", "Большая или очень детальная карта идёт легче с меньшим числом тайлов: остальные загружаются, когда вы туда доходите")).small().color(pal().text_dim));
                 });
-                ui.menu_button(tr("Time of day", "Время суток"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Sun, tr("Time of day", "Время суток")), |ui| {
                     if radio(ui, st.daytime.is_none(), tr("Plain day (as the game by day)", "Обычный день (как в игре днём)")).clicked() {
                         st.daytime = None;
                         st.time_flows = false;
@@ -1141,7 +1140,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         st.daytime = Some(h);
                     }
                 });
-                ui.menu_button(tr("Season", "Время года"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Season, tr("Season", "Время года")), |ui| {
                     // (the texture folders OMSI keeps for them)
                     let seasons: [(Option<&'static str>, &str); 6] = [
                         (None, tr("Summer", "Лето")),
@@ -1157,7 +1156,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         }
                     }
                 });
-                ui.menu_button(tr("Graphics API", "Графический API"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Memory, tr("Graphics API", "Графический API")), |ui| {
                     let now = crate::gpu::Api::of(&prefs.graphics_api);
                     for a in crate::gpu::Api::ALL.into_iter().filter(|a| a.here()) {
                         let name = if a == crate::gpu::Api::Auto { tr("Automatic", "Автоматически") } else { a.label() };
@@ -1167,7 +1166,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     }
                     ui.label(RichText::new(tr("DirectX 12 is the usual choice on Windows; if the chosen API cannot start, openMapper falls back to the automatic one. Takes effect after a restart (OPENMAPPER_BACKEND=dx12 for one run).", "DirectX 12 обычно лучший выбор на Windows; если выбранный API не запустится, openMapper вернётся к автоматическому. Применяется после перезапуска (OPENMAPPER_BACKEND=dx12 на один запуск).")).small().color(pal().text_dim));
                 });
-                ui.menu_button(tr("Graphics quality", "Качество графики"), |ui| {
+                ui.menu_button(icons::labelled(Icon::Quality, tr("Graphics quality", "Качество графики")), |ui| {
                     let now = crate::render::quality::Quality::from_code(&prefs.graphics);
                     for q in crate::render::quality::Quality::ALL {
                         if radio(ui, now == q, q.label()).clicked() {
@@ -1183,90 +1182,90 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                     }
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Road), tr("Road types and junctions…", "Типы дорог и перекрёстки…"), "", true) {
+                if menu_item(ui, Icon::Road, tr("Road types and junctions…", "Типы дорог и перекрёстки…"), "", true) {
                     actions.push(Action::RoadTypes);
                 }
-                if menu_item(ui, Some(Icon::Junction), tr("Complex junction editor…", "Редактор сложных перекрёстков…"), "", true) {
+                if menu_item(ui, Icon::Junction, tr("Complex junction editor…", "Редактор сложных перекрёстков…"), "", true) {
                     actions.push(Action::ComplexJunctions);
                 }
-                if menu_item(ui, Some(Icon::Route), tr("Crossing editor…", "Редактор перекрёстков…"), "", true) {
+                if menu_item(ui, Icon::Crossing, tr("Crossing editor…", "Редактор перекрёстков…"), "", true) {
                     actions.push(Action::CrossingPaths);
                 }
-                if menu_item(ui, Some(Icon::Layers), tr("PBR maps for a picture…", "PBR-карты для картинки…"), "", true) {
+                if menu_item(ui, Icon::Texture, tr("PBR maps for a picture…", "PBR-карты для картинки…"), "", true) {
                     actions.push(Action::PbrMaker);
                 }
             });
             ui.menu_button(tr("Map", "Карта"), |ui| {
-                if menu_item(ui, Some(Icon::Settings), tr("Map settings…", "Настройки карты…"), "", true) {
+                if menu_item(ui, Icon::Tune, tr("Map settings…", "Настройки карты…"), "", true) {
                     actions.push(Action::MapSettings);
                 }
-                if menu_item(ui, Some(Icon::Code), tr("Scripts…", "Скрипты…"), "", true) {
+                if menu_item(ui, Icon::Code, tr("Scripts…", "Скрипты…"), "", true) {
                     actions.push(Action::Scripts);
                 }
-                if menu_item(ui, Some(Icon::Schedule), tr("Calendar and place…", "Календарь и место…"), "", true) {
+                if menu_item(ui, Icon::Calendar, tr("Calendar and place…", "Календарь и место…"), "", true) {
                     actions.push(Action::Calendar);
                 }
-                if menu_item(ui, Some(Icon::Traffic), tr("Signal routes…", "Маршруты сигналов…"), "", true) {
+                if menu_item(ui, Icon::Traffic, tr("Signal routes…", "Маршруты сигналов…"), "", true) {
                     actions.push(Action::SignalRoutes);
                 }
-                if menu_item(ui, Some(Icon::Bus), tr("Trolleybus wire…", "Контактная сеть троллейбуса…"), "", true) {
+                if menu_item(ui, Icon::Cable, tr("Trolleybus wire…", "Контактная сеть троллейбуса…"), "", true) {
                     actions.push(Action::Trolley);
                 }
-                if menu_item(ui, Some(Icon::History), tr("Chrono scenarios…", "Хроно-сценарии…"), "", true) {
+                if menu_item(ui, Icon::Chrono, tr("Chrono scenarios…", "Хроно-сценарии…"), "", true) {
                     actions.push(Action::Chrono);
                 }
-                if menu_item(ui, Some(Icon::Layers), tr("Ground textures…", "Текстуры земли…"), "", true) {
+                if menu_item(ui, Icon::Texture, tr("Ground textures…", "Текстуры земли…"), "", true) {
                     ed.set_tool(Tool::Paint);
                 }
-                if menu_item(ui, Some(Icon::CheckCircle), tr("Check map…", "Проверить карту…"), "", true) {
+                if menu_item(ui, Icon::FactCheck, tr("Check map…", "Проверить карту…"), "", true) {
                     st.check.open = true;
                     st.check.issues = None;
                 }
-                if menu_item(ui, Some(Icon::Junction), tr("Make the junctions again", "Перестроить перекрёстки"), "", true) {
+                if menu_item(ui, Icon::Junction, tr("Make the junctions again", "Перестроить перекрёстки"), "", true) {
                     let n = ed.remake_all_junctions();
                     ed.toast(format!("{} {n}", tr("Junctions made again:", "Перекрёстков перестроено:")));
                 }
-                if menu_item(ui, Some(Icon::Bus), tr("Lines and timetable…", "Линии и расписание…"), &key(Cmd::Lines), true) {
+                if menu_item(ui, Icon::Bus, tr("Lines and timetable…", "Линии и расписание…"), &key(Cmd::Lines), true) {
                     actions.push(Action::Timetable);
                 }
-                if menu_item(ui, Some(Icon::Traffic), tr("Traffic and AI…", "Трафик и ИИ…"), &key(Cmd::Traffic), true) {
+                if menu_item(ui, Icon::Car, tr("Traffic and AI…", "Трафик и ИИ…"), &key(Cmd::Traffic), true) {
                     actions.push(Action::Traffic);
                 }
-                if menu_item(ui, Some(Icon::Flag), tr("Depot files (destinations)…", "Файлы депо (конечные)…"), "", true) {
+                if menu_item(ui, Icon::Signpost, tr("Depot files (destinations)…", "Файлы депо (конечные)…"), "", true) {
                     actions.push(Action::Depots);
                 }
-                if menu_item(ui, Some(Icon::Layers), tr("Satellite and terrain…", "Спутник и рельеф…"), &key(Cmd::Imagery), true) {
+                if menu_item(ui, Icon::Satellite, tr("Satellite and terrain…", "Спутник и рельеф…"), &key(Cmd::Imagery), true) {
                     actions.push(Action::Geo);
                 }
-                if menu_item(ui, Some(Icon::Road), tr("From OpenStreetMap…", "Из OpenStreetMap…"), "", true) {
+                if menu_item(ui, Icon::Public, tr("From OpenStreetMap…", "Из OpenStreetMap…"), "", true) {
                     actions.push(Action::Osm);
                 }
-                if menu_item(ui, Some(Icon::Route), tr("GPS tracks to trace…", "GPS-треки для обводки…"), "", true) {
+                if menu_item(ui, Icon::Gps, tr("GPS tracks to trace…", "GPS-треки для обводки…"), "", true) {
                     actions.push(Action::Trace);
                 }
-                if menu_item(ui, Some(Icon::Tiles), tr("Tiles from another map…", "Тайлы из другой карты…"), "", true) {
+                if menu_item(ui, Icon::Merge, tr("Tiles from another map…", "Тайлы из другой карты…"), "", true) {
                     actions.push(Action::MergeTiles);
                 }
                 ui.separator();
-                if menu_item(ui, Some(Icon::Play), tr("Test drive in openOMSI", "Тест-драйв в openOMSI"), &key(Cmd::TestDrive), game_found) {
+                if menu_item(ui, Icon::Play, tr("Test drive in openOMSI", "Тест-драйв в openOMSI"), &key(Cmd::TestDrive), game_found) {
                     actions.push(Action::Play);
                 }
                 play_here_items(ui, game_found, actions);
-                if menu_item(ui, Some(Icon::Play), tr("Test drive in OMSI 2 (the original)…", "Тест-драйв в оригинальном OMSI 2…"), "", true) {
+                if menu_item(ui, Icon::Play, tr("Test drive in OMSI 2 (the original)…", "Тест-драйв в оригинальном OMSI 2…"), "", true) {
                     actions.push(Action::PlayOriginal);
                 }
-                if menu_item(ui, Some(Icon::CheckCircle), tr("Check in openOMSI…", "Проверка в openOMSI…"), "", game_found) {
+                if menu_item(ui, Icon::Verified, tr("Check in openOMSI…", "Проверка в openOMSI…"), "", game_found) {
                     actions.push(Action::GameCheck);
                 }
             });
             ui.menu_button(tr("Help", "Справка"), |ui| {
-                if menu_item(ui, Some(Icon::CheckCircle), tr("Getting started", "С чего начать"), "", true) {
+                if menu_item(ui, Icon::School, tr("Getting started", "С чего начать"), "", true) {
                     actions.push(Action::Guide);
                 }
-                if menu_item(ui, Some(Icon::Import), tr("Updates…", "Обновления…"), "", true) {
+                if menu_item(ui, Icon::Update, tr("Updates…", "Обновления…"), "", true) {
                     actions.push(Action::Updates);
                 }
-                if menu_item(ui, Some(Icon::Info), tr("About openMapper", "О программе"), "", true) {
+                if menu_item(ui, Icon::Info, tr("About openMapper", "О программе"), "", true) {
                     st.about_open = true;
                 }
             });
@@ -1337,7 +1336,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                         }
                     }
                     let snap_on = ed.vertex_snap.is_some();
-                    let r = tool_button(ui, Icon::Focus, snap_on, true);
+                    let r = tool_button(ui, Icon::Snap, snap_on, true);
                     help(st, &r, format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), key_hint(Cmd::SnapVertex)));
                     if r.clicked() {
                         if snap_on {
@@ -1372,7 +1371,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 // (while a session runs the button closes it)
                 let running = crate::drive::running();
-                let label = if running { icons::labelled(Icon::Error, tr("Close test drive", "Закрыть тест-драйв")) } else { icons::labelled(Icon::Play, tr("Test drive", "Тест-драйв")) };
+                let label = if running { icons::labelled(Icon::Stop, tr("Close test drive", "Закрыть тест-драйв")) } else { icons::labelled(Icon::Play, tr("Test drive", "Тест-драйв")) };
                 let r = ui.add_enabled(game_found, egui::Button::new(label));
                 help(st, &r, if running { format!("{}{}", tr("Close the openOMSI session started from here", "Закрыть сессию openOMSI, запущенную отсюда"), key_hint(Cmd::TestDrive)) } else if game_found { format!("{}{}", tr("Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI", "Выбрать место старта, транспорт, время и погоду и проехать карту в openOMSI"), key_hint(Cmd::TestDrive)) } else { tr("openOMSI was not found: install it to test maps", "openOMSI не найден: установите его, чтобы проверять карты").to_string() });
                 if r.clicked() {
@@ -1424,10 +1423,10 @@ fn tool_cmd(t: Tool) -> crate::controls::Cmd {
 /// Test drives from somewhere else than the first start point (Map menu, and a right-click
 /// on Test drive).
 fn play_here_items(ui: &mut egui::Ui, game_found: bool, actions: &mut Vec<Action>) {
-    if menu_item(ui, Some(Icon::Flag), tr("Test drive from the start point nearest the view", "Тест-драйв с ближайшей к виду точки старта"), "Shift+F5", game_found) {
+    if menu_item(ui, Icon::Flag, tr("Test drive from the start point nearest the view", "Тест-драйв с ближайшей к виду точки старта"), "Shift+F5", game_found) {
         actions.push(Action::PlayHere(false));
     }
-    if menu_item(ui, Some(Icon::Visible), tr("See this view in openOMSI", "Посмотреть этот вид в openOMSI"), "", game_found) {
+    if menu_item(ui, Icon::Visible, tr("See this view in openOMSI", "Посмотреть этот вид в openOMSI"), "", game_found) {
         actions.push(Action::PlayHere(true));
     }
 }
@@ -1574,18 +1573,18 @@ fn tool_panel(
     actions: &mut Vec<Action>,
 ) {
     if ed.mesh.as_ref().map(|m| m.editing).unwrap_or(false) {
-        section(ui, tr("Edit mesh", "Редактирование меша"));
+        section(ui, Icon::Model3d, tr("Edit mesh", "Редактирование меша"));
         Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| crate::ui_mesh::edit_panel(ui, ed, &mut st.uv_open, &mut st.mesh_pics, actions));
         return;
     }
-    section(ui, ed.tool.label());
+    section(ui, ed.tool.icon(), ed.tool.label());
     Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| match ed.tool {
         Tool::Roads => catalogue(ui, st, ed, lib, thumbs, wanted, Kind::Spline, actions),
         Tool::Objects => {
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Snap, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1609,7 +1608,7 @@ fn tool_panel(
                 });
                 ui.add_space(4.0);
             }
-            egui::CollapsingHeader::new(RichText::new(tr("Shapes and lamps", "Фигуры и светильники")).strong()).id_salt("shapes").default_open(false).show(ui, |ui| {
+            egui::CollapsingHeader::new(icons::heading(Icon::Shapes, tr("Shapes and lamps", "Фигуры и светильники"))).id_salt("shapes").default_open(false).show(ui, |ui| {
                 crate::ui_mesh::primitives_grid(ui, actions);
                 crate::ui_mesh::lamp_makers(ui, &mut st.signal_lamps, actions);
                 crate::ui_mesh::extra_makers(ui, &mut st.makers, actions);
@@ -1663,7 +1662,7 @@ fn tool_panel(
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Snap, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1848,7 +1847,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
     });
     if logic.is_some() {
     } else if kind == Kind::Spline {
-        if ui.button(icons::labelled(Icon::Settings, tr("Road types and junctions…", "Типы дорог и перекрёстки…"))).clicked() {
+        if ui.button(icons::labelled(Icon::Road, tr("Road types and junctions…", "Типы дорог и перекрёстки…"))).clicked() {
             actions.push(Action::RoadTypes);
         }
         check(ui, &mut ed.follow_ground, tr("Shape the ground under the road", "Подгонять землю под дорогу"));
@@ -1922,7 +1921,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                 for (i, rel) in ed.plant_mix.iter().enumerate() {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(lib.find(rel).map(|a| a.name.clone()).unwrap_or_else(|| rel.clone())).small());
-                        if ui.small_button("×").clicked() {
+                        if icons::small(ui, Icon::Delete, tr("Out of the mix", "Убрать из смеси")).clicked() {
                             drop = Some(i);
                         }
                     });
@@ -2433,7 +2432,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| crate::ui_mesh::many_panel(ui, &mut st.keep_cutters, objects, splines, actions));
         return;
     }
-    section(ui, tr("Properties", "Свойства"));
+    section(ui, Icon::Tune, tr("Properties", "Свойства"));
     let mut delete = false;
     let mut changed_labels: Option<Vec<String>> = None;
     // (the rename leaves the stop across the road alone: it was split from it)
@@ -2488,14 +2487,14 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 // its textures' PBR maps: made here (Configure) or not yet (Create)
                 let made = st.pbr_made.as_ref().filter(|(rel, _)| rel.eq_ignore_ascii_case(&o.file)).map(|(_, m)| *m).unwrap_or(false);
                 let label = if made { tr("Configure PBR", "Настроить PBR") } else { tr("Create PBR", "Создать PBR") };
-                let r = ui.button(icons::labelled(Icon::Layers, label));
+                let r = ui.button(icons::labelled(Icon::Texture, label));
                 help(st, &r, tr("Normal, roughness, metal and shadow maps made from the object's textures, tuned and written as openOMSI reads them", "Карты нормалей, шероховатости, металла и теней из текстур объекта: настроить и записать так, как их читает openOMSI"));
                 if r.clicked() {
                     actions.push(Action::PbrForObject(o.file.clone()));
                 }
                 // its paths, if it is a crossing: edited in a copy of the object
                 if matches!(sel, Sel::Object(..)) {
-                    let r = ui.button(icons::labelled(Icon::Route, tr("Crossing editor", "Редактор перекрёстка")));
+                    let r = ui.button(icons::labelled(Icon::Crossing, tr("Crossing editor", "Редактор перекрёстка")));
                     help(st, &r, tr("The paths of a crossing or junction object, its blocking and its traffic light program, edited as OMSI 2's crossing editor does: the object's own file, the old one kept as a .bak", "Пути перекрёстка или перекрёстка-объекта, их блокировки и программу светофора правят, как в редакторе перекрёстков OMSI 2: в собственном файле объекта, прежний остаётся как .bak"));
                     if r.clicked() {
                         actions.push(Action::CrossingPaths);
@@ -2559,13 +2558,13 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                                 new_rot = Some([v[2].rem_euclid(360.0), v[0], v[1]]);
                             }
                             ui.horizontal(|ui| {
-                                if ui.small_button(Icon::Road.text(13.0)).on_hover_text(tr("Turn it the way the nearest road runs beside it", "Повернуть по ходу ближайшей дороги рядом")).clicked() {
+                                if icons::small(ui, Icon::Road, tr("Turn it the way the nearest road runs beside it", "Повернуть по ходу ближайшей дороги рядом")).clicked() {
                                     align_road = true;
                                 }
-                                if ui.small_button(Icon::Terrain.text(13.0)).on_hover_text(crate::ui_edit::lean_help()).clicked() {
+                                if icons::small(ui, Icon::Terrain, crate::ui_edit::lean_help()).clicked() {
                                     lean = true;
                                 }
-                                if (r[1] != 0.0 || r[2] != 0.0) && ui.small_button("↺").on_hover_text(tr("Stand it upright again", "Поставить ровно")).clicked() {
+                                if (r[1] != 0.0 || r[2] != 0.0) && icons::small(ui, Icon::Restart, tr("Stand it upright again", "Поставить ровно")).clicked() {
                                     new_rot = Some([r[0].rem_euclid(360.0), 0.0, 0.0]);
                                 }
                             });
@@ -2627,7 +2626,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     }
                 }
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(v_armed))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Snap, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(v_armed))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -2709,7 +2708,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 // the model: its size, and its textures with their PBR maps
                 if let Some(info) = st.obj_info.as_ref().filter(|i| i.file.eq_ignore_ascii_case(&o.file)) {
                     ui.add_space(6.0);
-                    egui::CollapsingHeader::new(RichText::new(tr("Model", "Модель")).strong()).icon(group_icon).default_open(true).show(ui, |ui| {
+                    egui::CollapsingHeader::new(icons::heading(Icon::Cube, tr("Model", "Модель"))).icon(group_icon).default_open(true).show(ui, |ui| {
                         egui::Grid::new("model info").num_columns(2).spacing(Vec2::new(8.0, 4.0)).show(ui, |ui| {
                             prop_row(ui, tr("Size", "Размер"), |ui| {
                                 ui.label(format!("{:.1} × {:.1} × {:.1} m", info.size[0], info.size[1], info.size[2]));
@@ -2766,7 +2765,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                 ui.label(RichText::new(a.map(|a| a.name.clone()).unwrap_or_else(|| s.file.clone())).strong().color(pal().text_strong));
                 ui.label(RichText::new(&s.file).small().color(pal().text_dim));
                 let made = st.pbr_made.as_ref().filter(|(rel, _)| rel.eq_ignore_ascii_case(&s.file)).map(|(_, m)| *m).unwrap_or(false);
-                let r = ui.button(icons::labelled(Icon::Layers, if made { tr("Configure PBR", "Настроить PBR") } else { tr("Create PBR", "Создать PBR") }));
+                let r = ui.button(icons::labelled(Icon::Texture, if made { tr("Configure PBR", "Настроить PBR") } else { tr("Create PBR", "Создать PBR") }));
                 help(st, &r, tr("Normal, roughness, metal and shadow maps made from the road type's textures", "Карты нормалей, шероховатости, металла и теней из текстур типа дороги"));
                 if r.clicked() {
                     actions.push(Action::PbrForSpline(s.file.clone()));
@@ -2842,23 +2841,23 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         }
                     });
                 });
-                if ui.small_button(tr("Lay on the ground", "Положить на землю")).on_hover_text(crate::ui_edit::lay_help()).clicked() {
+                if ui.small_button(icons::labelled(Icon::Ground, tr("Lay on the ground", "Положить на землю"))).on_hover_text(crate::ui_edit::lay_help()).clicked() {
                     lay = true;
                 }
-                if ui.small_button(tr("Reverse direction", "Развернуть направление")).on_hover_text(crate::ui_edit::reverse_help()).clicked() {
+                if ui.small_button(icons::labelled(Icon::Reverse, tr("Reverse direction", "Развернуть направление"))).on_hover_text(crate::ui_edit::reverse_help()).clicked() {
                     reverse = true;
                 }
                 if s.prev_id != 0 || s.next_id != 0 {
-                    if ui.small_button(tr("Select the whole road", "Выбрать всю дорогу")).on_hover_text(tr("Every piece linked on from this one (or double-click the road)", "Все куски, связанные с этим (или двойной клик по дороге)")).clicked() {
+                    if ui.small_button(icons::labelled(Icon::SelectAll, tr("Select the whole road", "Выбрать всю дорогу"))).on_hover_text(tr("Every piece linked on from this one (or double-click the road)", "Все куски, связанные с этим (или двойной клик по дороге)")).clicked() {
                         whole_road = true;
                     }
                 }
                 ui.horizontal_wrapped(|ui| {
-                    let b = egui::Button::new(tr("Cut", "Разрезать")).small().selected(ed.cutting);
+                    let b = egui::Button::new(icons::labelled(Icon::Cut, tr("Cut", "Разрезать"))).small().selected(ed.cutting);
                     if ui.add(b).on_hover_text(crate::ui_edit::knife_help()).clicked() {
                         knife = true;
                     }
-                    if s.next_id != 0 && ui.small_button(tr("Join with the next piece", "Соединить со следующим куском")).on_hover_text(tr("One piece again with the one after it, where the two make one curve", "Снова один кусок со следующим, если вместе они образуют одну кривую")).clicked() {
+                    if s.next_id != 0 && ui.small_button(icons::labelled(Icon::Link, tr("Join with the next piece", "Соединить со следующим куском"))).on_hover_text(tr("One piece again with the one after it, where the two make one curve", "Снова один кусок со следующим, если вместе они образуют одну кривую")).clicked() {
                         join_next = true;
                     }
                 });
@@ -3217,7 +3216,7 @@ fn map_stats(doc: &crate::doc::Document, lib: &Library) -> [f64; 5] {
 }
 
 fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Library, actions: &mut Vec<Action>) {
-    section(ui, tr("Map", "Карта"));
+    section(ui, Icon::Map, tr("Map", "Карта"));
     let Some(doc) = ed.doc.as_mut() else { return };
     let before = (doc.global.friendly_name.clone(), doc.global.description.clone(), doc.global.left_hand_traffic);
     Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
@@ -3304,7 +3303,7 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
         if r.clicked() {
             actions.push(Action::ImportMapPicture);
         }
-        let r = ui.button(icons::labelled(Icon::Flag, tr("Open the map with this view", "Открывать карту с этого вида")));
+        let r = ui.button(icons::labelled(Icon::Bookmark, tr("Open the map with this view", "Открывать карту с этого вида")));
         help(st, &r, tr("The camera as it is now is where the map opens (here and in OMSI 2's editor).", "Карта будет открываться с камерой, как сейчас (здесь и в редакторе OMSI 2)."));
         if r.clicked() {
             actions.push(Action::SetMapCamera);
@@ -3385,7 +3384,7 @@ fn texture_picker(ctx: &egui::Context, st: &mut UiState, files: &[String], swatc
 
 fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut Vec<Action>) {
     let mut open = st.help_open;
-    egui::Window::new(tr("Settings", "Настройки")).open(&mut open).collapsible(false).default_height(600.0).default_width(520.0).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Settings, tr("Settings", "Настройки"))).open(&mut open).collapsible(false).default_height(600.0).default_width(520.0).show(ctx, |ui| {
         ui.horizontal(|ui| {
             for (i, name) in [tr("General", "Общие"), tr("Graphics", "Графика"), tr("Camera", "Камера"), tr("Keys", "Клавиши"), tr("Mouse", "Мышь")].into_iter().enumerate() {
                 if ui.add(egui::Button::new(name).selected(st.settings_tab == i as u8).min_size(Vec2::new(0.0, 24.0))).clicked() {
@@ -3441,13 +3440,13 @@ fn controls(ctx: &egui::Context, st: &mut UiState, prefs: &Prefs, actions: &mut 
                 if b.clicked() {
                     st.key_capture = if waiting { None } else { Some(*cmd) };
                 }
-                if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Back to the default key", "Вернуть клавишу по умолчанию")).clicked() {
+                if icons::small(ui, Icon::Restart, tr("Back to the default key", "Вернуть клавишу по умолчанию")).clicked() {
                     actions.push(Action::BindKey(*cmd, preset.chord(*cmd)));
                 }
                 ui.end_row();
             }
         });
-        if ui.button(tr("Reset all keys", "Сбросить все клавиши")).clicked() {
+        if ui.button(icons::labelled(Icon::Restart, tr("Reset all keys", "Сбросить все клавиши"))).clicked() {
             actions.push(Action::ResetKeys);
         }
         ui.add_space(8.0);
@@ -3602,7 +3601,7 @@ fn camera_tuning(ui: &mut egui::Ui, prefs: &Prefs, actions: &mut Vec<Action>) {
     if changed {
         actions.push(Action::SetCamTune(t));
     }
-    if ui.button(tr("Reset the camera", "Сбросить камеру")).clicked() {
+    if ui.button(icons::labelled(Icon::Restart, tr("Reset the camera", "Сбросить камеру"))).clicked() {
         actions.push(Action::SetCamTune(Default::default()));
     }
 }
@@ -3620,7 +3619,7 @@ pub fn confirm_unsaved(ctx: &egui::Context, st: &mut UiState, actions: &mut Vec<
     }
     let mut decided: Option<bool> = None;
     let mut save = false;
-    egui::Window::new(tr("Unsaved changes", "Несохранённые изменения")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Save, tr("Unsaved changes", "Несохранённые изменения"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(330.0);
         ui.horizontal(|ui| {
             ui.label(Icon::Info.text(28.0).color(pal().accent));

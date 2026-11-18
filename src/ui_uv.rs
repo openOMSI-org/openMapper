@@ -11,6 +11,7 @@ use openmapper_mesh::edit::Selection;
 
 use crate::editor::Editor;
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::theme::pal;
 
 pub struct UvEditor {
@@ -50,7 +51,7 @@ pub fn window(ctx: &egui::Context, st: &mut UvEditor, open: &mut bool, ed: &mut 
         });
     }
     let mut keep_open = *open;
-    egui::Window::new(tr("UV editor", "UV-редактор")).id(egui::Id::new("uv editor")).open(&mut keep_open).default_size([520.0, 560.0]).resizable(true).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Texture, tr("UV editor", "UV-редактор"))).id(egui::Id::new("uv editor")).open(&mut keep_open).default_size([520.0, 560.0]).resizable(true).show(ctx, |ui| {
         let faces: Vec<usize> = m.sel.faces.iter().copied().collect();
         ui.horizontal_wrapped(|ui| {
             use openmapper_mesh::uv;
@@ -61,32 +62,32 @@ pub fn window(ctx: &egui::Context, st: &mut UvEditor, open: &mut bool, ed: &mut 
                     None
                 });
             };
-            if ui.button(tr("Smart unwrap", "Умная развёртка")).on_hover_text(tr("Every flat side apart in the picture, no faces on top of one another (all faces if none is selected)", "Каждая плоская сторона отдельно на картинке, грани не лежат друг на друге (все, если ничего не выделено)")).clicked() {
+            if ui.button(icons::labelled(Icon::AutoFix, tr("Smart unwrap", "Умная развёртка"))).on_hover_text(tr("Every flat side apart in the picture, no faces on top of one another (all faces if none is selected)", "Каждая плоская сторона отдельно на картинке, грани не лежат друг на друге (все, если ничего не выделено)")).clicked() {
                 op(m, &|mesh, f| uv::unwrap(mesh, f, uv::Unwrap::Smart { angle_deg: 66.0 }, 0.01));
             }
-            if ui.button(tr("Box unwrap", "Развёртка коробкой")).on_hover_text(tr("The six sides of a box apart in the picture", "Шесть сторон коробки отдельно на картинке")).clicked() {
+            if ui.button(icons::labelled(Icon::Cube, tr("Box unwrap", "Развёртка коробкой"))).on_hover_text(tr("The six sides of a box apart in the picture", "Шесть сторон коробки отдельно на картинке")).clicked() {
                 op(m, &|mesh, f| uv::unwrap(mesh, f, uv::Unwrap::Cube { size: 1.0 }, 0.01));
             }
             ui.separator();
-            if ui.button("⟲ 90°").clicked() {
+            if ui.button(icons::labelled(Icon::RotateLeft, "90°")).clicked() {
                 op(m, &|mesh, f| uv::rotate(mesh, f, 90.0));
             }
-            if ui.button("⟳ 90°").clicked() {
+            if ui.button(icons::labelled(Icon::Rotate, "90°")).clicked() {
                 op(m, &|mesh, f| uv::rotate(mesh, f, -90.0));
             }
-            if ui.button(tr("Flip ↔", "Отразить ↔")).clicked() {
+            if ui.button(icons::labelled(Icon::Swap, tr("Flip", "Отразить"))).on_hover_text(tr("Left to right", "Слева направо")).clicked() {
                 op(m, &|mesh, f| uv::flip(mesh, f, true));
             }
-            if ui.button(tr("Flip ↕", "Отразить ↕")).clicked() {
+            if ui.button(icons::labelled(Icon::SwapVert, tr("Flip", "Отразить"))).on_hover_text(tr("Top to bottom", "Сверху вниз")).clicked() {
                 op(m, &|mesh, f| uv::flip(mesh, f, false));
             }
-            if ui.button(tr("Scale ×2", "Масштаб ×2")).clicked() {
+            if ui.button(icons::labelled(Icon::ZoomIn, tr("Scale ×2", "Масштаб ×2"))).clicked() {
                 op(m, &|mesh, f| scale_about_centre(mesh, f, 2.0));
             }
-            if ui.button(tr("Scale ÷2", "Масштаб ÷2")).clicked() {
+            if ui.button(icons::labelled(Icon::ZoomOut, tr("Scale ÷2", "Масштаб ÷2"))).clicked() {
                 op(m, &|mesh, f| scale_about_centre(mesh, f, 0.5));
             }
-            if ui.button(tr("Fit", "Вписать")).on_hover_text(tr("Stretched to fill the picture", "Растянуть на всю картинку")).clicked() {
+            if ui.button(icons::labelled(Icon::Fit, tr("Fit", "Вписать"))).on_hover_text(tr("Stretched to fill the picture", "Растянуть на всю картинку")).clicked() {
                 op(m, &|mesh, f| uv::fit(mesh, f));
             }
             if ui.button(tr("Pack islands", "Упаковать острова")).clicked() {
