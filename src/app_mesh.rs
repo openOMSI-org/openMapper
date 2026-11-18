@@ -938,14 +938,22 @@ impl App {
         Ok(())
     }
 
-    /// A light a script of its own switches, put on the map with the next click.
-    pub(super) fn new_scripted_light(&mut self, b: crate::scripting::Behaviour, color: [u8; 3], range: f32) -> anyhow::Result<()> {
+    /// A script for the selected object's type (Lua or OMSI 2's), opened in the Scripts window.
+    /// An object of the installation becomes the map's own copy first, as for a mesh edit.
+    pub(super) fn script_object(&mut self, lua: bool) -> anyhow::Result<()> {
         let Some(roots) = self.roots.clone() else { return Ok(()) };
-        let rel = crate::scripting::make_light(&roots, &self.map_folder(), b, color, range)?;
-        self.lib.start_scan(&roots);
-        self.ed.set_tool(crate::editor::Tool::Objects);
-        self.ed.object_type = Some(rel);
-        self.ed.toast(tr("Light made: click where it goes; its script is in Map > Scripts", "Свет создан: кликните, куда его поставить; его скрипт: Карта > Скрипты"));
+        let Some(sel @ Sel::Object(k, id)) = self.ed.selected else { anyhow::bail!("{}", tr("select an object first", "сначала выделите объект")) };
+        let file = self.ed.doc.as_ref().and_then(|d| crate::selection::any_object(d, k, id)).map(|o| o.file.clone()).unwrap_or_default();
+        let ours = editable::sco_path(&roots, &file).is_some_and(|p| p.starts_with(&roots.content));
+        let rel = if ours {
+            file
+        } else {
+            let rel = crate::meshops::make_editable(&mut self.ed, &roots, &self.lib, sel)?;
+            self.ed.toast(tr("A copy of its own was made for the script: the original type is unchanged", "Для скрипта создана собственная копия: исходный тип не изменён"));
+            rel
+        };
+        let path = crate::scripting::add_script(&roots, &rel, lua)?;
+        self.scripts.opened(path, lua);
         Ok(())
     }
 

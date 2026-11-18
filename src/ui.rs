@@ -53,8 +53,8 @@ pub enum Action {
     CreatePrimitive(usize),
     /// The Scripts window.
     Scripts,
-    /// A new light switched by a script: how, its colour and reach.
-    ScriptedLight(crate::scripting::Behaviour, [u8; 3], f32),
+    /// A script for the selected object's type: Lua (openOMSI) or OMSI 2's `.osc`.
+    ScriptObject { lua: bool },
     /// A junction piece (its file) put onto the free end of a road: tile, id, far end or start.
     JunctionAtEnd(crate::doc::TileKey, i64, bool, String),
     /// Something done to openMapper's own objects (edit mode, join, booleans, export...).

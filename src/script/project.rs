@@ -398,7 +398,7 @@ fn manifest(map_folder: &str, friendly: &str) -> String {
     )
 }
 
-/// Ready-made scripts to start from.
+/// What a new script or module starts as.
 pub struct Template {
     pub title: &'static str,
     pub name: &'static str,
@@ -408,13 +408,7 @@ pub struct Template {
 pub fn templates() -> Vec<Template> {
     vec![
         Template { title: tr("Empty script", "Пустой скрипт"), name: "script", text: "-- What should happen on this map. `map.on`, `map.every`, `map.after` work while it is played.\n-- map.on(\"stop_arrive\", function(name, id, number, delay) end)\n" },
-        Template { title: tr("Empty module", "Пустой модуль"), name: "module", text: "-- Code the map's scripts share: local m = require(\"modules.<name>\")\nlocal M = {}\n\nfunction M.hello(who)\n  return \"Hello, \" .. who\nend\n\nreturn M\n" },
-        Template { title: tr("A greeting when the bus is taken", "Приветствие, когда садишься в автобус"), name: "greeting", text: "map.on(\"vehicle\", function(name)\n  if name then\n    omsi.message(\"Welcome! You drive the \" .. name .. \" on \" .. map.name, 6)\n  end\nend)\n" },
-        Template { title: tr("Announce every stop", "Объявлять каждую остановку"), name: "announce_stops", text: "-- the stop's name and how late (or early) the bus is\nmap.on(\"stop_arrive\", function(name, id, number, delay)\n  omsi.ui.toast(string.format(\"%d. %s, %s\", number, name, omsi.fmt.delay(delay)))\nend)\n" },
-        Template { title: tr("Traffic by the hour", "Движение по часам"), name: "traffic_by_hour", text: "-- busy in the rush hours, quiet at night\nlocal function density(h)\n  if h >= 7 and h < 9 or h >= 16 and h < 18 then return 300 end\n  if h >= 22 or h < 5 then return 40 end\n  return 150\nend\n\nmap.on(\"hour\", function(h)\n  omsi.traffic.set_density(density(h))\nend)\n" },
-        Template { title: tr("Weather at a time", "Погода в заданное время"), name: "evening_clouds", text: "-- the sky closes at six in the evening\nmap.on(\"hour\", function(h)\n  if h == 18 then\n    omsi.weather.set({ clouds = \"Overcast 1\" })\n  end\nend)\n" },
-        Template { title: tr("Speed limit warning", "Предупреждение о скорости"), name: "speed_warning", text: "-- once a second: over the lane's speed limit\nmap.every(1, function()\n  local limit = omsi.map.speed_limit()\n  local kmh = omsi.var(\"Velocity\")\n  if limit and kmh and kmh > limit + 5 then\n    omsi.message(string.format(\"Slow down: %.0f km/h, the limit is %.0f\", kmh, limit), 2)\n  end\nend)\n" },
-        Template { title: tr("A counter kept between games", "Счётчик, сохраняемый между играми"), name: "trips_counter", text: "-- how many trips were driven on this map, kept in the plugin's storage\nmap.on(\"trip_done\", function()\n  local n = (omsi.storage.get(\"trips\") or 0) + 1\n  omsi.storage.set(\"trips\", n)\n  omsi.ui.toast(\"Trips on this map: \" .. n)\nend)\n" },
+        Template { title: tr("Empty module", "Пустой модуль"), name: "module", text: "-- Code the map's scripts share: local m = require(\"modules.<name>\")\nlocal M = {}\n\nreturn M\n" },
     ]
 }
 

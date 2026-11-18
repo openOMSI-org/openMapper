@@ -78,6 +78,19 @@ fn minutes_of(v: Option<&Value>, default: f32) -> Result<f32, String> {
 }
 
 impl Server {
+    /// The trolleybus wire kit an edit shows the wire with: the one named (`map:<name>`,
+    /// `shared:<name>` or its name), which becomes the wire's, else the wire's own.
+    fn trolley_kit(&self, name: Option<&str>, w: &mut crate::trolley::Wire) -> Result<Option<crate::trolley_kit::KitDef>, String> {
+        let doc = self.ed.doc.as_ref().ok_or("no map")?;
+        if let Some(n) = name {
+            let kits = crate::trolley_kit::list(&self.roots, &doc.dir);
+            let (r, k) = kits.into_iter().find(|(r, k)| r.id() == n || r.stem == n || k.name == n).ok_or_else(|| format!("no trolleybus wire kit {n}: make one with trolley_kit"))?;
+            w.kit = Some(r.id());
+            return Ok(Some(k));
+        }
+        Ok(w.kit.as_deref().and_then(|id| crate::trolley_kit::load(&self.roots, &doc.dir, id)))
+    }
+
     // ---------------------------------------------------------------------------- files
 
     /// A file of the catalogue as the map names it (`spline`: which kind is wanted), else what
@@ -459,14 +472,15 @@ impl Server {
                 } else {
                     crate::trolley::over_roads(doc, &mut self.assets, &sel, lay)
                 };
-                // (on the map: openMapper's wire splines and masts, unless asked otherwise; the
-                // map's own wire splines show themselves)
-                let kit = crate::trolley_kit::Kit { wires: c.bool("wires").unwrap_or(true) && !from_splines, masts: c.bool("masts").unwrap_or(true) && !from_splines, mast_step: c.f64("mast_step").unwrap_or(30.0) };
+                // (on the map: the wire splines and masts of the kit named, or the wire's kit;
+                // none without a kit, and the map's own wire splines show themselves)
                 let mut after = crate::trolley::or_new(doc.traffic.trolley.as_ref());
+                let kit = self.trolley_kit(c.str("kit"), &mut after)?;
                 let added = crate::trolley::add_spans(&mut after, new);
                 let n = added.len();
                 if n > 0 {
-                    crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(&mut self.assets), Some(after), added, Some(kit));
+                    let u = kit.as_ref().map(|k| crate::trolley_kit::Use { kit: k, wires: c.bool("wires").unwrap_or(true) && !from_splines, masts: c.bool("masts").unwrap_or(true) && !from_splines });
+                    crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(after), added, u);
                 }
                 let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
                 said = json!({ "spans_laid": n, "spans": w.spans.len(), "switches": w.switches.len(), "lanes_of_selected": lanes_of, "problems": crate::trolley::problems(w).into_iter().map(|(p, t)| json!({ "at": [p.x, p.y], "problem": t })).collect::<Vec<_>>() });
@@ -486,12 +500,33 @@ impl Server {
                 }
                 let doc = self.ed.doc.as_ref().ok_or("no map")?;
                 let mut after = crate::trolley::or_new(doc.traffic.trolley.as_ref());
+                let kit = self.trolley_kit(c.str("kit"), &mut after)?;
                 let span = crate::trolley::drawn(&mut after, pts, c.i64("section").unwrap_or(1) as i32);
                 let added = crate::trolley::add_spans(&mut after, vec![(span, None)]);
-                let kit = crate::trolley_kit::Kit { wires: c.bool("wires").unwrap_or(true), ..Default::default() };
-                crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(&mut self.assets), Some(after), added, Some(kit));
+                let u = kit.as_ref().map(|k| crate::trolley_kit::Use { kit: k, wires: c.bool("wires").unwrap_or(true), masts: false });
+                crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(after), added, u);
                 let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
                 said = json!({ "spans": w.spans.len(), "switches": w.switches.len() });
+            }
+            "trolley_kit" => {
+                // (a kit the wire is shown with: listed, or written from its .cfg text)
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                match c.str("cfg") {
+                    None => {
+                        let kits: Vec<Value> = crate::trolley_kit::list(&self.roots, &doc.dir).into_iter().map(|(r, k)| json!({ "kit": r.id(), "name": k.name, "cfg": k.text() })).collect();
+                        said = json!({ "kits": kits, "new_kit_cfg": crate::trolley_kit::KitDef { name: "My net".into(), ..Default::default() }.text() });
+                    }
+                    Some(text) => {
+                        let k = crate::trolley_kit::KitDef::parse(text);
+                        let name = c.str("name").map(str::to_string).unwrap_or_else(|| k.name.clone());
+                        let k = crate::trolley_kit::KitDef { name: name.clone(), ..k };
+                        let scope = if c.str("scope") == Some("shared") { crate::trolley_kit::Scope::Shared } else { crate::trolley_kit::Scope::Map };
+                        let r = crate::trolley_kit::KitRef { scope, stem: crate::trolley_kit::stem_of(&name) };
+                        crate::trolley_kit::save(&self.roots, &doc.dir, &r, &k).map_err(|e| e.to_string())?;
+                        let n = if c.bool("renew").unwrap_or(false) { crate::trolley_kit::renew(&mut self.ed, &self.roots, &k) } else { 0 };
+                        said = json!({ "kit": r.id(), "cfg": k.text(), "renewed": n });
+                    }
+                }
             }
             "trolley_switch" => {
                 // (the switch of the frog nearest a point set as given)

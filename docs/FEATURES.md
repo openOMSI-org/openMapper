@@ -72,7 +72,9 @@ The complete list. A short overview is in the [README](../README.md).
   of the map's scripts to share with the Development Tools' compiler (obfuscated, with the
   permissions its code needs, signed with a key when given); a **Rust plugin** of the map is made
   from the Development Tools' template, edited here and built with `cargo` into
-  `plugins/map_<folder>_rs.oop`. Lights switched by a script are made in one click. The MCP server's
+  `plugins/map_<folder>_rs.oop`. Any object gets a script of its own in one click (Lua or OMSI
+  2's `.osc` with its variable list; an object of the installation becomes the map's own copy
+  first), its lamps and parts following the variables the script sets. The MCP server's
   `script` tool lists, reads, writes and runs the project too.
 * **Depot files** (Map > Depot files, or the Traffic window's last tab): the map's `.hof`
   files, which give its buses their destinations, the stop names on their displays and the
@@ -216,12 +218,18 @@ The complete list. A short overview is in the [README](../README.md).
   junction (shown in the view as they are ticked), or read off the map's wire splines as the
   game reads them, or drawn by hand (Draw a span by hand: its points clicked in the view, at
   the wire's height over what is clicked; started or ended on a span's end it joins it, on a
-  span's middle it cuts it there and branches off: a frog). On the map it is shown with openMapper's own content, written into the
-  content folder like its junction plates (no wire or mast models of anybody else needed):
-  a wire spline (`Splines\openMapper\Trolley`: two thin wires over the lane, a copy of each
-  road piece so it follows its bends and gradients; straight pieces over a junction's lanes),
-  masts with an arm and a hanger beside the road every so many metres, and a frog and a section
-  insulator object (`Sceneryobjects\openMapper\Trolley`) wherever the wire has them, put
+  span's middle it cuts it there and branches off: a frog). What shows it on the map comes from a
+  **kit** of the map maker's, openMapper having no wire or mast models of its own: a `.cfg` file
+  for this map (`<map>\trolley\`) or for every map (`openMapper\trolley\` of the content folder),
+  made and changed in the kit's window (or any text editor): the wires (how many, how far apart,
+  how high, how thick, their colour), masts every so many metres with the arm reaching so far,
+  and the mast, the frog and the section insulator each built of parts (boxes, cylinders,
+  cones, spheres, tubes, capsules, or any object of the content; each with its place, turn,
+  size and colour), drawn from the side, the front and above with the wires where they hang.
+  From it openMapper writes ordinary content (`Splines\openMapper\Trolley`: a copy of each
+  road piece, so the wire follows its bends and gradients, straight pieces over a junction's
+  lanes; `Sceneryobjects\openMapper\Trolley`: the masts beside the road, a frog and an
+  insulator wherever the wire has them, put
   again after every change; what a span laid goes with it, all in the wire's undo step. In
   the window it is also drawn while it is open (the pair of wires in its
   section's colour, an arrow the way it runs, frogs yellow, insulators black and white), a span

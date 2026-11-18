@@ -695,6 +695,8 @@ impl App {
             Ok("calendar") => self.calendar.open = true,
             Ok("signals") => self.signals.open = true,
             Ok("trolley") => self.trolley.open = true,
+            // (=kit:<id>: a trolleybus wire kit's window open on it)
+            Ok(k) if k.starts_with("kit:") => self.trolley.edit_kit(&k[4..]),
             Ok("chrono") => self.chrono.open = true,
             Ok(_) => self.map_settings.open = true,
             Err(_) => {}
@@ -1814,8 +1816,8 @@ impl App {
                 }
             }
             Action::Scripts => self.scripts.toggle(),
-            Action::ScriptedLight(b, color, range) => {
-                if let Err(e) = self.new_scripted_light(b, color, range) {
+            Action::ScriptObject { lua } => {
+                if let Err(e) = self.script_object(lua) {
                     self.ed.error(e.to_string());
                 }
             }

@@ -39,11 +39,14 @@ pub struct Wire {
     pub insulators: Vec<Insulator>,
     /// Blocks openMapper does not edit (`[trolley_sounds]`…), kept as they are.
     pub other: Vec<String>,
+    /// The kit (`trolley_kit`) its wire, masts, frogs and insulators are made from, as
+    /// `map:<name>` or `shared:<name>` (a comment line the game skips).
+    pub kit: Option<String>,
 }
 
 impl Default for Wire {
     fn default() -> Wire {
-        Wire { voltage: 600.0, spacing: 0.6, roughness: 0.0012, net_extra: Vec::new(), sections: Vec::new(), spans: Vec::new(), switches: Vec::new(), insulators: Vec::new(), other: Vec::new() }
+        Wire { voltage: 600.0, spacing: 0.6, roughness: 0.0012, net_extra: Vec::new(), sections: Vec::new(), spans: Vec::new(), switches: Vec::new(), insulators: Vec::new(), other: Vec::new(), kit: None }
     }
 }
 
@@ -190,6 +193,8 @@ fn nums(l: &str) -> Vec<f64> {
 
 /// The comment line of a span naming what openMapper laid for it.
 const LAID: &str = "// openmapper laid";
+/// The comment line of the net naming the kit its wire is shown with.
+const KIT: &str = "// openmapper kit";
 
 /// `trolley.txt` read (what it does not know kept as it is).
 pub fn parse(text: &str) -> Wire {
@@ -207,6 +212,10 @@ pub fn parse(text: &str) -> Wire {
         }
     };
     for line in text.lines() {
+        if let (Some(k), "trolley_net") = (line.trim().strip_prefix(KIT), block.as_str()) {
+            w.kit = Some(k.trim().to_string()).filter(|k| !k.is_empty());
+            continue;
+        }
         if let (Some(ids), "trolley_span") = (line.trim().strip_prefix(LAID), block.as_str()) {
             if let Some(s) = w.spans.last_mut() {
                 s.laid.extend(ids.split_whitespace().filter_map(|x| x.parse::<i64>().ok()));
@@ -324,6 +333,9 @@ fn point(p: DVec3) -> String {
 pub fn text(w: &Wire) -> String {
     let mut s = String::from("// openMapper: the map's overhead wire for openOMSI's trolleybuses (OMSI 2 ignores it)\n\n");
     s += &format!("[trolley_net]\nvoltage {}\nspacing {}\nroughness {}\n", num(w.voltage), num(w.spacing), w.roughness);
+    if let Some(k) = &w.kit {
+        s += &format!("{KIT} {k}\n");
+    }
     for l in &w.net_extra {
         s += l;
         s.push('\n');
@@ -657,7 +669,7 @@ pub fn set(ed: &mut crate::editor::Editor, roots: Option<&crate::install::Roots>
     if ed.doc.as_ref().is_none_or(|d| d.traffic.trolley == after) {
         return;
     }
-    crate::trolley_kit::apply(ed, roots, None, after, Vec::new(), None);
+    crate::trolley_kit::apply(ed, roots, after, Vec::new(), None);
 }
 
 /// A map's wire, or a new one with a first section.

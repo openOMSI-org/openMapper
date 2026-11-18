@@ -23,7 +23,7 @@ use crate::script::lex::Lang;
 use crate::script::lint::{self, Problem};
 use crate::script::project::{self, Kind, Project};
 use crate::script::run::{self, Arg, Cmd, LineKind, Out, Session, Val};
-use crate::scripting::{self, Behaviour};
+use crate::scripting;
 use crate::ui::Action;
 use crate::ui_code::{self, CodeState};
 
@@ -149,11 +149,6 @@ pub struct ScriptsUi {
     building: Option<Receiver<Msg>>,
     build_log: Vec<String>,
     sign_key: String,
-    // a light switched by a script
-    light_open: bool,
-    light: Behaviour,
-    light_color: [u8; 3],
-    light_range: f32,
     message: Option<(String, bool)>,
     /// A project file to open, and whether to run, once the map is there (checks without a
     /// person at the screen: OPENMAPPER_SCRIPTS).
@@ -199,10 +194,6 @@ impl Default for ScriptsUi {
             building: None,
             build_log: Vec::new(),
             sign_key: String::new(),
-            light_open: false,
-            light: Behaviour::Hours { from: 18.0, to: 23.0 },
-            light_color: [255, 220, 160],
-            light_range: 12.0,
             message: None,
             pending: None,
         }
@@ -211,23 +202,6 @@ impl Default for ScriptsUi {
 
 fn read_text(path: &Path) -> String {
     std::fs::read(path).map(|b| omsi_cfg::decode_text(&b).replace("\r\n", "\n")).unwrap_or_default()
-}
-
-/// The `[lua_script]` files a `.sco` names, relative to it.
-fn lua_scripts_of(sco: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut lines = sco.lines().map(str::trim);
-    while let Some(l) = lines.next() {
-        if l.eq_ignore_ascii_case("[lua_script]") {
-            if let Some(f) = lines.next() {
-                let f = f.split('#').next().unwrap_or("").trim();
-                if !f.is_empty() {
-                    out.push(f.to_string());
-                }
-            }
-        }
-    }
-    out
 }
 
 fn mono(t: impl Into<String>) -> RichText {
@@ -331,7 +305,7 @@ impl ScriptsUi {
             if !text.to_ascii_lowercase().contains("[lua_script]") {
                 continue;
             }
-            for s in lua_scripts_of(&text) {
+            for s in scripting::lua_scripts_of(&text) {
                 let script = omsi_cfg::resolve_path(sco.parent().unwrap_or(Path::new("")), &s);
                 out.push(ObjScript { object: rel.clone(), writable: script.starts_with(&roots.content), script, count: counts[&key] });
             }
@@ -340,41 +314,13 @@ impl ScriptsUi {
         self.objects = Some(out);
     }
 
-    /// A Lua script for the selected object's type: written beside its `.sco` and named in it.
-    fn add_object_script(&mut self, ed: &Editor, roots: &Roots, rel: &str) -> anyhow::Result<PathBuf> {
-        let _ = ed;
-        let (dir, stem) = editable::folder_of(roots, rel);
-        let name = format!("{}.lua", project::file_stem(&stem));
-        let path = dir.join(&name);
-        if let Some(mut src) = editable::load(roots, rel) {
-            // (an openMapper object: its .sco is written from its source, so the line goes there)
-            if !path.exists() {
-                std::fs::write(&path, project::OBJECT_TEMPLATE)?;
-            }
-            if !lua_scripts_of(&src.extra).iter().any(|s| s.eq_ignore_ascii_case(&name)) {
-                src.extra.push_str(&format!("\n[lua_script]\n{name}\n"));
-                editable::save(roots, rel, &src)?;
-            }
-        } else {
-            let sco = editable::sco_path(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: no .sco"))?;
-            anyhow::ensure!(sco.starts_with(&roots.content), "{}", tr("an object of the OMSI 2 installation is never changed: make it an object of your own first (its properties: Make editable)", "объект установки OMSI 2 не меняется: сначала сделайте его своим (его свойства: Сделать редактируемым)"));
-            let dir = sco.parent().unwrap_or(Path::new("")).to_path_buf();
-            let path = dir.join(&name);
-            if !path.exists() {
-                std::fs::write(&path, project::OBJECT_TEMPLATE)?;
-            }
-            let text = omsi_cfg::decode_text(&std::fs::read(&sco)?);
-            if !lua_scripts_of(&text).iter().any(|s| s.eq_ignore_ascii_case(&name)) {
-                let add = format!("{}\r\n[lua_script]\r\n{name}\r\n", if text.ends_with('\n') { "" } else { "\r\n" });
-                crate::doc::safe::write_atomic(&sco, &omsi_cfg::encode_text(&format!("{text}{add}")))?;
-            }
-            omsi_cfg::content_changed();
-            crate::hot::own_change();
-            return Ok(path);
-        }
-        omsi_cfg::content_changed();
-        crate::hot::own_change();
-        Ok(path)
+    /// A script just added to an object's type (`Action::ScriptObject`): opened.
+    pub fn opened(&mut self, path: PathBuf, lua: bool) {
+        self.open = true;
+        self.objects = None;
+        self.osc_for = None;
+        let kind = if lua { TabKind::Object } else { TabKind::Osc { vars: Vec::new(), strs: Vec::new(), consts: Vec::new() } };
+        self.open_tab(kind, path, true);
     }
 
     // ------------------------------------------------------------------------------- the run
@@ -661,7 +607,7 @@ impl ScriptsUi {
             self.toolbar(ui, ed, &project, &friendly);
             ui.separator();
             egui::Panel::left("scripts tree").resizable(true).default_size(240.0).size_range(170.0..=420.0).show(ui, |ui| {
-                egui::ScrollArea::vertical().id_salt("scripts tree scroll").show(ui, |ui| self.tree(ui, ed, roots, &project, &friendly, selected_object.as_deref()));
+                egui::ScrollArea::vertical().id_salt("scripts tree scroll").show(ui, |ui| self.tree(ui, ed, roots, &project, &friendly, selected_object.as_deref(), actions));
             });
             if self.show_api {
                 egui::Panel::right("scripts api").resizable(true).default_size(300.0).show(ui, |ui| self.api_panel(ui));
@@ -670,7 +616,7 @@ impl ScriptsUi {
             egui::CentralPanel::default().show(ui, |ui| self.editor_area(ui, &project, &friendly));
         });
         self.open = open;
-        self.dialogs(ctx, &project, &friendly, actions);
+        self.dialogs(ctx, &project, &friendly);
     }
 
     fn toolbar(&mut self, ui: &mut egui::Ui, ed: &Editor, project: &Project, friendly: &str) {
@@ -773,7 +719,7 @@ impl ScriptsUi {
         });
     }
 
-    fn tree(&mut self, ui: &mut egui::Ui, ed: &Editor, roots: &Roots, project: &Project, friendly: &str, selected: Option<&str>) {
+    fn tree(&mut self, ui: &mut egui::Ui, ed: &Editor, roots: &Roots, project: &Project, friendly: &str, selected: Option<&str>, actions: &mut Vec<Action>) {
         let weak = ui.visuals().weak_text_color();
         if !project.exists() {
             ui.label(RichText::new(tr("This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.", "У этой карты пока нет скриптов. Её скрипты выполняются в openOMSI, пока на ней играют: реагируют на происходящее (остановка, час, рейс), показывают сообщения, меняют движение и погоду.")).small().color(weak));
@@ -832,15 +778,14 @@ impl ScriptsUi {
                 if self.osc.is_empty() {
                     ui.label(RichText::new(tr("No OMSI 2 script (.osc).", "Нет скрипта OMSI 2 (.osc).")).small().color(weak));
                 }
-                if ui.button(icons::labelled(Icon::Add, tr("Add a Lua script to its type", "Добавить Lua-скрипт его типу"))).on_hover_text(tr("A script for every object of this type: written beside its .sco and named in it ([lua_script]); OMSI 2 skips it", "Скрипт для всех объектов этого типа: пишется рядом с его .sco и называется в нём ([lua_script]); OMSI 2 его пропускает")).clicked() {
-                    match self.add_object_script(ed, roots, rel) {
-                        Ok(p) => {
-                            self.objects = None;
-                            self.open_tab(TabKind::Object, p, true);
-                        }
-                        Err(e) => self.message = Some((e.to_string(), true)),
+                ui.horizontal_wrapped(|ui| {
+                    if ui.button(icons::labelled(Icon::Add, tr("Lua script (openOMSI)", "Lua-скрипт (openOMSI)"))).on_hover_text(tr("A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.", "Скрипт для всех объектов этого типа, рядом с его .sco и указан в нём ([lua_script]); OMSI 2 его пропускает. Объект установки сначала становится собственной копией карты.")).clicked() {
+                        actions.push(Action::ScriptObject { lua: true });
                     }
-                }
+                    if self.osc.is_empty() && ui.button(icons::labelled(Icon::Add, tr("OMSI 2 script (.osc)", "Скрипт OMSI 2 (.osc)"))).on_hover_text(tr("The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets", "Собственный скрипт объекта со списком переменных, его выполняют OMSI 2 и openOMSI; лампы и части [visible] следуют переменным, которые он задаёт")).clicked() {
+                        actions.push(Action::ScriptObject { lua: false });
+                    }
+                });
             }
         });
         // the Rust plugin
@@ -870,10 +815,6 @@ impl ScriptsUi {
                 self.bottom = Bottom::Build;
             }
         });
-        ui.add_space(6.0);
-        if ui.small_button(icons::labelled(Icon::Add, tr("A light switched by a script…", "Свет, включаемый скриптом…"))).clicked() {
-            self.light_open = true;
-        }
     }
 
     fn project_tree(&mut self, ui: &mut egui::Ui, project: &Project, friendly: &str) {
@@ -1347,7 +1288,7 @@ impl ScriptsUi {
         }
     }
 
-    fn dialogs(&mut self, ctx: &egui::Context, project: &Project, friendly: &str, actions: &mut Vec<Action>) {
+    fn dialogs(&mut self, ctx: &egui::Context, project: &Project, friendly: &str) {
         if let Some(nf) = &mut self.new_file {
             let mut open = true;
             let mut make = false;
@@ -1362,14 +1303,6 @@ impl ScriptsUi {
                         make = true;
                     }
                 });
-                ui.label(tr("Start from", "Взять за основу"));
-                for (i, t) in templates.iter().enumerate() {
-                    if (nf.kind == Kind::Module) == (i == 1) || (nf.kind == Kind::Script && i != 1) {
-                        if ui.radio(nf.template == i, t.title).clicked() {
-                            nf.template = i;
-                        }
-                    }
-                }
                 if ui.button(icons::labelled(Icon::Add, tr("Make", "Создать"))).clicked() {
                     make = true;
                 }
@@ -1419,57 +1352,6 @@ impl ScriptsUi {
                 self.rename = None;
             }
         }
-        if self.light_open {
-            let mut open = true;
-            egui::Window::new(tr("A light switched by a script", "Свет, включаемый скриптом")).collapsible(false).resizable(false).open(&mut open).show(ctx, |ui| {
-                ui.label(RichText::new(tr("A new object: a lamp that glows and lights the ground while its script says so. The script is yours to change after.", "Новый объект: лампа, которая светит и освещает землю, пока так говорит её скрипт. Потом скрипт можно менять.")).small());
-                let kinds = [Behaviour::Hours { from: 18.0, to: 23.0 }, Behaviour::Blink { period: 2.0 }, Behaviour::Months { from: 12, to: 1 }];
-                ui.horizontal_wrapped(|ui| {
-                    for k in kinds {
-                        let on = std::mem::discriminant(&k) == std::mem::discriminant(&self.light);
-                        if ui.selectable_label(on, k.label()).clicked() && !on {
-                            self.light = k;
-                        }
-                    }
-                });
-                match &mut self.light {
-                    Behaviour::Hours { from, to } => {
-                        ui.horizontal(|ui| {
-                            ui.label(tr("From", "С"));
-                            ui.add(egui::DragValue::new(from).range(0.0..=24.0).speed(0.1).suffix(tr(" h", " ч")));
-                            ui.label(tr("to", "до"));
-                            ui.add(egui::DragValue::new(to).range(0.0..=24.0).speed(0.1).suffix(tr(" h", " ч")));
-                        });
-                    }
-                    Behaviour::Blink { period } => {
-                        ui.horizontal(|ui| {
-                            ui.label(tr("A round takes", "Один круг"));
-                            ui.add(egui::DragValue::new(period).range(0.4..=60.0).speed(0.1).suffix(tr(" s", " с")));
-                        });
-                    }
-                    Behaviour::Months { from, to } => {
-                        ui.horizontal(|ui| {
-                            ui.label(tr("From month", "С месяца"));
-                            ui.add(egui::DragValue::new(from).range(1..=12));
-                            ui.label(tr("to", "по"));
-                            ui.add(egui::DragValue::new(to).range(1..=12));
-                        });
-                    }
-                }
-                ui.horizontal(|ui| {
-                    ui.label(tr("Colour", "Цвет"));
-                    ui.color_edit_button_srgb(&mut self.light_color);
-                    ui.label(tr("Reaches", "Светит на"));
-                    ui.add(egui::DragValue::new(&mut self.light_range).range(1.0..=100.0).suffix(" m"));
-                });
-                if ui.button(icons::labelled(Icon::Add, tr("Make the light", "Создать свет"))).clicked() {
-                    actions.push(Action::ScriptedLight(self.light, self.light_color, self.light_range));
-                    self.light_open = false;
-                }
-            });
-            if !open {
-                self.light_open = false;
-            }
-        }
+
     }
 }

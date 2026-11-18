@@ -2,10 +2,9 @@
 //! openOMSI's own compiler, so what is reported is what the game would say; and lights
 //! switched by a script. The map's Lua scripts for openOMSI are `crate::script`.
 
-use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use crate::editable::{self, Source, When};
+use crate::editable;
 use crate::i18n::tr;
 
 /// A problem in a script: the line (1-based, 0 when it belongs to no line) and what is wrong.
@@ -125,76 +124,75 @@ pub fn declared(dir: &Path, sco: &ScoScripts) -> (Vec<String>, Vec<String>, Vec<
     (read(&sco.varlists), read(&sco.strlists), sco.consts.iter().map(|f| omsi_cfg::resolve_path(dir, f)).collect())
 }
 
-/// What a scripted light does.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Behaviour {
-    /// Lit from one hour of the day to another (a shop's sign).
-    Hours { from: f32, to: f32 },
-    /// Lit and dark in turn, a whole period in seconds (a beacon).
-    Blink { period: f32 },
-    /// Lit through the months from one to another, 1 to 12 (Christmas lights).
-    Months { from: u8, to: u8 },
-}
-
-impl Behaviour {
-    pub fn label(self) -> &'static str {
-        match self {
-            Behaviour::Hours { .. } => tr("Lit during certain hours", "Горит в определённые часы"),
-            Behaviour::Blink { .. } => tr("Blinks", "Мигает"),
-            Behaviour::Months { .. } => tr("Lit in certain months", "Горит в определённые месяцы"),
-        }
-    }
-
-    /// The script that sets `lit`.
-    pub fn osc(self) -> String {
-        let mut s = String::from("' A light made in openMapper: the variable lit says whether it shines.\n' Change the rule below as you like; keep the {frame} ... {end} around it.\n\n{frame}\n");
-        match self {
-            Behaviour::Hours { from, to } => {
-                // (past midnight when the end comes before the start)
-                let join = if from <= to { "&&" } else { "||" };
-                let _ = write!(s, "\t' minutes since midnight\n\t(L.S.Time) 60 / s0\n\t{} >= l0 {} < {join}\n\t(S.L.lit)\n", (from * 60.0).round(), (to * 60.0).round());
-            }
-            Behaviour::Blink { period } => {
-                let p = period.max(0.2);
-                let _ = write!(s, "\t' seconds of play, shining for the first half of every period\n\t(L.S.GetTime) {p} % {} < (S.L.lit)\n", p / 2.0);
-            }
-            Behaviour::Months { from, to } => {
-                let join = if from <= to { "&&" } else { "||" };
-                let _ = write!(s, "\t(L.S.Month) s0\n\t{from} >= l0 {to} <= {join}\n\t(S.L.lit)\n");
+/// The `[lua_script]` files a `.sco` names, relative to it.
+pub fn lua_scripts_of(sco: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut lines = sco.lines().map(str::trim);
+    while let Some(l) = lines.next() {
+        if l.eq_ignore_ascii_case("[lua_script]") {
+            if let Some(f) = lines.next() {
+                let f = f.split('#').next().unwrap_or("").trim();
+                if !f.is_empty() {
+                    out.push(f.to_string());
+                }
             }
         }
-        s.push_str("{end}\n");
-        s
     }
+    out
 }
 
-/// A light that a script of its own switches: where the files go and what to write.
-pub fn scripted_light(color: [u8; 3], range: f32, stem: &str) -> Source {
-    let mut src = crate::makers::light_source(&crate::makers::Settings { light_color: color, light_range: range, light_night_only: false, ..Default::default() });
-    for l in &mut src.lights {
-        l.when = When::Var("lit".into());
+/// What a new OMSI 2 script of an object starts as.
+const OSC_START: &str = "' A script of a scenery object (OMSI 2 and openOMSI): {init} runs once, {frame} every frame.\n' The object's variables are listed in its varlist file, one per line: (L.L.name) reads one,\n' (S.L.name) sets it; lamps and [visible] parts of the object follow them.\n\n{init}\n{end}\n\n{frame}\n{end}\n";
+
+/// A script for every object of the type `rel`: Lua for openOMSI (`[lua_script]`, beside the
+/// `.sco`) or OMSI 2's (`[script]` with its variable list, in `script\`). An object of the
+/// installation is never changed: the caller makes it the map's own first. The script's file.
+pub fn add_script(roots: &crate::install::Roots, rel: &str, lua: bool) -> anyhow::Result<PathBuf> {
+    let sco = editable::sco_path(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: no .sco"))?;
+    anyhow::ensure!(sco.starts_with(&roots.content), "{}", tr("an object of the OMSI 2 installation is never changed: make it an object of your own first", "объект установки OMSI 2 не меняется: сначала сделайте его своим"));
+    let dir = sco.parent().unwrap_or(Path::new("")).to_path_buf();
+    let stem: String = sco.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().chars().map(|c| if c.is_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect();
+    let text = omsi_cfg::decode_text(&std::fs::read(&sco)?);
+    let (file, lines) = if lua {
+        let name = format!("{stem}.lua");
+        if lua_scripts_of(&text).iter().any(|s| s.eq_ignore_ascii_case(&name)) {
+            return Ok(dir.join(name));
+        }
+        if !dir.join(&name).exists() {
+            std::fs::write(dir.join(&name), crate::script::project::OBJECT_TEMPLATE)?;
+        }
+        (dir.join(&name), format!("[lua_script]\n{name}\n"))
+    } else {
+        let listed = sco_scripts(&text);
+        if let Some(first) = listed.scripts.first() {
+            // (OMSI 2 reads one script list: the object's own script is the one to change)
+            return Ok(omsi_cfg::resolve_path(&dir, first));
+        }
+        std::fs::create_dir_all(dir.join("script"))?;
+        let (osc, vars) = (format!("script\\{stem}.osc"), format!("script\\{stem}_varlist.txt"));
+        let path = omsi_cfg::resolve_path(&dir, &osc);
+        if !path.exists() {
+            std::fs::write(&path, OSC_START.replace('\n', "\r\n"))?;
+        }
+        if !omsi_cfg::resolve_path(&dir, &vars).exists() {
+            std::fs::write(omsi_cfg::resolve_path(&dir, &vars), "")?;
+        }
+        (path, format!("[script]\n1\n{osc}\n\n[varnamelist]\n1\n{vars}\n"))
+    };
+    match editable::load(roots, rel) {
+        // (an openMapper object: its .sco is written from its source, so the lines go there)
+        Some(mut src) => {
+            src.extra.push_str(&format!("\n{lines}"));
+            editable::save(roots, rel, &src)?;
+        }
+        None => {
+            let add = format!("{}\r\n{}", if text.ends_with('\n') { "" } else { "\r\n" }, lines.replace('\n', "\r\n"));
+            crate::doc::safe::write_atomic(&sco, &omsi_cfg::encode_text(&format!("{text}{add}")))?;
+        }
     }
-    src.name = "Scripted light".into();
-    src.extra = format!("[script]\n1\nscript\\{stem}.osc\n\n[varnamelist]\n1\nscript\\{stem}_varlist.txt\n");
-    src
-}
-
-/// Write the script of a scripted light beside the object (after the object itself is saved).
-pub fn write_light_script(dir: &Path, stem: &str, b: Behaviour) -> anyhow::Result<()> {
-    std::fs::create_dir_all(dir.join("script"))?;
-    std::fs::write(dir.join("script").join(format!("{stem}.osc")), b.osc().replace('\n', "\r\n"))?;
-    std::fs::write(dir.join("script").join(format!("{stem}_varlist.txt")), "lit\r\n")?;
-    Ok(())
-}
-
-/// Save a scripted light as a new object of the map: its relative path.
-pub fn make_light(roots: &crate::install::Roots, map: &str, b: Behaviour, color: [u8; 3], range: f32) -> anyhow::Result<String> {
-    let rel = editable::new_rel(roots, map, "ScriptedLight");
-    let (dir, stem) = editable::folder_of(roots, &rel);
-    let src = scripted_light(color, range, &stem);
-    editable::save(roots, &rel, &src)?;
-    write_light_script(&dir, &stem, b)?;
-    Ok(rel)
+    omsi_cfg::content_changed();
+    crate::hot::own_change();
+    Ok(file)
 }
 
 #[cfg(test)]
@@ -210,15 +208,33 @@ mod tests {
 
     #[test]
     fn the_game_compiler_checks_a_script() {
-        let ok = Behaviour::Hours { from: 18.0, to: 23.0 }.osc();
-        assert!(check_osc(&ok, &["lit".into()], &[], &[]).is_empty(), "{:?}", check_osc(&ok, &["lit".into()], &[], &[]));
-        for b in [Behaviour::Blink { period: 2.0 }, Behaviour::Months { from: 12, to: 1 }, Behaviour::Hours { from: 22.0, to: 5.0 }] {
-            let d = check_osc(&b.osc(), &["lit".into()], &[], &[]);
-            assert!(d.is_empty(), "{b:?}: {d:?}");
-        }
+        let ok = "{frame}\n\t(L.S.Time) 60 / s0\n\t1080 >= l0 1380 < &&\n\t(S.L.lit)\n{end}\n";
+        assert!(check_osc(ok, &["lit".into()], &[], &[]).is_empty(), "{:?}", check_osc(ok, &["lit".into()], &[], &[]));
+        assert!(check_osc(OSC_START, &[], &[], &[]).is_empty());
         // a variable the object does not list is a problem the game would report
         let d = check_osc("{frame}\n 1 (S.L.unknown)\n{end}\n", &[], &[], &[]);
         assert!(!d.is_empty());
+    }
+
+    #[test]
+    fn any_object_of_the_content_gets_a_lua_or_an_omsi_2_script() {
+        let roots = crate::doc::tests::scratch("add_script");
+        let dir = roots.content.join("Sceneryobjects").join("Mine");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("gate.sco"), "[mesh]\r\ngate.x\r\n").unwrap();
+        let rel = "Sceneryobjects\\Mine\\gate.sco";
+        let lua = add_script(&roots, rel, true).unwrap();
+        let osc = add_script(&roots, rel, false).unwrap();
+        assert!(lua.is_file() && osc.is_file());
+        // (again: the same files, nothing added twice)
+        assert_eq!(add_script(&roots, rel, true).unwrap(), lua);
+        assert_eq!(add_script(&roots, rel, false).unwrap(), osc);
+        let sco = omsi_cfg::decode_text(&std::fs::read(dir.join("gate.sco")).unwrap());
+        assert_eq!(lua_scripts_of(&sco), vec!["gate.lua"]);
+        assert_eq!(sco_scripts(&sco).scripts, vec!["script\\gate.osc"]);
+        assert!(sco.starts_with("[mesh]"));
+        // (the installation's objects are never written)
+        assert!(add_script(&roots, "Sceneryobjects\\Nowhere\\x.sco", true).is_err());
     }
 
     #[test]
