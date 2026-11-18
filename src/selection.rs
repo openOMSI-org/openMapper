@@ -494,6 +494,9 @@ pub fn unlink_outside(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
 /// Delete everything selected.
 pub fn delete(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
     hist.touch_global(doc);
+    // (where every spline is, read once when splines go: each one's links were else looked for
+    // across the whole map, twice to keep their tiles and twice to unlink them)
+    let w = sels.iter().any(|s| matches!(s, Sel::Spline(..))).then(|| SplineWhere::of(doc));
     for s in sels {
         match *s {
             Sel::Object(k, id) => {
@@ -505,8 +508,9 @@ pub fn delete(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
                 }
             }
             Sel::Spline(k, id) => {
-                touch_spline(hist, doc, k, id);
-                doc.delete_spline(k, id);
+                let Some(w) = &w else { continue };
+                touch_spline_where(hist, doc, w, k, id);
+                doc.delete_spline_known(k, id, &|o| w.map.get(&o).map(|e| e.0));
             }
             Sel::Attached(k, id) => {
                 hist.touch_tile(doc, k);
@@ -809,6 +813,26 @@ pub mod tests {
         assert!((doc.attachment((0, 0), 5).unwrap().offset[0] + 2.0).abs() < 1e-6);
     }
 
+    /// Deleting pieces of a road unlinks what they were linked to wherever it lies, with each
+    /// link's tile known from one read of the map, and undo brings the links back.
+    #[test]
+    fn deleting_a_piece_unlinks_its_neighbours_on_other_tiles() {
+        let mut doc = flat_map(3);
+        add_spline(&mut doc, (0, 0), 1, 20.0, 20.0, 0.0, 100.0, 0, 2);
+        add_spline(&mut doc, (1, 0), 2, 20.0, 20.0, 0.0, 100.0, 1, 3);
+        add_spline(&mut doc, (2, 0), 3, 20.0, 20.0, 0.0, 100.0, 2, 4);
+        add_spline(&mut doc, (2, 0), 4, 20.0, 120.0, 0.0, 100.0, 3, 0);
+        let mut hist = History::default();
+        hist.begin("delete");
+        delete(&mut doc, &mut hist, &[Sel::Spline((1, 0), 2), Sel::Spline((2, 0), 4)]);
+        hist.commit();
+        assert_eq!(doc.spline((0, 0), 1).unwrap().next_id, 0);
+        assert_eq!((doc.spline((2, 0), 3).unwrap().prev_id, doc.spline((2, 0), 3).unwrap().next_id), (0, 0));
+        hist.undo(&mut doc);
+        assert_eq!(doc.spline((0, 0), 1).unwrap().next_id, 2);
+        assert_eq!((doc.spline((2, 0), 3).unwrap().prev_id, doc.spline((2, 0), 3).unwrap().next_id), (2, 4));
+    }
+
     /// A move of many pieces keeps the tiles of the links they have outside it, as a move of
     /// one does: the links are read once for the whole move (the same tiles, a move of a
     /// chain of thousands paid for once).
@@ -829,8 +853,12 @@ pub mod tests {
         let w = SplineWhere::of(&many);
         touch_spline_where(&mut h2, &many, &w, (0, 0), 1);
         h2.commit();
-        let a = h1.take_changed().tiles;
-        let b = h2.take_changed().tiles;
+        // (a step tells only the tiles it did change)
+        for doc in [&mut one, &mut many] {
+            doc.tiles.values_mut().for_each(|t| t.touch_content());
+        }
+        let a = h1.take_changed(&one).tiles;
+        let b = h2.take_changed(&many).tiles;
         assert!(a.contains(&(1, 0)), "the link's tile is kept: {a:?}");
         assert_eq!(a, b);
     }

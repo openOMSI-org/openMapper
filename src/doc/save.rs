@@ -602,7 +602,8 @@ pub(crate) fn tile_text(t: &Tile) -> String {
         written.insert(a.id);
     }
     // (each after what it hangs on, as OMSI 2 reads them: an [attachObj] written before its
-    // parent is dropped by Omsi.exe. One whose parent is not in the tile goes last, as it was)
+    // parent is dropped by Omsi.exe. One whose parent is not in the tile goes last, as it was,
+    // and what hangs on it after it)
     let mut left: Vec<&MapObject> = t.attach_objects.iter().collect();
     loop {
         let before = left.len();
@@ -615,8 +616,24 @@ pub(crate) fn tile_text(t: &Tile) -> String {
             written.insert(o.id);
             false
         });
-        if left.is_empty() || left.len() == before {
+        if left.is_empty() {
             break;
+        }
+        if left.len() == before {
+            let hung: HashSet<i64> = left.iter().map(|o| o.id).collect();
+            left.retain(|o| {
+                if o.parent_id.is_some_and(|p| hung.contains(&p)) {
+                    return true;
+                }
+                numbered(&mut s);
+                object(&mut s, o, true);
+                written.insert(o.id);
+                false
+            });
+            // (a ring hung on itself: written as it is)
+            if left.len() == before {
+                break;
+            }
         }
     }
     for o in left {
@@ -944,7 +961,8 @@ mod tests {
         let hang = |id: i64, parent: i64| MapObject { file: "Sceneryobjects\\sign.sco".into(), id, parent_id: Some(parent), ..Default::default() };
         // (a sign on a sign that comes later in the list, signs on a row and an object, one on
         // nothing in this tile)
-        t.attach_objects = vec![hang(30, 31), hang(31, 10), hang(32, 11), hang(33, 20), hang(34, 999)];
+        // (and a sign on a sign whose pole is on another tile, listed before the sign it is on)
+        t.attach_objects = vec![hang(30, 31), hang(31, 10), hang(32, 11), hang(33, 20), hang(34, 999), hang(41, 40), hang(40, 998)];
         let text = tile_text(&t);
         let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &text));
         assert_eq!(back.splines.len(), 2);
@@ -952,10 +970,11 @@ mod tests {
         assert_eq!(rows, vec![(10, 0), (11, -1), (12, -1), (13, -1)], "no row lands on spline 7:\n{text}");
         let mut hung: Vec<i64> = back.attach_objects.iter().map(|o| o.id).collect();
         hung.sort();
-        assert_eq!(hung, vec![30, 31, 32, 33, 34], "every hung object read back, the sign on the later sign too");
+        assert_eq!(hung, vec![30, 31, 32, 33, 34, 40, 41], "every hung object read back, the sign on the later sign too");
         // (in the file, every [attachObj] comes after the record it hangs on)
         let at = |id: i64| text.find(&format!("\n{id}\n")).unwrap();
         assert!(at(10) < at(31) && at(31) < at(30));
+        assert!(at(40) < at(41), "the sign whose pole is elsewhere before the one on it:\n{text}");
     }
 
     /// The editor camera on a tile the map no longer has is put on one it has: OMSI 2's editor

@@ -620,12 +620,13 @@ impl SurfaceGrid {
 }
 
 /// A drag of one end's rotation: `original` is the path it started from, and `spawned` is
-/// how many pieces the last rebuild inserted after it.
+/// how many pieces the last rebuild inserted after it; `made`, those pieces as it left them.
 struct RotGesture {
     index: usize,
     at_end: bool,
     original: Path,
     spawned: usize,
+    made: Vec<Path>,
 }
 
 /// Rebuild `template` so it leaves on `h0` and arrives on `h1`, the two ends staying where
@@ -1861,8 +1862,28 @@ fn unsaved_text() -> &'static str {
 }
 
 impl CrossingPaths {
-    fn unsaved(&self) -> bool {
+    /// Whether there are edits here not saved yet (they live in the window alone: the map
+    /// itself is not marked changed by them).
+    pub fn unsaved(&self) -> bool {
         self.sheet.as_ref().is_some_and(|s| s.crossing != self.seen)
+    }
+
+    /// The map is about to be left (closed, another opened, the program ended). False when
+    /// there are edits here not saved: the window asks about them first, and the map stays.
+    pub fn may_leave_map(&mut self) -> bool {
+        if !self.unsaved() {
+            return true;
+        }
+        self.open = true;
+        self.ask_close = true;
+        false
+    }
+
+    /// The map the crossing was opened on is gone: the window goes with it (left open, it
+    /// would show that crossing's paths over whatever object of the next map has its tile and
+    /// IDCode, and work on that object).
+    pub fn map_gone(&mut self) {
+        self.discard();
     }
 
     /// Whether the paths are shown - and worked on - on the map itself: the crossing object in
@@ -1877,6 +1898,7 @@ impl CrossingPaths {
     }
 
     /// The path picked here (the map draws it picked too, when the paths are shown there).
+    #[cfg(test)]
     pub fn picked(&self) -> Option<usize> {
         self.selected
     }
@@ -2261,6 +2283,7 @@ impl CrossingPaths {
     }
 
     /// Which way round joins are made here.
+    #[cfg(test)]
     pub fn side(&self) -> Side {
         self.side
     }
@@ -2650,10 +2673,13 @@ impl CrossingPaths {
 
     /// Open on the selected object, or on a crossing picked from the map's list.
     pub fn request(&mut self, ed: &mut Editor, roots: &Roots, lib: &Library) {
-        // (what is being edited is not dropped for another object)
-        if self.unsaved() && !matches!((ed.selected, self.target), (Some(a), Some(b)) if a == b) {
+        // (what is being edited is not dropped for another object, nor read again from the
+        // file when the same one is asked for: that dropped the edits and their undo)
+        if self.unsaved() {
             self.open = true;
-            self.message = Some((unsaved_text().into(), true));
+            if !matches!((ed.selected, self.target), (Some(a), Some(b)) if a == b) {
+                self.message = Some((unsaved_text().into(), true));
+            }
             return;
         }
         self.sheet = None;
@@ -2759,6 +2785,14 @@ impl CrossingPaths {
                 self.forget_gestures();
                 self.footprint = None;
                 self.message = None;
+                // (nor is what was said of the last one, or a mode armed on it: the next click
+                // would else start or finish a path on this one)
+                self.link_report.clear();
+                self.from_nearby = false;
+                self.complete_to = false;
+                self.nearby.clear();
+                self.sink.clear();
+                self.sink_next = 0;
                 true
             }
             Err(e) => {
@@ -2837,7 +2871,12 @@ impl CrossingPaths {
         // (the paths laid on the map itself: the window keeps the properties at the screen's
         // right edge, so the crossing - the object in 3D - is what is seen and worked on)
         let beside = self.view_3d && self.tab == Tab::Paths;
-        let size = if beside { Vec2::new(400.0, (screen.height() - 90.0).max(420.0)) } else { Vec2::new(1000.0, 660.0) };
+        // (never larger than the screen: at 1366 x 768 and 150 % there are some 910 x 512
+        // points, and the window's least size had its bottom - the drawing, or the side
+        // panel's last rows - out of reach)
+        let fit = (screen.size() - Vec2::new(16.0, 44.0)).max(Vec2::splat(240.0));
+        let low = (fit.y - 150.0).clamp(160.0, 400.0);
+        let size = if beside { Vec2::new(400.0f32.min(fit.x), (screen.height() - 90.0).max(420.0).min(fit.y)) } else { Vec2::new(1000.0, 660.0).min(fit) };
         // (in the middle of the screen, as the crossing editor's own window is)
         let pos = if beside { Pos2::new(screen.right() - size.x - 10.0, screen.top() + 34.0) } else { screen.center() - size * 0.5 };
         let mut save = false;
@@ -2876,7 +2915,7 @@ impl CrossingPaths {
             .default_pos(pos)
             .default_size(size)
             .resizable(!beside);
-        window = if beside { window.current_pos(pos).fixed_size(size) } else { window.min_size(Vec2::new(880.0, 540.0)) };
+        window = if beside { window.current_pos(pos).fixed_size(size) } else { window.min_size(Vec2::new(880.0, 540.0).min(fit)).max_size(fit) };
         let shown = window
             .show(ctx, |ui| {
                 // (a scroll area takes the layout of the ui it is made in, so each half gets
@@ -2889,16 +2928,16 @@ impl CrossingPaths {
                 // to that width)
                 let room = if beside { (size.x - 16.0).max(320.0) } else { ui.available_width().clamp(320.0, 1200.0) };
                 ui.set_max_width(room);
-                ui.set_min_height(400.0);
+                ui.set_min_height(low);
                 let Some(mut sheet) = self.sheet.take() else {
                     self.no_target(ui, ed, roots, lib);
                     return;
                 };
                 self.head(ui, &sheet, &mut save, &mut revert, roots);                ui.separator();
                 let body = if beside {
-                    Vec2::new(ui.available_width().max(320.0), ui.available_height().max(400.0))
+                    Vec2::new(ui.available_width().max(320.0), ui.available_height().max(low))
                 } else {
-                    Vec2::new(ui.available_width().max(800.0), ui.available_height().max(400.0))
+                    Vec2::new(ui.available_width().max(800.0f32.min(fit.x - 24.0)), ui.available_height().max(low))
                 };
                 match self.tab {
                     Tab::Paths if beside => {
@@ -3420,9 +3459,12 @@ impl CrossingPaths {
         if index >= crossing.paths.len() {
             return;
         }
-        let fresh = self.rot_drag.as_ref().map(|g| g.index != index || g.at_end != at_end).unwrap_or(true);
+        // (a gesture whose pieces were changed since by something else - Connect the roads, a
+        // typed rotation's field let go without a drag ending - starts again from the path as
+        // it is: rebuilt from its old original, that change was silently undone)
+        let fresh = self.rot_drag.as_ref().map(|g| g.index != index || g.at_end != at_end || crossing.paths.get(index..=index + g.spawned) != Some(&g.made[..])).unwrap_or(true);
         if fresh {
-            self.rot_drag = Some(RotGesture { index, at_end, original: crossing.paths[index].clone(), spawned: 0 });
+            self.rot_drag = Some(RotGesture { index, at_end, original: crossing.paths[index].clone(), spawned: 0, made: Vec::new() });
         }
         let Some(g) = self.rot_drag.as_ref() else { return };
         let (index, spawned, original) = (g.index, g.spawned, g.original.clone());
@@ -3443,6 +3485,7 @@ impl CrossingPaths {
         if pieces.is_empty() {
             if let Some(g) = self.rot_drag.as_mut() {
                 g.spawned = 0;
+                g.made = vec![crossing.paths[index].clone()];
             }
             return;
         }
@@ -3451,6 +3494,7 @@ impl CrossingPaths {
         insert_after(&mut crossing.paths, index, pieces.into_iter().skip(1).collect());
         if let Some(g) = self.rot_drag.as_mut() {
             g.spawned = extra;
+            g.made = crossing.paths[index..=index + extra].to_vec();
         }
     }
 
@@ -4204,8 +4248,7 @@ impl CrossingPaths {
                     }
                     self.seen = crossing;
                     crate::hot::own_change();
-                    let key = self.rel.to_lowercase();
-                    assets.objects.remove(&key);
+                    assets.forget_object_model(&self.rel);
                     let _ = assets.object(&self.rel);
                     // (the GPU model too, and only that one: the catalogue is not read again)
                     actions.push(crate::ui::Action::CrossingSaved(self.rel.clone()));
@@ -4252,7 +4295,7 @@ impl CrossingPaths {
         }
         self.seen = crossing;
         crate::hot::own_change();
-        assets.objects.remove(&rel.to_lowercase());
+        assets.forget_object_model(&rel);
         let _ = assets.object(&rel);
         if fresh || !on_ours {
             ed.set_object_file(k, id, &rel);
@@ -5132,6 +5175,77 @@ Main
         assert!(!w.open);
         assert!(w.sheet.is_none(), "nothing is left to be shown");
         assert!(!w.ask_close, "the question is put away with the window");
+    }
+
+    /// Asking for the crossing editor on the crossing it holds edits of shows them as they are:
+    /// it read the file again, and the edits and their undo were gone without a word.
+    #[test]
+    fn asking_again_for_the_crossing_being_edited_keeps_the_edits() {
+        let mut w = opened(Tab::Paths);
+        w.sheet.as_mut().unwrap().crossing.paths[0].v[9] = 5.0;
+        w.open = false;
+        let mut ed = Editor::default();
+        ed.selected = w.target;
+        let nowhere = std::env::temp_dir().join("openmapper-crossing-none");
+        let roots = Roots { omsi: nowhere.clone(), content: nowhere };
+        w.request(&mut ed, &roots, &Library::default());
+        assert!(w.open);
+        assert_eq!(w.sheet.as_ref().map(|s| s.crossing.paths[0].v[9]), Some(5.0), "the edit is kept");
+    }
+
+    /// On a small screen (1366 x 768 at 150 %: some 910 x 512 points) the window fits on it,
+    /// in 2D and beside the map: its least size had the drawing's bottom, or the side panel's
+    /// last rows, off the screen.
+    #[test]
+    fn the_window_fits_a_small_screen() {
+        for beside in [false, true] {
+            let mut w = opened(Tab::Paths);
+            w.view_3d = beside;
+            let mut ed = Editor::default();
+            let ctx = context();
+            let lib = Library::default();
+            let mut actions = Vec::new();
+            let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(910.0, 512.0));
+            for time in [0.0, 0.1, 0.2] {
+                let input = egui::RawInput { screen_rect: Some(screen), time: Some(time), ..Default::default() };
+                let _ = ctx.run_ui(input, |ui| {
+                    let ctx = ui.ctx().clone();
+                    w.window(&ctx, &mut ed, &lib, None, None, &mut actions);
+                });
+            }
+            let at = ctx.memory(|m| m.area_rect(egui::Id::new("crossing paths window"))).expect("the window is there");
+            assert!(screen.contains_rect(at), "beside the map {beside}: {at:?} is not within {screen:?}");
+        }
+    }
+
+    /// A path changed by something else between two rotations of its end (Connect the roads
+    /// moving its start) keeps that change: the next rotation was rebuilt from the path as the
+    /// first one began, and the link's alignment was silently undone.
+    #[test]
+    fn a_rotation_after_another_change_keeps_that_change() {
+        let mut w = opened(Tab::Paths);
+        let mut c = w.sheet.as_ref().unwrap().crossing.clone();
+        let h = c.paths[0].heading();
+        w.apply_rotation(&mut c, 0, true, h + 3.0);
+        let moved = c.paths[0].v[0] + 0.7;
+        c.paths[0].v[0] = moved;
+        w.apply_rotation(&mut c, 0, true, h + 4.0);
+        assert!((c.paths[0].v[0] - moved).abs() < 1e-4, "the start as the other change left it: {} vs {moved}", c.paths[0].v[0]);
+    }
+
+    /// Leaving the map (closing it, opening another, ending the program) asks about the
+    /// crossing's edits first: they live in this window alone, the map is not marked changed
+    /// by them, and they were lost without a word.
+    #[test]
+    fn leaving_the_map_asks_about_the_crossing_first() {
+        let mut w = opened(Tab::Paths);
+        assert!(w.may_leave_map(), "nothing to lose");
+        w.sheet.as_mut().unwrap().crossing.paths[0].v[9] = 5.0;
+        w.open = false;
+        assert!(!w.may_leave_map(), "the map stays");
+        assert!(w.open && w.ask_close, "the window asks");
+        w.map_gone();
+        assert!(!w.open && w.sheet.is_none(), "another map's object is not worked on");
     }
 
     /// "+" carries a path on from the picked one: it starts at that path's end, in the way it

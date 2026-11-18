@@ -8,6 +8,33 @@ use crate::assets::Assets;
 use crate::doc::{tile_origin, Document, TileKey};
 use crate::library::{Category, Library};
 
+/// Things by where they lie, to find the near ones without looking at all of a city's.
+pub(crate) struct PointGrid<T> {
+    cell: f64,
+    cells: std::collections::HashMap<(i64, i64), Vec<T>>,
+}
+
+impl<T: Copy> PointGrid<T> {
+    pub fn new(cell: f64) -> Self {
+        PointGrid { cell, cells: Default::default() }
+    }
+
+    fn key(&self, p: DVec2) -> (i64, i64) {
+        ((p.x / self.cell).floor() as i64, (p.y / self.cell).floor() as i64)
+    }
+
+    pub fn add(&mut self, p: DVec2, v: T) {
+        let k = self.key(p);
+        self.cells.entry(k).or_default().push(v);
+    }
+
+    /// What lies in the cells within `r` of `p` (a little more than `r`: the caller measures).
+    pub fn near(&self, p: DVec2, r: f64) -> impl Iterator<Item = T> + '_ {
+        let (lo, hi) = (self.key(p - DVec2::splat(r)), self.key(p + DVec2::splat(r)));
+        (lo.0..=hi.0).flat_map(move |x| (lo.1..=hi.1).map(move |y| (x, y))).flat_map(move |k| self.cells.get(&k).into_iter().flatten().copied())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EndState {
     /// Joined to the next spline.
@@ -84,17 +111,28 @@ pub fn road_ends(doc: &Document, lib: &Library, assets: &mut Assets, technical: 
     }
     let lanes = object_lane_ends(doc, assets);
     let free: Vec<DVec3> = out.iter().filter(|e| e.state == EndState::Free).map(|e| e.pos).collect();
+    // (each end looked for among the near ones only: every free end of a city against every
+    // other and every lane end of every plate grew with the square of the map)
+    let mut lane_grid = PointGrid::new(8.0);
+    for (i, q) in lanes.iter().enumerate() {
+        lane_grid.add(q.truncate(), i);
+    }
+    let mut free_grid = PointGrid::new(8.0);
+    for (i, q) in free.iter().enumerate() {
+        free_grid.add(q.truncate(), i);
+    }
     for e in out.iter_mut().filter(|e| e.state == EndState::Free) {
         // (on a plate: object lane ends on the cross line through the end, within its width)
         let h = e.heading.to_radians();
         let (fwd, side) = (DVec2::new(h.sin(), h.cos()), DVec2::new(h.cos(), -h.sin()));
-        let on_plate = lanes.iter().any(|q| {
-            let d = (*q - e.pos).truncate();
+        let on_plate = lane_grid.near(e.pos.truncate(), e.half_width + 1.1).any(|i| {
+            let q = lanes[i];
+            let d = (q - e.pos).truncate();
             d.dot(fwd).abs() < 0.8 && d.dot(side).abs() <= e.half_width + 0.3 && (q.z - e.pos.z).abs() < 1.5
         });
         if on_plate {
             e.state = EndState::Plate;
-        } else if free.iter().filter(|q| (**q - e.pos).truncate().length() < 0.6 && (q.z - e.pos.z).abs() < 0.5).count() > 1 {
+        } else if free_grid.near(e.pos.truncate(), 0.6).map(|i| free[i]).filter(|q| (*q - e.pos).truncate().length() < 0.6 && (q.z - e.pos.z).abs() < 0.5).count() > 1 {
             e.state = EndState::Touching;
         }
     }

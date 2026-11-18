@@ -103,7 +103,8 @@ impl Editor {
         check_room(doc, segs)?;
         self.history.begin(tr("Splines laid", "Сплайны проложены"));
         let doc = self.doc.as_mut().unwrap();
-        let keys: Vec<TileKey> = segs.iter().flat_map(|s| [tile_of(s.start), tile_of(s.end())]).collect();
+        // (and the tiles of the ends it is linked to: their links change too)
+        let keys: Vec<TileKey> = segs.iter().flat_map(|s| [tile_of(s.start), tile_of(s.end())]).chain(from.map(|e| e.0)).chain(to.map(|e| e.0)).collect();
         for k in keys {
             self.history.touch_tile(doc, k);
         }
@@ -260,7 +261,11 @@ impl Editor {
             self.history.touch_tile(doc, k);
         }
         let r = paint_areas_in(doc, layer, polys, feather, erase);
-        self.history.commit();
+        if r.is_ok() {
+            self.history.commit();
+        } else {
+            self.history.rollback(doc);
+        }
         r
     }
 }
@@ -389,7 +394,7 @@ impl Editor {
             let mut v = Vec::new();
             for dx in -s..=s {
                 for dy in -s..=s {
-                    v.extend(g.get(&(cx + dx, cy + dy)).into_iter().flatten().copied());
+                    v.extend(g.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten().copied());
                 }
             }
             v
@@ -401,11 +406,18 @@ impl Editor {
         }
         lo -= DVec2::splat(reach);
         hi += DVec2::splat(reach);
+        // (only the map's own ground: a broken spline of a map file, 10^22 m out, made the
+        // walk over the samples between endless)
+        if let Some((a, b)) = self.doc.as_ref().map(|d| d.extent()) {
+            (lo, hi) = (lo.max(a), hi.min(b));
+        }
         self.history.begin(tr("Track beds", "Постель путей"));
         let pts: Vec<DVec2> = tracks.iter().step_by(10).map(|t| t.0).collect();
         self.touch_around(&pts, reach + 6.0);
         let Some(doc) = self.doc.as_mut() else { return rep };
-        let mut dummy = crate::history::History::default();
+        // (each tile a sample is set on is kept as it is set: the tiles round every so many
+        // samples missed some, which undo then left as the edit made them)
+        let hist = &mut self.history;
         for gy in (lo.y / cell).floor() as i64..=(hi.y / cell).ceil() as i64 {
             for gx in (lo.x / cell).floor() as i64..=(hi.x / cell).ceil() as i64 {
                 let q = DVec2::new(gx as f64 * cell, gy as f64 * cell);
@@ -426,12 +438,16 @@ impl Editor {
                     }
                 }
                 if (h - old as f64).abs() > 0.005 {
-                    crate::editor::set_world_sample(doc, &mut dummy, gx, gy, n, h as f32);
+                    crate::editor::set_world_sample(doc, hist, gx, gy, n, h as f32);
                     rep.samples += 1;
                 }
             }
         }
         if let Some(l) = layer {
+            // (the paint reaches whichever tiles the beds cross)
+            for k in doc.tiles.keys().copied().collect::<Vec<_>>() {
+                hist.touch_tile(doc, k);
+            }
             rep.texels = paint_areas_in(doc, l, &bands, 1.0, false).unwrap_or(0);
         }
         self.history.commit();
@@ -548,6 +564,11 @@ impl Editor {
         }
         lo -= DVec2::splat(reach);
         hi += DVec2::splat(reach);
+        // (only the map's own ground: a broken spline of a map file, 10^22 m out, made the
+        // walk over the samples between endless)
+        if let Some((a, b)) = self.doc.as_ref().map(|d| d.extent()) {
+            (lo, hi) = (lo.max(a), hi.min(b));
+        }
         for gy in (lo.y / cell).floor() as i64..=(hi.y / cell).ceil() as i64 {
             for gx in (lo.x / cell).floor() as i64..=(hi.x / cell).ceil() as i64 {
                 let q = DVec2::new(gx as f64 * cell, gy as f64 * cell);
@@ -560,7 +581,7 @@ impl Editor {
                 let (cx, cy) = key(q);
                 for dx in -2..=2 {
                     for dy in -2..=2 {
-                        for i in sg.get(&(cx + dx, cy + dy)).into_iter().flatten() {
+                        for i in sg.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten() {
                             let (p, z, h) = strips[*i];
                             if (p - q).length() <= h + reach {
                                 put(gx, gy, z - 0.06);
@@ -574,12 +595,14 @@ impl Editor {
         let pts: Vec<DVec2> = cap.keys().step_by(20).map(|(x, y)| DVec2::new(*x as f64 * cell, *y as f64 * cell)).collect();
         self.touch_around(&pts, 400.0);
         let Some(doc) = self.doc.as_mut() else { return 0 };
-        let mut dummy = crate::history::History::default();
+        // (each tile a sample is set on is kept as it is set: the tiles round every so many
+        // samples missed some, which undo then left as the edit made them)
+        let hist = &mut self.history;
         let mut moved = 0;
         for ((gx, gy), z) in cap {
             let Some(old) = crate::editor::world_sample(doc, gx, gy, n) else { continue };
             if (old as f64) > z {
-                crate::editor::set_world_sample(doc, &mut dummy, gx, gy, n, z as f32);
+                crate::editor::set_world_sample(doc, hist, gx, gy, n, z as f32);
                 moved += 1;
             }
         }
@@ -591,6 +614,29 @@ impl Editor {
 #[cfg(test)]
 mod short_joint_tests {
     use super::*;
+
+    /// A chain laid on from a road whose spline starts on another tile is undone whole: that
+    /// road's link to it was changed with its tile not kept, and kept pointing at a spline
+    /// that no longer was.
+    #[test]
+    fn a_chain_laid_on_from_a_road_on_another_tile_is_undone_whole() {
+        let mut doc = crate::selection::tests::flat_map(2);
+        let ts = crate::doc::tile_size();
+        // (from tile 0, 0 across into tile 1, 0)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, ts - 20.0, 100.0, 90.0, 40.0, 0, 0);
+        let (end, heading) = end_of(&doc, ((0, 0), 1, true)).unwrap();
+        assert_eq!(tile_of(end.truncate()), (1, 0));
+        let way = DVec2::new(heading.to_radians().sin(), heading.to_radians().cos());
+        let seg = crate::roads::straight(end.truncate(), end.truncate() + way * 30.0).unwrap();
+        assert_eq!(tile_of(seg.end()), (1, 0), "the chain lies on tile 1, 0 alone");
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let made = ed.lay_chain("Splines\\road.sli", &[seg], Some(((0, 0), 1, true)), None, 0.0).unwrap();
+        let next = |ed: &Editor| ed.doc.as_ref().unwrap().spline((0, 0), 1).unwrap().next_id;
+        assert_eq!(next(&ed), made[0].1, "linked");
+        ed.undo();
+        assert_eq!(next(&ed), 0, "the link undone with the chain");
+    }
 
     #[test]
     fn a_short_piece_between_two_ends_runs_from_the_one_height_to_the_other() {

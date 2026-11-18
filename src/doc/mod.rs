@@ -41,6 +41,11 @@ pub fn tile_of(p: DVec2) -> TileKey {
 
 static REVISION: AtomicU64 = AtomicU64::new(1);
 
+thread_local! {
+    /// The map and the next IDCode `Document::new_id` last left it at (counted on from there).
+    static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
+}
+
 /// A fresh revision number: whatever shows a tile rebuilds it when its number changes.
 pub fn next_rev() -> u64 {
     REVISION.fetch_add(1, Ordering::Relaxed)
@@ -451,9 +456,6 @@ impl Document {
         // (the map is looked through for its highest IDCode only when the next one is not the
         // one this map was last left at here: one after another, as a build lays a city's
         // roads, they are counted on without reading every object again each time)
-        thread_local! {
-            static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
-        }
         let me = self as *const Document as usize;
         if ISSUED.with(|c| c.get()) != (me, self.global.next_id_code) {
             let highest = self.highest_id();
@@ -468,8 +470,21 @@ impl Document {
         id
     }
 
+    /// The next IDCode is this editor's own to count on, as handed out by a shared session (a
+    /// block of its own): `new_id` does not raise it past the map's highest, which may lie in
+    /// another editor's block - it jumped there, and the two gave out the same IDCodes.
+    pub fn own_next_id(&self) {
+        ISSUED.with(|c| c.set((self as *const Document as usize, self.global.next_id_code)));
+    }
+
+    /// Where the map lies (world): its tiles' lowest corner and highest one.
+    pub fn extent(&self) -> (DVec2, DVec2) {
+        let ts = DVec2::splat(tile_size());
+        self.tiles.keys().fold((DVec2::splat(f64::MAX), DVec2::splat(f64::MIN)), |(lo, hi), k| (lo.min(tile_origin(*k)), hi.max(tile_origin(*k) + ts)))
+    }
+
     /// The greatest IDCode any object or spline on the map already has.
-    fn highest_id(&self) -> i64 {
+    pub(crate) fn highest_id(&self) -> i64 {
         let mut m = 0i64;
         for t in self.tiles.values() {
             for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
@@ -655,6 +670,13 @@ impl Document {
 
     /// Remove a spline, unlink its neighbours and drop the attachment rows that ran on it.
     pub fn delete_spline(&mut self, k: TileKey, id: i64) {
+        self.delete_spline_known(k, id, &|_| None);
+    }
+
+    /// `delete_spline`, with the tile each linked spline is on known (`tile_of`): its link is
+    /// taken away there instead of looked for across the whole map (a delete of thousands
+    /// looked the map through twice for each).
+    pub fn delete_spline_known(&mut self, k: TileKey, id: i64, tile_of: &dyn Fn(i64) -> Option<TileKey>) {
         let Some(t) = self.tiles.get_mut(&k) else { return };
         let Some(idx) = t.tile.splines.iter().position(|s| s.id == id) else { return };
         let s = t.tile.splines.remove(idx);
@@ -678,7 +700,8 @@ impl Document {
             if other == 0 {
                 continue;
             }
-            for t in self.tiles.values_mut() {
+            let known = tile_of(other);
+            for (_, t) in self.tiles.iter_mut().filter(|(tk, _)| known.is_none_or(|nk| **tk == nk)) {
                 let mut hit = false;
                 for o in t.tile.splines.iter_mut().filter(|o| o.id == other) {
                     if o.prev_id == id {

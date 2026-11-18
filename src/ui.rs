@@ -1542,7 +1542,10 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
                     crate::ui_edit::snap_controls(ui, ed, snap_room - sep);
                 }
                 ui.separator();
-                ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                // (an id of its own: the facts before it come and go - the loading spinner, the
+                // counts - and its own changed with how many there were, so egui warned of it
+                // changing between passes)
+                ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new("status help")).layout(Layout::left_to_right(Align::Center)), |ui| {
                     // (an idle hint is said whole or in short, never cut off; help and messages
                     // are cut short and shown whole under the mouse)
                     let text = if text.is_empty() { idle.iter().find(|t| small_w(ui, t, false) - sep <= ui.available_width()).map(|t| t.to_string()).unwrap_or_default() } else { text };
@@ -3232,14 +3235,20 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
                 ui.label(doc.global.entry_points.len().to_string());
             });
             // what the map holds (worked out again only when a tile changed)
-            let key = doc.tiles.values().fold(lib.assets.len() as u64, |h, t| h.rotate_left(5) ^ t.content_rev);
+            // (and while the catalogue is read, which tells more roads what kind they are, every
+            // two seconds: on a city it grows for minutes, and the stats worked out again with
+            // each file it read took a fifth of every frame)
+            let key = doc.tiles.values().fold(0u64, |h, t| h.rotate_left(5) ^ t.content_rev);
+            let (files, now) = (lib.assets.len(), ui.input(|i| i.time));
             let id = egui::Id::new("map stats");
-            let stats: Option<(u64, [f64; 5])> = ui.data(|d| d.get_temp(id));
+            let stats: Option<(u64, usize, f64, [f64; 5])> = ui.data(|d| d.get_temp(id));
             let v = match stats {
-                Some((k, v)) if k == key => v,
+                Some((k, n, at, v)) if k == key && (n == files || now - at < 2.0) => v,
                 _ => {
+                    let t_stats = std::time::Instant::now();
                     let v = map_stats(doc, lib);
-                    ui.data_mut(|d| d.insert_temp(id, (key, v)));
+                    crate::render::profile::log_time("map stats", t_stats);
+                    ui.data_mut(|d| d.insert_temp(id, (key, files, now, v)));
                     v
                 }
             };

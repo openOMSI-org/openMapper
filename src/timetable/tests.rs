@@ -546,6 +546,20 @@ fn a_lane_a_little_off_the_road_in_height_runs_on_into_it() {
     assert_eq!(ids, vec![2]);
 }
 
+/// A lane of a broken spline far out (Solnechnogorsk_2024 has some 10^22 m north) is linked
+/// with the rest without the cell numbers overflowing: saving the map stopped there.
+#[test]
+fn a_lane_at_the_end_of_the_numbers_is_linked_without_overflowing() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let north = |y0: f64, y1: f64| vec![DVec3::new(0.0, y0, 0.0), DVec3::new(0.0, y1, 0.0)];
+    net.add(PathKey { tile, id: 1, path: 0 }, north(1.15e22, 1.15e22 + 10.0), 10.0, 0, 0, (true, false));
+    net.add(PathKey { tile, id: 2, path: 0 }, north(-1.15e22 - 10.0, -1.15e22), 10.0, 1, 0, (true, false));
+    net.add(PathKey { tile, id: 3, path: 0 }, north(0.0, 20.0), 20.0, 2, 0, (true, false));
+    net.link();
+    assert!(net.lanes.iter().all(|l| l.next.is_empty()));
+}
+
 /// A road north: `A` to y 100, a 1 m piece `S` (a junction's connector), `B` on from y 101
 /// to a junction at y 120 and a detour `D` beside it; on past the junction, and a road
 /// leading into `A` from the south.

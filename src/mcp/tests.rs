@@ -150,3 +150,26 @@ fn base64_is_the_standard_one() {
     assert_eq!(base64(b"M"), "TQ==");
     assert_eq!(base64(b""), "");
 }
+
+/// `plate` is one undo step: two roads in line are linked, and undo takes the link back
+/// (it changed the map with no step open, and undo then went back past it).
+#[test]
+fn a_plate_is_undone_as_one_step() {
+    let mut s = server(true);
+    let doc = s.ed.doc.as_mut().unwrap();
+    crate::selection::tests::add_spline(doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 0);
+    crate::selection::tests::add_spline(doc, (0, 0), 2, 100.0, 150.0, 0.0, 50.0, 0, 0);
+    let v = call(&mut s, "plate", json!({ "ends": [{ "id": 1, "end": "end" }, { "id": 2, "end": "start" }] })).unwrap();
+    let next = |s: &Server| s.ed.doc.as_ref().unwrap().spline((0, 0), 1).unwrap().next_id;
+    assert_eq!(next(&s), 2, "linked: {v}");
+    call(&mut s, "undo", json!({})).unwrap();
+    assert_eq!(next(&s), 0, "the link undone");
+}
+
+/// A read-only server does not put right what `street_check` finds: `fix` changes the map.
+#[test]
+fn a_read_only_street_check_fixes_nothing() {
+    let mut s = server(false);
+    assert!(call(&mut s, "street_check", json!({})).is_ok());
+    assert!(call(&mut s, "street_check", json!({ "fix": true })).is_err());
+}

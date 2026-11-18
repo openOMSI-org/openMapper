@@ -504,6 +504,7 @@ impl App {
         if let Some(g) = &mut self.gfx {
             g.renderer.reset_map();
         }
+        self.crossing.map_gone();
         self.ed.open(doc);
         self.sync.rebase(self.ed.doc.as_ref());
         self.ed.set_tool(Tool::Select);
@@ -1532,6 +1533,10 @@ impl App {
         // so it is not cut short, nor counted as changes to lose)
         if guarded {
             self.finish_save();
+            // (the crossing editor's edits are not the map's: it asks about them itself)
+            if !self.unguarded && !self.crossing.may_leave_map() {
+                return;
+            }
         }
         let dirty = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
         if guarded {
@@ -1618,6 +1623,7 @@ impl App {
                 }
                 self.ed.doc = None;
                 self.ed.history.clear();
+                self.crossing.map_gone();
                 if let Some(r) = &self.roots {
                     self.ui.maps = install::list_maps(r);
                 }
@@ -2940,6 +2946,11 @@ impl App {
             self.ed.detach_lanes(assets, roots);
             self.ed.pick_ai_path_near(assets, at);
         }
+        // (an edit that kept every tile lets go of the copies it did not need at once, not with
+        // the next edit: on a city that is a copy of the whole map held meanwhile)
+        if let Some(doc) = self.ed.doc.as_ref() {
+            self.ed.history.settle(doc);
+        }
         if let Some(assets) = self.assets.as_mut() {
             self.ed.tick(assets, dt, self.mouse.left && !self.mouse.over_ui);
             if let Some(roots) = &self.roots {
@@ -3139,7 +3150,7 @@ impl App {
                 recover_answer = crate::doc::autosave::offer(&ctx, m);
             }
             sync_answer = crate::ui_sync::window(&ctx, &self.sync);
-            let unsaved = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
+            let unsaved = self.ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false) || self.crossing.unsaved();
             restart_now = self.updater.frame(&ctx, &mut self.prefs, unsaved) && self.recover.is_none();
         });
         match view {

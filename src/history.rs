@@ -19,6 +19,8 @@ struct Step {
     groups: Option<Vec<crate::mapgroups::MapGroup>>,
     /// When it was made (edits of one kind in quick succession are one step).
     at: std::time::Instant,
+    /// The tiles it did not change are dropped from it (see `History::settle`).
+    settled: bool,
 }
 
 /// What a window's edit changed, as it was before (see `History::push_snapshot`).
@@ -52,7 +54,10 @@ impl Changed {
     }
 
     fn add(&mut self, s: &Step) {
-        self.tiles.extend(s.tiles.keys().copied());
+        // (a step not settled yet tells its tiles once it is: until then it holds them all)
+        if s.settled {
+            self.tiles.extend(s.tiles.keys().copied());
+        }
         self.global |= s.global.is_some();
         self.timetable |= s.timetable.is_some();
         self.traffic |= s.traffic.is_some();
@@ -83,7 +88,7 @@ impl History {
     /// Start an edit (ends one still open).
     pub fn begin(&mut self, label: &str) {
         self.commit();
-        self.open = Some(Step { label: label.to_string(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: std::time::Instant::now() });
+        self.open = Some(Step { label: label.to_string(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: std::time::Instant::now(), settled: false });
     }
 
     pub fn is_open(&self) -> bool {
@@ -92,6 +97,7 @@ impl History {
 
     /// Keep a tile as it is now, before the open edit changes it (once per edit).
     pub fn touch_tile(&mut self, doc: &Document, k: TileKey) {
+        self.settle(doc);
         if let Some(s) = &mut self.open {
             s.tiles.entry(k).or_insert_with(|| doc.tiles.get(&k).cloned());
         }
@@ -99,6 +105,7 @@ impl History {
 
     /// Keep the global settings and the tile list.
     pub fn touch_global(&mut self, doc: &Document) {
+        self.settle(doc);
         if let Some(s) = &mut self.open {
             if s.global.is_none() {
                 s.global = Some((doc.global.clone(), doc.order.clone()));
@@ -116,6 +123,17 @@ impl History {
         }
     }
 
+    /// Drop from the steps kept since the last call the tiles they did not change: many edits
+    /// keep every tile of the map, as they cannot tell beforehand which they will reach, and
+    /// each such step would else hold a copy of the whole map.
+    pub fn settle(&mut self, doc: &Document) {
+        for s in self.undo.iter_mut().filter(|s| !s.settled) {
+            s.tiles.retain(|k, old| !unchanged(old.as_ref(), doc.tiles.get(k)));
+            s.settled = true;
+            self.changed.tiles.extend(s.tiles.keys().copied());
+        }
+    }
+
     /// Drop the open edit unkept (it changed nothing).
     pub fn cancel(&mut self) {
         self.open = None;
@@ -125,8 +143,8 @@ impl History {
     /// tool that found out half-way that it cannot finish).
     pub fn rollback(&mut self, doc: &mut Document) {
         if let Some(s) = self.open.take() {
-            self.changed.add(&s);
-            let _ = apply(doc, s);
+            let back = apply(doc, s);
+            self.changed.add(&back);
         }
     }
 
@@ -164,7 +182,7 @@ impl History {
             return;
         }
         let steps: Vec<Step> = self.undo.split_off(self.undo.len() - n);
-        let mut merged = Step { label: label.to_string(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: std::time::Instant::now() };
+        let mut merged = Step { label: label.to_string(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: std::time::Instant::now(), settled: false };
         for s in steps {
             for (k, t) in s.tiles {
                 merged.tiles.entry(k).or_insert(t);
@@ -200,7 +218,7 @@ impl History {
         if before.global.is_none() && before.timetable.is_none() && before.traffic.is_none() && before.descriptions.is_none() && before.groups.is_none() {
             return;
         }
-        self.undo.push(Step { label: label.to_string(), tiles: BTreeMap::new(), global: before.global, timetable: before.timetable, traffic: before.traffic, descriptions: before.descriptions, groups: before.groups, at: std::time::Instant::now() });
+        self.undo.push(Step { label: label.to_string(), tiles: BTreeMap::new(), global: before.global, timetable: before.timetable, traffic: before.traffic, descriptions: before.descriptions, groups: before.groups, at: std::time::Instant::now(), settled: true });
         self.kept += 1;
         if self.undo.len() > LIMIT {
             self.undo.remove(0);
@@ -232,9 +250,10 @@ impl History {
 
     pub fn undo(&mut self, doc: &mut Document) {
         self.commit();
+        self.settle(doc);
         if let Some(s) = self.undo.pop() {
-            self.changed.add(&s);
             let back = apply(doc, s);
+            self.changed.add(&back);
             self.redo.push(back);
         }
     }
@@ -242,8 +261,8 @@ impl History {
     pub fn redo(&mut self, doc: &mut Document) {
         self.commit();
         if let Some(s) = self.redo.pop() {
-            self.changed.add(&s);
             let back = apply(doc, s);
+            self.changed.add(&back);
             self.undo.push(back);
         }
     }
@@ -261,7 +280,8 @@ impl History {
     }
 
     /// What the kept edits, undos and redos changed since the last call.
-    pub fn take_changed(&mut self) -> Changed {
+    pub fn take_changed(&mut self, doc: &Document) -> Changed {
+        self.settle(doc);
         std::mem::take(&mut self.changed)
     }
 
@@ -279,10 +299,22 @@ impl History {
     }
 }
 
+/// Whether a tile is still as it was kept: nothing has given it a new revision since, and its
+/// contents are the same (an edit that forgot to give it one still counts as a change).
+fn unchanged(old: Option<&TileDoc>, now: Option<&TileDoc>) -> bool {
+    let (Some(a), Some(b)) = (old, now) else { return old.is_none() && now.is_none() };
+    (a.content_rev, a.terrain_rev, a.mask_rev) == (b.content_rev, b.terrain_rev, b.mask_rev) && a.water == b.water && a.tile == b.tile && a.terrain == b.terrain && a.masks == b.masks
+}
+
 /// Put a step's state into the document; returns the state it replaced (the opposite step).
 fn apply(doc: &mut Document, s: Step) -> Step {
-    let mut back = Step { label: s.label.clone(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: s.at };
+    let mut back = Step { label: s.label.clone(), tiles: BTreeMap::new(), global: None, timetable: None, traffic: None, descriptions: None, groups: None, at: s.at, settled: true };
     for (k, t) in s.tiles {
+        // (a tile the step kept but did not change stays as it is: marked changed, it would
+        // be written again on the next save and lose its light map)
+        if unchanged(t.as_ref(), doc.tiles.get(&k)) {
+            continue;
+        }
         let now = match t {
             Some(mut t) => {
                 // new revisions: whatever shows the tile builds it again
@@ -353,15 +385,43 @@ mod tests {
         h.touch_tile(&doc, (1, 0));
         doc.tiles.get_mut(&(1, 0)).unwrap().terrain.heights[0] = 5.0;
         // (an edit still open is not told)
-        assert!(h.take_changed().is_empty());
+        assert!(h.take_changed(&doc).is_empty());
         h.commit();
-        let c = h.take_changed();
+        let c = h.take_changed(&doc);
         assert_eq!(c.tiles.iter().copied().collect::<Vec<_>>(), vec![(1, 0)]);
-        assert!(!c.global && h.take_changed().is_empty());
+        assert!(!c.global && h.take_changed(&doc).is_empty());
         h.undo(&mut doc);
-        assert_eq!(h.take_changed().tiles.len(), 1);
+        assert_eq!(h.take_changed(&doc).tiles.len(), 1);
         h.push_snapshot("g", Snapshot { groups: Some(Vec::new()), ..Default::default() });
-        assert!(h.take_changed().groups);
+        assert!(h.take_changed(&doc).groups);
+    }
+
+    /// An edit that keeps every tile (it cannot tell beforehand which it will reach) holds and
+    /// tells only those it changed, and undoing it leaves the others as they are: marked
+    /// changed, they would all be written again on the next save, losing their light maps.
+    #[test]
+    fn tiles_kept_but_not_changed_are_left_alone() {
+        let mut doc = crate::selection::tests::flat_map(3);
+        doc.tiles.values_mut().for_each(|t| t.dirty = false);
+        let revs = |doc: &Document, k: TileKey| (doc.tiles[&k].content_rev, doc.tiles[&k].terrain_rev, doc.tiles[&k].mask_rev);
+        let before = revs(&doc, (0, 0));
+        let mut h = History::default();
+        h.begin("road");
+        for k in doc.tiles.keys().copied().collect::<Vec<_>>() {
+            h.touch_tile(&doc, k);
+        }
+        let t = doc.tiles.get_mut(&(1, 0)).unwrap();
+        t.terrain.heights[0] = 5.0;
+        t.touch_terrain();
+        h.commit();
+        assert_eq!(h.take_changed(&doc).tiles.into_iter().collect::<Vec<_>>(), vec![(1, 0)]);
+        assert_eq!(h.undo[0].tiles.len(), 1, "the step holds only the tile it changed");
+        h.undo(&mut doc);
+        assert_eq!(doc.tiles[&(1, 0)].terrain.heights[0], 0.0);
+        assert!(!doc.tiles[&(0, 0)].dirty && !doc.tiles[&(2, 0)].dirty, "the tiles not changed are not to be saved again");
+        assert_eq!(revs(&doc, (0, 0)), before, "nor built again");
+        h.redo(&mut doc);
+        assert_eq!(doc.tiles[&(1, 0)].terrain.heights[0], 5.0);
     }
 
     #[test]

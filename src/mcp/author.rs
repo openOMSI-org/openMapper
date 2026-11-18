@@ -95,8 +95,26 @@ impl Server {
             back: a.f64("cut_back"),
             backs: a.get("cut_back").and_then(|v| v.as_array()).map(|v| v.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect()),
         };
-        let made = self.ed.plate_from_ends_with(&mut self.assets, &ends, &ask)?;
-        Ok(json!({ "made": made }))
+        // (one undo step, as the Streets build that lays plates the same way makes: what the
+        // plate trims, links and reshapes may reach any tile its roads cross)
+        let doc = self.ed.doc.as_ref().ok_or("no map")?;
+        self.ed.history.begin("Plate");
+        for k in doc.tiles.keys() {
+            self.ed.history.touch_tile(doc, *k);
+        }
+        self.ed.history.touch_global(doc);
+        match self.ed.plate_from_ends_with(&mut self.assets, &ends, &ask) {
+            Ok(made) => {
+                self.ed.history.commit();
+                Ok(json!({ "made": made }))
+            }
+            Err(e) => {
+                if let Some(doc) = self.ed.doc.as_mut() {
+                    self.ed.history.rollback(doc);
+                }
+                Err(e)
+            }
+        }
     }
 
     /// `lay_spline`: a chain of one spline type through points, tangent-continuous everywhere,
@@ -182,6 +200,9 @@ impl Server {
             let at = self.point(o.get("at").ok_or("objects[].at is needed")?)?;
             layout.objects.push(crate::cjunction::LObject { file, x: at.x - origin.x, y: at.y - origin.y, z: o.get("z").and_then(|x| x.as_f64()).unwrap_or(0.0), heading: o.get("heading").and_then(|x| x.as_f64()).unwrap_or(0.0) });
         }
+        // (what is selected afterwards is what was put: a junction that could not be put
+        // leaves the selection as it was)
+        self.ed.select(None);
         self.ed.place_layout(&mut self.assets, &layout, origin, 0.0);
         let errs: Vec<String> = self.ed.toasts.iter().map(|t| t.text.clone()).collect();
         let sel = self.ed.selection();
@@ -207,6 +228,9 @@ impl Server {
             found.retain(|i| kinds.iter().any(|k| k == i.kind));
         }
         let mut fixed = 0;
+        if a.bool("fix").unwrap_or(false) && !self.allow_edit {
+            return Err("the server is read-only: start it with --allow-edit to fix".into());
+        }
         if a.bool("fix").unwrap_or(false) && found.iter().any(|i| i.fix.is_some()) {
             self.ed.history.begin("Street check: put right");
             let doc = self.ed.doc.as_mut().unwrap();

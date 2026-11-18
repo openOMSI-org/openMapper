@@ -441,6 +441,16 @@ impl Network {
     }
 }
 
+/// The box a line lies in: (lowest corner, highest).
+fn bbox(line: &[DVec2]) -> (DVec2, DVec2) {
+    line.iter().fold((DVec2::splat(f64::MAX), DVec2::splat(f64::MIN)), |(lo, hi), p| (lo.min(*p), hi.max(*p)))
+}
+
+/// Whether `p` lies farther than `r` outside the box: then every point of the line in it does.
+fn beyond(p: DVec2, b: (DVec2, DVec2), r: f64) -> bool {
+    p.x < b.0.x - r || p.y < b.0.y - r || p.x > b.1.x + r || p.y > b.1.y + r
+}
+
 fn polyline_dist(p: DVec2, line: &[DVec2]) -> (f64, usize, f64) {
     // (distance, segment, signed side: + right of the line's direction)
     let mut best = (f64::MAX, 0, 0.0);
@@ -1178,6 +1188,9 @@ impl Network {
         let mut walks: Vec<(i64, usize, usize, f64)> = Vec::new();
         let mut new_cross: Vec<(usize, DVec2)> = Vec::new();
         let mut passes: Vec<(bool, Vec<DVec2>, Vec<bool>)> = Vec::new();
+        // (a street whose box a point lies well outside of is not measured against it: every
+        // metre of every footway of a city against every street was most of a build's time)
+        let boxes: Vec<(DVec2, DVec2)> = self.streets.iter().map(|s| bbox(&s.axis)).collect();
         for w in ways.iter().filter(|w| role(w) == Some(Role::Foot)) {
             if w.pts.len() < 2 {
                 continue;
@@ -1191,6 +1204,9 @@ impl Network {
                         continue;
                     }
                     let half = s.width * 0.5 + s.median * 0.5;
+                    if beyond(*p, boxes[si], half + 12.0) {
+                        continue;
+                    }
                     let (d, k, side) = polyline_dist(*p, &s.axis);
                     // (beside it: off the carriageway, within 12 m, and running along it)
                     if d > half + 0.5 && d < half + 12.0 && k + 1 < s.axis.len() {
@@ -1247,7 +1263,7 @@ impl Network {
             }
             // the rest, cut where it is inside a street's corridor
             let inside = |p: DVec2| -> Option<usize> {
-                (0..self.streets.len()).find(|&si| polyline_dist(p, &self.streets[si].axis).0 < self.corridor(si))
+                (0..self.streets.len()).find(|&si| !beyond(p, boxes[si], self.corridor(si)) && polyline_dist(p, &self.streets[si].axis).0 < self.corridor(si))
             };
             let mut cur: Vec<DVec2> = Vec::new();
             let mut last_in: Option<usize> = None;
@@ -1290,9 +1306,11 @@ impl Network {
         // a piece lying along a longer one (within 1.5 m for most of it) is the same path drawn twice
         pieces.sort_by(|a, b| poly_len(b).total_cmp(&poly_len(a)));
         let mut kept: Vec<Vec<DVec2>> = Vec::new();
+        let mut kept_boxes: Vec<(DVec2, DVec2)> = Vec::new();
         for p in pieces {
-            let dup = kept.iter().any(|q| p.iter().filter(|x| polyline_dist(**x, q).0 < 1.5).count() * 10 >= p.len() * 8);
+            let dup = kept.iter().zip(&kept_boxes).any(|(q, b)| p.iter().filter(|x| !beyond(**x, *b, 1.5) && polyline_dist(**x, q).0 < 1.5).count() * 10 >= p.len() * 8);
             if !dup {
+                kept_boxes.push(bbox(&p));
                 kept.push(p);
             }
         }
@@ -1348,8 +1366,9 @@ impl Network {
         for p in &self.paths {
             // positions along p (segment index, point) where another path ends on it
             let mut cuts: Vec<(usize, f64, DVec2)> = Vec::new();
+            let b = bbox(p);
             for e in &ends {
-                if (*e - p[0]).length() < 1.5 || (*e - *p.last().unwrap()).length() < 1.5 {
+                if beyond(*e, b, 0.6) || (*e - p[0]).length() < 1.5 || (*e - *p.last().unwrap()).length() < 1.5 {
                     continue;
                 }
                 let (d, k, _) = polyline_dist(*e, p);

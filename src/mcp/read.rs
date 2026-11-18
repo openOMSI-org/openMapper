@@ -416,8 +416,8 @@ impl Server {
             let (lo, hi) = (self.point(lo)?, self.point(hi)?);
             let (lo, hi) = (lo.min(hi), lo.max(hi));
             let step = a.f64("step").unwrap_or(10.0).max(0.5);
-            let (nx, ny) = (((hi.x - lo.x) / step).floor() as usize + 1, ((hi.y - lo.y) / step).floor() as usize + 1);
-            if nx * ny > 40_000 {
+            let (nx, ny) = ((((hi.x - lo.x) / step).floor() as usize).saturating_add(1), (((hi.y - lo.y) / step).floor() as usize).saturating_add(1));
+            if nx.saturating_mul(ny) > 40_000 {
                 return Err(format!("{nx} x {ny} points: at most 40000, give a larger `step`"));
             }
             // rows from the south, each from the west

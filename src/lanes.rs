@@ -368,7 +368,7 @@ pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
         let mut hit = false;
         for dy in -1..=1 {
             for dx in -1..=1 {
-                for &j in grid.get(&(cx + dx, cy + dy)).map(|v| v.as_slice()).unwrap_or(&[]) {
+                for &j in grid.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).map(|v| v.as_slice()).unwrap_or(&[]) {
                     let (a, b) = (&ends[i], &ends[j]);
                     if i != j && a.kind == b.kind && (a.pos.truncate() - b.pos.truncate()).length() < LINK && (a.pos.z - b.pos.z).abs() < crate::timetable::network::LINK_RISE {
                         hit = true;

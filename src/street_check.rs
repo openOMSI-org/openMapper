@@ -11,7 +11,7 @@ use glam::DVec2;
 use crate::assets::Assets;
 use crate::doc::{tile_of, tile_origin, Document, TileKey};
 use crate::library::{Category, Library};
-use crate::road_ends::{road_ends, EndState};
+use crate::road_ends::{road_ends, EndState, PointGrid};
 use crate::roads;
 
 #[derive(Debug, Clone)]
@@ -89,35 +89,46 @@ pub fn on_paving(doc: &Document, p: DVec2) -> bool {
     false
 }
 
-/// Whether a buffer stop (or a vehicle standing at the end) is within 4 m of a track end.
-fn buffer_at(doc: &Document, p: DVec2) -> bool {
-    let words = ["loko", "upor", "zagrad", "pzs", "buffer", "prellbock", "tupik"];
-    doc.tiles.iter().any(|(k, t)| {
+/// Every object of the map by where it stands (its tile and its place in the tile's list).
+fn objects_by_place(doc: &Document) -> PointGrid<(TileKey, usize)> {
+    let mut g = PointGrid::new(50.0);
+    for (k, t) in &doc.tiles {
         let org = tile_origin(*k);
-        t.tile.objects.iter().any(|o| (org + DVec2::new(o.pos[0], o.pos[1]) - p).length() < 4.0 && { let f = o.file.to_lowercase(); words.iter().any(|w| f.contains(w)) })
+        for (i, o) in t.tile.objects.iter().enumerate() {
+            g.add(org + DVec2::new(o.pos[0], o.pos[1]), (*k, i));
+        }
+    }
+    g
+}
+
+/// Whether a buffer stop (or a vehicle standing at the end) is within 4 m of a track end.
+fn buffer_at(doc: &Document, objects: &PointGrid<(TileKey, usize)>, p: DVec2) -> bool {
+    let words = ["loko", "upor", "zagrad", "pzs", "buffer", "prellbock", "tupik"];
+    objects.near(p, 4.0).any(|(k, i)| {
+        let o = &doc.tiles[&k].tile.objects[i];
+        (tile_origin(k) + DVec2::new(o.pos[0], o.pos[1]) - p).length() < 4.0 && { let f = o.file.to_lowercase(); words.iter().any(|w| f.contains(w)) }
     })
 }
 
 /// Whether a surface object (a paved area, a plate) lies under `p`.
-pub fn on_surface_object(doc: &Document, assets: &mut Assets, p: DVec2) -> bool {
-    for (k, t) in &doc.tiles {
-        let org = tile_origin(*k);
-        for o in &t.tile.objects {
-            let c = org + DVec2::new(o.pos[0], o.pos[1]);
-            if (c - p).length() > 150.0 {
-                continue;
-            }
-            let Some(m) = assets.object(&o.file) else { continue };
-            if !m.surface {
-                continue;
-            }
-            // (into the object's own frame: x east, y north when it is not turned)
-            let h = -o.rot[0].to_radians();
-            let d = p - c;
-            let local = DVec2::new(d.x * h.cos() - d.y * h.sin(), d.x * h.sin() + d.y * h.cos());
-            if local.x >= m.lo.x as f64 - 0.3 && local.x <= m.hi.x as f64 + 0.3 && local.y >= m.lo.y as f64 - 0.3 && local.y <= m.hi.y as f64 + 0.3 {
-                return true;
-            }
+fn on_surface_object(doc: &Document, assets: &mut Assets, objects: &PointGrid<(TileKey, usize)>, p: DVec2) -> bool {
+    for (k, i) in objects.near(p, 150.0) {
+        let org = tile_origin(k);
+        let o = &doc.tiles[&k].tile.objects[i];
+        let c = org + DVec2::new(o.pos[0], o.pos[1]);
+        if (c - p).length() > 150.0 {
+            continue;
+        }
+        let Some(m) = assets.object(&o.file) else { continue };
+        if !m.surface {
+            continue;
+        }
+        // (into the object's own frame: x east, y north when it is not turned)
+        let h = -o.rot[0].to_radians();
+        let d = p - c;
+        let local = DVec2::new(d.x * h.cos() - d.y * h.sin(), d.x * h.sin() + d.y * h.cos());
+        if local.x >= m.lo.x as f64 - 0.3 && local.x <= m.hi.x as f64 + 0.3 && local.y >= m.lo.y as f64 - 0.3 && local.y <= m.hi.y as f64 + 0.3 {
+            return true;
         }
     }
     false
@@ -175,7 +186,7 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
         let mut best: HashMap<usize, (f64, f64, f64)> = HashMap::new();
         for dx in -span..=span {
             for dy in -span..=span {
-                for &(ri, si) in grid.get(&(cx + dx, cy + dy)).into_iter().flatten() {
+                for &(ri, si) in grid.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten() {
                     let (q, h) = roads_v[ri].samples[si];
                     let along = roads::dir(h).dot(p - q);
                     if along.abs() > 0.6 {
@@ -194,6 +205,11 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
 
     // ends: free where not a dead end, lying on one another unjoined, paths into a carriageway
     let ends = road_ends(doc, lib, assets, false);
+    let objects = objects_by_place(doc);
+    let mut touching = PointGrid::new(4.0);
+    for (i, e) in ends.iter().enumerate().filter(|(_, e)| e.state == EndState::Touching) {
+        touching.add(e.pos.truncate(), i);
+    }
     // (at the map's edge a road is cut, not ended)
     let edge = |p: DVec2| [DVec2::X, -DVec2::X, DVec2::Y, -DVec2::Y].iter().any(|d| !doc.tiles.contains_key(&tile_of(p + *d * 3.0)));
     for (i, e) in ends.iter().enumerate() {
@@ -203,7 +219,10 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
         }
         match e.state {
             EndState::Touching => {
-                if let Some(o) = ends.iter().enumerate().find(|(j, o)| *j != i && o.state == EndState::Touching && (o.pos - e.pos).truncate().length() < 0.6 && (o.pos.z - e.pos.z).abs() < 0.5 && o.cat == e.cat) {
+                // (the first such end in the list, as a look along all of it found)
+                let mut near_ends: Vec<usize> = touching.near(p, 0.6).collect();
+                near_ends.sort_unstable();
+                if let Some(o) = near_ends.into_iter().map(|j| (j, &ends[j])).find(|(j, o)| *j != i && o.state == EndState::Touching && (o.pos - e.pos).truncate().length() < 0.6 && (o.pos.z - e.pos.z).abs() < 0.5 && o.cat == e.cat) {
                     if i < o.0 {
                         out.push(StreetIssue { kind: "ends_unjoined", at: p, ids: vec![e.id, o.1.id], detail: "two ends lie on one another, not linked".into(), fix: Some(StreetFix::Link((e.tile, e.id, e.at_end), (o.1.tile, o.1.id, o.1.at_end))) });
                     }
@@ -214,9 +233,9 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
                     if let Some((ri, _, x, _)) = place(p, 30.0).into_iter().find(|r| r.3) {
                         out.push(StreetIssue { kind: "path_into_road", at: p, ids: vec![e.id, roads_v[ri].id], detail: format!("a path ends inside the carriageway of {} ({x:.1} m off its line): paths end at the kerb", roads_v[ri].id), fix: None });
                     }
-                } else if e.cat == Category::Tracks && !buffer_at(doc, p) {
+                } else if e.cat == Category::Tracks && !buffer_at(doc, &objects, p) {
                     out.push(StreetIssue { kind: "track_end_free", at: p, ids: vec![e.id], detail: "a track ends with nothing there: no buffer, no switch, not the map edge".into(), fix: None });
-                } else if e.cat == Category::Roads && !on_paving(doc, p) && !on_surface_object(doc, assets, p) {
+                } else if e.cat == Category::Roads && !on_paving(doc, p) && !on_surface_object(doc, assets, &objects, p) {
                     out.push(StreetIssue { kind: "road_end_free", at: p, ids: vec![e.id], detail: "a road ends in the open: nothing there, no paving (join it, end it at a plate, or pave where it ends)".into(), fix: None });
                 }
             }
@@ -231,33 +250,54 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
         }
     }
     for (k, t) in &doc.tiles {
-        for sp in t.tile.splines.iter().filter(|s| !s.deleted && s.next_id != 0) {
-            let Some((k2, nx)) = by_id.get(&sp.next_id) else { continue };
+        for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+            // the joints at this spline's end and, when the other one is turned round to meet it
+            // start to start, at its start: (at this one's end, the other, at the other's end)
+            let mut joints = Vec::new();
+            if let Some((k2, nx)) = by_id.get(&sp.next_id).filter(|_| sp.next_id != 0) {
+                // (two joined end to end name each other: one joint, looked at once - from both, each
+                // fix would bring the other's end to its own old height, and the step stayed)
+                if !(nx.next_id == sp.id && nx.prev_id != sp.id && nx.id < sp.id) {
+                    joints.push((true, *k2, *nx, nx.prev_id != sp.id));
+                }
+            }
+            if let Some((k2, nx)) = by_id.get(&sp.prev_id).filter(|_| sp.prev_id != 0) {
+                // (one running on into this one is looked at from its own end; two joined start to
+                // start, once, from the lower IDCode)
+                if nx.prev_id == sp.id && nx.next_id != sp.id && sp.id < nx.id {
+                    joints.push((false, *k2, *nx, false));
+                }
+            }
+            if joints.is_empty() {
+                continue;
+            }
             // (only what is driven or walked along runs on smoothly: walls and fences turn corners)
             let carries = lib.find(&sp.file).map(|a| matches!(a.category, Category::Roads | Category::Tracks | Category::Paths)).unwrap_or_else(|| assets.spline(&sp.file).map(|m| m.joinable()).unwrap_or(false));
             if !carries {
                 continue;
             }
             let a = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
-            let b = omsi_geometry::SplineCurve::from_map(nx, tile_origin(*k2));
-            let (pa, ha) = (a.end_point(), a.heading_at(sp.length));
-            // (the next one runs on from its start, or is turned round and runs on from its end)
-            let (pb, hb) = if nx.prev_id == sp.id { (b.point_at(0.0), b.heading_at(0.0)) } else { (b.end_point(), roads::norm_deg(b.heading_at(nx.length) + 180.0)) };
-            if !near(pa.truncate()) {
-                continue;
-            }
-            // (structures off the ground — a footbridge's flights and landings — are drawn as they
-            // are built, turning at their landings)
-            if pa.z - doc.ground(pa.truncate()) > 1.5 && pb.z - doc.ground(pb.truncate()) > 1.5 {
-                continue;
-            }
-            let gap = (pa - pb).length();
-            let kink = (roads::norm_deg(ha - hb + 180.0) - 180.0).abs();
-            if gap > 0.05 || kink > 1.5 {
-                // (a step in height only: the next one is brought to this one's end)
-                let flat_gap = (pa - pb).truncate().length();
-                let fix = (kink <= 1.5 && flat_gap < 0.02).then(|| StreetFix::SnapZ { tile: *k2, id: nx.id, at_end: nx.prev_id != sp.id, z: pa.z });
-                out.push(StreetIssue { kind: "link_kink", at: pa.truncate(), ids: vec![sp.id, nx.id], detail: format!("joined with a {kink:.1}° kink and a {gap:.2} m gap"), fix });
+            for (at_end, k2, nx, nx_at_end) in joints {
+                let b = omsi_geometry::SplineCurve::from_map(nx, tile_origin(k2));
+                // (each the way it is driven through the joint: out of this one, into the other)
+                let (pa, ha) = if at_end { (a.end_point(), a.heading_at(sp.length)) } else { (a.point_at(0.0), roads::norm_deg(a.heading_at(0.0) + 180.0)) };
+                let (pb, hb) = if nx_at_end { (b.end_point(), roads::norm_deg(b.heading_at(nx.length) + 180.0)) } else { (b.point_at(0.0), b.heading_at(0.0)) };
+                if !near(pa.truncate()) {
+                    continue;
+                }
+                // (structures off the ground — a footbridge's flights and landings — are drawn as they
+                // are built, turning at their landings)
+                if pa.z - doc.ground(pa.truncate()) > 1.5 && pb.z - doc.ground(pb.truncate()) > 1.5 {
+                    continue;
+                }
+                let gap = (pa - pb).length();
+                let kink = (roads::norm_deg(ha - hb + 180.0) - 180.0).abs();
+                if gap > 0.05 || kink > 1.5 {
+                    // (a step in height only: the other one is brought to this one's height there)
+                    let flat_gap = (pa - pb).truncate().length();
+                    let fix = (kink <= 1.5 && flat_gap < 0.02).then(|| StreetFix::SnapZ { tile: k2, id: nx.id, at_end: nx_at_end, z: pa.z });
+                    out.push(StreetIssue { kind: "link_kink", at: pa.truncate(), ids: vec![sp.id, nx.id], detail: format!("joined with a {kink:.1}° kink and a {gap:.2} m gap"), fix });
+                }
             }
         }
     }
@@ -379,6 +419,72 @@ pub fn apply(doc: &mut Document, issues: &[StreetIssue]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Two roads joined end to end with a step in height: one issue, and putting it right
+    /// leaves their ends at one height (each was brought to the other's old one).
+    #[test]
+    fn a_step_between_roads_joined_end_to_end_is_put_right() {
+        use crate::library::{Asset, Kind};
+        let mut doc = crate::selection::tests::flat_map(1);
+        // (north to y 150, and south down to it: both end there)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 2);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 2, 100.0, 200.0, 180.0, 50.0, 0, 1);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[1].pos[2] = 1.0;
+        let mut lib = Library::default();
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        let dir = std::env::temp_dir().join("openmapper-street-check-none");
+        let mut assets = Assets::new(dir.clone(), dir);
+        let found: Vec<StreetIssue> = check(&doc, &lib, &mut assets, None).into_iter().filter(|i| i.kind == "link_kink").collect();
+        assert_eq!(found.len(), 1, "one joint: {found:?}");
+        apply(&mut doc, &found);
+        let end = |id: i64| {
+            let sp = doc.spline((0, 0), id).unwrap();
+            omsi_geometry::SplineCurve::from_map(sp, tile_origin((0, 0))).end_point().z
+        };
+        assert!((end(1) - end(2)).abs() < 1e-6, "{} vs {}", end(1), end(2));
+    }
+
+    /// Two road ends lying on one another unjoined are one issue, found among the ends near
+    /// them (as looking along all of the map's found them), and one a metre off is none.
+    #[test]
+    fn ends_lying_on_one_another_are_found() {
+        use crate::library::{Asset, Kind};
+        let mut doc = crate::selection::tests::flat_map(1);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 0);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 2, 100.0, 150.0, 0.0, 50.0, 0, 0);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 3, 160.0, 100.0, 0.0, 50.0, 0, 0);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 4, 161.0, 150.0, 0.0, 50.0, 0, 0);
+        let mut lib = Library::default();
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        let dir = std::env::temp_dir().join("openmapper-street-check-none");
+        let mut assets = Assets::new(dir.clone(), dir);
+        let found: Vec<Vec<i64>> = check(&doc, &lib, &mut assets, None).into_iter().filter(|i| i.kind == "ends_unjoined").map(|i| i.ids).collect();
+        assert_eq!(found, vec![vec![1, 2]], "{found:?}");
+    }
+
+    /// Two roads joined start to start (the one turned round to meet the other) are looked at
+    /// too: a step between them was never found.
+    #[test]
+    fn a_step_between_roads_joined_start_to_start_is_found_and_put_right() {
+        use crate::library::{Asset, Kind};
+        let mut doc = crate::selection::tests::flat_map(1);
+        // (north from y 150, and south from it: both start there)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 100.0, 150.0, 0.0, 50.0, 2, 0);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 2, 100.0, 150.0, 180.0, 50.0, 1, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[1].pos[2] = 1.0;
+        let mut lib = Library::default();
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        let dir = std::env::temp_dir().join("openmapper-street-check-none");
+        let mut assets = Assets::new(dir.clone(), dir);
+        let found: Vec<StreetIssue> = check(&doc, &lib, &mut assets, None).into_iter().filter(|i| i.kind == "link_kink").collect();
+        assert_eq!(found.len(), 1, "one joint: {found:?}");
+        apply(&mut doc, &found);
+        let start = |id: i64| doc.spline((0, 0), id).unwrap().pos[2];
+        assert!((start(1) - start(2)).abs() < 1e-6, "{} vs {}", start(1), start(2));
+    }
 
     #[test]
     fn a_heading_is_squared_to_the_nearest_quarter_of_its_road() {
