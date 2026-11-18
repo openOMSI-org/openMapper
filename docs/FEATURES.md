@@ -190,7 +190,14 @@ The complete list. A short overview is in the [README](../README.md).
   beside the map; OMSI 2 has none and ignores it): spans laid over the kerb lane of the
   selected roads (each way, or one way) at a height, over the ticked lanes of a selected
   junction (shown in the view as they are ticked), or read off the map's wire splines as the
-  game reads them; drawn in the view while the window is open (the pair of wires in its
+  game reads them. On the map it is shown with openMapper's own content, written into the
+  content folder like its junction plates (no wire or mast models of anybody else needed):
+  a wire spline (`Splines\openMapper\Trolley`: two thin wires over the lane, a copy of each
+  road piece so it follows its bends and gradients; straight pieces over a junction's lanes),
+  masts with an arm and a hanger beside the road every so many metres, and a frog and a section
+  insulator object (`Sceneryobjects\openMapper\Trolley`) wherever the wire has them, put
+  again after every change; what a span laid goes with it, all in the wire's undo step. In
+  the window it is also drawn while it is open (the pair of wires in its
   section's colour, an arrow the way it runs, frogs yellow, insulators black and white), a span
   or a switch picked there with a click. Sections with their substation (live, feeder,
   regeneration), an insulator's dead length where two meet; each span's section, own spacing,

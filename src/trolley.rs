@@ -70,6 +70,9 @@ pub struct Span {
     pub spacing: Option<f64>,
     /// The centre line of the pair, world coordinates (x east, y north, z the wires' height).
     pub points: Vec<DVec3>,
+    /// The IDCodes of the wire splines and masts openMapper laid on the map for it (kept in
+    /// the file as a comment the game skips): they go when the span goes.
+    pub laid: Vec<i64>,
 }
 
 impl Span {
@@ -185,6 +188,9 @@ fn nums(l: &str) -> Vec<f64> {
     l.split_whitespace().skip(1).filter_map(|w| w.parse::<f64>().ok()).collect()
 }
 
+/// The comment line of a span naming what openMapper laid for it.
+const LAID: &str = "// openmapper laid";
+
 /// `trolley.txt` read (what it does not know kept as it is).
 pub fn parse(text: &str) -> Wire {
     let mut w = Wire::default();
@@ -201,6 +207,12 @@ pub fn parse(text: &str) -> Wire {
         }
     };
     for line in text.lines() {
+        if let (Some(ids), "trolley_span") = (line.trim().strip_prefix(LAID), block.as_str()) {
+            if let Some(s) = w.spans.last_mut() {
+                s.laid.extend(ids.split_whitespace().filter_map(|x| x.parse::<i64>().ok()));
+            }
+            continue;
+        }
         let l = line.split("//").next().unwrap_or("").trim();
         if l.is_empty() {
             continue;
@@ -331,6 +343,9 @@ pub fn text(w: &Wire) -> String {
         }
         for p in &sp.points {
             s += &format!("p {}\n", point(*p));
+        }
+        if !sp.laid.is_empty() {
+            s += &format!("{LAID} {}\n", sp.laid.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(" "));
         }
         s.push('\n');
     }
@@ -490,7 +505,7 @@ fn lifted(pts: &[DVec3], h: f64) -> Vec<DVec3> {
 
 /// Spans over the kerb lane of each selected road (each way, as `lay` says), one span a road
 /// piece and way: the pieces of a road meet end to end, so their spans join.
-pub fn over_roads(doc: &Document, assets: &mut crate::assets::Assets, sel: &[Sel], lay: Lay) -> Vec<Span> {
+pub fn over_roads(doc: &Document, assets: &mut crate::assets::Assets, sel: &[Sel], lay: Lay) -> Vec<(Span, Option<RoadLane>)> {
     let mut out = Vec::new();
     for s in sel {
         let Sel::Spline(k, id) = *s else { continue };
@@ -526,11 +541,23 @@ pub fn over_roads(doc: &Document, assets: &mut crate::assets::Assets, sel: &[Sel
             }
             let kerb = lanes.iter().filter(|l| l.1 == with).max_by(|a, b| if lay.left_hand { b.2.total_cmp(&a.2) } else { a.2.total_cmp(&b.2) });
             if let Some(l) = kerb {
-                out.push(Span { section: lay.section, spacing: None, points: lifted(&l.0, lay.height) });
+                // (across the road's own way, for a wire spline laid as a copy of the road)
+                let x = if with { l.2 } else { -l.2 };
+                out.push((Span { section: lay.section, points: lifted(&l.0, lay.height), ..Default::default() }, Some(RoadLane { tile: k, id, x, height: lay.height })));
             }
         }
     }
     out
+}
+
+/// The road piece a span runs over and where across it: the wire is shown as a copy of the
+/// road with a wire profile that far right of its line (`trolley_kit`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RoadLane {
+    pub tile: crate::doc::TileKey,
+    pub id: i64,
+    pub x: f64,
+    pub height: f64,
 }
 
 /// The street lanes of an object (a junction): its path number and points the way traffic
@@ -540,8 +567,8 @@ pub fn object_lanes(doc: &Document, assets: &mut crate::assets::Assets, s: Sel) 
 }
 
 /// Spans over the chosen lanes of an object.
-pub fn over_lanes(lanes: &[(usize, Vec<DVec3>)], chosen: &[usize], lay: Lay) -> Vec<Span> {
-    lanes.iter().filter(|l| chosen.contains(&l.0)).map(|l| Span { section: lay.section, spacing: None, points: lifted(&l.1, lay.height) }).collect()
+pub fn over_lanes(lanes: &[(usize, Vec<DVec3>)], chosen: &[usize], lay: Lay) -> Vec<(Span, Option<RoadLane>)> {
+    lanes.iter().filter(|l| chosen.contains(&l.0)).map(|l| (Span { section: lay.section, points: lifted(&l.1, lay.height), ..Default::default() }, None)).collect()
 }
 
 /// A spline type that is a pair of wires (two thin strips high over the road, 0.2 to 1.2 m
@@ -569,7 +596,7 @@ pub fn wire_profile(def: &omsi_scenery::sli::Spline) -> Option<(f64, f64, f64)> 
 }
 
 /// Spans along the map's wire splines (each piece one span at its wires' middle and height).
-pub fn from_wire_splines(doc: &Document, assets: &mut crate::assets::Assets, section: i32) -> Vec<Span> {
+pub fn from_wire_splines(doc: &Document, assets: &mut crate::assets::Assets, section: i32) -> Vec<(Span, Option<RoadLane>)> {
     let mut types: std::collections::HashMap<String, Option<(f64, f64, f64)>> = std::collections::HashMap::new();
     let mut out = Vec::new();
     for (k, t) in &doc.tiles {
@@ -581,17 +608,18 @@ pub fn from_wire_splines(doc: &Document, assets: &mut crate::assets::Assets, sec
             let x = if sp.mirror { -mid } else { mid };
             let n = (sp.length / 5.0).ceil().max(1.0) as usize;
             let points = (0..=n).map(|i| curve.offset_point(sp.length * i as f64 / n as f64, x, h)).collect();
-            out.push(Span { section, spacing: ((spacing - 0.6).abs() > 0.01).then_some(spacing), points });
+            out.push((Span { section, spacing: ((spacing - 0.6).abs() > 0.01).then_some(spacing), points, ..Default::default() }, None));
         }
     }
     out
 }
 
 /// New spans into the wire, leaving out those that lie over one it has (both ends within
-/// half a metre): laying it twice over a road gives no doubles. How many went in.
-pub fn add_spans(w: &mut Wire, new: Vec<Span>) -> usize {
-    let mut n = 0;
-    for s in new.into_iter().filter(|s| s.points.len() >= 2) {
+/// half a metre): laying it twice over a road gives no doubles. Those that went in, with their
+/// places in the wire.
+pub fn add_spans<T>(w: &mut Wire, new: Vec<(Span, T)>) -> Vec<(usize, T)> {
+    let mut n = Vec::new();
+    for (s, extra) in new.into_iter().filter(|s| s.0.points.len() >= 2) {
         let (a, b) = (s.points[0], *s.points.last().unwrap());
         let same = w.spans.iter().any(|o| o.points.len() >= 2 && o.points[0].distance(a) < 0.5 && o.points.last().unwrap().distance(b) < 0.5);
         if !same {
@@ -599,7 +627,7 @@ pub fn add_spans(w: &mut Wire, new: Vec<Span>) -> usize {
                 w.sections.push(Section::new(s.section));
             }
             w.spans.push(s);
-            n += 1;
+            n.push((w.spans.len() - 1, extra));
         }
     }
     add_missing_switches(w);
@@ -623,26 +651,18 @@ pub fn span_near(w: &Wire, p: DVec2, reach: f64) -> Option<usize> {
     best.map(|b| b.0)
 }
 
-/// The map's wire made `after` (None: none, trolley.txt taken away), one undo step.
-pub fn set(ed: &mut crate::editor::Editor, after: Option<Wire>) {
-    let Some(doc) = ed.doc.as_mut() else { return };
-    if doc.traffic.trolley == after {
+/// The map's wire made `after` (None: none, trolley.txt taken away), with what shows it on
+/// the map (see `trolley_kit::apply`), one undo step.
+pub fn set(ed: &mut crate::editor::Editor, roots: Option<&crate::install::Roots>, after: Option<Wire>) {
+    if ed.doc.as_ref().is_none_or(|d| d.traffic.trolley == after) {
         return;
     }
-    let old = doc.traffic.clone();
-    doc.traffic.trolley = after;
-    doc.traffic.touch(crate::traffic::File::Trolley);
-    ed.history.push_snapshot(tr("Trolleybus wire", "Контактная сеть"), crate::history::Snapshot { traffic: Some(old), ..Default::default() });
+    crate::trolley_kit::apply(ed, roots, None, after, Vec::new(), None);
 }
 
-/// The map's wire changed by `f` (a map without one gets one, with a first section), one undo
-/// step.
-pub fn edit<R>(ed: &mut crate::editor::Editor, f: impl FnOnce(&mut Wire, &Document) -> R) -> Option<R> {
-    let doc = ed.doc.as_ref()?;
-    let mut w = doc.traffic.trolley.clone().unwrap_or_else(|| Wire { sections: vec![Section::new(1)], ..Default::default() });
-    let r = f(&mut w, doc);
-    set(ed, Some(w));
-    Some(r)
+/// A map's wire, or a new one with a first section.
+pub fn or_new(w: Option<&Wire>) -> Wire {
+    w.cloned().unwrap_or_else(|| Wire { sections: vec![Section::new(1)], ..Default::default() })
 }
 
 // ------------------------------------------------------------------------- the view
@@ -763,7 +783,7 @@ mod tests {
         assert_eq!(breaks[0].1, DEFAULT_INSULATOR);
         assert!(problems(&w).is_empty());
         // a fourth span at the frog: the game cannot use it, and it is said
-        w.spans.push(Span { section: 1, spacing: None, points: vec![DVec3::new(50.0, 0.0, 6.0), DVec3::new(50.0, -40.0, 6.0)] });
+        w.spans.push(Span { section: 1, spacing: None, points: vec![DVec3::new(50.0, 0.0, 6.0), DVec3::new(50.0, -40.0, 6.0)], ..Default::default() });
         assert_eq!(problems(&w).len(), 2);
     }
 
@@ -771,13 +791,13 @@ mod tests {
     #[test]
     fn spans_go_in_once_and_frogs_get_switches() {
         let mut w = Wire::default();
-        let a = Span { section: 1, spacing: None, points: vec![DVec3::new(0.0, 0.0, 6.0), DVec3::new(30.0, 0.0, 6.0)] };
-        let b = Span { section: 1, spacing: None, points: vec![DVec3::new(30.0, 0.0, 6.0), DVec3::new(60.0, 0.0, 6.0)] };
-        let c = Span { section: 1, spacing: None, points: vec![DVec3::new(30.0, 0.0, 6.0), DVec3::new(50.0, 20.0, 6.0)] };
-        assert_eq!(add_spans(&mut w, vec![a.clone(), b]), 2);
-        assert_eq!(add_spans(&mut w, vec![a]), 0);
+        let a = Span { section: 1, spacing: None, points: vec![DVec3::new(0.0, 0.0, 6.0), DVec3::new(30.0, 0.0, 6.0)], ..Default::default() };
+        let b = Span { section: 1, spacing: None, points: vec![DVec3::new(30.0, 0.0, 6.0), DVec3::new(60.0, 0.0, 6.0)], ..Default::default() };
+        let c = Span { section: 1, spacing: None, points: vec![DVec3::new(30.0, 0.0, 6.0), DVec3::new(50.0, 20.0, 6.0)], ..Default::default() };
+        assert_eq!(add_spans(&mut w, vec![(a.clone(), ()), (b, ())]).len(), 2);
+        assert_eq!(add_spans(&mut w, vec![(a, ())]).len(), 0);
         assert!(w.switches.is_empty());
-        assert_eq!(add_spans(&mut w, vec![c]), 1);
+        assert_eq!(add_spans(&mut w, vec![(c, ())]).len(), 1);
         assert_eq!(w.switches.len(), 1);
         assert_eq!(w.sections.len(), 1);
         assert_eq!(span_near(&w, DVec2::new(45.0, 1.0), 2.0), Some(1));

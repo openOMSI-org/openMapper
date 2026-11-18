@@ -3073,7 +3073,7 @@ impl App {
                 self.calendar.window(&ctx, &mut self.ed);
                 self.chrono.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.signals.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
-                self.trolley.window(&ctx, &mut self.ed, self.assets.as_mut(), &mut actions);
+                self.trolley.window(&ctx, &mut self.ed, self.roots.as_ref(), self.assets.as_mut(), &mut actions);
                 self.geo.window(&ctx, &mut self.ed, &mut self.prefs);
                 self.ui.views.follow(self.ed.doc.as_ref().map(|d| d.dir.as_path()));
                 self.ui.views.window(&ctx, &mut self.cam);

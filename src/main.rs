@@ -89,6 +89,7 @@ mod ed_ground;
 mod ed_walk;
 mod ed_align;
 mod trolley;
+mod trolley_kit;
 mod ui_trolley;
 mod switches;
 mod texts;

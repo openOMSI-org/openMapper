@@ -39,6 +39,8 @@ pub struct TrolleyWindow {
     /// (None inside: not read yet).
     lanes: Option<(Sel, Option<Vec<(usize, Vec<DVec3>)>>)>,
     chosen: Vec<usize>,
+    /// How new wire shows on the map (wire splines, masts).
+    kit: crate::trolley_kit::Kit,
 }
 
 fn way_name(w: &str) -> &'static str {
@@ -51,7 +53,7 @@ fn way_name(w: &str) -> &'static str {
 }
 
 impl TrolleyWindow {
-    pub fn window(&mut self, ctx: &egui::Context, ed: &mut Editor, assets: Option<&mut crate::assets::Assets>, actions: &mut Vec<Action>) {
+    pub fn window(&mut self, ctx: &egui::Context, ed: &mut Editor, roots: Option<&crate::install::Roots>, mut assets: Option<&mut crate::assets::Assets>, actions: &mut Vec<Action>) {
         ed.wire.show = self.open;
         if !self.open {
             ed.wire.picking = false;
@@ -135,6 +137,16 @@ impl TrolleyWindow {
                             });
                         });
                         prop_row(ui, tr("Section", "Секция"), |ui| section_combo(ui, "lay section", &wire.sections, &mut lay.section));
+                        prop_row(ui, tr("On the map", "На карте"), |ui| {
+                            ui.vertical(|ui| {
+                                check(ui, &mut self.kit.wires, tr("the wire (openMapper's own wire spline)", "провод (собственный сплайн openMapper)"));
+                                ui.horizontal(|ui| {
+                                    check(ui, &mut self.kit.masts, tr("masts beside the road every", "столбы у дороги через каждые"));
+                                    ui.add_enabled(self.kit.masts, egui::DragValue::new(&mut self.kit.mast_step).range(10.0..=80.0).speed(0.5).suffix(" m"));
+                                });
+                                ui.label(RichText::new(tr("Frogs and section insulators are put where the wire has them.", "Стрелки и секционные изоляторы ставятся там, где они есть в сети.")).small().color(TEXT_DIM));
+                            });
+                        });
                     });
                     ui.add_space(6.0);
                     let n = roads.len();
@@ -331,7 +343,9 @@ impl TrolleyWindow {
         });
         self.open = open;
         ed.wire.preview = preview;
-        if let Some(a) = assets {
+        let mut added = Vec::new();
+        let mut kit = None;
+        if let Some(a) = assets.as_deref_mut() {
             let doc = ed.doc.as_ref().unwrap();
             // the lanes of a junction just selected (its model read first)
             if let Some((o, lanes @ None)) = self.lanes.as_mut() {
@@ -353,15 +367,20 @@ impl TrolleyWindow {
                         trolley::over_roads(doc, a, &sel, *lay)
                     }
                     Lay2::Lanes(chosen) => self.lanes.as_ref().and_then(|l| l.1.as_ref()).map(|l| trolley::over_lanes(l, &chosen, *lay)).unwrap_or_default(),
-                    Lay2::WireSplines => trolley::from_wire_splines(doc, a, lay.section),
+                    Lay2::WireSplines => {
+                        // (the map's own wire splines show it already)
+                        kit = Some(crate::trolley_kit::Kit { wires: false, masts: false, ..self.kit });
+                        trolley::from_wire_splines(doc, a, lay.section)
+                    }
                 };
-                let n = trolley::add_spans(&mut wire, new);
-                ed.toast(format!("{} {n}", tr("Spans laid:", "Пролётов проложено:")));
+                added = trolley::add_spans(&mut wire, new);
+                kit = kit.or(Some(self.kit));
+                ed.toast(format!("{} {}", tr("Spans laid:", "Пролётов проложено:"), added.len()));
             }
         }
         let after = if remove_all || !exists { None } else { Some(wire) };
         if after != before {
-            trolley::set(ed, after);
+            crate::trolley_kit::apply(ed, roots, assets, after, added, kit);
         }
     }
 }
