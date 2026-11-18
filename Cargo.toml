@@ -11,16 +11,18 @@ default-run = "openmapper"
 
 [dependencies]
 # openOMSI's own readers and geometry: the editor reads and builds exactly what the game does
-omsi-cfg = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-map = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-scenery = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-model = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-o3d = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-geometry = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-texture = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-timetable = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-content = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
-omsi-script = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
+omsi-cfg = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-map = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-scenery = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-model = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-o3d = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-geometry = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-texture = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-timetable = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-content = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+omsi-script = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
+# where the game lays the objects of spline rows (its map index and placement)
+omsi-world = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
 
 wgpu = { version = "29", default-features = false, features = ["std", "parking_lot", "metal", "vulkan", "dx12", "gles", "wgsl"] }
 winit = "0.30"
@@ -33,7 +35,7 @@ glam = "0.30"
 openmapper-mesh = { path = "crates/mesh" }
 # editing one map together (src/collab): the connection, and openOMSI's own Cloudflare tunnel
 openmapper-collab = { path = "crates/collab" }
-omsi-net = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed6f43f11b4c06ead299af7ac74280d5c5b" }
+omsi-net = { git = "https://github.com/openOMSI-org/openOMSI", rev = "a2828c998a059afabee706729935992b2f7fc031" }
 bytemuck = { version = "1", features = ["derive"] }
 pollster = "1.0"
 anyhow = "1"

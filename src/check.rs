@@ -119,6 +119,7 @@ pub enum Kind {
     LinkLost,
     HeadUnlinked,
     DepotFile,
+    RowBeforeSpline,
 }
 
 impl Kind {
@@ -151,6 +152,7 @@ impl Kind {
             Kind::LinkLost => tr("Objects linked to one that is gone", "Объекты, связанные с исчезнувшим"),
             Kind::HeadUnlinked => tr("Signal heads linked to no crossing", "Светофоры без перекрёстка"),
             Kind::DepotFile => tr("Depot files (destinations)", "Файлы депо (конечные)"),
+            Kind::RowBeforeSpline => tr("Rows the game does not show", "Ряды, которые игра не показывает"),
         }
     }
 
@@ -183,6 +185,7 @@ impl Kind {
             Kind::LinkLost => tr("An object takes its state ([varparent]) from an object no longer on the map: a signal head stays dark, a display blank. Link it to another in its properties (Linked objects), or \"Fix\" forgets the link.", "Объект берёт состояние ([varparent]) от объекта, которого больше нет на карте: светофор не горит, табло пустое. Свяжите его с другим в свойствах («Связанные объекты») или «Исправить» уберёт связь."),
             Kind::HeadUnlinked => tr("A traffic light's signal head takes its light from a crossing's program ([varparent]); this one is linked to none while others like it are, so it stays dark in the game. Select it and link it in its properties (Linked objects).", "Головка светофора берёт сигнал из программы перекрёстка ([varparent]); эта ни с чем не связана, хотя такие же связаны, и в игре она не горит. Выберите её и свяжите в свойствах («Связанные объекты»)."),
             Kind::DepotFile => tr("A depot file (.hof) gives the buses their destinations, the stop names on their displays and the routes their IBIS knows. Without one the signs stay empty and the IBIS knows no line. \"Fix\" makes it from the map's lines, or adds what the lines need to the map's own (Map > Depot files to see and change it).", "Файл депо (.hof) даёт автобусам конечные, имена остановок на табло и маршруты, которые знает IBIS. Без него указатели пусты, а IBIS не знает ни одной линии. «Исправить» создаст его по линиям карты или добавит в собственный файл карты то, чего не хватает линиям (Карта > Файлы депо, чтобы посмотреть и изменить)."),
+            Kind::RowBeforeSpline => tr("A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.", "Ряд объектов вдоль дороги (фонари, столбики, парковочные места) начинается раньше дороги, на которой лежит: его расстояние считается от начала цепочки дороги, а здесь оно меньше длины цепочки до этой дороги. OMSI 2 и openOMSI не показывают его совсем, редактор тоже. Положите ряд заново или увеличьте его начало в свойствах."),
             Kind::SignalRouteBroken => tr("A signal route names a signal or track pieces no longer on the map: the signal may never clear. Open Map > Signal routes and take the track again, or delete the route.", "Маршрут сигнала указывает сигнал или участки пути, которых больше нет на карте: сигнал может так и не открыться. Откройте Карта > Маршруты сигналов и возьмите пути заново или удалите маршрут."),
         }
     }
@@ -215,6 +218,9 @@ struct Snapshot {
     tt_doc: Option<Document>,
     /// The bus stops, with the tile each is on.
     stops: Vec<(TileKey, crate::stops::Found)>,
+    /// Rows the game does not draw (their first object before their own spline): tile,
+    /// IDCode, file, where their spline starts.
+    refused_rows: Vec<(TileKey, i64, String, DVec2)>,
 }
 
 /// What the catalogue says of a file.
@@ -329,6 +335,17 @@ fn snapshot(doc: &Document, lib: &Library) -> Snapshot {
         }).collect(),
         object_ids: doc.tiles.values().flat_map(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).map(|o| o.id).chain(t.tile.spline_attachments.iter().map(|a| a.id)).chain(t.chrono.iter().flat_map(|c| c.objects.iter().chain(&c.attach_objects).map(|o| o.id)))).collect(),
         stops: doc.tiles.iter().flat_map(|(k, t)| t.tile.objects.iter().filter(|o| o.flag == 7 && o.extra.len() >= 4).map(move |o| (*k, crate::stops::Found { id: o.id, name: o.extra[0].clone(), at: tile_origin(*k) + DVec2::new(o.pos[0], o.pos[1]) }))).collect(),
+        refused_rows: doc
+            .tiles
+            .iter()
+            .flat_map(|(k, t)| {
+                let splines = &t.tile.splines;
+                t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none() && omsi_world::map_index::row_starts_before_its_spline(a, splines)).map(move |a| {
+                    let s = &splines[a.spline_index.max(0) as usize];
+                    (*k, a.id, a.file.clone(), tile_origin(*k) + DVec2::new(s.pos[0], s.pos[1]))
+                })
+            })
+            .collect(),
         tt_doc: (!doc.timetable.lines.is_empty() || !doc.timetable.trips.is_empty() || !doc.traffic.veh_groups.is_empty()).then(|| doc.for_reading()),
     }
 }
@@ -714,6 +731,9 @@ fn run(s: Snapshot, roots: Vec<PathBuf>) -> Vec<Issue> {
     for (k, id, at, p) in s.var_links.iter().filter(|l| !s.object_ids.contains(&l.3)) {
         let file = s.objects.iter().find(|o| o.id == *id).map(|o| short(&o.file)).unwrap_or_default();
         out.push(issue(Severity::Warning, Kind::LinkLost, file, format!("[varparent] {p}"), Some(*at), Some(Sel::Object(*k, *id)), Some(Fix::DropVarParent(*k, *id))));
+    }
+    for (k, id, file, at) in &s.refused_rows {
+        out.push(issue(Severity::Warning, Kind::RowBeforeSpline, short(file), format!("IDCode {id}"), Some(*at), Some(Sel::Attached(*k, *id)), None));
     }
     out.sort_by(|a, b| a.severity.cmp(&b.severity).then(a.kind.cmp(&b.kind)));
     out
@@ -1397,7 +1417,7 @@ mod tests {
     fn snap(splines: Vec<SplineRec>) -> Snapshot {
         let mut kinds = HashMap::new();
         kinds.insert("splines\\road.sli".to_string(), KindRec { cat: Category::Roads, half_width: 4.0, bus_stop: false, lanes: true, abs_height: false, lamp: false, light_head: false });
-        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new() }
+        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new(), refused_rows: Vec::new() }
     }
 
     #[test]
@@ -1426,6 +1446,7 @@ mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         for k in tiles {
             doc.tiles.insert(*k, crate::doc::TileDoc::new_flat(0.0));
@@ -1638,6 +1659,21 @@ mod tests {
         let lost: Vec<_> = issues.iter().filter(|i| i.kind == Kind::LinkLost).collect();
         assert_eq!(lost.len(), 1);
         assert_eq!(lost[0].fix, Some(Fix::DropVarParent((0, 0), 2)));
+    }
+
+    /// A row starting before its own spline (20 m into its chain, the row at 5 m) is one the
+    /// game does not draw: it is named, a row laid from its spline is not.
+    #[test]
+    fn a_row_starting_before_its_spline_is_named() {
+        use crate::selection::tests::{add_spline, flat_map};
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 0.0, 0.0, 20.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 100.0, 20.0, 0.0, 40.0, 1, 0);
+        let row = |id: i64, d: f64| omsi_map::SplineAttachment { file: "Sceneryobjects\\lamp.sco".into(), id, spline_index: 1, offset: [3.0, 0.0, d], ..Default::default() };
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments = vec![row(5, 5.0), row(6, 25.0)];
+        let issues = run(snapshot(&doc, &Library::default()), Vec::new());
+        let rows: Vec<_> = issues.iter().filter(|i| i.kind == Kind::RowBeforeSpline).map(|i| i.sel).collect();
+        assert_eq!(rows, vec![Some(Sel::Attached((0, 0), 5))]);
     }
 
     #[test]

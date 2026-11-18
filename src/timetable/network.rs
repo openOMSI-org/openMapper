@@ -187,6 +187,7 @@ fn lane_of(key: PathKey, mut pts: Vec<DVec3>, file_length: f64, internal: usize,
 impl Network {
     pub fn build(doc: &Document, files: &mut Files) -> Network {
         let mut net = Network::default();
+        let rows = crate::place::row_index(doc);
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             // OMSI numbers a tile's paths through its splines, then its objects
@@ -219,7 +220,7 @@ impl Network {
                 if !files.get(&a.file).map(|i| i.is_bus_stop).unwrap_or(false) {
                     continue;
                 }
-                if let Some(first) = crate::place::row_objects(a, &t.tile.splines, org).first() {
+                if let Some(first) = crate::place::row_objects(a, &t.tile.splines, org, &rows).first() {
                     net.stops.push((*k, a.id, first.pose.pos));
                 }
             }

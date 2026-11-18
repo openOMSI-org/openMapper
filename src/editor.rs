@@ -1889,6 +1889,7 @@ impl Editor {
         // what hangs on objects and rows (signs on posts, lamps on masts), placed as they are drawn
         // (only near where the ray meets the ground: rows are worked out along their roads)
         let near = |k: &TileKey| ground.map(|g| (tile_origin(*k) + DVec2::splat(tile_size() * 0.5) - g.truncate()).length() < tile_size() * 1.5).unwrap_or(false);
+        let rows = crate::place::row_index(doc);
         for (k, t) in doc.tiles.iter().filter(|_| !paths_only) {
             if t.tile.attach_objects.is_empty() || !near(k) {
                 continue;
@@ -1900,7 +1901,7 @@ impl Editor {
             }
             for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
                 let Some(model) = assets.object(&a.file) else { continue };
-                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k));
+                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), &rows);
                 if let Some(first) = objs.iter().min_by_key(|o| o.index) {
                     parents.entry(a.id).or_insert((first.pose, model));
                 }
@@ -8780,11 +8781,12 @@ impl Editor {
         for (from, onto, sid, u, rec) in planned {
             self.history.touch_tile(doc, from);
             self.history.touch_tile(doc, onto);
-            let Some(t) = doc.tiles.get_mut(&onto) else { continue };
-            let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else { continue };
+            let Some(idx) = doc.tiles.get(&onto).and_then(|t| t.tile.splines.iter().position(|s| s.id == sid && !s.deleted)) else { continue };
+            let chain = crate::place::chain_offset_of(doc, &doc.tiles[&onto].tile.splines[idx]);
+            let t = doc.tiles.get_mut(&onto).unwrap();
             let mut rec = rec;
             rec.spline_index = idx as i32;
-            rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
+            rec.offset[2] = chain + u;
             let id = rec.id;
             t.tile.spline_attachments.push(rec);
             t.touch_content();
@@ -12706,7 +12708,7 @@ mod tests {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
             let row = &t.spline_attachments[0];
-            crate::place::row_objects(row, &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(row, &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         assert!(spots.len() > 1, "the row has objects to click on: {}", spots.len());
         for ro in spots.iter().take(3) {
@@ -12763,7 +12765,7 @@ mod tests {
         let spots = {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
-            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         let p = spots[0].pose.pos;
         // (aimed at the middle of the crown, where only the cards are drawn)
@@ -13103,7 +13105,7 @@ mod tests {
         let spots = {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
-            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         let p = spots[0].pose.pos;
         // (the eye 25 m up and 25 m to the side, as a person looks at a bay across the road)

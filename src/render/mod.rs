@@ -214,6 +214,9 @@ struct GpuTile {
     /// The ground's walls down from the rims of its holes to the roads' edges (vertices,
     /// indices, index count; openOMSI's `terrain_hole_walls`).
     walls: Option<(wgpu::Buffer, wgpu::Buffer, u32)>,
+    /// Its ground fitted to the aligned splines lying in troughs, drawn instead of the grid
+    /// (the same).
+    fitted: Option<(wgpu::Buffer, wgpu::Buffer, u32)>,
     /// What its uniform holds now.
     uniform_now: [f32; 8],
     /// Its paint masks' and ground cut's views (the bind group is made again with them
@@ -336,6 +339,8 @@ struct SplineEntry {
     outlines: Vec<Vec<DVec2>>,
     /// The same with the heights of the road's edge (world), for the ground's walls.
     rims: Vec<Vec<DVec3>>,
+    /// The ground fitted under it where it lies in a trough (openOMSI's), instead of its hole.
+    trough: Option<Arc<build::Trough>>,
     materials: Vec<Material>,
     instance: u32,
     /// Drawn as part of its tile's chunk (then it has no mesh of its own on the GPU).
@@ -1339,6 +1344,7 @@ impl Renderer {
     /// clock runs the programs).
     fn gather_heads(&mut self, device: &wgpu::Device, doc: &Document, assets: &mut Assets, disp: &[(TileKey, Arc<omsi_map::Tile>)], extras: &FrameExtras, anchor: DVec3) -> Vec<Head> {
         let mut heads = Vec::new();
+        let rows = crate::place::row_index(doc);
         for (k, t) in disp {
             let mut parents: HashMap<i64, (Pose, Arc<ObjectModel>)> = HashMap::new();
             for o in &t.objects {
@@ -1357,7 +1363,7 @@ impl Renderer {
                     continue;
                 }
                 let o = omsi_map::MapObject { file: a.file.clone(), id: a.id, extra: a.strings.clone(), var_parent: a.var_parent, ..Default::default() };
-                for ro in crate::place::row_objects(a, &t.splines, org) {
+                for ro in crate::place::row_objects(a, &t.splines, org, &rows) {
                     if let Some(mut h) = self.head_of(device, doc, assets, *k, &o, ro.pose.matrix_from(anchor), model.clone(), extras) {
                         h.sel = Sel::Attached(*k, a.id);
                         heads.push(h);
@@ -1446,7 +1452,7 @@ impl Renderer {
                 let views = [self.zero_mask.clone(), self.zero_mask.clone(), self.uncut.clone()];
                 let bind = tile_bind(device, &self.tile_layout, &uniform, &views, &self.mask_sampler, &self.imagery, k);
                 let imagery_rev = self.imagery.view(k).1;
-                self.tiles.insert(k, GpuTile { vb, uniform, masks: None, cut: None, cut_key: 0, bind, terrain_rev: 0, mask_rev: 0, walls: None, uniform_now: [f32::NAN; 8], views, imagery_rev, bbox: Aabb::ALL });
+                self.tiles.insert(k, GpuTile { vb, uniform, masks: None, cut: None, cut_key: 0, bind, terrain_rev: 0, mask_rev: 0, walls: None, fitted: None, uniform_now: [f32::NAN; 8], views, imagery_rev, bbox: Aabb::ALL });
             }
             let gt = self.tiles.get_mut(&k).unwrap();
             if gt.imagery_rev != self.imagery.view(k).1 {
@@ -1553,9 +1559,11 @@ impl Renderer {
             self.scene_key = key;
             // each tile's instances are kept, and made again only when it changed
             self.tile_groups.retain(|k, _| doc.tiles.contains_key(k) && is_live(k));
+            let rows = crate::place::row_index(doc);
             for (k, t) in &disp {
                 let Some(td) = doc.tiles.get(k) else { continue };
-                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64]);
+                // (its rows run on into the tiles around: laid out again when their chains change)
+                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64, crate::place::rows_beyond(doc, *k)]);
                 if self.tile_groups.get(k).map(|g| g.0 == tkey).unwrap_or(false) {
                     continue;
                 }
@@ -1585,7 +1593,7 @@ impl Renderer {
                 for a in t.spline_attachments.iter().filter(|_| !extras.hide[1]) {
                     let Some(model) = assets.object(&a.file) else { continue };
                     let rel_key = self.model_with_labels(device, &a.file.to_lowercase(), &model, &a.strings, assets);
-                    let objs = crate::place::row_objects(a, &t.splines, org);
+                    let objs = crate::place::row_objects(a, &t.splines, org, &rows);
                     let first = objs.iter().map(|o| o.index).min();
                     // (each record is a thing of its own: clicking one of its copies picks it,
                     // and they take its tint - selected or hovered - as an object does)
@@ -1785,7 +1793,7 @@ impl Renderer {
                 m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
                 let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
                 let mesh = Some(upload_mesh(device, &m));
-                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false });
+                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), trough: None, materials: vec![material], instance: 0, in_chunk: false });
                 self.warm_pending = true;
             }
             if let Some(e) = self.splines.get_mut(&key) {
@@ -2064,7 +2072,8 @@ impl Renderer {
             let (x0, y0) = (key.0 as f64 * ts, key.1 as f64 * ts);
             let (x1, y1) = (x0 + ts, y0 + ts);
             let outside = |b: [f64; 4]| b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1;
-            let mut input = build::CutInput { key, hash: h, splines: Vec::new(), objects: Vec::new(), terrain: doc.tiles.get(&key).map(|t| t.terrain.clone()) };
+            let neighbours = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)].into_iter().filter_map(|(dx, dy)| doc.tiles.get(&(key.0 + dx, key.1 + dy)).map(|t| (t.terrain.clone(), DVec2::new(dx as f64 * ts, dy as f64 * ts)))).collect();
+            let mut input = build::CutInput { key, hash: h, splines: Vec::new(), objects: Vec::new(), terrain: doc.tiles.get(&key).map(|t| t.terrain.clone()), neighbours };
             for dy in -1..=1 {
                 for dx in -1..=1 {
                     let n = (key.0 + dx, key.1 + dy);
@@ -2077,7 +2086,7 @@ impl Renderer {
                         if !e.cuts || outside(b) {
                             continue;
                         }
-                        input.splines.push((m.clone(), org, e.drivable, e.outlines.clone(), e.rims.clone()));
+                        input.splines.push(build::CutSpline { mesh: m.clone(), org, drivable: e.drivable, outlines: e.outlines.clone(), rims: e.rims.clone(), trough: e.trough.clone() });
                     }
                     // surface objects (junction plates, car parks) and [terrainhole] cutters
                     for o in &t.objects {
@@ -2090,7 +2099,9 @@ impl Renderer {
                         if outside([pose.pos.x - r, pose.pos.y - r, pose.pos.x + r, pose.pos.y + r]) {
                             continue;
                         }
-                        input.objects.push((model, pose));
+                        let ground = |x: f64, y: f64| doc.height_at(DVec2::new(x, y)).map(f64::from);
+                        let buried = model.holes.iter().map(|h| build::hole_is_buried(h, &pose, ground)).collect();
+                        input.objects.push((model, pose, buried));
                     }
                 }
             }
@@ -2099,12 +2110,14 @@ impl Renderer {
         // the cuts that are done
         for (key, h, cut) in self.builder.take_cuts() {
             let Some(g) = self.tiles.get_mut(&key) else { continue };
-            g.walls = cut.walls.map(|m| {
+            let upload = |m: MeshData, label: &str| {
                 let verts: Vec<TerrainVertex> = m.positions.iter().zip(&m.normals).map(|(p, n)| TerrainVertex { pos: p.to_array(), normal: n.to_array() }).collect();
-                let vb = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("walls vb"), contents: bytemuck::cast_slice(&verts), usage: wgpu::BufferUsages::VERTEX });
-                let ib = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("walls ib"), contents: bytemuck::cast_slice(&m.indices), usage: wgpu::BufferUsages::INDEX });
+                let vb = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents: bytemuck::cast_slice(&verts), usage: wgpu::BufferUsages::VERTEX });
+                let ib = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents: bytemuck::cast_slice(&m.indices), usage: wgpu::BufferUsages::INDEX });
                 (vb, ib, m.indices.len() as u32)
-            });
+            };
+            g.walls = cut.walls.map(|m| upload(m, "walls"));
+            g.fitted = cut.fitted.filter(|m| !m.indices.is_empty()).map(|m| upload(m, "fitted ground"));
             g.cut_key = h;
             // (nothing cut: the shared uncut ground; a texture of its own only where roads
             // or plates take the ground away)
@@ -2423,8 +2436,18 @@ impl Renderer {
             pass.set_index_buffer(self.terrain_index.slice(..), wgpu::IndexFormat::Uint32);
             for t in self.tiles.values().filter(|t| f.sees(&t.bbox) && in_reach(&t.bbox)) {
                 pass.set_bind_group(1, &t.bind, &[]);
-                pass.set_vertex_buffer(0, t.vb.slice(..));
-                pass.draw_indexed(0..self.terrain_index_count, 0, 0..1);
+                match &t.fitted {
+                    Some((vb, ib, n)) => {
+                        pass.set_vertex_buffer(0, vb.slice(..));
+                        pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint32);
+                        pass.draw_indexed(0..*n, 0, 0..1);
+                        pass.set_index_buffer(self.terrain_index.slice(..), wgpu::IndexFormat::Uint32);
+                    }
+                    None => {
+                        pass.set_vertex_buffer(0, t.vb.slice(..));
+                        pass.draw_indexed(0..self.terrain_index_count, 0, 0..1);
+                    }
+                }
                 calls += 1;
             }
             for t in self.tiles.values().filter(|t| f.sees(&t.bbox) && in_reach(&t.bbox)) {

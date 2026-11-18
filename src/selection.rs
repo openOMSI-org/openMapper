@@ -49,14 +49,14 @@ pub fn attachment(doc: &Document, k: TileKey, id: i64) -> Option<&omsi_map::Spli
 pub fn attachment_first(doc: &Document, k: TileKey, id: i64) -> Option<crate::place::RowObject> {
     let t = doc.tiles.get(&k)?;
     let a = t.tile.spline_attachments.iter().find(|a| a.id == id)?;
-    crate::place::row_objects(a, &t.tile.splines, tile_origin(k)).into_iter().min_by_key(|o| o.index)
+    crate::place::row_objects(a, &t.tile.splines, tile_origin(k), &crate::place::row_index(doc)).into_iter().min_by_key(|o| o.index)
 }
 
 /// Every copy a record places (where it is drawn, for picking).
 pub fn attachment_copies(doc: &Document, k: TileKey, id: i64) -> Vec<crate::place::RowObject> {
     let Some(t) = doc.tiles.get(&k) else { return Vec::new() };
     let Some(a) = t.tile.spline_attachments.iter().find(|a| a.id == id) else { return Vec::new() };
-    crate::place::row_objects(a, &t.tile.splines, tile_origin(k))
+    crate::place::row_objects(a, &t.tile.splines, tile_origin(k), &crate::place::row_index(doc))
 }
 
 /// The record as a map object, standing where its first copy does, so the properties panel can
@@ -93,7 +93,7 @@ fn road_heading(doc: &Document, k: TileKey, a: &omsi_map::SplineAttachment) -> f
     let Some(t) = doc.tiles.get(&k) else { return 0.0 };
     let Some(s) = t.tile.splines.get(a.spline_index.max(0) as usize).filter(|s| !s.deleted) else { return 0.0 };
     let curve = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
-    let u = (a.offset[2] - s.map_chain_offset.unwrap_or(0.0)).clamp(0.0, s.length.max(0.0));
+    let u = (a.offset[2] - crate::place::chain_offset_of(doc, s)).clamp(0.0, s.length.max(0.0));
     curve.heading_at(u)
 }
 
@@ -166,7 +166,7 @@ pub fn move_attachment(doc: &mut Document, k: TileKey, id: i64, to: DVec2) -> bo
     let Some(a) = t.tile.spline_attachments.iter().find(|a| a.id == id) else { return false };
     let Some(s) = t.tile.splines.get(a.spline_index.max(0) as usize).filter(|s| !s.deleted) else { return false };
     let Some((along, beside)) = on_spline(s, tile_origin(k), to) else { return false };
-    let chain = s.map_chain_offset.unwrap_or(0.0);
+    let chain = crate::place::chain_offset_of(doc, s);
     let (along, beside) = (chain + along, beside);
     let t = doc.tiles.get_mut(&k).unwrap();
     if let Some(a) = t.tile.spline_attachments.iter_mut().find(|a| a.id == id) {
@@ -751,6 +751,7 @@ pub mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         for x in 0..n {
             doc.tiles.insert((x, 0), TileDoc::new_flat(0.0));
@@ -798,7 +799,7 @@ pub mod tests {
         assert!((a.offset[1] - 1.0).abs() < 1e-6, "the height above the road is kept: {:?}", a.offset);
         // every copy of the row is on the road still, 7 m to its right, 1 m above it
         let t = &doc.tiles[&(0, 0)].tile;
-        let copies = crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)));
+        let copies = crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(&doc));
         assert_eq!(copies.len(), 3);
         for c in &copies {
             assert!((c.pose.pos.x - 107.0).abs() < 1e-6 && (c.pose.pos.z - 1.0).abs() < 1e-6, "{:?}", c.pose.pos);
