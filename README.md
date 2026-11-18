@@ -64,6 +64,8 @@ can drive in service.
 * **Real places**: satellite imagery, terrain heights and OpenStreetMap (roads, stops, lines, buildings, trees, water).
 * **Lines and traffic**: timetable, tours, depot files, AI traffic and paths.
 * **Your own models**: import glTF, FBX, OBJ and more, edit meshes, make materials and PBR maps, export.
+* **Scripts**: the map's Lua scripts for openOMSI as a project in a small IDE (completion of the game's API, checks as you type), run and debugged in the editor with breakpoints and steps, built into a shareable `.oop`; a Rust plugin too.
+* **Trolleybus wire**: overhead wire with sections, insulators and switches, laid with its masts.
 * **Check and drive**: a map check, the game's own checks, safe saving with earlier versions, and a test drive in openOMSI on one key (`F5`).
 
 The full list is in [docs/FEATURES.md](docs/FEATURES.md), the controls in its last section, and
@@ -76,7 +78,7 @@ Rust, written from scratch for openOMSI:
 * **wgpu** from the org's fork [`wgpu-openomsi`](https://github.com/openOMSI-org/wgpu-openomsi)
   (the same revision openOMSI uses), Metal / Vulkan / Direct3D 12 / GL;
 * the interface is [`egui-openomsi`](https://github.com/openOMSI-org/egui-openomsi), laid out
-  like a classic desktop editor: menu bar, toolbar, docked panels (tool/catalogue on the left,
+  like a classic desktop editor, in a dark or a light theme: menu bar, toolbar, docked panels (tool/catalogue on the left,
   properties on the right), status bar with help and cursor coordinates;
 * icons are Google's [Material Symbols](https://fonts.google.com/icons) (Apache 2.0), stored in
   the repository: the full font is in `assets/fonts`, and the binary embeds a ~10 KB subset of
