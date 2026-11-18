@@ -437,7 +437,9 @@ impl Grid {
     /// What lies in the cells round `p` (within one cell of it).
     fn near(&self, p: DVec2) -> impl Iterator<Item = usize> + '_ {
         let (x, y) = self.key(p);
-        (-1..=1).flat_map(move |dx| (-1..=1).map(move |dy| (x + dx, y + dy))).flat_map(move |k| self.cells.get(&k).into_iter().flatten().copied())
+        // (a point thrown out to the end of the numbers by a broken spline of a map file is
+        // in the last cell: the one beyond it is not there to look in)
+        (x.saturating_sub(1)..=x.saturating_add(1)).flat_map(move |cx| (y.saturating_sub(1)..=y.saturating_add(1)).map(move |cy| (cx, cy))).flat_map(move |k| self.cells.get(&k).into_iter().flatten().copied())
     }
 }
 
@@ -1387,6 +1389,20 @@ pub fn cli(cfg: &Path) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A point at the far end of the numbers (a broken spline of a map file sends its end
+    /// there) is looked round without the cell numbers overflowing: the check of
+    /// Solnechnogorsk_2024 stopped there.
+    #[test]
+    fn a_point_at_the_end_of_the_numbers_is_looked_round() {
+        let mut g = Grid::new(2.0);
+        let far = DVec2::new(f64::INFINITY, f64::MAX);
+        g.add(far, 0);
+        g.add(DVec2::new(1.0, 1.0), 1);
+        assert_eq!(g.near(far).collect::<Vec<_>>(), vec![0]);
+        assert_eq!(g.near(DVec2::new(f64::NEG_INFINITY, f64::MIN)).count(), 0);
+        assert_eq!(g.near(DVec2::new(1.5, 1.5)).collect::<Vec<_>>(), vec![1]);
+    }
 
     fn spline(id: i64, x: f64, heading: f64, prev: i64, next: i64) -> SplineRec {
         let p = DVec3::new(x, 0.0, 0.0);
