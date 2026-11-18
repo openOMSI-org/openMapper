@@ -123,7 +123,7 @@ fn chart(ui: &mut egui::Ui, pts: &[Sample], joints: &[Joint], actions: &mut Vec<
     let w = ui.available_width();
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 120.0), Sense::click_and_drag());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 2.0, pal().canvas);
+    p.rect(rect, 2.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let length = pts.last().map(|s| s.at).unwrap_or(1.0).max(1.0);
     let lo = pts.iter().map(|s| s.road.min(s.ground)).fold(f64::MAX, f64::min);
     let hi = pts.iter().map(|s| s.road.max(s.ground)).fold(f64::MIN, f64::max);

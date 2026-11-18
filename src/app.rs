@@ -310,6 +310,7 @@ impl App {
         }
         // OPENMAPPER_MULTIPLAYER: File > Multiplayer open at the start
         app.ed.apply_snap_settings(app.prefs.snap);
+        app.ui.panel_sizes = app.prefs.panel_sizes;
         app.collab.open = std::env::var_os("OPENMAPPER_MULTIPLAYER").is_some();
         // OPENMAPPER_HELP=1: View > Controls open (checks of the keys without a person at the
         // screen); OPENMAPPER_KEYS=mapper|omsi|blender: that set of keys (and OMSI 2's mouse)
@@ -3203,6 +3204,11 @@ impl App {
         let snap = self.ed.snap_settings();
         if snap != self.prefs.snap {
             self.prefs.snap = snap;
+            self.prefs.save();
+        }
+        // (kept once a panel's edge is let go, not at every step of the drag)
+        if self.ui.panel_sizes.iter().zip(self.prefs.panel_sizes).any(|(a, b)| (a - b).abs() >= 1.0) && !g.egui_ctx.input(|i| i.pointer.any_down()) {
+            self.prefs.panel_sizes = self.ui.panel_sizes.map(f32::round);
             self.prefs.save();
         }
         g.renderer.profile.add("ui", crate::render::profile::ms(t_ui));

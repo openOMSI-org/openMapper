@@ -69,7 +69,7 @@ fn file_name(p: &Path) -> String {
 fn plan(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 170.0), Sense::hover());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, pal().canvas);
+    p.rect(rect, 3.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let total = s.total_width().max(1.0);
     let k = ((rect.width() - 30.0) / total).min((rect.height() - 20.0) / 14.0);
     let rw = s.roadway_width();
@@ -200,7 +200,7 @@ fn preview(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
 fn section(ui: &mut egui::Ui, s: &RoadSpec, tex: &mut TexCache) {
     let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 100.0), Sense::hover());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, pal().canvas);
+    p.rect(rect, 3.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let total = s.total_width().max(1.0);
     let k = (rect.width() - 20.0) / total;
     let rw = s.roadway_width();

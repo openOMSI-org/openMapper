@@ -299,6 +299,8 @@ pub struct UiState {
     pub season: Option<&'static str>,
     /// The maps' pictures on the welcome screen, small (None: the map has none).
     welcome_pictures: HashMap<PathBuf, Option<egui::TextureHandle>>,
+    /// The panels' sizes as they are now (`Prefs::panel_sizes`).
+    pub panel_sizes: [f32; 3],
 }
 
 impl Default for UiState {
@@ -355,6 +357,7 @@ impl Default for UiState {
             time_speed: 1.0,
             season: None,
             welcome_pictures: HashMap::new(),
+            panel_sizes: [0.0; 3],
         }
     }
 }
@@ -844,18 +847,31 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
     // (the panels below fill in the help; the status bar shows last frame's)
     let help_line = st.status_help.take();
     status_bar(root, help_line, st, ed, &status);
-    egui::Panel::left("tool panel").resizable(true).default_size(290.0).size_range(240.0..=480.0).frame(panel_frame()).show(root, |ui| {
+    // (the panels open as wide as they were dragged to; a panel widened by what it shows is
+    // not taken for one the user widened)
+    let size = |i: usize, first: f32| if st.panel_sizes[i] > 0.0 { st.panel_sizes[i] } else { first };
+    let dragged = |ctx: &egui::Context, panel: &str| ctx.is_being_dragged(Id::new(panel).with("__resize"));
+    let (left, right) = (size(0, 290.0), size(1, 270.0));
+    let r = egui::Panel::left("tool panel").resizable(true).default_size(left).size_range(240.0..=480.0).frame(panel_frame()).show(root, |ui| {
         tool_panel(ui, st, ed, lib, thumbs, wanted, swatches, wanted_swatches, actions);
     });
-    egui::Panel::right("properties").resizable(true).default_size(270.0).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
+    if dragged(root.ctx(), "tool panel") {
+        st.panel_sizes[0] = r.response.rect.width();
+    }
+    let r = egui::Panel::right("properties").resizable(true).default_size(right).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
         // (a road's rows of objects can make it long; a row wider than the panel scrolls
         // sideways instead of widening it: the map view shrank and slid away under the click)
         egui::ScrollArea::both().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
             properties(ui, st, ed, lib, actions);
         });
     });
+    if dragged(root.ctx(), "properties") {
+        st.panel_sizes[1] = r.response.rect.width();
+    }
     let favourites = st.favourites.clone();
-    st.assets.panel(root, ed, lib, thumbs, wanted, &favourites, texture_files, swatches, wanted_swatches, actions);
+    if let Some(h) = st.assets.panel(root, ed, lib, thumbs, wanted, &favourites, texture_files, swatches, wanted_swatches, actions, st.panel_sizes[2]).filter(|_| dragged(root.ctx(), "assets")) {
+        st.panel_sizes[2] = h;
+    }
     let mut view = (egui::Rect::NOTHING, false);
     egui::CentralPanel::default().frame(Frame::NONE).show(root, |ui| {
         let rect = ui.max_rect();
@@ -1407,7 +1423,8 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
             let (text, color) = match (ed.toasts.last(), help_line) {
                 (_, Some(h)) => (h, pal().text),
                 (Some(t), None) => (t.text.clone(), if t.error { pal().error } else { pal().ok }),
-                (None, None) => (String::new(), pal().text_dim),
+                // (with nothing to say, where more is to be found)
+                (None, None) => (tr("Right-click the view for what can be done there; Search commands finds the rest", "Правый клик по виду: что можно сделать там; «Поиск команд» найдёт остальное").to_string(), pal().text_dim),
             };
             // (the facts on the right first; the help gets what is left, cut short)
             // The bar scales with the window: what does not fit goes in this order, the tile
@@ -1904,7 +1921,17 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         ui.set_min_height(avail - 6.0);
         ui.set_width(ui.available_width());
         if items.is_empty() {
-            ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).color(pal().text_dim));
+            // (an empty list says why, and what to do)
+            let why = if lib.scanning {
+                tr("Reading the content of OMSI 2…", "Читается контент OMSI 2…")
+            } else if searching {
+                tr("Nothing found: try fewer letters, or Everything in Show", "Ничего не найдено: попробуйте меньше букв или «Всё» в списке «Показать»")
+            } else {
+                tr("Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)", "Ничего такого нет: выберите «Всё» в списке «Показать» или импортируйте ассеты (Файл > Импорт ассетов)")
+            };
+            Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
+                ui.label(RichText::new(why).color(pal().text_dim));
+            });
             return;
         }
         let mut row = |ui: &mut egui::Ui, a: &crate::library::Asset, i: usize, st: &mut UiState, ed: &mut Editor| {

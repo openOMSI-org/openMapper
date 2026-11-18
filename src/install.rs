@@ -67,6 +67,10 @@ pub struct Prefs {
     /// The interface's colours: "dark", "light" or "system" (empty: dark).
     #[serde(default)]
     pub theme: String,
+    /// The tool panel's and the properties' widths and the assets panel's height, as they
+    /// were dragged (0: as at first).
+    #[serde(default)]
+    pub panel_sizes: [f32; 3],
     /// How the mouse moves the camera: "map" (the default, like map editors and city
     /// builders) or "fly" (like Unity / Unreal: right button looks round, W A S D fly).
     #[serde(default)]

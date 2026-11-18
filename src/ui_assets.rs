@@ -85,11 +85,11 @@ fn folder_of(a: &Asset) -> &str {
 }
 
 impl AssetBrowser {
-    /// The panel; `view`: the 3D view's rectangle (a picture dropped there is placed).
+    /// The panel, `height` high at first (0: as at first); gives the height it has now.
     #[allow(clippy::too_many_arguments)]
-    pub fn panel(&mut self, root: &mut egui::Ui, ed: &mut Editor, lib: &Library, thumbs: &HashMap<String, Option<Thumb>>, wanted: &mut Vec<(String, bool)>, favourites: &[String], textures: &[String], swatches: &HashMap<String, egui::TextureHandle>, wanted_swatches: &mut Vec<String>, actions: &mut Vec<Action>) {
+    pub fn panel(&mut self, root: &mut egui::Ui, ed: &mut Editor, lib: &Library, thumbs: &HashMap<String, Option<Thumb>>, wanted: &mut Vec<(String, bool)>, favourites: &[String], textures: &[String], swatches: &HashMap<String, egui::TextureHandle>, wanted_swatches: &mut Vec<String>, actions: &mut Vec<Action>, height: f32) -> Option<f32> {
         if !self.open {
-            return;
+            return None;
         }
         if let Some((rel, true)) = ed.reveal.clone() {
             if let Some(a) = lib.find(&rel) {
@@ -112,7 +112,7 @@ impl AssetBrowser {
             _ => self.build_cache(key, lib, favourites, textures),
         };
         let on_textures = self.show == Show::Textures;
-        egui::Panel::bottom("assets").resizable(true).default_size(260.0).size_range(140.0..=600.0).frame(egui::Frame::new().fill(pal().panel).inner_margin(egui::Margin::same(6))).show(root, |ui| {
+        let shown = egui::Panel::bottom("assets").resizable(true).default_size(if height > 0.0 { height } else { 260.0 }).size_range(140.0..=600.0).frame(egui::Frame::new().fill(pal().panel).inner_margin(egui::Margin::same(6))).show(root, |ui| {
             // the bar: search, kind, size, import
             ui.horizontal(|ui| {
                 ui.label(icons::labelled(Icon::Objects, tr("Assets", "Ассеты")));
@@ -258,6 +258,7 @@ impl AssetBrowser {
             });
         });
         self.cache = Some(cache);
+        let height = shown.response.rect.height();
         if matches!(&ed.reveal, Some((_, true))) {
             ed.reveal = None;
         }
@@ -276,6 +277,7 @@ impl AssetBrowser {
             }
         }
         self.confirm(root.ctx(), lib, actions);
+        Some(height)
     }
 
     fn build_cache(&self, key: u64, lib: &Library, favourites: &[String], textures: &[String]) -> Cache {

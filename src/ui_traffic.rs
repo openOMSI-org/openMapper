@@ -594,7 +594,7 @@ fn plot(ui: &mut egui::Ui, road: &mut [(f32, f32)], people: &mut [(f32, f32)]) -
     let inner = Rect::from_min_max(rect.min + Vec2::new(28.0, 6.0), rect.max - Vec2::new(6.0, 18.0));
     let top = road.iter().chain(people.iter()).map(|p| p.1).fold(2.0f32, f32::max).ceil();
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, pal().canvas);
+    p.rect(rect, 3.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let at = |h: f32, d: f32| Pos2::new(inner.left() + inner.width() * h / 24.0, inner.bottom() - inner.height() * d / top);
     for h in (0..=24).step_by(3) {
         let x = at(h as f32, 0.0).x;
