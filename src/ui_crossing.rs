@@ -621,12 +621,13 @@ impl SurfaceGrid {
 }
 
 /// A drag of one end's rotation: `original` is the path it started from, and `spawned` is
-/// how many pieces the last rebuild inserted after it.
+/// how many pieces the last rebuild inserted after it; `made`, those pieces as it left them.
 struct RotGesture {
     index: usize,
     at_end: bool,
     original: Path,
     spawned: usize,
+    made: Vec<Path>,
 }
 
 /// Rebuild `template` so it leaves on `h0` and arrives on `h1`, the two ends staying where
@@ -3459,9 +3460,12 @@ impl CrossingPaths {
         if index >= crossing.paths.len() {
             return;
         }
-        let fresh = self.rot_drag.as_ref().map(|g| g.index != index || g.at_end != at_end).unwrap_or(true);
+        // (a gesture whose pieces were changed since by something else - Connect the roads, a
+        // typed rotation's field let go without a drag ending - starts again from the path as
+        // it is: rebuilt from its old original, that change was silently undone)
+        let fresh = self.rot_drag.as_ref().map(|g| g.index != index || g.at_end != at_end || crossing.paths.get(index..=index + g.spawned) != Some(&g.made[..])).unwrap_or(true);
         if fresh {
-            self.rot_drag = Some(RotGesture { index, at_end, original: crossing.paths[index].clone(), spawned: 0 });
+            self.rot_drag = Some(RotGesture { index, at_end, original: crossing.paths[index].clone(), spawned: 0, made: Vec::new() });
         }
         let Some(g) = self.rot_drag.as_ref() else { return };
         let (index, spawned, original) = (g.index, g.spawned, g.original.clone());
@@ -3482,6 +3486,7 @@ impl CrossingPaths {
         if pieces.is_empty() {
             if let Some(g) = self.rot_drag.as_mut() {
                 g.spawned = 0;
+                g.made = vec![crossing.paths[index].clone()];
             }
             return;
         }
@@ -3490,6 +3495,7 @@ impl CrossingPaths {
         insert_after(&mut crossing.paths, index, pieces.into_iter().skip(1).collect());
         if let Some(g) = self.rot_drag.as_mut() {
             g.spawned = extra;
+            g.made = crossing.paths[index..=index + extra].to_vec();
         }
     }
 
@@ -5211,6 +5217,21 @@ Main
             let at = ctx.memory(|m| m.area_rect(egui::Id::new("crossing paths window"))).expect("the window is there");
             assert!(screen.contains_rect(at), "beside the map {beside}: {at:?} is not within {screen:?}");
         }
+    }
+
+    /// A path changed by something else between two rotations of its end (Connect the roads
+    /// moving its start) keeps that change: the next rotation was rebuilt from the path as the
+    /// first one began, and the link's alignment was silently undone.
+    #[test]
+    fn a_rotation_after_another_change_keeps_that_change() {
+        let mut w = opened(Tab::Paths);
+        let mut c = w.sheet.as_ref().unwrap().crossing.clone();
+        let h = c.paths[0].heading();
+        w.apply_rotation(&mut c, 0, true, h + 3.0);
+        let moved = c.paths[0].v[0] + 0.7;
+        c.paths[0].v[0] = moved;
+        w.apply_rotation(&mut c, 0, true, h + 4.0);
+        assert!((c.paths[0].v[0] - moved).abs() < 1e-4, "the start as the other change left it: {} vs {moved}", c.paths[0].v[0]);
     }
 
     /// Leaving the map (closing it, opening another, ending the program) asks about the
