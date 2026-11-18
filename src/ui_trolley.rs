@@ -143,7 +143,7 @@ impl TrolleyWindow {
         let picking = &mut ed.wire.picking;
         let drawing = &mut ed.wire.drawing;
         let (span_sel, switch_sel) = (&mut ed.wire.span, &mut ed.wire.switch);
-        egui::Window::new(icons::labelled(Icon::Bus, tr("Trolleybus wire", "Контактная сеть троллейбуса"))).id(egui::Id::new("trolley wire")).open(&mut open).default_pos([330.0, 90.0]).default_size([460.0, 560.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Cable, tr("Trolleybus wire", "Контактная сеть троллейбуса"))).id(egui::Id::new("trolley wire")).open(&mut open).default_pos([330.0, 90.0]).default_size([460.0, 560.0]).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.", "Контактная сеть для троллейбусов openOMSI (trolley.txt рядом с картой; OMSI 2 его не читает). Без него игра берёт провода из сплайнов карты.")).small().color(pal().text_dim));
             if !exists {
                 ui.add_space(6.0);
@@ -197,13 +197,13 @@ impl TrolleyWindow {
                                             ui.selectable_value(&mut self.kit, id, n);
                                         }
                                     });
-                                    if ui.small_button(icons::labelled(Icon::Add, "")).on_hover_text(tr("A new kit", "Новый комплект")).clicked() {
+                                    if icons::small(ui, Icon::AddBox, tr("A new kit", "Новый комплект")).clicked() {
                                         let def = KitDef { name: tr("My wire", "Мой провод").into(), ..KitDef::default() };
                                         self.edit = Some(KitEdit { r: None, scope: Scope::Map, saved: def.clone(), def, piece: Piece::Mast, part: None });
                                     }
                                     let chosen = self.kit.as_ref().and_then(|i| kits.iter().find(|k| &k.0.id() == i)).cloned();
                                     if let Some((r, k)) = chosen {
-                                        if ui.small_button(icons::labelled(Icon::Settings, "")).on_hover_text(tr("Change this kit", "Изменить этот комплект")).clicked() {
+                                        if icons::small(ui, Icon::Tune, tr("Change this kit", "Изменить этот комплект")).clicked() {
                                             self.edit = Some(KitEdit { scope: r.scope, r: Some(r), saved: k.clone(), def: k, piece: Piece::Mast, part: None });
                                         }
                                     }
@@ -505,7 +505,7 @@ impl TrolleyWindow {
         let mut done: Option<&str> = None;
         let mut message: Option<String> = None;
         let title = format!("{}: {}", tr("Wire kit", "Комплект контактной сети"), e.def.name);
-        egui::Window::new(icons::labelled(Icon::Settings, &title)).id(egui::Id::new("trolley kit window")).open(&mut open).default_size([760.0, 600.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Tune, &title)).id(egui::Id::new("trolley kit window")).open(&mut open).default_size([760.0, 600.0]).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("Everything shown on the map comes from here: openMapper has no wire or mast models of its own. The kit is a .cfg file; change it here or in any text editor.", "Всё, что видно на карте, берётся отсюда: своих моделей провода и опор у openMapper нет. Комплект — это файл .cfg; меняйте его здесь или в любом текстовом редакторе.")).small().color(pal().text_dim));
             egui::Grid::new("kit head").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
                 kit_row(ui, tr("Name", "Название"), |ui| {
@@ -537,7 +537,12 @@ impl TrolleyWindow {
             ui.horizontal(|ui| {
                 for p in PIECES {
                     let n = e.def.mesh(p).len();
-                    if ui.selectable_label(e.piece == p, format!("{} ({n})", p.label())).clicked() {
+                    let icon = match p {
+                        Piece::Mast => Icon::Construction,
+                        Piece::Frog => Icon::Split,
+                        Piece::Insulator => Icon::Bolt,
+                    };
+                    if ui.selectable_label(e.piece == p, icons::labelled(icon, &format!("{} ({n})", p.label()))).clicked() {
                         e.piece = p;
                         e.part = None;
                     }
@@ -575,12 +580,12 @@ impl TrolleyWindow {
                         }
                     });
                     if let Some(i) = e.part.filter(|i| *i < parts.len()) {
-                        if ui.small_button(icons::labelled(Icon::Copy, "")).on_hover_text(tr("Duplicate", "Дублировать")).clicked() {
+                        if icons::small(ui, Icon::Duplicate, tr("Duplicate", "Дублировать")).clicked() {
                             let p = parts[i].clone();
                             parts.insert(i + 1, p);
                             e.part = Some(i + 1);
                         }
-                        if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Remove", "Удалить")).clicked() {
+                        if icons::small(ui, Icon::Delete, tr("Remove", "Удалить")).clicked() {
                             parts.remove(i);
                             e.part = None;
                         }
@@ -601,7 +606,7 @@ impl TrolleyWindow {
                             kit_row(ui, tr("Object", "Объект"), |ui| {
                                 ui.add(egui::TextEdit::singleline(&mut p.file).desired_width(180.0));
                                 if let Some(f) = &selected_file {
-                                    if ui.small_button(tr("The selected one", "Выбранный")).clicked() {
+                                    if ui.small_button(icons::labelled(Icon::Select, tr("The selected one", "Выбранный"))).clicked() {
                                         p.file = f.clone();
                                     }
                                 }
@@ -638,19 +643,19 @@ impl TrolleyWindow {
                 if ui.add_enabled(dirty, egui::Button::new(icons::labelled(Icon::Save, tr("Save", "Сохранить")))).clicked() {
                     done = Some("save");
                 }
-                if ui.add_enabled(e.r.is_some(), egui::Button::new(tr("Save and renew the map's wire", "Сохранить и обновить провод карты"))).on_hover_text(tr("What is laid from this kit is made anew as it now says (a changed reach or step shows on wire laid from now on)", "То, что проложено по этому комплекту, переделывается по нему (изменённые вылет и шаг действуют для новой укладки)")).clicked() {
+                if ui.add_enabled(e.r.is_some(), egui::Button::new(icons::labelled(Icon::Refresh, tr("Save and renew the map's wire", "Сохранить и обновить провод карты")))).on_hover_text(tr("What is laid from this kit is made anew as it now says (a changed reach or step shows on wire laid from now on)", "То, что проложено по этому комплекту, переделывается по нему (изменённые вылет и шаг действуют для новой укладки)")).clicked() {
                     done = Some("renew");
                 }
-                if ui.add_enabled(dirty, egui::Button::new(tr("Revert", "Вернуть"))).clicked() {
+                if ui.add_enabled(dirty, egui::Button::new(icons::labelled(Icon::Undo, tr("Revert", "Вернуть")))).clicked() {
                     e.def = e.saved.clone();
                     e.scope = e.r.as_ref().map(|r| r.scope).unwrap_or(Scope::Map);
                 }
                 if e.r.is_some() {
-                    if ui.button(tr("Copy", "Копия")).on_hover_text(tr("A new kit from this one (to rename it, or change it apart)", "Новый комплект из этого (чтобы переименовать или менять отдельно)")).clicked() {
+                    if ui.button(icons::labelled(Icon::Duplicate, tr("Copy", "Копия"))).on_hover_text(tr("A new kit from this one (to rename it, or change it apart)", "Новый комплект из этого (чтобы переименовать или менять отдельно)")).clicked() {
                         e.r = None;
                         e.def.name = format!("{} {}", e.def.name, tr("copy", "копия"));
                     }
-                    if ui.button(tr("Show the file", "Показать файл")).clicked() {
+                    if ui.button(icons::labelled(Icon::Folder, tr("Show the file", "Показать файл"))).clicked() {
                         done = Some("reveal");
                     }
                 }

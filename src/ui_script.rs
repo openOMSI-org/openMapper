@@ -628,7 +628,7 @@ impl ScriptsUi {
                     self.save_all(project, friendly);
                     self.start_run(ui.ctx(), ed, project, friendly, false);
                 }
-                if ui.button(tr("Step in", "Войти")).on_hover_text(tr("Run and stop at the first line (F11)", "Запустить и остановиться на первой строке (F11)")).clicked() {
+                if ui.button(icons::labelled(Icon::StepInto, tr("Step in", "Войти"))).on_hover_text(tr("Run and stop at the first line (F11)", "Запустить и остановиться на первой строке (F11)")).clicked() {
                     self.start_run(ui.ctx(), ed, project, friendly, true);
                 }
             } else {
@@ -637,26 +637,26 @@ impl ScriptsUi {
                         self.send(Cmd::Continue);
                         self.running = true;
                     }
-                } else if ui.button(tr("Pause", "Пауза")).on_hover_text(tr("Stop the clock; a script running stops at its next line", "Остановить часы; работающий скрипт остановится на следующей строке")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Pause, tr("Pause", "Пауза"))).on_hover_text(tr("Stop the clock; a script running stops at its next line", "Остановить часы; работающий скрипт остановится на следующей строке")).clicked() {
                     self.send(Cmd::Pause);
                     self.running = false;
                 }
                 ui.add_enabled_ui(paused, |ui| {
-                    if ui.button(tr("Over", "Шаг")).on_hover_text(tr("Step over (F10)", "Шаг с обходом (F10)")).clicked() {
+                    if ui.button(icons::labelled(Icon::StepOver, tr("Over", "Шаг"))).on_hover_text(tr("Step over (F10)", "Шаг с обходом (F10)")).clicked() {
                         self.send(Cmd::StepOver);
                     }
-                    if ui.button(tr("Into", "Внутрь")).on_hover_text(tr("Step into (F11)", "Шаг внутрь (F11)")).clicked() {
+                    if ui.button(icons::labelled(Icon::StepInto, tr("Into", "Внутрь"))).on_hover_text(tr("Step into (F11)", "Шаг внутрь (F11)")).clicked() {
                         self.send(Cmd::StepIn);
                     }
-                    if ui.button(tr("Out", "Наружу")).on_hover_text(tr("Step out (Shift+F11)", "Шаг наружу (Shift+F11)")).clicked() {
+                    if ui.button(icons::labelled(Icon::StepOut, tr("Out", "Наружу"))).on_hover_text(tr("Step out (Shift+F11)", "Шаг наружу (Shift+F11)")).clicked() {
                         self.send(Cmd::StepOut);
                     }
                 });
-                if ui.button(tr("Stop", "Стоп")).on_hover_text("Shift+F5").clicked() {
+                if ui.button(icons::labelled(Icon::Stop, tr("Stop", "Стоп"))).on_hover_text("Shift+F5").clicked() {
                     self.session = None;
                     self.stopped = None;
                 }
-                if ui.button(tr("Restart", "Заново")).clicked() {
+                if ui.button(icons::labelled(Icon::Restart, tr("Restart", "Заново"))).clicked() {
                     self.session = None;
                     self.save_all(project, friendly);
                     self.start_run(ui.ctx(), ed, project, friendly, false);
@@ -705,14 +705,14 @@ impl ScriptsUi {
             if ui.add_enabled(dirty, egui::Button::new(icons::labelled(Icon::Save, tr("Save all", "Сохранить всё")))).on_hover_text("Ctrl+S").clicked() {
                 self.save_all(project, friendly);
             }
-            if ui.add_enabled(self.building.is_none() && project.exists(), egui::Button::new(tr("Build .oop", "Собрать .oop"))).on_hover_text(tr("One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)", "Один файл со скриптами карты, чтобы делиться: скомпилирован и запутан, с нужными разрешениями (компилятор Development Tools)")).clicked() {
+            if ui.add_enabled(self.building.is_none() && project.exists(), egui::Button::new(icons::labelled(Icon::Build, tr("Build .oop", "Собрать .oop")))).on_hover_text(tr("One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)", "Один файл со скриптами карты, чтобы делиться: скомпилирован и запутан, с нужными разрешениями (компилятор Development Tools)")).clicked() {
                 self.save_all(project, friendly);
                 self.build_log.clear();
                 let key = (!self.sign_key.trim().is_empty()).then(|| PathBuf::from(self.sign_key.trim()));
                 self.building = Some(build::spawn(project.dir.clone(), key, ui.ctx().clone()));
                 self.bottom = Bottom::Build;
             }
-            ui.toggle_value(&mut self.show_api, tr("API", "API")).on_hover_text(tr("The game's functions and events", "Функции и события игры"));
+            ui.toggle_value(&mut self.show_api, icons::labelled(Icon::Description, tr("API", "API"))).on_hover_text(tr("The game's functions and events", "Функции и события игры"));
             if let Some((m, bad)) = &self.message {
                 ui.label(RichText::new(m).small().color(if *bad { ui.visuals().error_fg_color } else { ui.visuals().weak_text_color() }));
             }
@@ -738,7 +738,7 @@ impl ScriptsUi {
         }
         // the scripts of objects
         ui.add_space(6.0);
-        let header = egui::CollapsingHeader::new(RichText::new(tr("Object scripts (Lua)", "Скрипты объектов (Lua)")).strong()).id_salt("tree objects").default_open(false).show(ui, |ui| {
+        let header = egui::CollapsingHeader::new(icons::heading(Icon::Model3d, tr("Object scripts (Lua)", "Скрипты объектов (Lua)"))).id_salt("tree objects").default_open(false).show(ui, |ui| {
             if self.objects.is_none() {
                 self.find_object_scripts(ed, roots);
             }
@@ -756,13 +756,13 @@ impl ScriptsUi {
                     }
                 }
             }
-            if ui.small_button(tr("Refresh", "Обновить")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Refresh, tr("Refresh", "Обновить"))).clicked() {
                 self.objects = None;
             }
         });
         header.header_response.on_hover_text(tr("Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)", "Скрипты, названные в [lua_script] сценарного объекта: один работает для всех объектов его типа рядом с камерой (только openOMSI)"));
         // the selected object
-        egui::CollapsingHeader::new(RichText::new(tr("Selected object", "Выделенный объект")).strong()).id_salt("tree selected").default_open(true).show(ui, |ui| match selected {
+        egui::CollapsingHeader::new(icons::heading(Icon::Cube, tr("Selected object", "Выделенный объект"))).id_salt("tree selected").default_open(true).show(ui, |ui| match selected {
             None => {
                 ui.label(RichText::new(tr("Select one object on the map to see its scripts.", "Выделите на карте один объект, чтобы увидеть его скрипты.")).small().color(weak));
             }
@@ -789,7 +789,7 @@ impl ScriptsUi {
             }
         });
         // the Rust plugin
-        egui::CollapsingHeader::new(RichText::new(tr("Rust plugin", "Плагин на Rust")).strong()).id_salt("tree rust").default_open(false).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Build, tr("Rust plugin", "Плагин на Rust"))).id_salt("tree rust").default_open(false).show(ui, |ui| {
             let dir = project.rust_dir();
             if !dir.join("Cargo.toml").is_file() {
                 ui.label(RichText::new(tr("A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.", "Плагин карты на Rust, скомпилированный в WebAssembly в .oop. Для сборки нужен Rust (rustup) с целью wasm32-unknown-unknown.")).small().color(weak));
@@ -807,7 +807,7 @@ impl ScriptsUi {
                     self.open_tab(TabKind::Rust, p, true);
                 }
             }
-            if ui.add_enabled(self.building.is_none(), egui::Button::new(tr("Build and install", "Собрать и установить"))).on_hover_text(tr("cargo builds it, the .oop goes into the content folder's plugins", "cargo собирает его, .oop кладётся в plugins папки контента")).clicked() {
+            if ui.add_enabled(self.building.is_none(), egui::Button::new(icons::labelled(Icon::Build, tr("Build and install", "Собрать и установить")))).on_hover_text(tr("cargo builds it, the .oop goes into the content folder's plugins", "cargo собирает его, .oop кладётся в plugins папки контента")).clicked() {
                 self.save_all(project, friendly);
                 self.build_log.clear();
                 let key = (!self.sign_key.trim().is_empty()).then(|| PathBuf::from(self.sign_key.trim()));
@@ -820,8 +820,8 @@ impl ScriptsUi {
     fn project_tree(&mut self, ui: &mut egui::Ui, project: &Project, friendly: &str) {
         let weak = ui.visuals().weak_text_color();
         let files = self.files.clone();
-        let section = |ui: &mut egui::Ui, this: &mut Self, title: &str, kind: Kind, help: &str| {
-            let r = egui::CollapsingHeader::new(RichText::new(title).strong()).id_salt(("tree", title)).default_open(true).show(ui, |ui| {
+        let section = |ui: &mut egui::Ui, this: &mut Self, icon: Icon, title: &str, kind: Kind, help: &str| {
+            let r = egui::CollapsingHeader::new(icons::heading(icon, title)).id_salt(("tree", title)).default_open(true).show(ui, |ui| {
                 let list: Vec<&project::File> = files.iter().filter(|f| f.kind == kind).collect();
                 if list.is_empty() {
                     ui.label(RichText::new(tr("(none)", "(нет)")).small().color(weak));
@@ -854,23 +854,23 @@ impl ScriptsUi {
                         }
                         r.context_menu(|ui| {
                             if f.kind != Kind::Made && f.kind != Kind::Manifest {
-                                if ui.button(tr("Rename…", "Переименовать…")).clicked() {
+                                if ui.button(icons::labelled(Icon::Edit, tr("Rename…", "Переименовать…"))).clicked() {
                                     this.rename = Some((f.rel.clone(), f.name().trim_end_matches(".lua").to_string()));
                                     ui.close();
                                 }
                                 if kind == Kind::Script {
-                                    if ui.button(tr("Earlier in the order", "Раньше по порядку")).clicked() {
+                                    if ui.button(icons::labelled(Icon::Up, tr("Earlier in the order", "Раньше по порядку"))).clicked() {
                                         let _ = project.move_script(f.name(), -1, friendly);
                                         this.files_stale = true;
                                         ui.close();
                                     }
-                                    if ui.button(tr("Later in the order", "Позже по порядку")).clicked() {
+                                    if ui.button(icons::labelled(Icon::Down, tr("Later in the order", "Позже по порядку"))).clicked() {
                                         let _ = project.move_script(f.name(), 1, friendly);
                                         this.files_stale = true;
                                         ui.close();
                                     }
                                 }
-                                if ui.button(tr("Delete (into openMapper's bin)", "Удалить (в корзину openMapper)")).clicked() {
+                                if ui.button(icons::labelled(Icon::Delete, tr("Delete (into openMapper's bin)", "Удалить (в корзину openMapper)"))).clicked() {
                                     match project.delete(project.dir.parent().and_then(Path::parent).unwrap_or(Path::new("")), &f.rel, friendly) {
                                         Ok(()) => {
                                             this.tabs.retain(|t| t.path != path);
@@ -882,7 +882,7 @@ impl ScriptsUi {
                                     ui.close();
                                 }
                             }
-                            if ui.button(tr("Show in the file manager", "Показать в файловом менеджере")).clicked() {
+                            if ui.button(icons::labelled(Icon::Folder, tr("Show in the file manager", "Показать в файловом менеджере"))).clicked() {
                                 crate::app::reveal(&path);
                                 ui.close();
                             }
@@ -895,10 +895,10 @@ impl ScriptsUi {
             });
             r.header_response.on_hover_text(help);
         };
-        section(ui, self, tr("Scripts", "Скрипты"), Kind::Script, tr("Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.", "Каждый запускается, когда играют на карте, в этом порядке (правый клик, чтобы переместить); упавший не мешает остальным. Используйте map.on, map.every, map.after: они действуют только на этой карте."));
-        section(ui, self, tr("Modules", "Модули"), Kind::Module, tr("Code the scripts share: local util = require(\"modules.util\")", "Код, общий для скриптов: local util = require(\"modules.util\")"));
-        section(ui, self, tr("Data", "Данные"), Kind::Data, tr("Files the scripts read (data/), pictures and sounds", "Файлы, которые читают скрипты (data/), картинки и звуки"));
-        egui::CollapsingHeader::new(RichText::new(tr("Made by openMapper", "Сделано openMapper")).small()).id_salt("tree made").default_open(false).show(ui, |ui| {
+        section(ui, self, Icon::Code, tr("Scripts", "Скрипты"), Kind::Script, tr("Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.", "Каждый запускается, когда играют на карте, в этом порядке (правый клик, чтобы переместить); упавший не мешает остальным. Используйте map.on, map.every, map.after: они действуют только на этой карте."));
+        section(ui, self, Icon::Extension, tr("Modules", "Модули"), Kind::Module, tr("Code the scripts share: local util = require(\"modules.util\")", "Код, общий для скриптов: local util = require(\"modules.util\")"));
+        section(ui, self, Icon::DataObject, tr("Data", "Данные"), Kind::Data, tr("Files the scripts read (data/), pictures and sounds", "Файлы, которые читают скрипты (data/), картинки и звуки"));
+        egui::CollapsingHeader::new(icons::labelled(Icon::Lock, tr("Made by openMapper", "Сделано openMapper"))).id_salt("tree made").default_open(false).show(ui, |ui| {
             for f in files.iter().filter(|f| matches!(f.kind, Kind::Made | Kind::Manifest)) {
                 let path = project.path(&f.rel);
                 if ui.selectable_label(self.tabs.get(self.active).is_some_and(|t| t.path == path), mono(&f.rel)).clicked() {
@@ -927,7 +927,7 @@ impl ScriptsUi {
                 if r.middle_clicked() {
                     close = Some(i);
                 }
-                if ui.small_button("x").clicked() {
+                if icons::small(ui, Icon::Close, tr("Close", "Закрыть")).clicked() {
                     close = Some(i);
                 }
                 ui.add_space(6.0);
@@ -994,11 +994,11 @@ impl ScriptsUi {
     fn bottom_panel(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             let n: usize = self.tabs.iter().map(|t| t.problems.len()).sum();
-            ui.selectable_value(&mut self.bottom, Bottom::Problems, format!("{} ({n})", tr("Problems", "Проблемы")));
-            ui.selectable_value(&mut self.bottom, Bottom::Console, tr("Console", "Консоль"));
-            ui.selectable_value(&mut self.bottom, Bottom::Debug, tr("Debugger", "Отладчик"));
-            ui.selectable_value(&mut self.bottom, Bottom::Events, tr("Events", "События"));
-            ui.selectable_value(&mut self.bottom, Bottom::Build, tr("Build", "Сборка"));
+            ui.selectable_value(&mut self.bottom, Bottom::Problems, icons::labelled(Icon::Warning, &format!("{} ({n})", tr("Problems", "Проблемы"))));
+            ui.selectable_value(&mut self.bottom, Bottom::Console, icons::labelled(Icon::Terminal, tr("Console", "Консоль")));
+            ui.selectable_value(&mut self.bottom, Bottom::Debug, icons::labelled(Icon::Bug, tr("Debugger", "Отладчик")));
+            ui.selectable_value(&mut self.bottom, Bottom::Events, icons::labelled(Icon::Bolt, tr("Events", "События")));
+            ui.selectable_value(&mut self.bottom, Bottom::Build, icons::labelled(Icon::Build, tr("Build", "Сборка")));
         });
         ui.separator();
         match self.bottom {
@@ -1075,7 +1075,7 @@ impl ScriptsUi {
                 }
             }
             let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-            if (ui.button(tr("Run", "Выполнить")).clicked() || enter) && !self.console_input.trim().is_empty() {
+            if (ui.button(icons::labelled(Icon::Play, tr("Run", "Выполнить"))).clicked() || enter) && !self.console_input.trim().is_empty() {
                 if self.session.is_none() {
                     self.console.push(Line { kind: LineKind::Note, text: tr("Start a run first (Run, F5)", "Сначала запустите (Запустить, F5)").into(), at: None });
                 } else {
@@ -1086,7 +1086,7 @@ impl ScriptsUi {
                 }
                 r.request_focus();
             }
-            if ui.small_button(tr("Clear", "Очистить")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Delete, tr("Clear", "Очистить"))).clicked() {
                 self.console.clear();
             }
         });
@@ -1196,7 +1196,7 @@ impl ScriptsUi {
                 ui.label(RichText::new(a).small());
                 ui.add(egui::TextEdit::singleline(v).desired_width(90.0).font(egui::TextStyle::Monospace));
             }
-            if ui.add_enabled(self.session.is_some() && self.stopped.is_none(), egui::Button::new(icons::labelled(Icon::Play, tr("Send", "Послать")))).on_hover_text(tr("As if the game sent it: every handler of it runs", "Как будто игра его послала: выполняются все его обработчики")).clicked() {
+            if ui.add_enabled(self.session.is_some() && self.stopped.is_none(), egui::Button::new(icons::labelled(Icon::Bolt, tr("Send", "Послать")))).on_hover_text(tr("As if the game sent it: every handler of it runs", "Как будто игра его послала: выполняются все его обработчики")).clicked() {
                 let args = self.event_args.iter().map(|s| Arg::parse(s)).collect();
                 self.send(Cmd::Fire(ev.name.clone(), args));
             }
@@ -1216,7 +1216,7 @@ impl ScriptsUi {
         ui.horizontal(|ui| {
             ui.label(tr("Sign with the key", "Подписать ключом"));
             ui.add(egui::TextEdit::singleline(&mut self.sign_key).hint_text(tr("a secret key file of oopc keygen (optional)", "файл секретного ключа oopc keygen (необязательно)")).desired_width(320.0));
-            if ui.small_button(tr("Browse…", "Обзор…")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Folder, tr("Browse…", "Обзор…"))).clicked() {
                 if let Some(p) = rfd::FileDialog::new().pick_file() {
                     self.sign_key = p.to_string_lossy().to_string();
                 }
@@ -1244,7 +1244,7 @@ impl ScriptsUi {
         let q = self.api_search.to_lowercase();
         let mut insert = None;
         egui::ScrollArea::vertical().id_salt("api list").auto_shrink([false, false]).show(ui, |ui| {
-            egui::CollapsingHeader::new(RichText::new(tr("Events", "События")).strong()).default_open(!q.is_empty()).show(ui, |ui| {
+            egui::CollapsingHeader::new(icons::heading(Icon::Bolt, tr("Events", "События"))).default_open(!q.is_empty()).show(ui, |ui| {
                 for e in api.events.iter().filter(|e| q.is_empty() || e.name.contains(&q) || e.doc.to_lowercase().contains(&q)) {
                     let r = ui.selectable_label(false, mono(e.signature())).on_hover_text(format!("{}\n{} {}", e.doc, tr("since", "с версии"), e.since));
                     if r.double_clicked() {
@@ -1329,7 +1329,7 @@ impl ScriptsUi {
             egui::Window::new(tr("Rename", "Переименовать")).collapsible(false).resizable(false).open(&mut open).show(ctx, |ui| {
                 let r = ui.text_edit_singleline(name);
                 r.request_focus();
-                if (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) || ui.button(tr("Rename", "Переименовать")).clicked() {
+                if (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) || ui.button(icons::labelled(Icon::Edit, tr("Rename", "Переименовать"))).clicked() {
                     done = true;
                 }
             });

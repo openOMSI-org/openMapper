@@ -442,13 +442,13 @@ pub fn code_editor(ui: &mut egui::Ui, id: Id, text: &mut String, st: &mut CodeSt
                 if o.writable {
                     if st.replace_open {
                         ui.add(egui::TextEdit::singleline(&mut st.replace).hint_text(tr("Replace with", "Заменить на")).desired_width(150.0));
-                        if ui.small_button(tr("Replace", "Заменить")).clicked() && b0 != b1 && text[b0..b1].eq_ignore_ascii_case(&st.find) {
+                        if ui.small_button(crate::icons::labelled(crate::icons::Icon::Swap, tr("Replace", "Заменить"))).clicked() && b0 != b1 && text[b0..b1].eq_ignore_ascii_case(&st.find) {
                             text.replace_range(b0..b1, &st.replace);
                             let at = char_of_byte(text, b0 + st.replace.len());
                             set_cursor = Some((at, at));
                             out.changed = true;
                         }
-                        if ui.small_button(tr("All", "Все")).clicked() && !st.find.is_empty() {
+                        if ui.small_button(crate::icons::labelled(crate::icons::Icon::DoneAll, tr("All", "Все"))).clicked() && !st.find.is_empty() {
                             let mut from = 0;
                             while let Some(r) = find_in(&text[from..], &st.find, 0, false, st.case).map(|r| from + r.start..from + r.end) {
                                 if r.start < from {
@@ -459,11 +459,11 @@ pub fn code_editor(ui: &mut egui::Ui, id: Id, text: &mut String, st: &mut CodeSt
                             }
                             out.changed = true;
                         }
-                    } else if ui.small_button(tr("Replace…", "Заменить…")).clicked() {
+                    } else if ui.small_button(crate::icons::labelled(crate::icons::Icon::Swap, tr("Replace…", "Заменить…"))).clicked() {
                         st.replace_open = true;
                     }
                 }
-                if ui.small_button("x").clicked() {
+                if crate::icons::small(ui, crate::icons::Icon::Close, tr("Close", "Закрыть")).clicked() {
                     st.find_open = false;
                     st.replace_open = false;
                 }

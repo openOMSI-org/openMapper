@@ -188,28 +188,17 @@ icons! {
     Warning = "warning" 0xf083,
     Error = "error" 0xf8b6,
     CheckCircle = "check_circle" 0xf0be,
-    // the script IDE's and the trolleybus wire window's (their windows are being made)
-    #[allow(dead_code)]
+    // the Scripts window's and the trolleybus wire's
     Pause = "pause" 0xe034,
-    #[allow(dead_code)]
     StepOver = "step_over" 0xf6ff,
-    #[allow(dead_code)]
     StepInto = "step_into" 0xf701,
-    #[allow(dead_code)]
     StepOut = "step_out" 0xf700,
-    #[allow(dead_code)]
     Bug = "bug_report" 0xe868,
-    #[allow(dead_code)]
     Terminal = "terminal" 0xeb8e,
-    #[allow(dead_code)]
     DataObject = "data_object" 0xead3,
-    #[allow(dead_code)]
     Description = "description" 0xe873,
-    #[allow(dead_code)]
     Extension = "extension" 0xe87b,
-    #[allow(dead_code)]
     AddBox = "add_box" 0xe146,
-    #[allow(dead_code)]
     Bolt = "electric_bolt" 0xec1c,
     // the interface's own parts
     Up = "arrow_upward" 0xe5d8,
