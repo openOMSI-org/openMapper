@@ -181,6 +181,7 @@ fn main() {
         _ => {}
     }
     // `openmapper path/to/global.cfg` opens that map
+    logging::windowed();
     logging::watchdog();
     logging::stage("cleaning up after an update");
     updater::clean_up();
