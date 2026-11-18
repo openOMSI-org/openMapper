@@ -89,10 +89,14 @@ pub fn paint(ctx: &egui::Context, c: &super::Collab, ed: &Editor, cam: &crate::c
         painter.circle_filled(s, 5.0, color);
         painter.circle_stroke(s, 5.0, Stroke::new(1.5, Color32::WHITE));
         // (the name as plain text, with the tool in hand)
-        let galley = painter.layout_no_wrap(format!("{} · {}", peer.name, p.tool), egui::FontId::proportional(12.0), Color32::WHITE);
+        // (on the player's own colour, in black or white as reads on it: a pale colour took
+        // white text out of sight)
+        let fill = color.gamma_multiply(0.92);
+        let ink = crate::theme::ink_on(color);
+        let galley = painter.layout_no_wrap(format!("{} · {}", peer.name, p.tool), egui::FontId::proportional(12.0), ink);
         let r = egui::Rect::from_min_size(s + Vec2::new(9.0, -8.0), galley.size() + Vec2::new(8.0, 4.0));
-        painter.rect_filled(r, CornerRadius::same(3), color.gamma_multiply(0.85));
-        painter.galley(r.min + Vec2::new(4.0, 2.0), galley, Color32::WHITE);
+        painter.rect_filled(r, CornerRadius::same(3), fill);
+        painter.galley(r.min + Vec2::new(4.0, 2.0), galley, ink);
     }
 }
 

@@ -56,18 +56,6 @@ impl Tool {
             Tool::Tiles => Icon::Tiles,
         }
     }
-
-    pub fn key(self) -> &'static str {
-        match self {
-            Tool::Select => "1",
-            Tool::Roads => "2",
-            Tool::Objects => "3",
-            Tool::Logic => "4",
-            Tool::Terrain => "5",
-            Tool::Paint => "6",
-            Tool::Tiles => "7",
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -224,9 +212,19 @@ impl Xform {
     pub fn label(self) -> &'static str {
         match self {
             Xform::Select => tr("Select", "Выбор"),
-            Xform::Move => tr("Move (V): drag an arrow along X, Y or Z, a square in its plane, the circle over the ground", "Перемещение (V): тяните стрелку вдоль X, Y или Z, квадрат — в его плоскости, круг — по земле"),
-            Xform::Rotate => tr("Rotate (C): drag a ring to turn about X, Y or Z", "Поворот (C): тяните кольцо, чтобы вращать вокруг X, Y или Z"),
-            Xform::Scale => tr("Scale (X): drag an arrow to scale along that axis, a square for two, the circle for all three", "Масштаб (X): тяните стрелку для масштаба по оси, квадрат — по двум, круг — по всем трём"),
+            Xform::Move => tr("Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground", "Перемещение: тяните стрелку вдоль X, Y или Z, квадрат — в его плоскости, круг — по земле"),
+            Xform::Rotate => tr("Rotate: drag a ring to turn about X, Y or Z", "Поворот: тяните кольцо, чтобы вращать вокруг X, Y или Z"),
+            Xform::Scale => tr("Scale: drag an arrow to scale along that axis, a square for two, the circle for all three", "Масштаб: тяните стрелку для масштаба по оси, квадрат — по двум, круг — по всем трём"),
+        }
+    }
+
+    /// The command whose key picks it.
+    pub fn cmd(self) -> Option<crate::controls::Cmd> {
+        match self {
+            Xform::Select => None,
+            Xform::Move => Some(crate::controls::Cmd::XformMove),
+            Xform::Rotate => Some(crate::controls::Cmd::XformRotate),
+            Xform::Scale => Some(crate::controls::Cmd::XformScale),
         }
     }
 }

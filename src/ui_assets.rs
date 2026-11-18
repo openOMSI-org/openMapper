@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use egui::{Color32, CornerRadius, Pos2, Rect, RichText, Sense, Stroke, Vec2};
+use egui::{CornerRadius, Pos2, Rect, RichText, Sense, Stroke, Vec2};
 
 use crate::editor::{Editor, Sample, Tool};
 use crate::i18n::tr;
@@ -85,11 +85,11 @@ fn folder_of(a: &Asset) -> &str {
 }
 
 impl AssetBrowser {
-    /// The panel, `height` high at first (0: as at first); gives the height it has now.
+    /// The panel; `view`: the 3D view's rectangle (a picture dropped there is placed).
     #[allow(clippy::too_many_arguments)]
-    pub fn panel(&mut self, root: &mut egui::Ui, ed: &mut Editor, lib: &Library, thumbs: &HashMap<String, Option<Thumb>>, wanted: &mut Vec<(String, bool)>, favourites: &[String], textures: &[String], swatches: &HashMap<String, egui::TextureHandle>, wanted_swatches: &mut Vec<String>, actions: &mut Vec<Action>, height: f32) -> Option<f32> {
+    pub fn panel(&mut self, root: &mut egui::Ui, ed: &mut Editor, lib: &Library, thumbs: &HashMap<String, Option<Thumb>>, wanted: &mut Vec<(String, bool)>, favourites: &[String], textures: &[String], swatches: &HashMap<String, egui::TextureHandle>, wanted_swatches: &mut Vec<String>, actions: &mut Vec<Action>) {
         if !self.open {
-            return None;
+            return;
         }
         if let Some((rel, true)) = ed.reveal.clone() {
             if let Some(a) = lib.find(&rel) {
@@ -112,41 +112,48 @@ impl AssetBrowser {
             _ => self.build_cache(key, lib, favourites, textures),
         };
         let on_textures = self.show == Show::Textures;
-        let shown = egui::Panel::bottom("assets").resizable(true).default_size(if height > 0.0 { height } else { 260.0 }).size_range(140.0..=600.0).frame(egui::Frame::new().fill(pal().panel).inner_margin(egui::Margin::same(6))).show(root, |ui| {
-            // the bar: search, kind, size, import
-            ui.horizontal(|ui| {
-                ui.label(icons::labelled(Icon::Objects, tr("Assets", "Ассеты")));
-                ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(tr("Search", "Поиск")).desired_width(200.0));
-                let armed = matches!(ed.sample, Some(Sample::Either));
-                let tip = tr("Click an object or a spline in the view", "Щёлкните объект или сплайн в виде");
-                if ui.add(egui::Button::new(Icon::Dropper.text(16.0)).selected(armed)).on_hover_text(tip).clicked() {
-                    if armed {
-                        ed.sample = None;
-                    } else {
-                        ed.sample = Some(Sample::Either);
-                        ed.sample_browser = true;
-                        ed.toast(tip);
+        egui::Panel::bottom("assets").resizable(true).default_size(260.0).size_range(140.0..=600.0).frame(egui::Frame::new().fill(pal().panel).inner_margin(egui::Margin::same(6))).show(root, |ui| {
+            // the bar: search, kind, size, import, wrapped onto a second line in a narrow
+            // window rather than cut off; the close button stays in the top right corner
+            let close = Rect::from_min_size(ui.max_rect().right_top() + Vec2::new(-20.0, 0.0), Vec2::splat(20.0));
+            ui.scope(|ui| {
+                ui.set_max_width(ui.available_width() - 26.0);
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(icons::labelled(Icon::Objects, tr("Assets", "Ассеты")));
+                    ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(tr("Search", "Поиск")).desired_width(200.0));
+                    let armed = matches!(ed.sample, Some(Sample::Either));
+                    let tip = tr("Click an object or a spline in the view", "Щёлкните объект или сплайн в виде");
+                    if ui.add(egui::Button::new(Icon::Dropper.text(16.0)).selected(armed)).on_hover_text(tip).clicked() {
+                        if armed {
+                            ed.sample = None;
+                        } else {
+                            ed.sample = Some(Sample::Either);
+                            ed.sample_browser = true;
+                            ed.toast(tip);
+                        }
                     }
-                }
-                for (s, label) in [(Show::All, tr("All", "Все")), (Show::Objects, tr("Objects", "Объекты")), (Show::Splines, tr("Roads and splines", "Дороги и сплайны")), (Show::Textures, tr("Textures", "Текстуры"))] {
-                    if ui.selectable_label(self.show == s, label).clicked() {
-                        self.show = s;
-                        self.folder = None;
-                        self.tex_folder = None;
+                    for (s, label) in [(Show::All, tr("All", "Все")), (Show::Objects, tr("Objects", "Объекты")), (Show::Splines, tr("Roads and splines", "Дороги и сплайны")), (Show::Textures, tr("Textures", "Текстуры"))] {
+                        if ui.selectable_label(self.show == s, label).clicked() {
+                            self.show = s;
+                            self.folder = None;
+                            self.tex_folder = None;
+                        }
                     }
-                }
-                ui.separator();
-                ui.add(egui::Slider::new(&mut self.size, 56.0..=160.0).show_value(false)).on_hover_text(tr("Picture size", "Размер картинок"));
-                if ui.button(icons::labelled(Icon::Import, tr("Import…", "Импорт…"))).clicked() {
-                    actions.push(Action::Import);
-                }
-                ui.menu_button(tr("Shapes…", "Фигуры…"), |ui| crate::ui_mesh::primitives_menu(ui, actions));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button("×").on_hover_text(tr("Close (B)", "Закрыть (B)")).clicked() {
-                        self.open = false;
+                    ui.separator();
+                    ui.add(egui::Slider::new(&mut self.size, 56.0..=160.0).show_value(false)).on_hover_text(tr("Picture size", "Размер картинок"));
+                    if ui.button(icons::labelled(Icon::Import, tr("Import…", "Импорт…"))).clicked() {
+                        actions.push(Action::Import);
                     }
+                    ui.menu_button(tr("Shapes…", "Фигуры…"), |ui| crate::ui_mesh::primitives_menu(ui, actions));
                 });
             });
+            let r = ui.interact(close, ui.id().with("assets close"), Sense::click());
+            let fill = if r.is_pointer_button_down_on() { pal().pressed } else if r.hovered() { pal().hover } else { pal().widget };
+            ui.painter().rect(close, CornerRadius::same(3), fill, Stroke::new(1.0, pal().widget_stroke), egui::StrokeKind::Inside);
+            ui.painter().text(close.center(), egui::Align2::CENTER_CENTER, "×", egui::FontId::proportional(15.0), pal().text);
+            if r.on_hover_text(format!("{}{}", tr("Close", "Закрыть"), crate::controls::key_hint(crate::controls::Cmd::Assets))).clicked() {
+                self.open = false;
+            }
             ui.separator();
             let kinds: &[Kind] = match self.show {
                 Show::All => &[Kind::Object, Kind::Spline],
@@ -258,7 +265,6 @@ impl AssetBrowser {
             });
         });
         self.cache = Some(cache);
-        let height = shown.response.rect.height();
         if matches!(&ed.reveal, Some((_, true))) {
             ed.reveal = None;
         }
@@ -273,11 +279,10 @@ impl AssetBrowser {
                 // (what is being dragged, under the hand)
                 let painter = root.ctx().layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("asset drag")));
                 let name = lib.find(&rel).map(|a| a.name.clone()).unwrap_or(rel);
-                painter.text(p + Vec2::new(14.0, 4.0), egui::Align2::LEFT_TOP, name, egui::FontId::proportional(13.0), Color32::WHITE);
+                crate::theme::view_label(&painter, p + Vec2::new(14.0, 4.0), name, 13.0);
             }
         }
         self.confirm(root.ctx(), lib, actions);
-        Some(height)
     }
 
     fn build_cache(&self, key: u64, lib: &Library, favourites: &[String], textures: &[String]) -> Cache {

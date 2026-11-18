@@ -27,6 +27,11 @@ pub(crate) fn short(s: &str, max: usize) -> String {
     format!("{cut}…")
 }
 
+/// `s` cut short to what fits the width left, less `reserve` points (about 7 a character).
+pub(crate) fn fit(ui: &egui::Ui, s: &str, reserve: f32) -> String {
+    short(s, ((ui.available_width() - reserve) / 7.0).max(8.0) as usize)
+}
+
 /// A label that breaks anywhere to fit the panel: a long name or path without spaces would
 /// otherwise push the panel wider than its range and break the layout.
 pub(crate) fn long_label(ui: &mut egui::Ui, text: &str, style: egui::TextStyle, color: Color32) -> egui::Response {
@@ -299,8 +304,6 @@ pub struct UiState {
     pub season: Option<&'static str>,
     /// The maps' pictures on the welcome screen, small (None: the map has none).
     welcome_pictures: HashMap<PathBuf, Option<egui::TextureHandle>>,
-    /// The panels' sizes as they are now (`Prefs::panel_sizes`).
-    pub panel_sizes: [f32; 3],
 }
 
 impl Default for UiState {
@@ -357,7 +360,6 @@ impl Default for UiState {
             time_speed: 1.0,
             season: None,
             welcome_pictures: HashMap::new(),
-            panel_sizes: [0.0; 3],
         }
     }
 }
@@ -503,33 +505,38 @@ fn tool_button(ui: &mut egui::Ui, icon: Icon, on: bool, enabled: bool) -> egui::
 
 /// A check box drawn with Material Symbols' own boxes (egui's are drawn with lines).
 pub(crate) fn check(ui: &mut egui::Ui, on: &mut bool, text: impl Into<egui::WidgetText>) -> egui::Response {
-    let galley = text.into().into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Button);
-    let (icon, gap) = (18.0, 6.0);
-    let size = Vec2::new(icon + gap + galley.size().x, galley.size().y.max(icon + 2.0));
-    let (rect, mut resp) = ui.allocate_exact_size(size, Sense::click());
+    let mut resp = boxed_label(ui, text, if *on { Icon::CheckOn } else { Icon::CheckOff }, *on);
     if resp.clicked() {
         *on = !*on;
         resp.mark_changed();
     }
-    let vis = ui.style().interact(&resp);
-    let col = if *on { pal().accent } else { vis.fg_stroke.color };
-    icons::paint(ui.painter(), if *on { Icon::CheckOn } else { Icon::CheckOff }, egui::pos2(rect.left() + icon * 0.5, rect.center().y), icon + 2.0, col);
-    let text_color = vis.text_color();
-    ui.painter().galley(egui::pos2(rect.left() + icon + gap, rect.center().y - galley.size().y * 0.5), galley, text_color);
     resp
 }
 
 /// A radio button drawn with Material Symbols' own circles.
 fn radio(ui: &mut egui::Ui, on: bool, text: impl Into<egui::WidgetText>) -> egui::Response {
-    let galley = text.into().into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Button);
+    boxed_label(ui, text, if on { Icon::RadioOn } else { Icon::RadioOff }, on)
+}
+
+/// A box or circle and its text. A long text wraps in the panel as egui's own labels do
+/// instead of widening it; the box stays by its first line.
+fn boxed_label(ui: &mut egui::Ui, text: impl Into<egui::WidgetText>, icon_of: Icon, on: bool) -> egui::Response {
     let (icon, gap) = (18.0, 6.0);
+    let galley = text.into().into_galley(ui, Some(ui.wrap_mode()), (ui.available_width() - icon - gap).max(40.0), egui::TextStyle::Button);
     let size = Vec2::new(icon + gap + galley.size().x, galley.size().y.max(icon + 2.0));
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let vis = ui.style().interact(&resp);
     let col = if on { pal().accent } else { vis.fg_stroke.color };
-    icons::paint(ui.painter(), if on { Icon::RadioOn } else { Icon::RadioOff }, egui::pos2(rect.left() + icon * 0.5, rect.center().y), icon + 2.0, col);
+    let lines = galley.rows.len().max(1) as f32;
+    let (mid, top) = if lines > 1.0 {
+        let row = galley.size().y / lines;
+        (rect.top() + row * 0.5, rect.top())
+    } else {
+        (rect.center().y, rect.center().y - galley.size().y * 0.5)
+    };
+    icons::paint(ui.painter(), icon_of, egui::pos2(rect.left() + icon * 0.5, mid), icon + 2.0, col);
     let text_color = vis.text_color();
-    ui.painter().galley(egui::pos2(rect.left() + icon + gap, rect.center().y - galley.size().y * 0.5), galley, text_color);
+    ui.painter().galley(egui::pos2(rect.left() + icon + gap, top), galley, text_color);
     resp
 }
 
@@ -843,35 +850,22 @@ pub struct EditorUi<'a> {
 pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut Vec<Action>) -> (egui::Rect, bool) {
     let EditorUi { ed, lib, thumbs, wanted, swatches, wanted_swatches, can_undo, can_redo, game_found, texture_files, prefs, status } = u;
     menu_bar(root, st, ed, can_undo, can_redo, game_found, prefs, actions);
-    toolbar(root, st, ed, can_undo, can_redo, game_found, prefs, actions);
+    toolbar(root, st, ed, can_undo, can_redo, game_found, actions);
     // (the panels below fill in the help; the status bar shows last frame's)
     let help_line = st.status_help.take();
     status_bar(root, help_line, st, ed, &status);
-    // (the panels open as wide as they were dragged to; a panel widened by what it shows is
-    // not taken for one the user widened)
-    let size = |i: usize, first: f32| if st.panel_sizes[i] > 0.0 { st.panel_sizes[i] } else { first };
-    let dragged = |ctx: &egui::Context, panel: &str| ctx.is_being_dragged(Id::new(panel).with("__resize"));
-    let (left, right) = (size(0, 290.0), size(1, 270.0));
-    let r = egui::Panel::left("tool panel").resizable(true).default_size(left).size_range(240.0..=480.0).frame(panel_frame()).show(root, |ui| {
+    egui::Panel::left("tool panel").resizable(true).default_size(290.0).size_range(240.0..=480.0).frame(panel_frame()).show(root, |ui| {
         tool_panel(ui, st, ed, lib, thumbs, wanted, swatches, wanted_swatches, actions);
     });
-    if dragged(root.ctx(), "tool panel") {
-        st.panel_sizes[0] = r.response.rect.width();
-    }
-    let r = egui::Panel::right("properties").resizable(true).default_size(right).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
+    egui::Panel::right("properties").resizable(true).default_size(270.0).size_range(220.0..=420.0).frame(panel_frame()).show(root, |ui| {
         // (a road's rows of objects can make it long; a row wider than the panel scrolls
         // sideways instead of widening it: the map view shrank and slid away under the click)
         egui::ScrollArea::both().id_salt("properties scroll").auto_shrink([false, false]).show(ui, |ui| {
             properties(ui, st, ed, lib, actions);
         });
     });
-    if dragged(root.ctx(), "properties") {
-        st.panel_sizes[1] = r.response.rect.width();
-    }
     let favourites = st.favourites.clone();
-    if let Some(h) = st.assets.panel(root, ed, lib, thumbs, wanted, &favourites, texture_files, swatches, wanted_swatches, actions, st.panel_sizes[2]).filter(|_| dragged(root.ctx(), "assets")) {
-        st.panel_sizes[2] = h;
-    }
+    st.assets.panel(root, ed, lib, thumbs, wanted, &favourites, texture_files, swatches, wanted_swatches, actions);
     let mut view = (egui::Rect::NOTHING, false);
     egui::CentralPanel::default().frame(Frame::NONE).show(root, |ui| {
         let rect = ui.max_rect();
@@ -894,7 +888,8 @@ pub fn editor(root: &mut egui::Ui, st: &mut UiState, u: EditorUi, actions: &mut 
             p.circle_filled(rect.center(), 17.0, if resp.is_pointer_button_down_on() { pal().widget_active } else if resp.hovered() { pal().widget_hover } else { pal().window });
             p.circle_stroke(rect.center(), 17.0, Stroke::new(1.5, if st.view_2d { pal().accent } else { pal().widget_stroke_hover }));
             p.text(rect.center(), egui::Align2::CENTER_CENTER, if st.view_2d { "3D" } else { "2D" }, egui::FontId::proportional(13.0), pal().text_strong);
-            if resp.on_hover_text(if st.view_2d { tr("Back to the 3D view (0)", "Вернуться в 3D (0)") } else { tr("The plan view from above, north up (0)", "Вид сверху, север вверху (0)") }).clicked() {
+            let key = crate::controls::key_hint(crate::controls::Cmd::View2d);
+            if resp.on_hover_text(if st.view_2d { format!("{}{key}", tr("Back to the 3D view", "Вернуться в 3D")) } else { format!("{}{key}", tr("The plan view from above, north up", "Вид сверху, север вверху")) }).clicked() {
                 st.view_2d = !st.view_2d;
             }
         });
@@ -927,9 +922,7 @@ pub(crate) fn let_time_run(st: &mut UiState, on: bool) {
 #[allow(clippy::too_many_arguments)]
 fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bool, can_redo: bool, game_found: bool, prefs: &Prefs, actions: &mut Vec<Action>) {
     // (the keys as the user set them, not the defaults)
-    let keys = crate::controls::Keymap::of(&prefs.keys, crate::controls::Preset::of(&prefs.keys_set, prefs.omsi_controls));
-    let key = |c: crate::controls::Cmd| keys.chord(c).map(|k| k.text()).unwrap_or_default();
-    use crate::controls::Cmd;
+    use crate::controls::{key_text as key, Cmd};
     egui::Panel::top("menu").frame(Frame::new().fill(pal().bar).inner_margin(Margin::symmetric(6, 2))).show(root, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(tr("File", "Файл"), |ui| {
@@ -1044,8 +1037,8 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                         }
                     }
                 });
-                check(ui, &mut st.minimap.open, icons::labelled(Icon::Map, tr("Overview map (M)", "Обзорная карта (M)")));
-                check(ui, &mut st.assets.open, icons::labelled(Icon::Objects, tr("Assets (B)", "Ассеты (B)")));
+                check(ui, &mut st.minimap.open, icons::labelled(Icon::Map, &format!("{}{}", tr("Overview map", "Обзорная карта"), crate::controls::key_hint(Cmd::Overview))));
+                check(ui, &mut st.assets.open, icons::labelled(Icon::Objects, &format!("{}{}", tr("Assets", "Ассеты"), crate::controls::key_hint(Cmd::Assets))));
                 crate::ui_geo::view_menu(ui, &mut st.geo);
                 if menu_item(ui, Some(Icon::Terrain), tr("Flatten the terrain (roads follow)", "Убрать рельеф (дороги подстроятся)"), "", true) {
                     actions.push(Action::FlattenTerrain);
@@ -1058,6 +1051,11 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 }
                 if menu_item(ui, Some(Icon::Save), tr("Save a picture of the view", "Сохранить картинку вида"), &key(Cmd::Picture), true) {
                     actions.push(Action::ViewPicture);
+                }
+                // (the windows come back where they were left; this is the way out for one
+                // left somewhere awkward)
+                if menu_item(ui, None, tr("Put the windows back in their first places", "Вернуть окна на исходные места"), "", true) {
+                    ui.ctx().memory_mut(|m| m.reset_areas());
                 }
                 ui.separator();
                 lang_menu(ui, actions);
@@ -1178,7 +1176,7 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
             });
             ui.menu_button(tr("Tools", "Инструменты"), |ui| {
                 for t in Tool::ALL {
-                    if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(t.key()).selected(ed.tool == t)).clicked() {
+                    if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(crate::controls::key_text(tool_cmd(t))).selected(ed.tool == t)).clicked() {
                         ed.set_tool(t);
                     }
                 }
@@ -1271,9 +1269,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
     });
 }
 
-#[allow(clippy::too_many_arguments)]
-fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bool, can_redo: bool, game_found: bool, prefs: &Prefs, actions: &mut Vec<Action>) {
-    let search_key = crate::controls::Keymap::of(&prefs.keys, crate::controls::Preset::of(&prefs.keys_set, prefs.omsi_controls)).chord(crate::controls::Cmd::Commands).map(|k| k.text()).unwrap_or_default();
+fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bool, can_redo: bool, game_found: bool, actions: &mut Vec<Action>) {
+    // (the help names the keys as the user set them)
+    use crate::controls::{key_hint, key_text, Cmd};
     egui::Panel::top("toolbar").frame(Frame::new().fill(pal().panel).inner_margin(Margin::symmetric(6, 3)).stroke(Stroke::new(1.0, pal().border))).show(root, |ui| {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
@@ -1292,7 +1290,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             if dirty {
                 ui.painter().circle_filled(r.rect.right_top() + Vec2::new(-6.0, 6.0), 3.0, pal().accent);
             }
-            help(st, &r, if dirty { tr("Save (Ctrl+S): there are unsaved changes", "Сохранить (Ctrl+S): есть несохранённые изменения") } else { tr("Save (Ctrl+S)", "Сохранить (Ctrl+S)") });
+            help(st, &r, format!("{}{}{}", tr("Save", "Сохранить"), key_hint(Cmd::Save), if dirty { tr(": there are unsaved changes", ": есть несохранённые изменения") } else { "" }));
             if r.clicked() {
                 actions.push(Action::Save);
             }
@@ -1303,12 +1301,12 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             }
             ui.separator();
             let r = tool_button(ui, Icon::Undo, false, can_undo);
-            help(st, &r, format!("{} (Ctrl+Z){}", tr("Undo", "Отменить"), ed.history.undo_label().map(|l| format!(": {l}")).unwrap_or_default()));
+            help(st, &r, format!("{}{}{}", tr("Undo", "Отменить"), key_hint(Cmd::Undo), ed.history.undo_label().map(|l| format!(": {l}")).unwrap_or_default()));
             if r.clicked() {
                 actions.push(Action::Undo);
             }
             let r = tool_button(ui, Icon::Redo, false, can_redo);
-            help(st, &r, tr("Redo (Ctrl+Shift+Z)", "Повторить (Ctrl+Shift+Z)"));
+            help(st, &r, format!("{}{}", tr("Redo", "Повторить"), key_hint(Cmd::Redo)));
             if r.clicked() {
                 actions.push(Action::Redo);
             }
@@ -1316,7 +1314,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             for t in Tool::ALL {
                 let on = ed.tool == t && (t != Tool::Select || ed.xform == crate::editor::Xform::Select);
                 let r = tool_button(ui, t.icon(), on, true);
-                help(st, &r, format!("{} ({})", t.label(), t.key()));
+                help(st, &r, format!("{}{}", t.label(), key_hint(tool_cmd(t))));
                 if r.clicked() {
                     ed.set_tool(t);
                     if t == Tool::Select {
@@ -1327,7 +1325,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                 if t == Tool::Select {
                     for x in crate::editor::Xform::ALL.into_iter().skip(1) {
                         let r = tool_button(ui, x.icon(), ed.tool == Tool::Select && ed.xform == x, true);
-                        help(st, &r, x.label());
+                        help(st, &r, format!("{}{}", x.label(), x.cmd().map(key_hint).unwrap_or_default()));
                         if r.clicked() {
                             ed.set_tool(Tool::Select);
                             ed.xform = if ed.xform == x { crate::editor::Xform::Select } else { x };
@@ -1335,7 +1333,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                     }
                     let snap_on = ed.vertex_snap.is_some();
                     let r = tool_button(ui, Icon::Focus, snap_on, true);
-                    help(st, &r, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"));
+                    help(st, &r, format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), key_hint(Cmd::SnapVertex)));
                     if r.clicked() {
                         if snap_on {
                             ed.cancel_vertex_snap();
@@ -1345,7 +1343,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                     }
                     let edge_snap_on = ed.edge_snap.is_some();
                     let r_edge = tool_button(ui, Icon::Line, edge_snap_on, true);
-                    help(st, &r_edge, tr("Snap edge to edge (L)", "Привязать ребро к ребру (L)"));
+                    help(st, &r_edge, format!("{}{}", tr("Snap edge to edge", "Привязать ребро к ребру"), key_hint(Cmd::SnapEdge)));
                     if r_edge.clicked() {
                         if edge_snap_on {
                             ed.cancel_edge_snap();
@@ -1357,12 +1355,12 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
             }
             ui.separator();
             let r = tool_button(ui, Icon::Tiles, ed.show_grid, true);
-            help(st, &r, tr("Tile grid (G)", "Сетка тайлов (G)"));
+            help(st, &r, format!("{}{}", tr("Tile grid", "Сетка тайлов"), key_hint(Cmd::TileGrid)));
             if r.clicked() {
                 ed.show_grid = !ed.show_grid;
             }
             let r = tool_button(ui, Icon::Objects, st.assets.open, true);
-            help(st, &r, tr("Assets: every object and road type, with pictures (B)", "Ассеты: все объекты и типы дорог с картинками (B)"));
+            help(st, &r, format!("{}{}", tr("Assets: every object and road type, with pictures", "Ассеты: все объекты и типы дорог с картинками"), key_hint(Cmd::Assets)));
             if r.clicked() {
                 st.assets.open = !st.assets.open;
             }
@@ -1371,7 +1369,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                 let running = crate::drive::running();
                 let label = if running { icons::labelled(Icon::Error, tr("Close test drive", "Закрыть тест-драйв")) } else { icons::labelled(Icon::Play, tr("Test drive", "Тест-драйв")) };
                 let r = ui.add_enabled(game_found, egui::Button::new(label));
-                help(st, &r, if running { tr("Close the openOMSI session started from here (F5)", "Закрыть сессию openOMSI, запущенную отсюда (F5)") } else if game_found { tr("Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI (F5)", "Выбрать место старта, транспорт, время и погоду и проехать карту в openOMSI (F5)") } else { tr("openOMSI was not found: install it to test maps", "openOMSI не найден: установите его, чтобы проверять карты") });
+                help(st, &r, if running { format!("{}{}", tr("Close the openOMSI session started from here", "Закрыть сессию openOMSI, запущенную отсюда"), key_hint(Cmd::TestDrive)) } else if game_found { format!("{}{}", tr("Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI", "Выбрать место старта, транспорт, время и погоду и проехать карту в openOMSI"), key_hint(Cmd::TestDrive)) } else { tr("openOMSI was not found: install it to test maps", "openOMSI не найден: установите его, чтобы проверять карты").to_string() });
                 if r.clicked() {
                     actions.push(Action::Play);
                 }
@@ -1380,7 +1378,7 @@ fn toolbar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: boo
                     ui.label(RichText::new(d.display_name()).color(pal().text_dim));
                 }
                 ui.add_space(8.0);
-                if search_box(ui, &search_key).clicked() {
+                if search_box(ui, &key_text(Cmd::Commands)).clicked() {
                     st.palette.show();
                 }
             });
@@ -1404,6 +1402,20 @@ fn search_box(ui: &mut egui::Ui, key: &str) -> egui::Response {
     resp.on_hover_text(tr("Every command of the menus by its name", "Любая команда из меню по её названию"))
 }
 
+/// The command that picks a tool, for the key it is on.
+fn tool_cmd(t: Tool) -> crate::controls::Cmd {
+    use crate::controls::Cmd;
+    match t {
+        Tool::Select => Cmd::ToolSelect,
+        Tool::Roads => Cmd::ToolRoads,
+        Tool::Objects => Cmd::ToolObjects,
+        Tool::Logic => Cmd::ToolLogic,
+        Tool::Terrain => Cmd::ToolTerrain,
+        Tool::Paint => Cmd::ToolPaint,
+        Tool::Tiles => Cmd::ToolTiles,
+    }
+}
+
 /// Test drives from somewhere else than the first start point (Map menu, and a right-click
 /// on Test drive).
 fn play_here_items(ui: &mut egui::Ui, game_found: bool, actions: &mut Vec<Action>) {
@@ -1423,9 +1435,13 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
             let (text, color) = match (ed.toasts.last(), help_line) {
                 (_, Some(h)) => (h, pal().text),
                 (Some(t), None) => (t.text.clone(), if t.error { pal().error } else { pal().ok }),
-                // (with nothing to say, where more is to be found)
-                (None, None) => (tr("Right-click the view for what can be done there; Search commands finds the rest", "Правый клик по виду: что можно сделать там; «Поиск команд» найдёт остальное").to_string(), pal().text_dim),
+                // (with nothing to say, where more is to be found: chosen below by the room left)
+                (None, None) => (String::new(), pal().text_dim),
             };
+            let idle = [
+                tr("Right-click the view for what can be done there; Search commands finds the rest", "Правый клик по виду: что можно сделать там; «Поиск команд» найдёт остальное"),
+                tr("Right-click the view: its menu", "Правый клик по виду: его меню"),
+            ];
             // (the facts on the right first; the help gets what is left, cut short)
             // The bar scales with the window: what does not fit goes in this order, the tile
             // numbers' details and counts first, then the cursor, and the switches fold into a
@@ -1522,8 +1538,13 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
                 }
                 ui.separator();
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                    let r = ui.add(egui::Label::new(RichText::new(&text).small().color(color)).truncate());
-                    r.on_hover_text(&text);
+                    // (an idle hint is said whole or in short, never cut off; help and messages
+                    // are cut short and shown whole under the mouse)
+                    let text = if text.is_empty() { idle.iter().find(|t| small_w(ui, t, false) - sep <= ui.available_width()).map(|t| t.to_string()).unwrap_or_default() } else { text };
+                    if !text.is_empty() {
+                        let r = ui.add(egui::Label::new(RichText::new(&text).small().color(color)).truncate());
+                        r.on_hover_text(&text);
+                    }
                 });
             });
         });
@@ -1556,7 +1577,7 @@ fn tool_panel(
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1567,7 +1588,7 @@ fn tool_panel(
                         }
                     }
                     let edge_on = ed.edge_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(edge_on))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {
@@ -1634,7 +1655,7 @@ fn tool_panel(
             if ed.selection().iter().any(|s| matches!(s, Sel::Object(..))) {
                 ui.horizontal_wrapped(|ui| {
                     let snap_on = ed.vertex_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(snap_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_on))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
@@ -1645,7 +1666,7 @@ fn tool_panel(
                         }
                     }
                     let edge_on = ed.edge_snap.is_some();
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(edge_on))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(edge_on))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {
@@ -1659,7 +1680,7 @@ fn tool_panel(
                 ui.add_space(8.0);
             }
             for t in Tool::ALL.iter().skip(1) {
-                if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(t.key()).min_size(Vec2::new(ui.available_width(), 24.0))).clicked() {
+                if ui.add(egui::Button::new(icons::labelled(t.icon(), t.label())).shortcut_text(crate::controls::key_text(tool_cmd(*t))).min_size(Vec2::new(ui.available_width(), 24.0))).clicked() {
                     ed.set_tool(*t);
                 }
             }
@@ -1793,7 +1814,10 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         ui.label(tr("Search", "Поиск"));
         ui.horizontal(|ui| {
             let drop = logic.is_none();
-            let w = (ui.available_width() - if drop { 28.0 } else { 0.0 }).max(40.0);
+            // (room for the dropper button and the gap before it: less, and the row pushed the
+            // panel wider every frame until it reached its widest)
+            let button = 16.0 + ui.spacing().button_padding.x * 2.0 + ui.spacing().item_spacing.x + 2.0;
+            let w = (ui.available_width() - if drop { button } else { 0.0 }).max(40.0);
             ui.add(egui::TextEdit::singleline(&mut st.search).desired_width(w));
             if drop {
                 let armed = match (kind, ed.sample) {
@@ -1914,7 +1938,9 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
         }
     }
     let items: Vec<&crate::library::Asset> = lib.filter(kind, *cat, &st.search).filter(|a| belongs(a)).collect();
-    ui.label(RichText::new(if lib.scanning { tr("reading OMSI 2…", "чтение OMSI 2…").to_string() } else { format!("{} {}", items.len(), tr("items", "шт.")) }).small().color(pal().text_dim));
+    // (the list fills as the scan goes: what is there is counted, the rest said to be coming)
+    let count = format!("{} {}", items.len(), tr("items", "шт."));
+    ui.label(RichText::new(if lib.scanning { format!("{count} · {}", tr("more as OMSI 2 is read…", "ещё будут, пока читается OMSI 2…")) } else { count }).small().color(pal().text_dim));
     let avail = ui.available_height();
     let searching = !st.search.trim().is_empty();
     Frame::new().fill(pal().field).stroke(Stroke::new(1.0, pal().border)).show(ui, |ui| {
@@ -2047,7 +2073,9 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
             let open_all = tree.len() <= 2;
             for (top, subs) in &tree {
                 let n: usize = subs.values().map(|v| v.len()).sum();
-                egui::CollapsingHeader::new(RichText::new(format!("{top}   ({n})")).strong()).icon(group_icon).id_salt(("cat-dir", kind == Kind::Spline, top)).default_open(open_all).show(ui, |ui| {
+                // (a long folder name with no spaces cannot wrap: cut short, it no longer pushes
+                // the panel wider as the scan finds it)
+                egui::CollapsingHeader::new(RichText::new(format!("{}   ({n})", fit(ui, top, 80.0))).strong()).icon(group_icon).id_salt(("cat-dir", kind == Kind::Spline, top)).default_open(open_all).show(ui, |ui| {
                     for (sub, list) in subs {
                         let mut draw = |ui: &mut egui::Ui| {
                             for (i, a) in list.iter().enumerate() {
@@ -2057,7 +2085,7 @@ fn catalogue_of(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Libr
                         if sub.is_empty() {
                             draw(ui);
                         } else {
-                            egui::CollapsingHeader::new(format!("{sub}   ({})", list.len())).icon(group_icon).id_salt(("cat-sub", kind == Kind::Spline, top, sub)).show(ui, |ui| draw(ui));
+                            egui::CollapsingHeader::new(format!("{}   ({})", fit(ui, sub, 90.0), list.len())).icon(group_icon).id_salt(("cat-sub", kind == Kind::Spline, top, sub)).show(ui, |ui| draw(ui));
                         }
                     }
                 });
@@ -2589,13 +2617,13 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                     }
                 }
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex (V)", "Привязать вершину (V)"))).selected(v_armed))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex", "Привязать вершину"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(v_armed))
                         .on_hover_text(tr("Snap a vertex of this object to another vertex (Shortcut: V)", "Привязать вершину объекта к другой вершине (Горячая клавиша: V)"))
                         .clicked()
                     {
                         toggle_vertex_snap = true;
                     }
-                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge (L)", "Привязать ребро (L)"))).selected(e_armed))
+                    if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge", "Привязать ребро"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(e_armed))
                         .on_hover_text(tr("Snap an edge of this object to another edge or road (Shortcut: L)", "Привязать ребро объекта к другому ребру или дороге (Горячая клавиша: L)"))
                         .clicked()
                     {

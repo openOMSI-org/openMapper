@@ -310,7 +310,6 @@ impl App {
         }
         // OPENMAPPER_MULTIPLAYER: File > Multiplayer open at the start
         app.ed.apply_snap_settings(app.prefs.snap);
-        app.ui.panel_sizes = app.prefs.panel_sizes;
         app.collab.open = std::env::var_os("OPENMAPPER_MULTIPLAYER").is_some();
         // OPENMAPPER_HELP=1: View > Controls open (checks of the keys without a person at the
         // screen); OPENMAPPER_KEYS=mapper|omsi|blender: that set of keys (and OMSI 2's mouse)
@@ -376,6 +375,10 @@ impl App {
             renderer.roots = vec![r.content.clone(), r.omsi.clone()];
         }
         let egui_ctx = egui::Context::default();
+        // (not for a picture of the window: it must not depend on how the last run left it)
+        if std::env::var_os("OPENMAPPER_SHOT").is_none() {
+            install::load_ui_memory(&egui_ctx);
+        }
         ui::style(&egui_ctx);
         // OPENMAPPER_THEME=dark|light|system: that theme for this run (checks of both)
         crate::theme::Choice::from_code(&std::env::var("OPENMAPPER_THEME").unwrap_or_else(|_| self.prefs.theme.clone())).apply(&egui_ctx);
@@ -594,6 +597,14 @@ impl App {
             }
         }
         self.hook_edit = std::env::var("OPENMAPPER_EDIT").ok();
+        // OPENMAPPER_UV=1: the UV editor open (on what OPENMAPPER_SHAPE and OPENMAPPER_EDIT made)
+        if std::env::var_os("OPENMAPPER_UV").is_some() {
+            self.ui.uv_open = true;
+        }
+        // OPENMAPPER_ASSETS=1: the assets panel open
+        if std::env::var_os("OPENMAPPER_ASSETS").is_some() {
+            self.ui.assets.open = true;
+        }
         // OPENMAPPER_XFORM=move|rotate|scale: the Select tool's handles shown on the selection
         if let Ok(x) = std::env::var("OPENMAPPER_XFORM") {
             use crate::editor::Xform;
@@ -2182,30 +2193,6 @@ impl App {
             self.ed.toast(tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"));
             return;
         }
-        if !self.crossing.open
-            && code == Some(KeyCode::KeyV)
-            && !self.keys.ctrl
-            && !self.keys.alt
-        {
-            if self.ed.vertex_snap.is_some() {
-                self.ed.cancel_vertex_snap();
-            } else {
-                self.ed.start_vertex_snap();
-            }
-            return;
-        }
-        if !self.crossing.open
-            && code == Some(KeyCode::KeyL)
-            && !self.keys.ctrl
-            && !self.keys.alt
-        {
-            if self.ed.edge_snap.is_some() {
-                self.ed.cancel_edge_snap();
-            } else {
-                self.ed.start_edge_snap();
-            }
-            return;
-        }
         let ctrl = self.keys.ctrl;
         let shift = self.keys.shift;
         let mut actions = Vec::new();
@@ -2394,6 +2381,20 @@ impl App {
             }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
+            Cmd::SnapVertex if !self.crossing.open => {
+                if self.ed.vertex_snap.is_some() {
+                    self.ed.cancel_vertex_snap();
+                } else {
+                    self.ed.start_vertex_snap();
+                }
+            }
+            Cmd::SnapEdge if !self.crossing.open => {
+                if self.ed.edge_snap.is_some() {
+                    self.ed.cancel_edge_snap();
+                } else {
+                    self.ed.start_edge_snap();
+                }
+            }
             Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
@@ -2439,6 +2440,8 @@ impl App {
             Cmd::Focus => actions.push(Action::FocusSelection),
             Cmd::TestDrive => actions.push(if shift { Action::PlayHere(false) } else { Action::Play }),
             Cmd::Picture => actions.push(Action::ViewPicture),
+            // (the crossing editor has its own use for the keys)
+            Cmd::SnapVertex | Cmd::SnapEdge => {}
         }
     }
 
@@ -3016,6 +3019,7 @@ impl App {
         self.geo.fill_bridge(&mut self.ui.geo, &self.ed);
         self.ui.minimap.imagery = self.geo.minimap_tiles();
         g.renderer.profile.add("ui.before", crate::render::profile::ms(t_ui));
+        crate::controls::show_keys(&Keymap::of(&self.prefs.keys, Preset::of(&self.prefs.keys_set, self.prefs.omsi_controls)));
         let full = g.egui_ctx.run_ui(raw, |ui| {
             let ctx = ui.ctx().clone();
             crate::theme::sync(&ctx);
@@ -3204,11 +3208,6 @@ impl App {
         let snap = self.ed.snap_settings();
         if snap != self.prefs.snap {
             self.prefs.snap = snap;
-            self.prefs.save();
-        }
-        // (kept once a panel's edge is let go, not at every step of the drag)
-        if self.ui.panel_sizes.iter().zip(self.prefs.panel_sizes).any(|(a, b)| (a - b).abs() >= 1.0) && !g.egui_ctx.input(|i| i.pointer.any_down()) {
-            self.prefs.panel_sizes = self.ui.panel_sizes.map(f32::round);
             self.prefs.save();
         }
         g.renderer.profile.add("ui", crate::render::profile::ms(t_ui));
@@ -4330,6 +4329,9 @@ impl ApplicationHandler for App {
             crate::doc::autosave::clear(&r.content);
         }
         self.prefs.save();
+        if let (Some(g), None) = (&self.gfx, std::env::var_os("OPENMAPPER_SHOT")) {
+            install::save_ui_memory(&g.egui_ctx);
+        }
     }
 }
 

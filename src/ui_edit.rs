@@ -76,7 +76,9 @@ pub fn paint_names(ctx: &egui::Context, ed: &Editor, lib: &Library, cam: &crate:
             continue;
         }
         taken.push(r);
-        let fill = if stop { Color32::from_rgba_unmultiplied(30, 70, 120, alpha / 4 * 3) } else { Color32::from_rgba_unmultiplied(120, 60, 20, alpha / 4 * 3) };
+        // (the backdrop fades less than the name: white on bright sky or ground needs it)
+        let back = (alpha / 4 * 3).max(170);
+        let fill = if stop { Color32::from_rgba_unmultiplied(30, 70, 120, back) } else { Color32::from_rgba_unmultiplied(120, 60, 20, back) };
         painter.rect_filled(r, CornerRadius::same(3), fill);
         painter.galley(r.min + Vec2::new(5.0, 2.0), galley, Color32::WHITE);
     }
@@ -397,8 +399,8 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     }
                 }
                 let snap_armed = ed.vertex_snap.is_some();
-                if ui.add(egui::Button::new(icons::labelled(Icon::Focus, tr("Snap vertex to vertex (V)", "Привязать вершину к вершине (V)"))).selected(snap_armed))
-                    .on_hover_text(tr("Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel", "Привязать вершину выбранного объекта к вершине другого объекта (V)\nShift: только по горизонтали, Esc/ПКМ: отмена"))
+                if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_armed))
+                    .on_hover_text(tr("Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel", "Привязать вершину выбранного объекта к вершине другого объекта\nShift: только по горизонтали, Esc/ПКМ: отмена"))
                     .clicked()
                 {
                     if snap_armed {
@@ -408,8 +410,8 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     }
                 }
                 let edge_snap_armed = ed.edge_snap.is_some();
-                if ui.add(egui::Button::new(icons::labelled(Icon::Line, tr("Snap edge to edge (L)", "Привязать ребро к ребру (L)"))).selected(edge_snap_armed))
-                    .on_hover_text(tr("Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel", "Выровнять ребро выбранного объекта по ребру или дороге (L)\nПоворачивает и привязывает по линии\nShift: только по горизонтали, Esc/ПКМ: отмена"))
+                if ui.add(egui::Button::new(icons::labelled(Icon::Line, &format!("{}{}", tr("Snap edge to edge", "Привязать ребро к ребру"), crate::controls::key_hint(crate::controls::Cmd::SnapEdge)))).selected(edge_snap_armed))
+                    .on_hover_text(tr("Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel", "Выровнять ребро выбранного объекта по ребру или дороге\nПоворачивает и привязывает по линии\nShift: только по горизонтали, Esc/ПКМ: отмена"))
                     .clicked()
                 {
                     if edge_snap_armed {
@@ -537,26 +539,28 @@ pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id
     }
     ui.add_space(6.0);
     ui.label(RichText::new(tr("Ends (joined roads follow)", "Концы (соседние дороги следуют)")).strong());
-    egui::Grid::new("spline ends").num_columns(5).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
+    egui::Grid::new("spline ends").num_columns(5).spacing(Vec2::new(4.0, 5.0)).show(ui, |ui| {
         ui.label("");
-        ui.label(RichText::new(tr("height", "высота")).small().color(pal().text_dim));
-        ui.label(RichText::new(tr("gradient", "уклон")).small().color(pal().text_dim));
-        ui.label(RichText::new(tr("cant", "вираж")).small().color(pal().text_dim)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
-        ui.label(RichText::new(tr("Rotate", "Поворот")).small().color(pal().text_dim)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
+        // (the units stand over the columns, not in each box: with them in the boxes the last
+        // column ran past the panel's edge)
+        ui.label(RichText::new(tr("height, m", "высота, м")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("gradient, %", "уклон, %")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("cant, %", "вираж, %")).small().color(pal().text_dim)).on_hover_text(tr("Banking across the road, %: positive lowers its right side (into a right bend)", "Поперечный наклон, %: плюс опускает правую сторону (в правый поворот)"));
+        ui.label(RichText::new(tr("Rotate, °", "Поворот, °")).small().color(pal().text_dim)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним."));
         ui.end_row();
         for (at_end, z, g, cant, h, name) in [(false, &mut z0, &mut g0, &mut c0, &mut h0, tr("Start", "Начало")), (true, &mut z1, &mut g1, &mut c1, &mut h1, tr("End", "Конец"))] {
             prop_row(ui, name, |ui| {
-                if ui.add(egui::DragValue::new(z).speed(0.02).max_decimals(2).suffix(" m")).changed() {
+                if ui.add(egui::DragValue::new(z).speed(0.02).max_decimals(2)).changed() {
                     out.change = Some((at_end, Some(*z), None));
                 }
                 let lim = g.abs().max(40.0);
-                if ui.add(egui::DragValue::new(g).speed(0.05).range(-lim..=lim).max_decimals(2).suffix(" %")).changed() {
+                if ui.add(egui::DragValue::new(g).speed(0.05).range(-lim..=lim).max_decimals(2)).changed() {
                     out.change = Some((at_end, None, Some(*g)));
                 }
-                if ui.add(egui::DragValue::new(cant).speed(0.05).range(-100.0..=100.0).max_decimals(2).suffix(" %")).changed() {
+                if ui.add(egui::DragValue::new(cant).speed(0.05).range(-100.0..=100.0).max_decimals(2)).changed() {
                     out.cant = Some((at_end, *cant));
                 }
-                if ui.add(egui::DragValue::new(h).speed(0.4).max_decimals(1).suffix("°")).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним.")).changed() {
+                if ui.add(egui::DragValue::new(h).speed(0.4).max_decimals(1)).on_hover_text(tr("The direction the road runs at this end, degrees. Dragging it rotates the end; the road joined there turns with it.", "Направление дороги на этом конце, градусы. Вращение поворачивает конец; соседняя дорога поворачивается вместе с ним.")).changed() {
                     out.heading = Some((at_end, *h));
                 }
             });

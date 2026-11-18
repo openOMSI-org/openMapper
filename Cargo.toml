@@ -24,7 +24,9 @@ omsi-script = { git = "https://github.com/openOMSI-org/openOMSI", rev = "c4738ed
 
 wgpu = { version = "29", default-features = false, features = ["std", "parking_lot", "metal", "vulkan", "dx12", "gles", "wgsl"] }
 winit = "0.30"
-egui = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04" }
+egui = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", features = ["persistence"] }
+# (the windows' places and the panels kept between runs, as egui writes them)
+ron = "0.12"
 egui-wgpu = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false }
 egui-winit = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false, features = ["clipboard", "links", "wayland", "x11"] }
 

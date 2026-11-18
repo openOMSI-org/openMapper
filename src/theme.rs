@@ -217,6 +217,22 @@ pub fn readable(c: Color32) -> Color32 {
     Color32::from_rgba_unmultiplied((c.r() as f32 * k) as u8, (c.g() as f32 * k) as u8, (c.b() as f32 * k) as u8, c.a())
 }
 
+/// Black or white, whichever reads on `fill` (a label on a colour of its own, a player's).
+pub fn ink_on(fill: Color32) -> Color32 {
+    let l = 0.2126 * fill.r() as f32 + 0.7152 * fill.g() as f32 + 0.0722 * fill.b() as f32;
+    if l > 150.0 { Color32::from_gray(20) } else { Color32::WHITE }
+}
+
+/// A label over the 3D view on a pill of the theme's overlay, so it reads over sky and
+/// ground alike; `at` is its top left.
+pub fn view_label(painter: &egui::Painter, at: egui::Pos2, text: String, size: f32) {
+    let p = pal();
+    let galley = painter.layout_no_wrap(text, egui::FontId::proportional(size), p.text_strong);
+    let r = egui::Rect::from_min_size(at, galley.size() + egui::vec2(10.0, 4.0));
+    painter.rect(r, egui::CornerRadius::same(3), p.overlay, egui::Stroke::new(1.0, p.border), egui::StrokeKind::Inside);
+    painter.galley(r.min + egui::vec2(5.0, 2.0), galley, p.text_strong);
+}
+
 static LIGHT_ON: AtomicBool = AtomicBool::new(false);
 
 /// The colours of the theme on screen.

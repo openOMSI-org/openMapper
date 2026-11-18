@@ -237,7 +237,7 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
         let here = format!("{path}\\{name}");
         // (a search opens every folder it finds something in; the top ones are open)
         let open = if q.is_empty() { None } else { Some(true) };
-        let r = egui::CollapsingHeader::new(RichText::new(format!("{name}  ({n})")).color(pal().text_strong))
+        let r = egui::CollapsingHeader::new(RichText::new(format!("{}  ({n})", crate::ui::fit(ui, name, 80.0))).color(pal().text_strong))
             .id_salt(("outliner folder", &here))
             .icon(folder_icon)
             .default_open(path.is_empty())
@@ -260,7 +260,8 @@ fn show_folder(ui: &mut egui::Ui, f: &Folder, path: &str, q: &str, lib: &Library
             continue;
         }
         let has_sel = items.iter().any(|i| selected.contains(&i.sel));
-        let title = RichText::new(format!(" {name}  ({})", shown.len())).color(if has_sel { pal().accent } else { pal().text });
+        // (cut short: a long name would push the panel wider)
+        let title = RichText::new(format!(" {}  ({})", crate::ui::fit(ui, &name, 80.0), shown.len())).color(if has_sel { pal().accent } else { pal().text });
         let open = if q.is_empty() { None } else if shown.len() <= 20 { Some(true) } else { None };
         let spline = file.to_lowercase().ends_with(".sli");
         let r = egui::CollapsingHeader::new(title).id_salt(("outliner file", file)).icon(if spline { road_icon } else { object_icon }).open(open).show(ui, |ui| {
