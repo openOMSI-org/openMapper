@@ -9,7 +9,7 @@ use glam::{DVec2, DVec3, Mat4};
 use omsi_map::{MapSpline, SplineAttachment};
 use omsi_world::map_index::{self, IndexedSpline, MapIndex};
 
-use crate::doc::Document;
+use crate::doc::{Document, TileKey};
 
 pub use omsi_world::map_index::attachment_matrix;
 
@@ -75,12 +75,7 @@ pub fn row_index(doc: &Document) -> Arc<MapIndex> {
     static LAST: Mutex<Option<(u64, Arc<MapIndex>)>> = Mutex::new(None);
     let mut h = std::collections::hash_map::DefaultHasher::new();
     for t in doc.tiles.values() {
-        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
-            (s.id, s.prev_id, s.next_id, s.length.to_bits(), s.map_chain_offset.map(f64::to_bits)).hash(&mut h);
-        }
-        for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_some()) {
-            (a.id, a.spline_index, a.repeater, a.offset[2].to_bits(), a.interval.to_bits()).hash(&mut h);
-        }
+        chain_data(&t.tile, &mut h);
     }
     let key = h.finish();
     let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
@@ -90,6 +85,34 @@ pub fn row_index(doc: &Document) -> Arc<MapIndex> {
     let ix = Arc::new(build_row_index(doc));
     *last = Some((key, ix.clone()));
     ix
+}
+
+/// What of a tile the rows read beyond their own tile: its splines' lengths, links and chain
+/// distances, and its repeaters' counts.
+fn chain_data(t: &omsi_map::Tile, h: &mut impl Hasher) {
+    for s in t.splines.iter().filter(|s| !s.deleted) {
+        (s.id, s.prev_id, s.next_id, s.length.to_bits(), s.map_chain_offset.map(f64::to_bits)).hash(h);
+    }
+    for a in t.spline_attachments.iter().filter(|a| a.repeater.is_some()) {
+        (a.id, a.spline_index, a.repeater, a.offset[2].to_bits(), a.interval.to_bits()).hash(h);
+    }
+}
+
+/// What the rows of tile `k` depend on beyond it: the chains of the tiles around, where they
+/// run on and where the object at a border is decided (0 for a tile without rows). The view
+/// lays a tile's rows out again when it changes, not only when the tile itself does.
+pub fn rows_beyond(doc: &Document, k: TileKey) -> u64 {
+    if doc.tiles.get(&k).is_none_or(|t| t.tile.spline_attachments.is_empty()) {
+        return 0;
+    }
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+        if let Some(t) = doc.tiles.get(&(k.0 + dx, k.1 + dy)) {
+            (dx, dy).hash(&mut h);
+            chain_data(&t.tile, &mut h);
+        }
+    }
+    h.finish()
 }
 
 fn build_row_index(doc: &Document) -> MapIndex {
@@ -226,5 +249,20 @@ mod tests {
         // (on spline 3, 100 m into its tile's chain, at 50 m: 50 m before it)
         doc.tiles.get_mut(&(1, 0)).unwrap().tile.spline_attachments[0] = row(9, 1, 50.0, 0.0, 0.0, None);
         assert!(placed(&doc).is_empty());
+    }
+
+    /// A tile's rows are laid out again when a spline of the chain they run on into the tile
+    /// next door changes, and not when anything else there does.
+    #[test]
+    fn rows_depend_on_the_chains_of_the_tiles_around() {
+        let mut doc = border_row(tile_size(), 0.0, 0.0, 3);
+        let before = rows_beyond(&doc, (0, 0));
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.objects.push(omsi_map::MapObject { file: "Sceneryobjects\\x.sco".into(), id: 50, ..Default::default() });
+        assert_eq!(rows_beyond(&doc, (0, 0)), before, "an object there changes nothing");
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.splines[0].length = 120.0;
+        assert_ne!(rows_beyond(&doc, (0, 0)), before, "its spline does");
+        // (a tile without rows depends on nothing beyond)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.clear();
+        assert_eq!(rows_beyond(&doc, (0, 0)), 0);
     }
 }

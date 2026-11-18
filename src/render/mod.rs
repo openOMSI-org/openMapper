@@ -1562,7 +1562,8 @@ impl Renderer {
             let rows = crate::place::row_index(doc);
             for (k, t) in &disp {
                 let Some(td) = doc.tiles.get(k) else { continue };
-                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64]);
+                // (its rows run on into the tiles around: laid out again when their chains change)
+                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64, crate::place::rows_beyond(doc, *k)]);
                 if self.tile_groups.get(k).map(|g| g.0 == tkey).unwrap_or(false) {
                     continue;
                 }
