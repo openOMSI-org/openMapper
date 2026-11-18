@@ -7477,14 +7477,22 @@ impl Editor {
 
     pub fn select_chain(&mut self, k: TileKey, id: i64) {
         let Some(doc) = self.doc.as_ref() else { return };
+        // (every spline's tile and links read once: each link looked up across the whole map
+        // made a double click on a long road of a city take seconds)
+        let mut links: std::collections::HashMap<i64, (TileKey, i64, i64)> = std::collections::HashMap::new();
+        for (tk, t) in &doc.tiles {
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                links.entry(s.id).or_insert((*tk, s.prev_id, s.next_id));
+            }
+        }
         let mut v = vec![Sel::Spline(k, id)];
         let mut seen = std::collections::HashSet::from([id]);
         let mut todo = vec![id];
         while let Some(cur) = todo.pop() {
-            let Some((_, s)) = doc.find_spline(cur) else { continue };
-            for n in [s.prev_id, s.next_id] {
+            let Some(&(_, prev, next)) = links.get(&cur) else { continue };
+            for n in [prev, next] {
                 if n != 0 && seen.len() < 5000 && seen.insert(n) {
-                    if let Some((nk, _)) = doc.find_spline(n) {
+                    if let Some(&(nk, _, _)) = links.get(&n) {
                         v.push(Sel::Spline(nk, n));
                         todo.push(n);
                     }
