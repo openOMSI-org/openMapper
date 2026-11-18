@@ -261,7 +261,7 @@ The complete list. A short overview is in the [README](../README.md).
   one another but not joined, links to splines that are gone, bus stops with no lane near,
   start points away from a road, IDCodes used twice, a too low NextIDCode, objects off their
   tile, tiles without a file or ground, street lamps on a tile the game lights no ground from, tiles far fuller than the stock maps' (a wood planted too densely); trips no way is found for, tours without departures or
-  a depot, traffic groups missing from the AI lists (copied from OMSI 2's own maps with one click where they have them), objects linked to one that is gone, stops no trip calls at. Every issue is explained, a click flies there, many
+  a depot, traffic groups missing from the AI lists (copied from OMSI 2's own maps with one click where they have them), objects linked to one that is gone, stops no trip calls at, trolleybus wire the game cannot use (four spans in one point, a switch with no frog). Every issue is explained, a click flies there, many
   are put right with one more click (and can be undone). `openmapper --check path/to/global.cfg`
   prints the same without a window.
 * **Safe saving**: every file is written under a temporary name and put in place only once

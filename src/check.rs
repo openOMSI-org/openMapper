@@ -113,6 +113,7 @@ pub enum Kind {
     UnschedMissing,
     StopUnused,
     SignalRouteBroken,
+    TrolleyWire,
     ChronoUnmatched,
     LampsDark,
     HeavyTile,
@@ -145,6 +146,7 @@ impl Kind {
             Kind::UnschedMissing => tr("Traffic groups not in the AI lists", "Группы трафика не в списках ИИ"),
             Kind::StopUnused => tr("Stops no trip calls at", "Остановки без рейсов"),
             Kind::SignalRouteBroken => tr("Signal routes naming what is gone", "Маршруты сигналов с исчезнувшим"),
+            Kind::TrolleyWire => tr("Trolleybus wire the game cannot use", "Контактная сеть, которую игра не поймёт"),
             Kind::ChronoUnmatched => tr("Chrono changes of what is gone", "Хроно-изменения исчезнувшего"),
             Kind::LampsDark => tr("Lamps lighting no ground at night", "Фонари не освещают землю ночью"),
             Kind::HeavyTile => tr("Tiles with very many objects", "Тайлы с очень большим числом объектов"),
@@ -183,6 +185,7 @@ impl Kind {
             Kind::LinkLost => tr("An object takes its state ([varparent]) from an object no longer on the map: a signal head stays dark, a display blank. Link it to another in its properties (Linked objects), or \"Fix\" forgets the link.", "Объект берёт состояние ([varparent]) от объекта, которого больше нет на карте: светофор не горит, табло пустое. Свяжите его с другим в свойствах («Связанные объекты») или «Исправить» уберёт связь."),
             Kind::HeadUnlinked => tr("A traffic light's signal head takes its light from a crossing's program ([varparent]); this one is linked to none while others like it are, so it stays dark in the game. Select it and link it in its properties (Linked objects).", "Головка светофора берёт сигнал из программы перекрёстка ([varparent]); эта ни с чем не связана, хотя такие же связаны, и в игре она не горит. Выберите её и свяжите в свойствах («Связанные объекты»)."),
             Kind::DepotFile => tr("A depot file (.hof) gives the buses their destinations, the stop names on their displays and the routes their IBIS knows. Without one the signs stay empty and the IBIS knows no line. \"Fix\" makes it from the map's lines, or adds what the lines need to the map's own (Map > Depot files to see and change it).", "Файл депо (.hof) даёт автобусам конечные, имена остановок на табло и маршруты, которые знает IBIS. Без него указатели пусты, а IBIS не знает ни одной линии. «Исправить» создаст его по линиям карты или добавит в собственный файл карты то, чего не хватает линиям (Карта > Файлы депо, чтобы посмотреть и изменить)."),
+            Kind::TrolleyWire => tr("openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.", "openOMSI делает стрелку только там, где сходятся ровно три пролёта контактной сети, а стрелку там, где они больше не сходятся, пропускает; пролёт в секции, которой нет в сети, остаётся без подстанции. Откройте Карта > Контактная сеть троллейбуса, чтобы исправить."),
             Kind::SignalRouteBroken => tr("A signal route names a signal or track pieces no longer on the map: the signal may never clear. Open Map > Signal routes and take the track again, or delete the route.", "Маршрут сигнала указывает сигнал или участки пути, которых больше нет на карте: сигнал может так и не открыться. Откройте Карта > Маршруты сигналов и возьмите пути заново или удалите маршрут."),
         }
     }
@@ -865,6 +868,12 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
         if gone > 0 {
             let k = d.tiles.iter().find(|(_, t)| t.tile.objects.iter().any(|o| o.id == r.signal.0)).map(|(k, _)| *k);
             out.push(Issue { severity: Severity::Warning, kind: Kind::SignalRouteBroken, title: format!("{} {i}", tr("Route", "Маршрут")), detail: format!("{gone} {}", tr("gone", "нет на карте")), at: None, sel: k.map(|k| Sel::Object(k, r.signal.0)), fix: None });
+        }
+    }
+    // the trolleybus wire: joints the game cannot use, switches without a frog
+    if let Some(w) = &d.traffic.trolley {
+        for (p, text) in crate::trolley::problems(w) {
+            out.push(Issue { severity: Severity::Warning, kind: Kind::TrolleyWire, title: tr("Trolleybus wire", "Контактная сеть").to_string(), detail: text, at: Some(p.truncate()), sel: None, fix: None });
         }
     }
     // chrono scenarios: their changes name things of the map or of a scenario
