@@ -49,7 +49,31 @@ The complete list. A short overview is in the [README](../README.md).
   from the installation, which groups drive about on their own, parked cars and people. A group
   the map lacks can be copied from OMSI 2's own maps.
 * **Vehicles of a line** (the Lines window's Vehicles tab): OMSI 2's `car_use/*.ocu` files: for a span of dates the types its tours are given (only these, or mostly these with a share) and fleet numbers of single tours. **How a trip serves its stops** (always, when wanted, drive through, when early) per station.
-* **Scripts** (Map > Scripts): the map's Lua script for openOMSI (`plugins/map_<folder>/main.lua`, run on this map only, checked as typed, ready-made scripts to start from), object scripts (`.osc`) read and edited with openOMSI's own compiler checking them, and lights switched by a script made in one click.
+* **Scripts** (Map > Scripts): a small IDE for the map's code in openOMSI. The map's scripts are a
+  project (`plugins/map_<folder>/` of the content folder, a folder plugin of openOMSI): scripts that
+  start in a chosen order when the map is played, each switched on or off and one failing leaving
+  the others running (`map.on`, `map.every`, `map.after`, `map.watch` act on this map only), modules
+  they share (`require("modules.util")`) and data files; a map's old one-file script becomes its
+  first script. Files open in tabs with Lua and Rust in colour, line numbers, indenting that follows
+  the code, completion of the game's whole API (313 functions, 65 events, with their help and
+  permissions) and of the file's own names, find and replace, go to a line, comment out (`Ctrl+/`);
+  mistakes are found as one types: Lua 5.4 syntax, functions and events the game does not have,
+  modules `require` cannot find. **Run and debug in the editor** (`F5`): the scripts run with the
+  game's `omsi` API, sandboxed as the game sandboxes them (what needs a bus or a duty answers as
+  the game does without one, and the console says so), the clock at a chosen time and speed sending
+  `frame`, `minute` and `hour`, any of the game's events sent by hand with its arguments;
+  breakpoints (a click beside a line, `F9`), pause, step over / into / out (`F10`, `F11`,
+  `Shift+F11`), the call stack, each frame's locals and upvalues with tables to open, a console
+  that evaluates Lua in the frame stopped at, the plugin's storage and the objects' variables; an
+  endless loop is stopped after 10 s. Lua scripts of scenery objects (`[lua_script]` of a `.sco`)
+  are listed, edited, added to the selected object's type and run against the objects of that type
+  on the map (`object_init`, `object_frame`, `object_click`); OMSI 2's `.osc` scripts of the
+  selected object are read and checked with openOMSI's own compiler. **Build .oop** makes one file
+  of the map's scripts to share with the Development Tools' compiler (obfuscated, with the
+  permissions its code needs, signed with a key when given); a **Rust plugin** of the map is made
+  from the Development Tools' template, edited here and built with `cargo` into
+  `plugins/map_<folder>_rs.oop`. Lights switched by a script are made in one click. The MCP server's
+  `script` tool lists, reads, writes and runs the project too.
 * **Depot files** (Map > Depot files, or the Traffic window's last tab): the map's `.hof`
   files, which give its buses their destinations, the stop names on their displays and the
   routes their IBIS knows. One click makes one from the map's lines (a destination for each

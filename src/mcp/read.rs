@@ -488,37 +488,137 @@ impl Server {
         }).into())
     }
 
-    /// The map's Lua script: read, checked, written.
+    /// The map's scripts (a project of scripts and modules): listed, read, checked, written,
+    /// made, deleted, switched on and off, and run in the editor's test run.
     pub fn script(&mut self, a: Args) -> Reply {
+        use crate::script::project::{self, Kind, Project};
         let d = self.doc()?;
         let folder = d.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
         let friendly = d.global.friendly_name.clone();
-        let content = self.roots.content.clone();
+        let p = Project::of(&self.roots.content, &folder);
+        let write = |s: &Self| if s.allow_edit { Ok(()) } else { Err("the server is read-only: start it with --allow-edit".to_string()) };
+        let problems = |text: &str, p: &Project| -> Vec<Value> {
+            let modules = p.module_names();
+            crate::script::lint::check(text, &crate::script::lint::Context { modules: &modules, object: false }).into_iter().map(|x| json!({ "line": x.line, "message": x.message, "error": x.error })).collect()
+        };
+        if let Some(n) = a.get("new") {
+            write(self)?;
+            let kind = if n.get("kind").and_then(|v| v.as_str()) == Some("module") { Kind::Module } else { Kind::Script };
+            let name = n.get("name").and_then(|v| v.as_str()).unwrap_or("script");
+            let text = n.get("text").and_then(|v| v.as_str()).map(str::to_string).unwrap_or_else(|| {
+                let t = n.get("template").and_then(|v| v.as_str()).unwrap_or(if kind == Kind::Module { "module" } else { "script" });
+                project::templates().into_iter().find(|x| x.name == t).map(|x| x.text.to_string()).unwrap_or_default()
+            });
+            p.create(&friendly).map_err(|e| e.to_string())?;
+            let f = p.add(kind, name, &text, &friendly).map_err(|e| e.to_string())?;
+            return Ok(json!({ "made": f.rel, "problems": problems(&text, &p) }).into());
+        }
+        if let Some(run) = a.get("run") {
+            return self.script_run(&p, &folder, &friendly, run);
+        }
+        let Some(file) = a.str("file") else {
+            let files: Vec<Value> = p.files().into_iter().map(|f| json!({ "file": f.rel, "kind": format!("{:?}", f.kind).to_lowercase(), "on": f.on })).collect();
+            let templates: Vec<Value> = project::templates().into_iter().map(|t| json!({ "name": t.name, "title": t.title, "text": t.text })).collect();
+            return Ok(json!({ "folder": p.dir, "exists": p.exists(), "files": files, "templates": templates, "api_version": crate::script::api::api().version,
+                "notes": "scripts/*.lua start in order when the map is played (main.lua, made by openMapper, starts them; one that fails leaves the others running); modules/*.lua are required as require(\"modules.name\"). In scripts use map.on(event, fn), map.every(seconds, fn), map.after(seconds, fn), map.watch(...): like omsi.on etc. but only while this map is played. omsi.* is openOMSI's plugin API." }).into());
+        };
         if a.bool("delete").unwrap_or(false) {
-            if !self.allow_edit {
-                return Err("the server is read-only: start it with --allow-edit".into());
-            }
-            crate::scripting::delete_lua(&content, &folder).map_err(|e| e.to_string())?;
-            return Ok(json!({ "deleted": true }).into());
+            write(self)?;
+            p.delete(&self.roots.content, file, &friendly).map_err(|e| e.to_string())?;
+            return Ok(json!({ "deleted": file }).into());
+        }
+        if let Some(on) = a.bool("on") {
+            write(self)?;
+            p.set_on(file.rsplit('/').next().unwrap_or(file), on, &friendly).map_err(|e| e.to_string())?;
+            return Ok(json!({ "file": file, "on": on }).into());
         }
         match a.str("text") {
             None => {
-                let templates: Vec<Value> = crate::scripting::lua_templates().into_iter().map(|t| json!({ "title": t.title, "text": t.text })).collect();
-                Ok(json!({ "path": crate::scripting::lua_path(&content, &folder), "text": crate::scripting::read_lua(&content, &folder), "templates": templates,
-                    "notes": "The header above the line is made by openMapper: `on(event, fn)` and `every(seconds, fn)` run on this map only; MAP is the map's folder." }).into())
+                let text = p.read_file(file).ok_or_else(|| format!("{file}: no such file in the project"))?;
+                let pr = problems(&text, &p);
+                Ok(json!({ "file": file, "text": text, "problems": pr }).into())
             }
             Some(text) => {
-                let problems: Vec<Value> = crate::scripting::check_lua(text).into_iter().map(|p| json!({ "line": p.line, "message": p.message })).collect();
-                if !problems.is_empty() {
-                    return Ok(json!({ "written": false, "problems": problems }).into());
+                let pr = problems(text, &p);
+                if pr.iter().any(|x| x["error"] == true) {
+                    return Ok(json!({ "written": false, "problems": pr }).into());
                 }
-                if !self.allow_edit {
-                    return Ok(json!({ "written": false, "ok": true, "note": "read-only server: only checked" }).into());
-                }
-                crate::scripting::write_lua(&content, &folder, &friendly, text).map_err(|e| e.to_string())?;
-                Ok(json!({ "written": true, "path": crate::scripting::lua_path(&content, &folder) }).into())
+                write(self)?;
+                p.create(&friendly).map_err(|e| e.to_string())?;
+                p.save_file(file, text).map_err(|e| e.to_string())?;
+                p.write_made(&friendly).map_err(|e| e.to_string())?;
+                Ok(json!({ "written": file, "problems": pr }).into())
             }
         }
+    }
+
+    /// The map's scripts run as the Scripts window runs them, for `seconds` of game time at
+    /// `speed`, with events sent at given times: what they printed, showed and got wrong.
+    fn script_run(&mut self, p: &crate::script::project::Project, folder: &str, friendly: &str, run: &Value) -> Reply {
+        use crate::script::run::{Arg, Cmd, Out, Session, Setup};
+        let d = self.doc()?;
+        let seconds = run.get("seconds").and_then(|v| v.as_f64()).unwrap_or(10.0).clamp(0.0, 600.0);
+        let speed = run.get("speed").and_then(|v| v.as_f64()).unwrap_or(30.0).clamp(0.0, 1000.0);
+        let clock = run.get("clock").and_then(|v| v.as_f64()).unwrap_or(8.0) * 3600.0;
+        let tiles: Vec<(glam::DVec2, omsi_map::Terrain)> = d.tiles.iter().map(|(k, t)| (crate::doc::tile_origin(*k), t.terrain.clone())).collect();
+        let size = omsi_map::tile_size();
+        let setup = Setup {
+            files: p.sources(),
+            entry: "main.lua".into(),
+            map_folder: folder.to_string(),
+            friendly: friendly.to_string(),
+            map_path: d.dir.join("global.cfg").to_string_lossy().to_string(),
+            lht: d.global.left_hand_traffic,
+            ground: std::sync::Arc::new(move |x, y| {
+                let (o, t) = tiles.iter().find(|(o, _)| x >= o.x && y >= o.y && x < o.x + size && y < o.y + size)?;
+                Some(omsi_geometry::terrain_height(t, (x - o.x) as f32, (y - o.y) as f32) as f64)
+            }),
+            objects: Vec::new(),
+            all_objects: std::sync::Arc::new(Vec::new()),
+            clock,
+            speed,
+            breakpoints: Default::default(),
+            step_in: false,
+        };
+        let s = Session::start(setup, None);
+        let mut events: Vec<(f64, String, Vec<Arg>)> = run.get("events").and_then(|v| v.as_array()).map(|v| v.iter().filter_map(|e| {
+            let name = e.get("name")?.as_str()?.to_string();
+            let args = e.get("args").and_then(|a| a.as_array()).map(|a| a.iter().map(|x| match x {
+                Value::Null => Arg::Nil,
+                Value::Bool(b) => Arg::Bool(*b),
+                Value::Number(n) => Arg::Num(n.as_f64().unwrap_or(0.0)),
+                Value::String(t) => Arg::Str(t.clone()),
+                other => Arg::Str(other.to_string()),
+            }).collect()).unwrap_or_default();
+            Some((e.get("at").and_then(|v| v.as_f64()).unwrap_or(0.0), name, args))
+        }).collect()).unwrap_or_default();
+        events.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut out = Vec::new();
+        let start = std::time::Instant::now();
+        let mut game = 0.0;
+        let mut ended = false;
+        while !ended && start.elapsed().as_secs_f64() < 60.0 && (game < seconds || !events.is_empty()) {
+            while events.first().is_some_and(|e| e.0 <= game) {
+                let (_, n, a) = events.remove(0);
+                s.send(Cmd::Fire(n, a));
+            }
+            for o in s.poll() {
+                match o {
+                    Out::Line { kind, text, at } => out.push(json!({ "kind": format!("{kind:?}").to_lowercase(), "text": text, "at": at.map(|(f, l)| format!("{f}:{l}")) })),
+                    Out::Clock { time, .. } => game = time,
+                    Out::Ended(e) => {
+                        if let Some(e) = e {
+                            out.push(json!({ "kind": "error", "text": e }));
+                        }
+                        ended = true;
+                    }
+                    _ => {}
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        s.send(Cmd::Stop);
+        Ok(json!({ "ran_seconds": game, "lines": out }).into())
     }
 }
 

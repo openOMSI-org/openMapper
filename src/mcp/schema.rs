@@ -109,8 +109,10 @@ impl Server {
                 "line": { "type": "string", "description": "Only this line." }
             }), &[], true),
             tool("editor_state", "The editor now: the tool and its mode and settings, the road / object type chosen, the selection, the undo and redo steps.", json!({}), &[], true),
-            tool("script", "The map's Lua script (openOMSI plugin: events like on(\"stop_arrive\", fn), every(seconds, fn), omsi.* calls). Without `text`: read it and the templates. With `text`: check it as Lua 5.4 and (with --allow-edit) write it; `delete: true` removes it.", json!({
-                "text": { "type": "string" }, "delete": { "type": "boolean" }
+            tool("script", "The map's scripts for openOMSI, a project of Lua files: scripts/*.lua start in order when the map is played (map.on(event, fn), map.every(seconds, fn), map.after... act on this map only; omsi.* is the game's API), modules/*.lua are shared (require(\"modules.name\")). No arguments: the files, templates and notes. `file`: read it with its problems; with `text`: write it (refused when it has errors). `new: {kind: script|module, name, template | text}` makes one; `file` + `delete: true` removes it; `file` + `on: false` switches a script off. `run: {seconds, speed, clock (hour), events: [{at, name, args}]}` runs the scripts in the editor (no game: what needs a bus answers nil) and gives what they printed and their errors.", json!({
+                "file": { "type": "string" }, "text": { "type": "string" }, "delete": { "type": "boolean" }, "on": { "type": "boolean" },
+                "new": { "type": "object", "properties": { "kind": { "type": "string", "enum": ["script", "module"] }, "name": { "type": "string" }, "template": { "type": "string" }, "text": { "type": "string" } } },
+                "run": { "type": "object", "properties": { "seconds": { "type": "number" }, "speed": { "type": "number" }, "clock": { "type": "number" }, "events": { "type": "array", "items": { "type": "object", "properties": { "at": { "type": "number" }, "name": { "type": "string" }, "args": { "type": "array" } } } } } }
             }), &[], true),
             tool("reload", "Read the map from disk again (after another program changed it). Unsaved edits are dropped.", json!({}), &[], false),
             tool("open_map", "Open a map by its global.cfg (see list_maps). The open one is dropped (save it first).", json!({ "path": { "type": "string" } }), &["path"], false),
@@ -118,7 +120,7 @@ impl Server {
         if !self.allow_edit {
             for x in &mut t {
                 if x["name"] == "script" {
-                    x["description"] = json!("The map's Lua script and its templates; `text` is only checked (the server is read-only).");
+                    x["description"] = json!("The map's scripts (a project of Lua files): listed, read with their problems and run in the editor's test run; nothing is written (the server is read-only).");
                 }
             }
             return t;

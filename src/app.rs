@@ -803,8 +803,12 @@ impl App {
             self.ui.check.issues = None;
         }
         // OPENMAPPER_SCRIPTS=1: the Scripts window open from the start
-        if std::env::var_os("OPENMAPPER_SCRIPTS").is_some() {
-            self.scripts.open = true;
+        if let Ok(f) = std::env::var("OPENMAPPER_SCRIPTS") {
+            // (a project file to open; OPENMAPPER_SCRIPTS_RUN=1 runs the scripts too, stopping at
+            // the line OPENMAPPER_SCRIPTS_BREAK names)
+            let file = if f == "1" { String::new() } else { f };
+            let line = std::env::var("OPENMAPPER_SCRIPTS_BREAK").ok().and_then(|l| l.parse().ok());
+            self.scripts.open_on(&file, std::env::var_os("OPENMAPPER_SCRIPTS_RUN").is_some(), line);
         }
         // OPENMAPPER_TIMETABLE=<line>: the Lines window open on that line (checks without a person at the screen)
         if let Ok(l) = std::env::var("OPENMAPPER_TIMETABLE") {
@@ -1780,7 +1784,7 @@ impl App {
                     Err(e) => self.cj.failed(e.to_string()),
                 }
             }
-            Action::Scripts => self.scripts.open = !self.scripts.open,
+            Action::Scripts => self.scripts.toggle(),
             Action::ScriptedLight(b, color, range) => {
                 if let Err(e) = self.new_scripted_light(b, color, range) {
                     self.ed.error(e.to_string());
@@ -3967,7 +3971,8 @@ impl ApplicationHandler for App {
                 let mut typing = g.egui_ctx.egui_wants_keyboard_input();
                 // (Ctrl/Cmd + Z, Y: the map's undo even from a text field, which lets go of
                 // the keyboard; its own text undo would only undo half of the edit)
-                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY) | Some(KeyCode::KeyD)) {
+                // (a script's code editor keeps its own undo)
+                if typing && pressed && self.keys.ctrl && matches!(code, Some(KeyCode::KeyZ) | Some(KeyCode::KeyY) | Some(KeyCode::KeyD)) && !crate::ui_code::has_focus(&g.egui_ctx) {
                     g.egui_ctx.memory_mut(|m| m.stop_text_input());
                     typing = false;
                 }
@@ -4352,7 +4357,7 @@ fn stream_window(doc: &Document, on: bool, count: usize, at: &mut Option<DVec2>,
 
 /// Write the window's picture to a PNG (the screenshot mode).
 /// Show a file in the system's file manager.
-fn reveal(p: &Path) {
+pub(crate) fn reveal(p: &Path) {
     #[cfg(target_os = "macos")]
     let _ = std::process::Command::new("open").arg("-R").arg(p).spawn();
     #[cfg(target_os = "windows")]
