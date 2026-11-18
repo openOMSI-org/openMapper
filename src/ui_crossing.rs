@@ -2785,6 +2785,14 @@ impl CrossingPaths {
                 self.forget_gestures();
                 self.footprint = None;
                 self.message = None;
+                // (nor is what was said of the last one, or a mode armed on it: the next click
+                // would else start or finish a path on this one)
+                self.link_report.clear();
+                self.from_nearby = false;
+                self.complete_to = false;
+                self.nearby.clear();
+                self.sink.clear();
+                self.sink_next = 0;
                 true
             }
             Err(e) => {
