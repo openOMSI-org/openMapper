@@ -231,11 +231,25 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
         }
     }
     for (k, t) in &doc.tiles {
-        for sp in t.tile.splines.iter().filter(|s| !s.deleted && s.next_id != 0) {
-            let Some((k2, nx)) = by_id.get(&sp.next_id) else { continue };
-            // (two joined end to end name each other: one joint, looked at once - from both, each
-            // fix would bring the other's end to its own old height, and the step stayed)
-            if nx.next_id == sp.id && nx.prev_id != sp.id && nx.id < sp.id {
+        for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+            // the joints at this spline's end and, when the other one is turned round to meet it
+            // start to start, at its start: (at this one's end, the other, at the other's end)
+            let mut joints = Vec::new();
+            if let Some((k2, nx)) = by_id.get(&sp.next_id).filter(|_| sp.next_id != 0) {
+                // (two joined end to end name each other: one joint, looked at once - from both, each
+                // fix would bring the other's end to its own old height, and the step stayed)
+                if !(nx.next_id == sp.id && nx.prev_id != sp.id && nx.id < sp.id) {
+                    joints.push((true, *k2, *nx, nx.prev_id != sp.id));
+                }
+            }
+            if let Some((k2, nx)) = by_id.get(&sp.prev_id).filter(|_| sp.prev_id != 0) {
+                // (one running on into this one is looked at from its own end; two joined start to
+                // start, once, from the lower IDCode)
+                if nx.prev_id == sp.id && nx.next_id != sp.id && sp.id < nx.id {
+                    joints.push((false, *k2, *nx, false));
+                }
+            }
+            if joints.is_empty() {
                 continue;
             }
             // (only what is driven or walked along runs on smoothly: walls and fences turn corners)
@@ -244,25 +258,27 @@ pub fn check(doc: &Document, lib: &Library, assets: &mut Assets, area: Option<(D
                 continue;
             }
             let a = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
-            let b = omsi_geometry::SplineCurve::from_map(nx, tile_origin(*k2));
-            let (pa, ha) = (a.end_point(), a.heading_at(sp.length));
-            // (the next one runs on from its start, or is turned round and runs on from its end)
-            let (pb, hb) = if nx.prev_id == sp.id { (b.point_at(0.0), b.heading_at(0.0)) } else { (b.end_point(), roads::norm_deg(b.heading_at(nx.length) + 180.0)) };
-            if !near(pa.truncate()) {
-                continue;
-            }
-            // (structures off the ground — a footbridge's flights and landings — are drawn as they
-            // are built, turning at their landings)
-            if pa.z - doc.ground(pa.truncate()) > 1.5 && pb.z - doc.ground(pb.truncate()) > 1.5 {
-                continue;
-            }
-            let gap = (pa - pb).length();
-            let kink = (roads::norm_deg(ha - hb + 180.0) - 180.0).abs();
-            if gap > 0.05 || kink > 1.5 {
-                // (a step in height only: the next one is brought to this one's end)
-                let flat_gap = (pa - pb).truncate().length();
-                let fix = (kink <= 1.5 && flat_gap < 0.02).then(|| StreetFix::SnapZ { tile: *k2, id: nx.id, at_end: nx.prev_id != sp.id, z: pa.z });
-                out.push(StreetIssue { kind: "link_kink", at: pa.truncate(), ids: vec![sp.id, nx.id], detail: format!("joined with a {kink:.1}° kink and a {gap:.2} m gap"), fix });
+            for (at_end, k2, nx, nx_at_end) in joints {
+                let b = omsi_geometry::SplineCurve::from_map(nx, tile_origin(k2));
+                // (each the way it is driven through the joint: out of this one, into the other)
+                let (pa, ha) = if at_end { (a.end_point(), a.heading_at(sp.length)) } else { (a.point_at(0.0), roads::norm_deg(a.heading_at(0.0) + 180.0)) };
+                let (pb, hb) = if nx_at_end { (b.end_point(), roads::norm_deg(b.heading_at(nx.length) + 180.0)) } else { (b.point_at(0.0), b.heading_at(0.0)) };
+                if !near(pa.truncate()) {
+                    continue;
+                }
+                // (structures off the ground — a footbridge's flights and landings — are drawn as they
+                // are built, turning at their landings)
+                if pa.z - doc.ground(pa.truncate()) > 1.5 && pb.z - doc.ground(pb.truncate()) > 1.5 {
+                    continue;
+                }
+                let gap = (pa - pb).length();
+                let kink = (roads::norm_deg(ha - hb + 180.0) - 180.0).abs();
+                if gap > 0.05 || kink > 1.5 {
+                    // (a step in height only: the other one is brought to this one's height there)
+                    let flat_gap = (pa - pb).truncate().length();
+                    let fix = (kink <= 1.5 && flat_gap < 0.02).then(|| StreetFix::SnapZ { tile: k2, id: nx.id, at_end: nx_at_end, z: pa.z });
+                    out.push(StreetIssue { kind: "link_kink", at: pa.truncate(), ids: vec![sp.id, nx.id], detail: format!("joined with a {kink:.1}° kink and a {gap:.2} m gap"), fix });
+                }
             }
         }
     }
@@ -408,6 +424,28 @@ mod tests {
             omsi_geometry::SplineCurve::from_map(sp, tile_origin((0, 0))).end_point().z
         };
         assert!((end(1) - end(2)).abs() < 1e-6, "{} vs {}", end(1), end(2));
+    }
+
+    /// Two roads joined start to start (the one turned round to meet the other) are looked at
+    /// too: a step between them was never found.
+    #[test]
+    fn a_step_between_roads_joined_start_to_start_is_found_and_put_right() {
+        use crate::library::{Asset, Kind};
+        let mut doc = crate::selection::tests::flat_map(1);
+        // (north from y 150, and south from it: both start there)
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 100.0, 150.0, 0.0, 50.0, 2, 0);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 2, 100.0, 150.0, 180.0, 50.0, 1, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[1].pos[2] = 1.0;
+        let mut lib = Library::default();
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        let dir = std::env::temp_dir().join("openmapper-street-check-none");
+        let mut assets = Assets::new(dir.clone(), dir);
+        let found: Vec<StreetIssue> = check(&doc, &lib, &mut assets, None).into_iter().filter(|i| i.kind == "link_kink").collect();
+        assert_eq!(found.len(), 1, "one joint: {found:?}");
+        apply(&mut doc, &found);
+        let start = |id: i64| doc.spline((0, 0), id).unwrap().pos[2];
+        assert!((start(1) - start(2)).abs() < 1e-6, "{} vs {}", start(1), start(2));
     }
 
     #[test]
