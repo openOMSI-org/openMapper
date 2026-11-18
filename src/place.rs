@@ -119,7 +119,12 @@ fn build_row_index(doc: &Document) -> MapIndex {
 /// distance from: its own number, else (a tile older than version 11) the walk back along the
 /// map's links that the game makes.
 pub fn chain_offset_of(doc: &Document, s: &MapSpline) -> f64 {
-    s.map_chain_offset.unwrap_or_else(|| chain_offset(&row_index(doc), s.id, IndexedSpline { length: s.length, map_chain_offset: None, prev: s.prev_id, next: s.next_id }))
+    s.map_chain_offset.unwrap_or_else(|| walked_chain_offset(&row_index(doc), s))
+}
+
+/// The same walk with the map's index at hand: the lengths before `s` along the links.
+pub fn walked_chain_offset(ix: &MapIndex, s: &MapSpline) -> f64 {
+    chain_offset(ix, s.id, IndexedSpline { length: s.length, map_chain_offset: None, prev: s.prev_id, next: s.next_id })
 }
 
 /// One object standing on a joint belongs to the spline before (`omsi-world`'s).

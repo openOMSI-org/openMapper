@@ -358,6 +358,19 @@ impl Document {
             groups: Vec::new(),
             global_extra,
         };
+        // (a tile from OMSI 1 writes no chain distances: the game walks them along the links
+        // each time; taken once here, a row counts from the same place after the tile is
+        // saved as version 14, which keeps them - see `save::as_version_14`)
+        let ix = crate::place::row_index(&doc);
+        let walked: Vec<(TileKey, usize, f64)> = doc
+            .tiles
+            .iter()
+            .filter(|(_, t)| t.tile.version > 0 && t.tile.version < 11)
+            .flat_map(|(k, t)| t.tile.splines.iter().enumerate().filter(|(_, s)| s.map_chain_offset.is_none()).map(|(i, s)| (*k, i, crate::place::walked_chain_offset(&ix, s))).collect::<Vec<_>>())
+            .collect();
+        for (k, i, offset) in walked {
+            doc.tiles.get_mut(&k).unwrap().tile.splines[i].map_chain_offset = Some(offset);
+        }
         if found > 0 {
             log::info!("{found} start points from the tiles' entry point objects (global.cfg lists none)");
             // (their places from the objects, as every other's)

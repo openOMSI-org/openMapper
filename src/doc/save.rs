@@ -133,7 +133,7 @@ pub(crate) fn apply_stamp(doc: &mut Document, stamp: &SaveStamp) -> bool {
         if let Some(t) = doc.tiles.get_mut(k) {
             if t.content_rev == *content && t.terrain_rev == *terrain && t.mask_rev == *mask {
                 t.dirty = false;
-                t.tile.version = 14;
+                as_version_14(&mut t.tile, grid_scale(k.1));
                 t.tile.has_terrain = true;
             }
         }
@@ -212,7 +212,7 @@ fn save_with(doc: &mut Document, known: &HashSet<TileKey>) -> anyhow::Result<()>
     }
     for k in written {
         if let Some(t) = doc.tiles.get_mut(&k) {
-            t.tile.version = 14;
+            as_version_14(&mut t.tile, grid_scale(k.1));
             t.tile.has_terrain = true;
             t.dirty = false;
         }
@@ -246,10 +246,10 @@ pub(crate) fn plan_known(doc: &Document, dir: &Path, all: bool, has_tile: &dyn F
         }
         let file = file_of(doc, *k);
         let mut own = t.tile.clone();
-        own.version = 14;
         own.has_terrain = true;
         own.has_water = t.water.is_some();
         super::unfit_from_world_grid(&mut own, k.1);
+        as_version_14(&mut own, 1.0);
         ops.push(Op::Write(dir.join(&file), utf16(&tile_text(&own))));
         ops.push(Op::Write(dir.join(format!("{file}.terrain")), t.terrain.to_bytes()));
         match t.water {
@@ -277,6 +277,27 @@ pub(crate) fn plan_known(doc: &Document, dir: &Path, all: bool, has_tile: &dyn F
     // (only what is there to remove)
     ops.retain(|o| !matches!(o, Op::Remove(p) if !p.exists()));
     (ops, written)
+}
+
+/// A tile as version 14 writes it. One read from OMSI 1 (older than version 11) had no chain
+/// distances; written, each spline's last number is the one its rows count from (left 0,
+/// every row on a spline into its chain stood that far off its place once read back). `k`:
+/// the scale of the tile onto the map's grid, which the editor's chain distances are in.
+pub(crate) fn as_version_14(t: &mut Tile, k: f64) {
+    if t.version > 0 && t.version < 11 {
+        for s in t.splines.iter_mut() {
+            if let Some(o) = s.map_chain_offset {
+                s.tex_offset = o / k;
+            }
+        }
+    }
+    t.version = 14;
+}
+
+/// The scale of the tiles of row `ty` onto a `[worldcoordinates]` map's grid (1 elsewhere).
+fn grid_scale(ty: i32) -> f64 {
+    let (kx, ky) = omsi_map::world_tile_scale(ty);
+    (kx + ky) / 2.0
 }
 
 pub fn tile_file(k: TileKey) -> String {

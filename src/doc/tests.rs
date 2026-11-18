@@ -601,3 +601,39 @@ fn global_cfg_keeps_the_blocks_it_does_not_know_in_their_places() {
     assert_eq!(back, doc.global_extra);
     let _ = std::fs::remove_dir_all(&roots.content);
 }
+
+/// A tile from OMSI 1 writes no chain distances (the game walks them along the links); saved
+/// as version 14 it writes the ones walked, so a row on the second spline of a chain stands
+/// where it stood once the map is saved and read again (it stood 40 m off).
+#[test]
+fn an_old_tiles_rows_stand_where_they_stood_after_a_save() {
+    let _map = one_map();
+    let roots = scratch("old-chain");
+    let map = roots.content.join("maps").join("Old");
+    std::fs::create_dir_all(&map).unwrap();
+    // (north from (100, 50): 40 m, then a linked spline of 60 m, a lamp 50 m into the chain)
+    std::fs::write(
+        map.join("tile_0_0.map"),
+        "[version]\n10\n\n\
+[spline]\n0\nSplines\\road.sli\n1\n-1\n100\n0\n50\n0\n40\n0\n0\n0\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n2\n0\n0\n0\n0\n0\n60\n0\n0\n0\n0\n0\n\n\
+[splineAttachement]\n0\nSceneryobjects\\lamp.sco\n7\n1\n3\n0\n50\n0\n0\n0\n0\n",
+    )
+    .unwrap();
+    std::fs::write(map.join("global.cfg"), "[name]\nOld\n\n[map]\n0\n0\ntile_0_0.map\n").unwrap();
+    let spots = |doc: &Document| {
+        let t = &doc.tiles[&(0, 0)].tile;
+        crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc)).iter().map(|o| o.pose.pos).collect::<Vec<_>>()
+    };
+    let mut doc = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    let before = spots(&doc);
+    assert_eq!(before.len(), 1);
+    assert!((before[0] - DVec3::new(103.0, 100.0, 0.0)).length() < 1e-6, "{before:?}");
+    doc.tiles.get_mut(&(0, 0)).unwrap().dirty = true;
+    save(&mut doc).unwrap();
+    let back = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    assert_eq!(back.tiles[&(0, 0)].tile.version, 14);
+    let after = spots(&back);
+    assert!(after.len() == 1 && (after[0] - before[0]).length() < 1e-6, "{after:?} - {before:?}");
+    let _ = std::fs::remove_dir_all(&roots.content);
+}
