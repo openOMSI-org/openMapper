@@ -26,7 +26,7 @@ mod schema;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -85,7 +85,12 @@ pub(crate) struct Server {
     shooter: Option<Box<shot::Shooter>>,
     /// The imagery `shot` compares with: a tile URL and its zoom (given once).
     imagery_src: Option<(String, u8)>,
+    /// Each tile's objects' and splines' IDCodes, and the revision they were read at.
+    tile_ids: HashMap<crate::doc::TileKey, TileIds>,
 }
+
+/// A tile's objects' and (not deleted) splines' IDCodes, at a revision of it.
+type TileIds = (u64, std::sync::Arc<(Vec<i64>, Vec<i64>)>);
 
 /// `openmapper --mcp`: serve until stdin closes. Returns the exit code.
 pub fn cli(cfg: Option<&Path>, allow_edit: bool) -> i32 {
@@ -175,11 +180,10 @@ impl<'a> Args<'a> {
     }
 }
 
-/// What the map holds, by IDCode, to tell what an edit added and took away.
+/// What the map holds, by IDCode, to tell what an edit added and took away: each tile's, at
+/// the revision it had.
 pub(crate) struct Before {
-    objects: HashSet<i64>,
-    splines: HashSet<i64>,
-    tiles: usize,
+    tiles: HashMap<crate::doc::TileKey, TileIds>,
 }
 
 impl Server {
@@ -191,7 +195,7 @@ impl Server {
         ed.content_dir = Some(roots.content.clone());
         ed.road_styles = crate::road_maker::Styles::load(&roots.content);
         ed.asphalt = crate::junction::asphalt_texture(&roots.omsi);
-        Server { roots, cfg: None, ed, assets, lib, tt: crate::ui_timetable::TimetableUi::new(), allow_edit, warmed: false, switches_for: usize::MAX, in_batch: false, shooter: None, imagery_src: None }
+        Server { roots, cfg: None, ed, assets, lib, tt: crate::ui_timetable::TimetableUi::new(), allow_edit, warmed: false, switches_for: usize::MAX, in_batch: false, shooter: None, imagery_src: None, tile_ids: HashMap::new() }
     }
 
     /// Open a map (its global.cfg), dropping the one open.
@@ -530,16 +534,21 @@ impl Server {
     }
 
     /// What the map holds now, to tell what an edit changed.
-    pub fn before(&self) -> Before {
-        let mut b = Before { objects: HashSet::new(), splines: HashSet::new(), tiles: 0 };
-        if let Some(d) = &self.ed.doc {
-            b.tiles = d.tiles.len();
-            for t in d.tiles.values() {
-                b.objects.extend(t.tile.objects.iter().map(|o| o.id));
-                b.splines.extend(t.tile.splines.iter().filter(|s| !s.deleted).map(|s| s.id));
+    pub fn before(&mut self) -> Before {
+        // (a tile is read again only when it changed: every call looked through all of a city,
+        // before the edit and after it, for what the edit did)
+        let Some(d) = &self.ed.doc else {
+            self.tile_ids.clear();
+            return Before { tiles: HashMap::new() };
+        };
+        self.tile_ids.retain(|k, _| d.tiles.contains_key(k));
+        for (k, t) in &d.tiles {
+            if self.tile_ids.get(k).is_none_or(|e| e.0 != t.content_rev) {
+                let ids = (t.tile.objects.iter().map(|o| o.id).collect(), t.tile.splines.iter().filter(|s| !s.deleted).map(|s| s.id).collect());
+                self.tile_ids.insert(*k, (t.content_rev, std::sync::Arc::new(ids)));
             }
         }
-        b
+        Before { tiles: self.tile_ids.clone() }
     }
 
     /// What changed since `before`, and what the editor said meanwhile.
@@ -550,27 +559,35 @@ impl Server {
         let mut now_o = HashSet::new();
         let mut now_s = HashSet::new();
         let mut tiles = 0;
+        // (what was on the tiles that changed, or went: the others are as they were)
+        let (mut was_o, mut was_s) = (HashSet::new(), HashSet::new());
         if let Some(d) = &self.ed.doc {
             tiles = d.tiles.len();
-            for (k, t) in &d.tiles {
+            for (k, (rev, ids)) in &before.tiles {
+                if d.tiles.get(k).is_none_or(|t| t.content_rev != *rev) {
+                    was_o.extend(ids.0.iter().copied());
+                    was_s.extend(ids.1.iter().copied());
+                }
+            }
+            for (k, t) in d.tiles.iter().filter(|(k, t)| before.tiles.get(k).is_none_or(|e| e.0 != t.content_rev)) {
                 let org = tile_origin(*k);
                 for o in &t.tile.objects {
                     now_o.insert(o.id);
-                    if !before.objects.contains(&o.id) {
+                    if !was_o.contains(&o.id) {
                         added_o.push(json!({ "id": o.id, "file": o.file, "at": p2(org + DVec2::new(o.pos[0], o.pos[1])), "heading": number(o.rot[0]) }));
                     }
                 }
                 for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                     now_s.insert(s.id);
-                    if !before.splines.contains(&s.id) {
+                    if !was_s.contains(&s.id) {
                         let c = omsi_geometry::SplineCurve::from_map(s, org);
                         added_s.push(json!({ "id": s.id, "file": s.file, "from": p2(c.point_at(0.0).truncate()), "to": p2(c.end_point().truncate()), "length": number(s.length) }));
                     }
                 }
             }
         }
-        let removed_o: Vec<i64> = before.objects.difference(&now_o).copied().collect();
-        let removed_s: Vec<i64> = before.splines.difference(&now_s).copied().collect();
+        let removed_o: Vec<i64> = was_o.difference(&now_o).copied().collect();
+        let removed_s: Vec<i64> = was_s.difference(&now_s).copied().collect();
         let mut v = serde_json::Map::new();
         let mut put = |name: &str, list: Vec<Value>| {
             if !list.is_empty() {
@@ -585,7 +602,7 @@ impl Server {
         put("added_splines", added_s);
         put("removed_objects", removed_o.into_iter().map(Value::from).collect());
         put("removed_splines", removed_s.into_iter().map(Value::from).collect());
-        if tiles != before.tiles {
+        if tiles != before.tiles.len() {
             v.insert("tiles".into(), json!(tiles));
         }
         let (msgs, errs): (Vec<_>, Vec<_>) = self.ed.toasts.drain(..).partition(|t| !t.error);
