@@ -118,6 +118,9 @@ impl Find {
             let v: Vec<f64> = q.split([',', ';', ' ']).filter(|x| !x.is_empty()).map(|x| x.parse::<f64>()).collect::<Result<_, _>>().unwrap_or_default();
             (v.len() == 2).then(|| DVec2::new(v[0], v[1]))
         };
+        // a tile by its place in the grid ("tile 3 -2")
+        // a tile by its place in the grid ("tile 3 -2")
+        let tile = tile_query(&q).map(|k| (k, doc.order.iter().position(|o| *o == k), doc.tiles.contains_key(&k)));
         let mut look: Option<DVec2> = None;
         let name_of = |g: &Group| lib.find(&g.file).map(|a| a.name.clone()).filter(|n| !n.is_empty()).unwrap_or_else(|| g.file.rsplit(['\\', '/']).next().unwrap_or(&g.file).to_string());
         let mut open = self.open;
@@ -126,7 +129,7 @@ impl Find {
         let mut go: Option<(Sel, DVec2)> = None;
         let mut replace: Option<(String, bool, String)> = None;
         egui::Window::new(icons::labelled(Icon::Search, tr("Find in map", "Поиск по карте"))).id(egui::Id::new("find in map")).open(&mut open).default_pos([320.0, 100.0]).default_size([440.0, 480.0]).resizable(true).show(ctx, |ui| {
-            let r = ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("Name, file, IDCode, stop or x, y", "Название, файл, IDCode, остановка или x, y")).desired_width(f32::INFINITY));
+            let r = ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("Name, file, IDCode, stop, x, y or tile x y", "Название, файл, IDCode, остановка, x, y или тайл x y")).desired_width(f32::INFINITY));
             if self.focus {
                 r.request_focus();
                 self.focus = false;
@@ -136,6 +139,20 @@ impl Find {
                     ui.label(format!("{} {:.1}, {:.1}", tr("The point", "Точка"), p.x, p.y));
                     if ui.button(icons::labelled(Icon::Focus, tr("Go to", "Перейти"))).clicked() {
                         look = Some(p);
+                    }
+                });
+                ui.separator();
+            }
+            if let Some((k, index, has)) = tile {
+                ui.horizontal(|ui| {
+                    let what = match (index, has) {
+                        (Some(i), true) => format!("{} {}, {} · {} {i}", tr("Tile", "Тайл"), k.0, k.1, tr("number", "номер")),
+                        (Some(i), false) => format!("{} {}, {} · {} {i} · {}", tr("Tile", "Тайл"), k.0, k.1, tr("number", "номер"), tr("listed, no file", "в списке, без файла")),
+                        _ => format!("{} {}, {} · {}", tr("Tile", "Тайл"), k.0, k.1, tr("not on the map", "нет на карте")),
+                    };
+                    ui.label(what);
+                    if ui.button(icons::labelled(Icon::Focus, tr("Go to", "Перейти"))).on_hover_text(tr("The camera over the tile's middle", "Камера над серединой тайла")).clicked() {
+                        look = Some(crate::doc::tile_origin(k) + DVec2::splat(crate::doc::tile_size() * 0.5));
                     }
                 });
                 ui.separator();
@@ -230,5 +247,29 @@ impl Find {
             let n = ed.replace_everywhere(&from, &to, spline);
             ed.toast(format!("{} {n}", tr("Replaced:", "Заменено:")));
         }
+    }
+}
+
+/// A tile asked for by its place in the grid: "tile 3 -2", "tile 3, -2", "t 3 -2", "тайл 3 -2".
+pub fn tile_query(q: &str) -> Option<(i32, i32)> {
+    let q = q.trim().to_lowercase();
+    let rest = ["tile", "тайл", "t"].iter().find_map(|p| q.strip_prefix(p).filter(|r| r.starts_with([' ', ':']) || r.starts_with(|c: char| c == '-' || c.is_ascii_digit())))?;
+    let v: Vec<i32> = rest.split([',', ';', ' ', ':']).filter(|x| !x.is_empty()).map(|x| x.parse::<i32>()).collect::<Result<_, _>>().ok()?;
+    (v.len() == 2).then(|| (v[0], v[1]))
+}
+
+#[cfg(test)]
+mod tile_tests {
+    use super::tile_query;
+
+    #[test]
+    fn a_tile_is_asked_for_in_any_spelling() {
+        assert_eq!(tile_query("tile 3 -2"), Some((3, -2)));
+        assert_eq!(tile_query("Tile: 3, -2"), Some((3, -2)));
+        assert_eq!(tile_query("t-1 0"), Some((-1, 0)));
+        assert_eq!(tile_query("тайл 0 5"), Some((0, 5)));
+        assert_eq!(tile_query("tilestop 3 2"), None);
+        assert_eq!(tile_query("3 2"), None);
+        assert_eq!(tile_query("tile 3"), None);
     }
 }

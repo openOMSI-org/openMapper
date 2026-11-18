@@ -146,6 +146,7 @@ pub struct App {
     map_settings: crate::ui_mapsettings::MapSettings,
     calendar: crate::ui_calendar::CalendarWindow,
     signals: crate::ui_signals::SignalWindow,
+    trolley: crate::ui_trolley::TrolleyWindow,
     chrono: crate::ui_chrono::ChronoWindow,
     /// The Satellite and terrain window and the overlay on the ground.
     geo: crate::ui_geo::GeoUi,
@@ -270,6 +271,7 @@ impl App {
             map_settings: Default::default(),
             calendar: Default::default(),
             signals: Default::default(),
+            trolley: Default::default(),
             chrono: Default::default(),
             geo: Default::default(),
             osm: Default::default(),
@@ -677,6 +679,7 @@ impl App {
         match std::env::var("OPENMAPPER_SETTINGS").as_deref() {
             Ok("calendar") => self.calendar.open = true,
             Ok("signals") => self.signals.open = true,
+            Ok("trolley") => self.trolley.open = true,
             Ok("chrono") => self.chrono.open = true,
             Ok(_) => self.map_settings.open = true,
             Err(_) => {}
@@ -775,6 +778,12 @@ impl App {
                 let p = |x: f64, y: f64| DVec3::new(x, y, doc.ground(DVec2::new(x, y)));
                 self.ed.ruler = Some((Some(p(v[0], v[1])), Some(p(v[2], v[3]))));
             }
+        }
+        // OPENMAPPER_RULER_AREA=x,y;x,y;…: the ruler's outline through those corners
+        if let (Ok(c), Some(doc)) = (std::env::var("OPENMAPPER_RULER_AREA"), &self.ed.doc) {
+            let pts: Vec<DVec3> = c.split(';').filter_map(|q| q.split_once(',')).filter_map(|(x, y)| Some((x.trim().parse::<f64>().ok()?, y.trim().parse::<f64>().ok()?))).map(|(x, y)| DVec3::new(x, y, doc.ground(DVec2::new(x, y)))).collect();
+            self.ed.ruler = Some((None, None));
+            self.ed.ruler_area = pts;
         }
         if let Some(s) = std::env::var("OPENMAPPER_GRID").ok().and_then(|s| s.parse::<f64>().ok()) {
             self.ed.snap_grid = true;
@@ -2037,6 +2046,7 @@ impl App {
             Action::MapSettings => self.map_settings.open = true,
             Action::Calendar => self.calendar.open = true,
             Action::SignalRoutes => self.signals.open = true,
+            Action::Trolley => self.trolley.open = true,
             Action::Chrono => self.chrono.open = true,
             Action::OpenLines => self.tt.open = true,
             Action::OpenTraffic => self.traffic.open = true,
@@ -2388,6 +2398,9 @@ impl App {
             }
             Cmd::Ruler => self.ed.toggle_ruler(),
             Cmd::Knife => self.ed.toggle_cutting(),
+            Cmd::NextPiece | Cmd::PrevPiece => {
+                self.ed.select_linked(c == Cmd::NextPiece, shift);
+            }
             Cmd::CompleteTo => self.ed.complete_to(),
             Cmd::EditMesh => self.toggle_edit_mode(),
             Cmd::Polygon | Cmd::PolygonClick => {
@@ -3047,6 +3060,7 @@ impl App {
             }
             crate::ui_edit::paint_box(&ctx, &self.ed);
             crate::ui_edit::paint_ruler(&ctx, &self.ed, &self.cam, self.view);
+            crate::ruler_area::paint(&ctx, &self.ed, &self.cam, self.view);
             crate::ui_edit::paint_cut(&ctx, &self.ed, &self.cam, self.view);
             crate::collab::presence::paint(&ctx, &self.collab, &self.ed, &self.cam, self.view);
             crate::ui_menu::show(&ctx, &mut self.ui.view_menu, &mut self.ed, &self.lib, &mut actions);
@@ -3070,6 +3084,7 @@ impl App {
                 self.calendar.window(&ctx, &mut self.ed);
                 self.chrono.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
                 self.signals.window(&ctx, &mut self.ed, &self.lib, self.roots.as_ref(), &mut actions);
+                self.trolley.window(&ctx, &mut self.ed, self.roots.as_ref(), self.assets.as_mut(), &mut actions);
                 self.geo.window(&ctx, &mut self.ed, &mut self.prefs);
                 self.ui.views.follow(self.ed.doc.as_ref().map(|d| d.dir.as_path()));
                 self.ui.views.window(&ctx, &mut self.cam);

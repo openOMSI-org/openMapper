@@ -211,6 +211,8 @@ pub enum Cmd {
     Picture,
     Polygon,
     PolygonClick,
+    NextPiece,
+    PrevPiece,
 }
 
 use Cmd::*;
@@ -218,7 +220,7 @@ use Cmd::*;
 pub const ALL: &[Cmd] = &[
     Forward, Back, Left, Right, TurnLeft, TurnRight, LookDown, View2d, Focus, TileGrid, Overview, Assets, Lines, Traffic, Imagery, ToolSelect, ToolRoads, ToolObjects, ToolLogic,
     ToolTerrain, ToolPaint, ToolTiles, NewObject, XformMove, XformRotate, XformScale, EditMesh, JoinObjects, Rotate, Ruler, Knife, CompleteTo, BuildRoad, Confirm, BrushSmaller, BrushLarger, Delete, Group, Ungroup, Copy, Cut, Paste, Duplicate, SelectAll, Undo,
-    Redo, Save, Find, Commands, TestDrive, Picture, Polygon, PolygonClick,
+    Redo, Save, Find, Commands, TestDrive, Picture, Polygon, PolygonClick, NextPiece, PrevPiece,
 ];
 
 impl Cmd {
@@ -278,6 +280,8 @@ impl Cmd {
             Picture => "picture",
             Polygon => "polygon",
             PolygonClick => "polygon_click",
+            NextPiece => "next_piece",
+            PrevPiece => "prev_piece",
         }
     }
 
@@ -334,6 +338,8 @@ impl Cmd {
             Focus => tr("Go to the selection", "Перейти к выбранному"),
             TestDrive => tr("Test drive in openOMSI (Shift: from the camera)", "Тест-драйв в openOMSI (Shift: от камеры)"),
             Picture => tr("Save a picture of the view", "Сохранить картинку вида"),
+            NextPiece => tr("Select the next road piece (joined at its end; Shift: add it)", "Выбрать следующий кусок дороги (у конца; Shift: добавить)"),
+            PrevPiece => tr("Select the previous road piece (joined at its start; Shift: add it)", "Выбрать предыдущий кусок дороги (у начала; Shift: добавить)"),
             Polygon => tr("Polygon: fill the selected splines, or click its corners", "Многоугольник: заполнить выделенные сплайны или кликать по углам"),
             PolygonClick => tr("Polygon: click its corners", "Многоугольник: кликать по углам"),
         }
@@ -394,12 +400,14 @@ impl Cmd {
             Picture => Chord::key(KeyCode::F12),
             Polygon => Chord::key(KeyCode::KeyP),
             PolygonClick => Chord { code: KeyCode::KeyP, ctrl: false, shift: true },
+            NextPiece => Chord::key(KeyCode::Period),
+            PrevPiece => Chord::key(KeyCode::Comma),
         }
     }
 
     /// Whether Shift only changes what the command does (it is not part of the key).
     fn shift_free(self) -> bool {
-        matches!(self, Rotate | TestDrive)
+        matches!(self, Rotate | TestDrive | NextPiece | PrevPiece)
     }
 
     /// The keys that also do it and are not changed.

@@ -490,6 +490,8 @@ pub struct Editor {
     heading_drag: Option<HeadingDrag>,
     /// GPS tracks shown to trace over (world metres; Map > GPS tracks to trace).
     pub trace_lines: Vec<Vec<DVec2>>,
+    /// The trolleybus wire in the view, and clicks picking in it (the Trolleybus wire window).
+    pub wire: crate::trolley::WireView,
     /// The camera asked to go over this point (a window's "go there").
     pub look_request: Option<DVec2>,
     /// The ground under the selected objects is to be levelled at the next tick.
@@ -569,6 +571,8 @@ pub struct Editor {
     pub keep_height: bool,
     /// The ruler, when on: its first point and, once clicked, its second.
     pub ruler: Option<(Option<DVec3>, Option<DVec3>)>,
+    /// The corners of an outline the ruler measures (Shift + clicks; see `ruler_area`).
+    pub ruler_area: Vec<DVec3>,
     /// The knife (K): a click on a road cuts it there, until right-click or Esc.
     pub cutting: bool,
     // snapping
@@ -804,6 +808,7 @@ impl Default for Editor {
             heading_shown: None,
             heading_drag: None,
             trace_lines: Vec::new(),
+            wire: Default::default(),
             look_request: None,
             level_request: false,
             last_click: None,
@@ -820,6 +825,7 @@ impl Default for Editor {
             session_first_id: i64::MAX,
             row_params: Default::default(),
             ruler: None,
+            ruler_area: Vec::new(),
             cutting: false,
             typed_text: Default::default(),
             straight_lock: false,
@@ -2515,8 +2521,17 @@ impl Editor {
             }
             return;
         }
+        // (the Trolleybus wire window picks a span or a switch with a click)
+        if self.wire.picking || self.wire.drawing.is_some() {
+            self.wire.click = self.cursor;
+            return;
+        }
         // the ruler takes the clicks while it is on: from one point to the next
-        if let (Some(r), Some(c)) = (&mut self.ruler, self.cursor) {
+        if let (true, Some(c)) = (self.ruler.is_some(), self.cursor) {
+            if self.ruler_area_click(c, shift) {
+                return;
+            }
+            let r = self.ruler.as_mut().unwrap();
             *r = match *r {
                 (Some(a), None) => (Some(a), Some(c)),
                 _ => (Some(c), None),
@@ -6246,6 +6261,9 @@ impl Editor {
             }
             disc(&mut x.overlay, cam, a + lift, dw * 3.0, ORANGE);
         }
+        if let (true, Some(wire)) = (self.wire.show, doc.traffic.trolley.as_ref()) {
+            crate::trolley::draw(&mut x, cam, wire, &self.wire, w, dw);
+        }
         // GPS tracks to trace, in magenta on the ground
         for t in &self.trace_lines {
             let on = |p: DVec2| DVec3::new(p.x, p.y, doc.ground(p) + 0.4);
@@ -6506,6 +6524,7 @@ impl Editor {
                 disc(&mut x.overlay, cam, p + lift, w * 2.5, [1.0, 0.85, 0.2, 1.0]);
             }
         }
+        crate::ruler_area::draw(&mut x, cam, self, w);
         if let Some(snap) = &self.vertex_snap {
             let ball_r = (cam.distance * 0.007).clamp(0.06, 1.2);
             let disc_r = (ball_r * 1.6) as f32;
@@ -10075,7 +10094,7 @@ impl Editor {
 
     /// The road ends the selected junctions hold (not those of roads selected with them,
     /// which move along).
-    fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
+    pub(crate) fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
         let Some(doc) = self.doc.as_ref() else { return Vec::new() };
         let ids: Vec<i64> = sels.iter().filter_map(|s| if let Sel::Spline(_, id) = s { Some(*id) } else { None }).collect();
         let mut out = Vec::new();
@@ -10097,7 +10116,7 @@ impl Editor {
     /// The roads junctions hold follow them (turned by `deg` round `pivot`, shifted by
     /// `delta`, raised by `dz`), and the ground comes to the junctions' plates. Inside an open
     /// history step.
-    fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
+    pub(crate) fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
         let mut failed = 0;
         for (_, arms) in groups {
             for a in arms {
@@ -10140,7 +10159,7 @@ impl Editor {
 
     /// Close the open step, unless junction plates are still to be made again in it (the
     /// next tick does that and closes it).
-    fn finish_step(&mut self) {
+    pub(crate) fn finish_step(&mut self) {
         if self.pending_rebuild.is_empty() {
             self.history.commit();
         }
@@ -10781,6 +10800,7 @@ impl Editor {
     /// The ruler on or off.
     pub fn toggle_ruler(&mut self) {
         self.ruler = if self.ruler.is_some() { None } else { Some((None, None)) };
+        self.ruler_area.clear();
     }
 
     /// What the ruler measures: from its first point to its second (or the cursor).

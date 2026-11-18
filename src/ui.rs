@@ -153,6 +153,8 @@ pub enum Action {
     Calendar,
     /// The signal routes window (railway signals and the track they protect).
     SignalRoutes,
+    /// The trolleybus wire window (openOMSI's `trolley.txt`).
+    Trolley,
     /// The chrono scenarios window (the map over the years).
     Chrono,
     /// The Lines window opened.
@@ -1160,6 +1162,9 @@ fn menu_bar(root: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, can_undo: bo
                 }
                 if menu_item(ui, Some(Icon::Traffic), tr("Signal routes…", "Маршруты сигналов…"), "", true) {
                     actions.push(Action::SignalRoutes);
+                }
+                if menu_item(ui, Some(Icon::Bus), tr("Trolleybus wire…", "Контактная сеть троллейбуса…"), "", true) {
+                    actions.push(Action::Trolley);
                 }
                 if menu_item(ui, Some(Icon::History), tr("Chrono scenarios…", "Хроно-сценарии…"), "", true) {
                     actions.push(Action::Chrono);
@@ -2340,6 +2345,8 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
     // ends held)
     let mut spline_extra: Option<(f64, f64, u8)> = None;
     let mut whole_road = false;
+    // (the piece joined at the start (false) or the end (true), to select)
+    let mut step: Option<bool> = None;
     let mut knife = false;
     let mut join_next = false;
     let mut reverse = false;
@@ -2697,7 +2704,7 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
                         });
                     });
                     prop_row(ui, tr("Linked", "Связи"), |ui| {
-                        ui.label(format!("{} / {}", if s.prev_id != 0 { tr("start", "начало") } else { "-" }, if s.next_id != 0 { tr("end", "конец") } else { "-" }));
+                        step = crate::ui_edit::linked_steps(ui, s.prev_id != 0, s.next_id != 0);
                     });
                     prop_row(ui, tr("Mirrored", "Зеркально"), |ui| {
                         let mut m = s.mirror;
@@ -3032,6 +3039,10 @@ fn properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Librar
         Sel::Spline(k, id) => {
             if whole_road {
                 ed.select_chain(k, id);
+                return;
+            }
+            if let Some(forward) = step {
+                ed.select_linked(forward, false);
                 return;
             }
             if knife {

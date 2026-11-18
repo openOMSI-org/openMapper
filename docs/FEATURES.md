@@ -6,7 +6,7 @@ The complete list. A short overview is in the [README](../README.md).
 
 | Tool | Key | What it does |
 | --- | --- | --- |
-| Select | 1 | click an object or road (double-click a road: all of it, every piece up to where it branches or ends; All like it in the properties: every one of its type) · `Shift`+click adds or takes away · `Shift`/`Ctrl` + drag on empty ground selects with a box · drag the selection to move it all · `R` turns it round its middle · `Del` deletes it · `Ctrl+C / X / V / D` copy, cut, paste at the cursor, duplicate (links inside the copy kept, rows of objects and things hanging on them come along) · several selected: move, raise and turn by numbers, give every road one type or every object the catalogue's one (also for one object: Replace with), one even slope along a chain of roads (a bridge, a ramp), objects turned each a random way, all like one, or each the way the nearest road runs beside it (also the road button by an object's rotation), leaned with the ground under them (a fence or a shed on a hillside; the hill button by an object's rotation) or stood upright again |
+| Select | 1 | click an object or road (double-click a road: all of it, every piece up to where it branches or ends; All like it in the properties: every one of its type) · `Shift`+click adds or takes away · `Shift`/`Ctrl` + drag on empty ground selects with a box · drag the selection to move it all · `R` turns it round its middle · `Del` deletes it · `Ctrl+C / X / V / D` copy, cut, paste at the cursor, duplicate (links inside the copy kept, rows of objects and things hanging on them come along) · several selected: move, raise and turn by numbers, give every road one type or every object the catalogue's one (also for one object: Replace with), one even slope along a chain of roads (a bridge, a ramp), objects turned each a random way, all like one, or each the way the nearest road runs beside it (also the road button by an object's rotation), leaned with the ground under them (a fence or a shed on a hillside; the hill button by an object's rotation) or stood upright again; three or more lined up at equal steps on the line between the two farthest apart, or only spaced evenly along it, each keeping its distance to the side (posts, lamps, a row of trees placed by eye) |
 | Road shape | - | select a road: drag its end dots to move an end (a road joined there follows, tangent at the joint, its far end kept; an end at a junction stays), drag the middle dot to bend it. Heights, gradients and cant (banking) at both ends in the properties, the joined road following; length and radius (straight, left, right) by numbers, the road joined at its end carried along, tangent; the ends' skew (a slanted cut: fences meeting at a corner) and the ground cut away under it (tunnels, underpasses: OMSI's terrain align); Lay on the ground puts a road or a selection of them back onto the ground (after shaping it or laying a height map over it), smoothed so they climb hills rather than every bump, roads not selected keeping their joints; Reverse direction turns a road or a chain round where it lies, the traffic on it going the other way (a one-way street, a track); the knife (K, the Knife switch in the status bar or Cut in a road's properties: a click on a road cuts it there, as often as wanted, the two pieces' lengths shown at the cursor and on whole grid steps with grid snapping on; or a right-click on a road: Cut the road here) splits a road to give a stretch its own type or settings (a bridge, a tram section), the rows of objects along it running on over the cut, and Join with the next piece makes two pieces one again where they make one curve; the height profile of a road or a chain over the ground under it, coloured by gradient, with the steepest stretch, the climb and fall and how high it runs over the ground or how deep in a cut (a click on it goes there; its joints dragged up or down set their heights, the gradients kept smooth) |
 | Roundabouts | - | Roads tool option: click the centre, then the ring (or drag out to it). A one-way ring of the chosen road type, anticlockwise where traffic keeps right and clockwise where it keeps left; the roads that ran into the circle are cut back and joined to the ring with junctions |
 | Drawing by numbers | - | each road is two clicks (going on from the end just built is an option); while a road is drawn: type its length, radius or heading in the fields at the view's corner (empty ones follow the cursor), `Shift` draws a straight, `Enter` builds it. "Keep the height" draws bridges and embankments: an even gradient, a rise typed for the end, the ground left alone (pillars: objects along the road) |
@@ -18,7 +18,7 @@ The complete list. A short overview is in the [README](../README.md).
 | Location, rotation, scale | - | an object's properties: X, Y and Z (the height above sea level, whatever the object keeps it as; its height above the ground under it shown beneath), rotation about X, Y and Z, and its size along each axis (proportions kept or not), each on a row of its own to drag or type |
 | Auto-Switch, Auto-Junction, Auto-Align | - | status bar: switches where a track branches off, junctions where roads meet, objects lined up with the nearest road (an imported model is never lined up) |
 | Controls | - | File > Controls: every key, each one changeable (click it, press the new key; kept in the settings), the mouse, and which set of keys to start from: openMapper's own, OMSI 2's editor's (with its mouse too) or Blender's |
-| Ruler | U | status bar: click two points for the distance, the height between them and the gradient, written on the line in the view |
+| Ruler | U | status bar: click two points for the distance, the height between them and the gradient, written on the line in the view; `Shift` + clicks put the corners of an outline, closed back to the first, its area (m², hectares) and perimeter seen from above written over it and in the status bar |
 | Snapping | - | status bar: `Grid` (0.5–10 m) for placing, moving, road ends and reshaping, the grid drawn on the ground round the cursor while it is on; `Angle` with its step (1° to 90°) for headings, also what `R` turns by |
 | Roads | 2 | click the start, then the end: the arc builds itself. A road continues smoothly from a road end it starts at, joins another end with an S-curve or bend (biarc), is cut into OMSI splines and linked with its neighbours. It can shape the ground under itself. |
 | Junctions | - | automatic: a road drawn into another's middle or across it cuts both and fills the gap with a junction object of its own (asphalt plate, `[path]` lanes for straight on, right and left, footpaths round the corners), written as ordinary OMSI content into `Sceneryobjects\openMapper\<map>` |
@@ -210,6 +210,27 @@ The complete list. A short overview is in the [README](../README.md).
   place among its tile's paths is counted again on saving, as the game counts it (all 649
   pieces of the stock maps come out the same). The map check names routes whose signal or
   track is gone.
+* **Trolleybus wire** (Map menu), openOMSI's overhead wire for its trolleybuses (`trolley.txt`
+  beside the map; OMSI 2 has none and ignores it): spans laid over the kerb lane of the
+  selected roads (each way, or one way) at a height, over the ticked lanes of a selected
+  junction (shown in the view as they are ticked), or read off the map's wire splines as the
+  game reads them, or drawn by hand (Draw a span by hand: its points clicked in the view, at
+  the wire's height over what is clicked; started or ended on a span's end it joins it, on a
+  span's middle it cuts it there and branches off: a frog). On the map it is shown with openMapper's own content, written into the
+  content folder like its junction plates (no wire or mast models of anybody else needed):
+  a wire spline (`Splines\openMapper\Trolley`: two thin wires over the lane, a copy of each
+  road piece so it follows its bends and gradients; straight pieces over a junction's lanes),
+  masts with an arm and a hanger beside the road every so many metres, and a frog and a section
+  insulator object (`Sceneryobjects\openMapper\Trolley`) wherever the wire has them, put
+  again after every change; what a span laid goes with it, all in the wire's undo step. In
+  the window it is also drawn while it is open (the pair of wires in its
+  section's colour, an arrow the way it runs, frogs yellow, insulators black and white), a span
+  or a switch picked there with a click. Sections with their substation (live, feeder,
+  regeneration), an insulator's dead length where two meet; each span's section, own spacing,
+  height and way; every frog (three spans meeting) gets a switch: set by power, the indicator,
+  radio (route codes, a channel, a range) or fixed, and standing straight, to the branch or
+  at random when the game starts. Joints the game cannot use (four spans in one point) and
+  switches left without a frog are named. Undo as for the rest; saved with the map.
 * **Chrono scenarios** (Map menu): the map's changes over the years listed with their dates,
   tiles, the lines they take off and their descriptions; the view shows the map as on any day
   chosen, every scenario active then laid over it as the game does. A scenario's dates, the
@@ -240,7 +261,7 @@ The complete list. A short overview is in the [README](../README.md).
   the folders its files lie in (Sceneryobjects › Buildings_MC › …), each kind with how many
   there are and each one a click away (selected and flown to); a search by name, file or
   IDCode; a right-click selects every one of a kind or everything in a folder.
-* **Find in map** (Edit menu or `Ctrl+F`): stops and start points by name and a point by its coordinates (`x, y`) to go to; every kind of object and spline the map uses,
+* **Find in map** (Edit menu or `Ctrl+F`): stops and start points by name, a point by its coordinates (`x, y`) and a tile by its place in the grid (`tile 3 -2`, with its number in the map's tile list) to go to; every kind of object and spline the map uses,
   with how many, by name, file or IDCode; select them all, go from one to the next, or replace
   them all with the object (road type) chosen in the catalogue in one undo step.
 * **Texts on objects**: street signs, stop plates and line numbers show their labels in the
@@ -271,7 +292,7 @@ The complete list. A short overview is in the [README](../README.md).
   one another but not joined, links to splines that are gone, bus stops with no lane near,
   start points away from a road, IDCodes used twice, a too low NextIDCode, objects off their
   tile, tiles without a file or ground, street lamps on a tile the game lights no ground from, tiles far fuller than the stock maps' (a wood planted too densely); trips no way is found for, tours without departures or
-  a depot, traffic groups missing from the AI lists (copied from OMSI 2's own maps with one click where they have them), objects linked to one that is gone, stops no trip calls at. Every issue is explained, a click flies there, many
+  a depot, traffic groups missing from the AI lists (copied from OMSI 2's own maps with one click where they have them), objects linked to one that is gone, stops no trip calls at, trolleybus wire the game cannot use (four spans in one point, a switch with no frog). Every issue is explained, a click flies there, many
   are put right with one more click (and can be undone). `openmapper --check path/to/global.cfg`
   prints the same without a window.
 * **Safe saving**: every file is written under a temporary name and put in place only once
@@ -394,7 +415,7 @@ The complete list. A short overview is in the [README](../README.md).
   Option + drag turns and tilts.
 * **Keyboard:** `W A S D` / arrows move, `Q / E` turn, `1–7` tools, `V / C / X` move, rotate and scale handles, `Tab` edit the selected object's mesh, `Ctrl+J` join objects, `M` overview map, `B` assets, `L` lines, `T` traffic, `I` satellite and terrain, `R` turn object, `Del`,
   `F` go to selection, `[ ]` brush size, `G` tile grid, `Ctrl+Z`, `Ctrl+Shift+Z`, `Ctrl+S`,
-  `Ctrl+C / X / V / D` copy, cut, paste, duplicate, `Ctrl+A` select all, `Ctrl+F` find in map, `Ctrl+K` search for a command, `Alt + arrows` nudge the selection a grid step (`Shift`: 10 cm), `Alt + Page Up / Down` raise or lower it, `U` ruler, `Home` look straight down, `F5` test drive (`Shift+F5`: from the start point nearest the view), `F12` save a picture of the view (into `~/Pictures/openMapper`), `Ctrl+1…9` go to a saved view (`Ctrl+Shift`: keep the view there).
+  `Ctrl+C / X / V / D` copy, cut, paste, duplicate, `Ctrl+A` select all, `Ctrl+F` find in map, `Ctrl+K` search for a command, `Alt + arrows` nudge the selection a grid step (`Shift`: 10 cm), `Alt + Page Up / Down` raise or lower it, `U` ruler, `Home` look straight down, `F5` test drive (`Shift+F5`: from the start point nearest the view), `F12` save a picture of the view (into `~/Pictures/openMapper`), `Ctrl+1…9` go to a saved view (`Ctrl+Shift`: keep the view there), `.` / `,` the next / previous road piece (the one joined at the selected piece's end / start, the camera following: a long road walked through piece by piece as with OMSI 2's editor's next spline; `Shift` adds it to the selection; also the Linked buttons in a road's properties).
 * **OMSI 2's editor (View > Preset Key Shortcut (from other applications) > "OMSI 2's editor: mouse and keys"):** the mouse
   and the keys of OMSI 2's own map editor in one switch: the middle button turns the view, the
   right button held and moved up and down zooms, a right click on the ground goes there

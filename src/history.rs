@@ -106,6 +106,16 @@ impl History {
         }
     }
 
+    /// Keep the traffic files as they are (the trolleybus wire changed with the tiles that show
+    /// it: one step).
+    pub fn touch_traffic(&mut self, doc: &Document) {
+        if let Some(s) = &mut self.open {
+            if s.traffic.is_none() {
+                s.traffic = Some(doc.traffic.clone());
+            }
+        }
+    }
+
     /// Drop the open edit unkept (it changed nothing).
     pub fn cancel(&mut self) {
         self.open = None;

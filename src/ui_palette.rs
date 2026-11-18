@@ -52,7 +52,7 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::SelectAll, "Select all", "Выбрать всё", "", "Ctrl+A", |_, _, a| a.push(Action::SelectAll)),
         cmd!(Icon::History, "Edit history…", "История правок…", "undo steps шаги", "", |st, _, _| st.history_open = true),
         cmd!(Icon::Objects, "Groups…", "Группы…", "prefab template шаблон", "", |st, _, _| st.groups.open = true),
-        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop найти заменить остановка", "Ctrl+F", |st, _, _| st.find.show()),
+        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop tile go to найти заменить остановка тайл перейти", "Ctrl+F", |st, _, _| st.find.show()),
         cmd!(Icon::Junction, "Make the junctions again", "Перестроить перекрёстки", "junction plate rebuild asphalt texture перекрёсток плита асфальт текстура", "", |_, ed, _| {
             let n = ed.remake_all_junctions();
             ed.toast(format!("{} {n}", tr("Junctions made again:", "Перекрёстков перестроено:")));
@@ -73,6 +73,18 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Junction, "Complex junction editor…", "Редактор сложных перекрёстков…", "custom junction top view splines markings кастомный перекрёсток вид сверху разметка", "", |_, _, a| a.push(Action::ComplexJunctions)),
         cmd!(Icon::Layers, "PBR maps for a picture…", "PBR-карты для картинки…", "normal roughness нормали", "", |_, _, a| a.push(Action::PbrMaker)),
         cmd!(Icon::Road, "Knife: cut roads", "Нож: разрезать дороги", "cut split knife road spline разрезать разделить дорогу сплайн", "K", |_, ed, _| ed.toggle_cutting()),
+        cmd!(Icon::Objects, "Line up the selected objects", "Выстроить выбранные объекты в линию", "align straight row equal spacing distribute выровнять ряд прямая равный шаг", "", |_, ed, _| {
+            ed.line_up(true);
+        }),
+        cmd!(Icon::Objects, "Space the selected objects evenly", "Расставить выбранные объекты поровну", "distribute equal spacing spread step распределить равный шаг интервал", "", |_, ed, _| {
+            ed.line_up(false);
+        }),
+        cmd!(Icon::Road, "Next road piece", "Следующий кусок дороги", "next spline linked chain walk along следующий сплайн связанный цепочка", ".", |_, ed, _| {
+            ed.select_linked(true, false);
+        }),
+        cmd!(Icon::Road, "Previous road piece", "Предыдущий кусок дороги", "previous spline linked chain walk back предыдущий сплайн связанный цепочка", ",", |_, ed, _| {
+            ed.select_linked(false, false);
+        }),
         cmd!(Icon::Focus, "Snap vertex to vertex", "Привязать вершину к вершине", "snap vertex align object привязка вершина", "V", |_, ed, _| {
             if ed.vertex_snap.is_some() {
                 ed.cancel_vertex_snap();
@@ -87,11 +99,12 @@ fn commands() -> Vec<Command> {
                 ed.start_edge_snap();
             }
         }),
-        cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient измерить расстояние уклон", "U", |_, ed, _| ed.toggle_ruler()),
+        cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient area perimeter square metres hectares измерить расстояние уклон площадь периметр гектар", "U", |_, ed, _| ed.toggle_ruler()),
         // Map
         cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
         cmd!(Icon::Code, "Scripts…", "Скрипты…", "lua osc script code plugin скрипт код плагин программа", "", |_, _, a| a.push(Action::Scripts)),
         cmd!(Icon::Schedule, "Calendar and place…", "Календарь и место…", "holidays time zone summer number plates праздники часовой пояс номера", "", |_, _, a| a.push(Action::Calendar)),
+        cmd!(Icon::Bus, "Trolleybus wire…", "Контактная сеть троллейбуса…", "trolley overhead catenary frog switch insulator section substation trolley.txt троллейбус провод контактная сеть стрелка изолятор секция подстанция", "", |_, _, a| a.push(Action::Trolley)),
         cmd!(Icon::Traffic, "Signal routes…", "Маршруты сигналов…", "railway signal железная дорога светофор", "", |_, _, a| a.push(Action::SignalRoutes)),
         cmd!(Icon::History, "Chrono scenarios…", "Хроно-сценарии…", "years history годы", "", |_, _, a| a.push(Action::Chrono)),
         cmd!(Icon::CheckCircle, "Check map…", "Проверить карту…", "errors problems validate ошибки проблемы", "", |st, _, _| {

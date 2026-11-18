@@ -133,6 +133,23 @@ pub fn paint_ruler(ctx: &egui::Context, ed: &Editor, cam: &crate::camera::Camera
     painter.galley(r.min + Vec2::new(5.0, 2.0), galley, Color32::BLACK);
 }
 
+/// A road piece's links as two buttons: the piece joined at its start and at its end, each
+/// selected with a click (`,` and `.`). Which was clicked: false the start, true the end.
+pub fn linked_steps(ui: &mut egui::Ui, has_prev: bool, has_next: bool) -> Option<bool> {
+    let mut out = None;
+    ui.horizontal(|ui| {
+        let prev = ui.add_enabled(has_prev, egui::Button::new(format!("◀ {}", tr("start", "начало"))).small()).on_hover_text(tr("Select the piece joined at its start (,)", "Выбрать кусок у его начала (,)"));
+        let next = ui.add_enabled(has_next, egui::Button::new(format!("{} ▶", tr("end", "конец"))).small()).on_hover_text(tr("Select the piece joined at its end (.)", "Выбрать кусок у его конца (.)"));
+        if prev.clicked() {
+            out = Some(false);
+        }
+        if next.clicked() {
+            out = Some(true);
+        }
+    });
+    out
+}
+
 pub fn knife_help() -> &'static str {
     tr("Knife (K): a click on a road cuts it there, as often as you like; the pieces' lengths shown at the cursor, on whole grid steps with grid snapping on · right-click or Esc: off", "Нож (K): клик по дороге разрезает её в этом месте, сколько угодно раз; длины кусков видны у курсора, с привязкой к сетке — по целым шагам сетки · правый клик или Esc: выключить")
 }
@@ -204,7 +221,7 @@ fn snap_unit(ui: &mut egui::Ui, ed: &mut Editor, i: usize) {
         }
         3 => {
             let mut on = ed.ruler.is_some();
-            if check(ui, &mut on, RichText::new(tr("Ruler", "Линейка")).small()).on_hover_text(tr("Click two points to measure the distance and gradient between them (U) · right-click: off", "Клик по двум точкам: расстояние и уклон между ними (U) · правый клик: выключить")).changed() {
+            if check(ui, &mut on, RichText::new(tr("Ruler", "Линейка")).small()).on_hover_text(tr("Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off", "Клик по двум точкам: расстояние и уклон между ними (U) · Shift + клики: углы площади (её размер и периметр) · правый клик: выключить")).changed() {
                 ed.toggle_ruler();
             }
         }
@@ -269,6 +286,9 @@ pub fn snap_controls(ui: &mut egui::Ui, ed: &mut Editor, room: f32) {
                 let flat = d.truncate().length();
                 let grade = if flat > 0.01 { format!("{:+.1} %", d.z / flat * 100.0) } else { "-".into() };
                 ui.label(RichText::new(format!("{:.2} m · Δh {:+.2} m · {grade}", flat, d.z)).small().monospace().color(Color32::from_rgb(255, 216, 51)));
+            }
+            if let Some((a, p)) = ed.ruler_measure() {
+                ui.label(RichText::new(format!("{} · {} {p:.1} m", crate::ruler_area::area_text(a), tr("perimeter", "периметр"))).small().monospace().color(Color32::from_rgb(255, 216, 51)));
             }
         }
         for i in 2..shown {
@@ -450,6 +470,16 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     ed.lean_objects(false);
                 }
             });
+            if objects > 2 {
+                ui.horizontal_wrapped(|ui| {
+                    if ui.button(tr("Line up", "В линию")).on_hover_text(tr("On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)", "На прямой между двумя самыми дальними, с равным шагом (столбы, фонари, ряд деревьев)")).clicked() {
+                        ed.line_up(true);
+                    }
+                    if ui.button(tr("Space evenly", "Расставить поровну")).on_hover_text(tr("Equal steps between the two farthest apart, each keeping its distance to the side", "Равный шаг между двумя самыми дальними, каждый сохраняет отступ вбок")).clicked() {
+                        ed.line_up(false);
+                    }
+                });
+            }
         }
         if splines > 0 {
             if let Some(rt) = ed.road_type.clone() {
