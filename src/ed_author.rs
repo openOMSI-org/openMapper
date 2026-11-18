@@ -394,7 +394,7 @@ impl Editor {
             let mut v = Vec::new();
             for dx in -s..=s {
                 for dy in -s..=s {
-                    v.extend(g.get(&(cx + dx, cy + dy)).into_iter().flatten().copied());
+                    v.extend(g.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten().copied());
                 }
             }
             v
@@ -406,6 +406,11 @@ impl Editor {
         }
         lo -= DVec2::splat(reach);
         hi += DVec2::splat(reach);
+        // (only the map's own ground: a broken spline of a map file, 10^22 m out, made the
+        // walk over the samples between endless)
+        if let Some((a, b)) = self.doc.as_ref().map(|d| d.extent()) {
+            (lo, hi) = (lo.max(a), hi.min(b));
+        }
         self.history.begin(tr("Track beds", "Постель путей"));
         let pts: Vec<DVec2> = tracks.iter().step_by(10).map(|t| t.0).collect();
         self.touch_around(&pts, reach + 6.0);
@@ -559,6 +564,11 @@ impl Editor {
         }
         lo -= DVec2::splat(reach);
         hi += DVec2::splat(reach);
+        // (only the map's own ground: a broken spline of a map file, 10^22 m out, made the
+        // walk over the samples between endless)
+        if let Some((a, b)) = self.doc.as_ref().map(|d| d.extent()) {
+            (lo, hi) = (lo.max(a), hi.min(b));
+        }
         for gy in (lo.y / cell).floor() as i64..=(hi.y / cell).ceil() as i64 {
             for gx in (lo.x / cell).floor() as i64..=(hi.x / cell).ceil() as i64 {
                 let q = DVec2::new(gx as f64 * cell, gy as f64 * cell);
@@ -571,7 +581,7 @@ impl Editor {
                 let (cx, cy) = key(q);
                 for dx in -2..=2 {
                     for dy in -2..=2 {
-                        for i in sg.get(&(cx + dx, cy + dy)).into_iter().flatten() {
+                        for i in sg.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten() {
                             let (p, z, h) = strips[*i];
                             if (p - q).length() <= h + reach {
                                 put(gx, gy, z - 0.06);

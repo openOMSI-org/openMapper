@@ -198,7 +198,7 @@ impl Editor {
             let mut v = Vec::new();
             for dx in -s..=s {
                 for dy in -s..=s {
-                    v.extend(gw.get(&(cx + dx, cy + dy)).into_iter().flatten().copied());
+                    v.extend(gw.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).into_iter().flatten().copied());
                 }
             }
             v
@@ -210,6 +210,11 @@ impl Editor {
         }
         lo -= DVec2::splat(set.blend + cell);
         hi += DVec2::splat(set.blend + cell);
+        // (only the map's own ground: a broken spline of a map file, 10^22 m out, made the
+        // walk over the samples between endless)
+        if let Some((a, b)) = self.doc.as_ref().map(|d| d.extent()) {
+            (lo, hi) = (lo.max(a), hi.min(b));
+        }
         if let Some((a, b)) = set.region {
             lo = lo.max(a);
             hi = hi.min(b);

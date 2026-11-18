@@ -446,6 +446,12 @@ impl Document {
         ISSUED.with(|c| c.set((self as *const Document as usize, self.global.next_id_code)));
     }
 
+    /// Where the map lies (world): its tiles' lowest corner and highest one.
+    pub fn extent(&self) -> (DVec2, DVec2) {
+        let ts = DVec2::splat(tile_size());
+        self.tiles.keys().fold((DVec2::splat(f64::MAX), DVec2::splat(f64::MIN)), |(lo, hi), k| (lo.min(tile_origin(*k)), hi.max(tile_origin(*k) + ts)))
+    }
+
     /// The greatest IDCode any object or spline on the map already has.
     pub(crate) fn highest_id(&self) -> i64 {
         let mut m = 0i64;

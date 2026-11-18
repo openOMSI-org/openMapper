@@ -285,7 +285,7 @@ impl Network {
             let (cx, cy) = cell(end);
             for dy in -1..=1 {
                 for dx in -1..=1 {
-                    for &j in starts.get(&(cx + dx, cy + dy)).map(|v| v.as_slice()).unwrap_or(&[]) {
+                    for &j in starts.get(&(cx.saturating_add(dx), cy.saturating_add(dy))).map(|v| v.as_slice()).unwrap_or(&[]) {
                         let b = &self.lanes[j];
                         if j == i || b.key == a.key || b.rail != a.rail {
                             continue;
