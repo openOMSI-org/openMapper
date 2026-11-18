@@ -34,6 +34,13 @@ version from this file.
 - Opening Solnechnogorsk and maps with splines far off their tiles no longer crashes or hangs the overview and the check.
 - The street check puts a step between two joined roads right instead of swapping it.
 - The Roads tool's panel no longer widens itself; the status bar's hint is never cut off.
+- A sign hung on another whose pole is on the next tile is written after its parent, so OMSI 2 no longer drops it.
+- In multiplayer, two editors no longer hand out the same IDCodes.
+- The crossing editor fits a 1366×768 screen at 150 %, and turning a path's end after Connect the roads no longer undoes the link.
+- The street check also checks roads joined start to start.
+- A missing model no longer holds the street check, road ends, `raster` and `shot` for a minute each.
+- Saving and forming the ground on maps with broken splines far off their tiles (Solnechnogorsk) no longer panics or loops; the MCP server exits after a crash instead of hanging on a dialog.
+- An idle frame no longer walks every spline in view and looks for the water texture on disk; deleting a big selection and every MCP edit no longer look the whole map through.
 
 ## 0.1.25 - 2026-11-15
 
