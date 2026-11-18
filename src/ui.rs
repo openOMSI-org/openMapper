@@ -3120,14 +3120,20 @@ fn map_properties(ui: &mut egui::Ui, st: &mut UiState, ed: &mut Editor, lib: &Li
                 ui.label(doc.global.entry_points.len().to_string());
             });
             // what the map holds (worked out again only when a tile changed)
-            let key = doc.tiles.values().fold(lib.assets.len() as u64, |h, t| h.rotate_left(5) ^ t.content_rev);
+            // (and while the catalogue is read, which tells more roads what kind they are, every
+            // two seconds: on a city it grows for minutes, and the stats worked out again with
+            // each file it read took a fifth of every frame)
+            let key = doc.tiles.values().fold(0u64, |h, t| h.rotate_left(5) ^ t.content_rev);
+            let (files, now) = (lib.assets.len(), ui.input(|i| i.time));
             let id = egui::Id::new("map stats");
-            let stats: Option<(u64, [f64; 5])> = ui.data(|d| d.get_temp(id));
+            let stats: Option<(u64, usize, f64, [f64; 5])> = ui.data(|d| d.get_temp(id));
             let v = match stats {
-                Some((k, v)) if k == key => v,
+                Some((k, n, at, v)) if k == key && (n == files || now - at < 2.0) => v,
                 _ => {
+                    let t_stats = std::time::Instant::now();
                     let v = map_stats(doc, lib);
-                    ui.data_mut(|d| d.insert_temp(id, (key, v)));
+                    crate::render::profile::log_time("map stats", t_stats);
+                    ui.data_mut(|d| d.insert_temp(id, (key, files, now, v)));
                     v
                 }
             };

@@ -31,6 +31,8 @@ pub struct Minimap {
     pub open: bool,
     pub large: bool,
     key: u64,
+    /// The part of `key` that is the map's own (the rest is the catalogue, read as it grows).
+    map_key: u64,
     tiles: Vec<DVec2>,
     /// Satellite or own pictures laid on tiles: a tile's corner, a small copy, its opacity
     /// (`ui_geo::GeoUi::minimap_tiles`).
@@ -102,10 +104,17 @@ impl Minimap {
     }
 
     fn rebuild(&mut self, doc: &Document, lib: &Library, moving: bool) {
-        let key = doc.tiles.iter().fold(doc.tiles.len() as u64, |h, (k, t)| {
+        let map_key = doc.tiles.iter().fold(doc.tiles.len() as u64, |h, (k, t)| {
             h.wrapping_mul(31).wrapping_add(t.content_rev).wrapping_add((k.0 as u64) << 20 ^ k.1 as u64)
-        }) ^ (lib.assets.len() as u64) << 40;
+        });
+        let key = map_key ^ (lib.assets.len() as u64) << 40;
         if key == self.key && !self.tiles.is_empty() {
+            return;
+        }
+        // (the catalogue being read only tells more lines what kind they are: on a city it
+        // grows for minutes, and the thumbnail made again three times a second for it took a
+        // good part of every frame)
+        if map_key == self.map_key && self.built.is_some_and(|at| at.elapsed() < std::time::Duration::from_secs(2)) {
             return;
         }
         // (while things are being moved the thumbnail is left as it was, and made again once
@@ -121,7 +130,9 @@ impl Minimap {
             }
         }
         self.built = Some(std::time::Instant::now());
+        let t_rebuild = std::time::Instant::now();
         self.key = key;
+        self.map_key = map_key;
         self.tiles.clear();
         let mut lines: Vec<(Line, Vec<DVec2>)> = Vec::new();
         let ts = tile_size();
@@ -190,6 +201,7 @@ impl Minimap {
         }
         self.min = min;
         self.max = max;
+        crate::render::profile::log_time("minimap", t_rebuild);
     }
 
     /// What the lines' picture was made for: the map as built, where the map lies on the
@@ -290,5 +302,34 @@ impl Minimap {
             return resp.interact_pointer_pos().map(to_world);
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::library::{Asset, Kind};
+    use crate::selection::tests::{add_spline, flat_map};
+
+    /// The catalogue growing while it is read does not make the thumbnail again more than
+    /// every two seconds (on a city that was three times a second for minutes, a good part of
+    /// every frame); the map changing does, as before.
+    #[test]
+    fn the_catalogue_being_read_does_not_rebuild_the_thumbnail_each_time_it_grows() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 0);
+        let mut lib = Library::default();
+        let mut m = Minimap::new();
+        m.rebuild(&doc, &lib, false);
+        let a_while_ago = || Some(std::time::Instant::now() - std::time::Duration::from_millis(500));
+        m.built = a_while_ago();
+        let first = m.key;
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        m.rebuild(&doc, &lib, false);
+        assert_eq!(m.key, first, "not made again for the catalogue alone");
+        doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
+        m.rebuild(&doc, &lib, false);
+        assert_ne!(m.key, first, "made again for the map");
     }
 }
