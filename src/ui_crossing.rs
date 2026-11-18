@@ -2871,7 +2871,12 @@ impl CrossingPaths {
         // (the paths laid on the map itself: the window keeps the properties at the screen's
         // right edge, so the crossing - the object in 3D - is what is seen and worked on)
         let beside = self.view_3d && self.tab == Tab::Paths;
-        let size = if beside { Vec2::new(400.0, (screen.height() - 90.0).max(420.0)) } else { Vec2::new(1000.0, 660.0) };
+        // (never larger than the screen: at 1366 x 768 and 150 % there are some 910 x 512
+        // points, and the window's least size had its bottom - the drawing, or the side
+        // panel's last rows - out of reach)
+        let fit = (screen.size() - Vec2::new(16.0, 44.0)).max(Vec2::splat(240.0));
+        let low = (fit.y - 150.0).clamp(160.0, 400.0);
+        let size = if beside { Vec2::new(400.0f32.min(fit.x), (screen.height() - 90.0).max(420.0).min(fit.y)) } else { Vec2::new(1000.0, 660.0).min(fit) };
         // (in the middle of the screen, as the crossing editor's own window is)
         let pos = if beside { Pos2::new(screen.right() - size.x - 10.0, screen.top() + 34.0) } else { screen.center() - size * 0.5 };
         let mut save = false;
@@ -2910,7 +2915,7 @@ impl CrossingPaths {
             .default_pos(pos)
             .default_size(size)
             .resizable(!beside);
-        window = if beside { window.current_pos(pos).fixed_size(size) } else { window.min_size(Vec2::new(880.0, 540.0)) };
+        window = if beside { window.current_pos(pos).fixed_size(size) } else { window.min_size(Vec2::new(880.0, 540.0).min(fit)).max_size(fit) };
         let shown = window
             .show(ctx, |ui| {
                 // (a scroll area takes the layout of the ui it is made in, so each half gets
@@ -2923,16 +2928,16 @@ impl CrossingPaths {
                 // to that width)
                 let room = if beside { (size.x - 16.0).max(320.0) } else { ui.available_width().clamp(320.0, 1200.0) };
                 ui.set_max_width(room);
-                ui.set_min_height(400.0);
+                ui.set_min_height(low);
                 let Some(mut sheet) = self.sheet.take() else {
                     self.no_target(ui, ed, roots, lib);
                     return;
                 };
                 self.head(ui, &sheet, &mut save, &mut revert, roots);                ui.separator();
                 let body = if beside {
-                    Vec2::new(ui.available_width().max(320.0), ui.available_height().max(400.0))
+                    Vec2::new(ui.available_width().max(320.0), ui.available_height().max(low))
                 } else {
-                    Vec2::new(ui.available_width().max(800.0), ui.available_height().max(400.0))
+                    Vec2::new(ui.available_width().max(800.0f32.min(fit.x - 24.0)), ui.available_height().max(low))
                 };
                 match self.tab {
                     Tab::Paths if beside => {
@@ -5181,6 +5186,31 @@ Main
         w.request(&mut ed, &roots, &Library::default());
         assert!(w.open);
         assert_eq!(w.sheet.as_ref().map(|s| s.crossing.paths[0].v[9]), Some(5.0), "the edit is kept");
+    }
+
+    /// On a small screen (1366 x 768 at 150 %: some 910 x 512 points) the window fits on it,
+    /// in 2D and beside the map: its least size had the drawing's bottom, or the side panel's
+    /// last rows, off the screen.
+    #[test]
+    fn the_window_fits_a_small_screen() {
+        for beside in [false, true] {
+            let mut w = opened(Tab::Paths);
+            w.view_3d = beside;
+            let mut ed = Editor::default();
+            let ctx = context();
+            let lib = Library::default();
+            let mut actions = Vec::new();
+            let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(910.0, 512.0));
+            for time in [0.0, 0.1, 0.2] {
+                let input = egui::RawInput { screen_rect: Some(screen), time: Some(time), ..Default::default() };
+                let _ = ctx.run_ui(input, |ui| {
+                    let ctx = ui.ctx().clone();
+                    w.window(&ctx, &mut ed, &lib, None, None, &mut actions);
+                });
+            }
+            let at = ctx.memory(|m| m.area_rect(egui::Id::new("crossing paths window"))).expect("the window is there");
+            assert!(screen.contains_rect(at), "beside the map {beside}: {at:?} is not within {screen:?}");
+        }
     }
 
     /// Leaving the map (closing it, opening another, ending the program) asks about the
