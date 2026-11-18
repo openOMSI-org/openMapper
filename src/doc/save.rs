@@ -2,7 +2,7 @@
 //! `.terrain` height fields and the painting masks. A map read from the installation is
 //! first copied whole into the content folder, so the original is never written to.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -110,6 +110,7 @@ pub(crate) fn prepare_save(doc: &Document) -> SaveJob {
         traffic: doc.traffic.clone(),
         descriptions: doc.descriptions.clone(),
         groups: Vec::new(),
+        global_extra: doc.global_extra.clone(),
     };
     SaveJob { doc: copy, known: doc.tiles.keys().copied().collect(), stamp }
 }
@@ -314,12 +315,35 @@ pub(crate) fn global_text(doc: &Document) -> String {
 pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> bool) -> String {
     let g = &doc.global;
     let mut s = header();
-    let kw = |s: &mut String, k: &str, lines: &[String]| {
+    // (the blocks the editor does not write itself go back after the block they followed)
+    let extra = &doc.global_extra;
+    let mut used = vec![false; extra.len()];
+    let foreign = |s: &mut String, b: &ForeignBlock| {
+        for l in &b.lines {
+            let _ = writeln!(s, "{l}");
+        }
+        s.push('\n');
+    };
+    for (b, u) in extra.iter().zip(used.iter_mut()).filter(|(b, _)| b.after.is_none()) {
+        foreign(&mut s, b);
+        *u = true;
+    }
+    let mut seen: HashMap<String, usize> = HashMap::new();
+    let mut kw = |s: &mut String, k: &str, lines: &[String]| {
         let _ = writeln!(s, "[{k}]");
         for l in lines {
             let _ = writeln!(s, "{l}");
         }
         s.push('\n');
+        let key = k.to_ascii_lowercase();
+        let n = seen.entry(key.clone()).or_insert(0);
+        for (b, u) in extra.iter().zip(used.iter_mut()) {
+            if !*u && b.after.as_ref().is_some_and(|a| a.0 == key && a.1 == *n) {
+                foreign(s, b);
+                *u = true;
+            }
+        }
+        *n += 1;
     };
     kw(&mut s, "name", &[g.name.clone()]);
     kw(&mut s, "friendlyname", &[g.friendly_name.clone()]);
@@ -416,7 +440,73 @@ pub(crate) fn global_text_known(doc: &Document, has_tile: &dyn Fn(&TileKey) -> b
             kw(&mut s, "map", &[k.0.to_string(), k.1.to_string(), t.file.clone()]);
         }
     }
+    // (what followed a block no longer written: at the end)
+    for (b, u) in extra.iter().zip(&used) {
+        if !u {
+            foreign(&mut s, b);
+        }
+    }
     s
+}
+
+/// A block of global.cfg the editor does not write itself (a keyword of an add-on, of openOMSI
+/// or of a newer OMSI the reader does not know), kept as it was read: its lines from the
+/// keyword on, and the block it followed (keyword in lower case, and which one of that name),
+/// after which it is written back.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ForeignBlock {
+    pub after: Option<(String, usize)>,
+    pub lines: Vec<String>,
+}
+
+/// Whether `global_text` writes this keyword (lower case) itself.
+fn written_keyword(k: &str) -> bool {
+    const OWN: [&str; 25] = [
+        "name", "friendlyname", "description", "version", "nextidcode", "worldcoordinates", "dynhelperactive", "realrail", "lht", "backgroundimage", "mapcam", "moneysystem", "ticketpack",
+        "repair_time_min", "years", "realyearoffset", "standarddepot", "groundtex", "addseason", "trafficdensity_road", "trafficdensity_passenger", "entrypoints", "splineobjtypes", "scenobjlist", "map",
+    ];
+    OWN.contains(&k) || omsi_cfg::transport::TransportMode::from_keyword(k).is_some()
+}
+
+/// The blocks of a global.cfg's lines that the editor does not write itself (see
+/// [`ForeignBlock`]). A keyword line is one the game's reader takes for one; the text of a
+/// description runs to its `[end]` whatever it holds.
+pub fn foreign_blocks(lines: &[String]) -> Vec<ForeignBlock> {
+    let mut out: Vec<ForeignBlock> = Vec::new();
+    let mut seen: HashMap<String, usize> = HashMap::new();
+    let mut after = None;
+    let mut open = false;
+    let mut i = 0;
+    while i < lines.len() {
+        match omsi_cfg::keyword_of(lines[i].trim()) {
+            Some(k) if written_keyword(&k.to_ascii_lowercase()) => {
+                let k = k.to_ascii_lowercase();
+                let n = seen.entry(k.clone()).or_insert(0);
+                after = Some((k.clone(), *n));
+                *n += 1;
+                open = false;
+                if k == "description" {
+                    while i + 1 < lines.len() && !lines[i + 1].trim().eq_ignore_ascii_case("[end]") {
+                        i += 1;
+                    }
+                    i += 1;
+                }
+            }
+            Some(_) => {
+                out.push(ForeignBlock { after: after.clone(), lines: vec![lines[i].clone()] });
+                open = true;
+            }
+            None if open => out.last_mut().unwrap().lines.push(lines[i].clone()),
+            None => {}
+        }
+        i += 1;
+    }
+    for b in &mut out {
+        while b.lines.last().is_some_and(|l| l.trim().is_empty()) {
+            b.lines.pop();
+        }
+    }
+    out
 }
 
 /// The editor camera (`[mapcam]`: tile x, tile y, x, height, y, heading, pitch, distance) on a

@@ -1446,6 +1446,7 @@ mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         for k in tiles {
             doc.tiles.insert(*k, crate::doc::TileDoc::new_flat(0.0));

@@ -22,6 +22,7 @@ fn server(allow_edit: bool) -> Server {
         traffic: Default::default(),
         descriptions: Default::default(),
         groups: Vec::new(),
+        global_extra: Vec::new(),
     };
     doc.add_tile((0, 0));
     let mut s = Server::new(roots, allow_edit);

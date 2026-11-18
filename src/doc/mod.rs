@@ -213,6 +213,9 @@ pub struct Document {
     pub descriptions: crate::descriptions::Descriptions,
     /// Things kept together (openMapper's own: `openMapper/groups.json` beside the map).
     pub groups: Vec<crate::mapgroups::MapGroup>,
+    /// The blocks of global.cfg the editor does not write itself, kept as they were read and
+    /// written back in their places.
+    pub global_extra: Vec<save::ForeignBlock>,
 }
 
 impl Document {
@@ -248,6 +251,7 @@ impl Document {
             traffic: crate::traffic::Traffic::load(&template),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
             source: Some(template),
             global_dirty: true,
             fresh: true,
@@ -269,7 +273,9 @@ impl Document {
     /// stays as it is).
     pub fn load(roots: &crate::install::Roots, cfg: &Path, mut progress: impl FnMut(f32)) -> anyhow::Result<Document> {
         let started = std::time::Instant::now();
-        let mut global = GlobalCfg::load(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        let file = omsi_cfg::CfgFile::read(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        let mut global = GlobalCfg::parse(&file);
+        let global_extra = save::foreign_blocks(&file.lines);
         omsi_map::configure_grid(&global);
         // (a map from OMSI 1 lists no [entrypoints]: Omsi.exe takes its tiles' entry point
         // objects as they are, and so do openOMSI and the view; written when the settings are)
@@ -350,6 +356,7 @@ impl Document {
             traffic,
             descriptions,
             groups: Vec::new(),
+            global_extra,
         };
         if found > 0 {
             log::info!("{found} start points from the tiles' entry point objects (global.cfg lists none)");
@@ -408,6 +415,7 @@ impl Document {
             traffic: self.traffic.clone(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: self.global_extra.clone(),
         }
     }
 

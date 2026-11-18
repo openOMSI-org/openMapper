@@ -461,6 +461,7 @@ fn placeholder() -> Document {
         traffic: Default::default(),
         descriptions: Default::default(),
         groups: Vec::new(),
+        global_extra: Vec::new(),
     }
 }
 

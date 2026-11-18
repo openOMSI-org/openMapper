@@ -42,6 +42,7 @@ pub(crate) fn sample_map(roots: &Roots) -> Document {
         traffic: Default::default(),
         descriptions: Default::default(),
         groups: Vec::new(),
+        global_extra: Vec::new(),
     };
     for k in [(0, 0), (1, 0), (0, -1)] {
         doc.add_tile(k);
@@ -566,5 +567,37 @@ fn a_map_without_entrypoints_takes_its_tiles_entry_objects() {
     assert_eq!(e, vec![(7, "Depot", 0)]);
     assert!(doc.global.entry_points[0].pos.iter().all(|v| v.is_finite()), "{:?}", doc.global.entry_points[0].pos);
     assert!(!doc.is_dirty());
+    let _ = std::fs::remove_dir_all(&roots.content);
+}
+
+/// The blocks of global.cfg the editor does not know (an add-on's, a newer game's) are written
+/// back as they were and where they were: after the block they followed, the first before
+/// everything, and a description's text is not taken for one.
+#[test]
+fn global_cfg_keeps_the_blocks_it_does_not_know_in_their_places() {
+    let _map = one_map();
+    let roots = scratch("foreign-blocks");
+    let map = roots.content.join("maps").join("Foreign");
+    std::fs::create_dir_all(&map).unwrap();
+    std::fs::write(map.join("tile_0_0.map"), "[version]\n14\n").unwrap();
+    std::fs::write(
+        map.join("global.cfg"),
+        "[mod_header]\nfirst\n\n[name]\nForeign\n\n[friendlyname]\nForeign map\n\n[weather_preset]\nrain\n0.5\n\n\
+[description]\nA map\n[Hinweis]\nmore text\n[end]\n\n[NextIDCode]\n10\n\n[groundtex]\nTexture\\gras.bmp\nTexture\\gras_det.bmp\n0\n1\n60\n\n\
+[after_ground]\n1\n\n[map]\n0\n0\ntile_0_0.map\n\n[trailer]\nx\ny\n",
+    )
+    .unwrap();
+    let doc = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    let text = global_text(&doc);
+    let at = |k: &str| text.find(k).unwrap_or_else(|| panic!("{k} is missing:\n{text}"));
+    assert!(at("[mod_header]\nfirst\n") < at("[name]"));
+    assert!(at("[friendlyname]") < at("[weather_preset]\nrain\n0.5\n") && at("[weather_preset]") < at("[description]"));
+    assert!(at("[groundtex]") < at("[after_ground]\n1\n") && at("[after_ground]") < at("[map]"));
+    assert!(at("[map]") < at("[trailer]\nx\ny\n"));
+    assert!(!text.contains("[Hinweis]\n\n"), "the description's own line is no block of its own:\n{text}");
+    assert_eq!(text.matches("[weather_preset]").count(), 1);
+    // (and written again the same)
+    let back = super::save::foreign_blocks(&text.lines().map(str::to_string).collect::<Vec<_>>());
+    assert_eq!(back, doc.global_extra);
     let _ = std::fs::remove_dir_all(&roots.content);
 }
