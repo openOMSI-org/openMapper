@@ -1450,7 +1450,10 @@ fn status_bar(root: &mut egui::Ui, help_line: Option<String>, st: &mut UiState, 
                     crate::ui_edit::snap_controls(ui, ed, snap_room - sep);
                 }
                 ui.separator();
-                ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                // (an id of its own: the facts before it come and go - the loading spinner, the
+                // counts - and its own changed with how many there were, so egui warned of it
+                // changing between passes)
+                ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new("status help")).layout(Layout::left_to_right(Align::Center)), |ui| {
                     let r = ui.add(egui::Label::new(RichText::new(&text).small().color(color)).truncate());
                     r.on_hover_text(&text);
                 });
