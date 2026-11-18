@@ -10,6 +10,7 @@ use egui::RichText;
 
 use crate::doc::safe::Op;
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::theme::pal;
 
 /// The languages offered (OMSI's codes) and their names.
@@ -167,7 +168,7 @@ pub fn editor(ui: &mut egui::Ui, doc: &mut crate::doc::Document, history: &mut c
         if a.changed() || b.changed() {
             doc.descriptions.set(&lang, name, desc);
         }
-        if had && ui.small_button(tr("Remove this language", "Убрать этот язык")).clicked() {
+        if had && ui.small_button(icons::labelled(Icon::Delete, tr("Remove this language", "Убрать этот язык"))).clicked() {
             doc.descriptions.remove(&lang);
         }
         if !had {

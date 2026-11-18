@@ -144,13 +144,13 @@ impl AssetBrowser {
                     if ui.button(icons::labelled(Icon::Import, tr("Import…", "Импорт…"))).clicked() {
                         actions.push(Action::Import);
                     }
-                    ui.menu_button(tr("Shapes…", "Фигуры…"), |ui| crate::ui_mesh::primitives_menu(ui, actions));
+                    ui.menu_button(icons::labelled(Icon::Shapes, tr("Shapes…", "Фигуры…")), |ui| crate::ui_mesh::primitives_menu(ui, actions));
                 });
             });
             let r = ui.interact(close, ui.id().with("assets close"), Sense::click());
             let fill = if r.is_pointer_button_down_on() { pal().pressed } else if r.hovered() { pal().hover } else { pal().widget };
             ui.painter().rect(close, CornerRadius::same(3), fill, Stroke::new(1.0, pal().widget_stroke), egui::StrokeKind::Inside);
-            ui.painter().text(close.center(), egui::Align2::CENTER_CENTER, "×", egui::FontId::proportional(15.0), pal().text);
+            icons::paint(ui.painter(), Icon::Close, close.center(), 16.0, pal().text);
             if r.on_hover_text(format!("{}{}", tr("Close", "Закрыть"), crate::controls::key_hint(crate::controls::Cmd::Assets))).clicked() {
                 self.open = false;
             }
@@ -395,7 +395,7 @@ impl AssetBrowser {
                 actions.push(Action::ToggleFavourite(a.rel.clone()));
                 ui.close();
             }
-            if ui.button(tr("Show in the file manager", "Показать в файловом менеджере")).clicked() {
+            if ui.button(icons::labelled(Icon::Folder, tr("Show in the file manager", "Показать в файловом менеджере"))).clicked() {
                 actions.push(Action::RevealAsset(a.rel.clone()));
                 ui.close();
             }
@@ -421,10 +421,10 @@ impl AssetBrowser {
         if ui.button(icons::labelled(Icon::Star, if starred { tr("Remove from favourites", "Убрать из избранного") } else { tr("Add to favourites", "В избранное") })).clicked() {
             actions.push(Action::ToggleFavourite(a.rel.clone()));
         }
-        if ui.button(icons::labelled(Icon::Layers, tr("PBR material…", "PBR-материал…"))).clicked() {
+        if ui.button(icons::labelled(Icon::Texture, tr("PBR material…", "PBR-материал…"))).clicked() {
             actions.push(if a.kind == Kind::Spline { Action::PbrForSpline(a.rel.clone()) } else { Action::PbrForObject(a.rel.clone()) });
         }
-        if ui.button(icons::labelled(Icon::Open, tr("Show in the file manager", "Показать в файловом менеджере"))).clicked() {
+        if ui.button(icons::labelled(Icon::Folder, tr("Show in the file manager", "Показать в файловом менеджере"))).clicked() {
             actions.push(Action::RevealAsset(a.rel.clone()));
         }
         if a.from_content && ui.button(icons::labelled(Icon::Delete, tr("Delete…", "Удалить…"))).clicked() {
@@ -439,7 +439,7 @@ impl AssetBrowser {
         let Some(rel) = self.confirm_delete.clone() else { return };
         let name = lib.find(&rel).map(|a| a.name.clone()).unwrap_or_else(|| rel.clone());
         let mut close = false;
-        egui::Window::new(tr("Delete the asset?", "Удалить ассет?")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Delete, tr("Delete the asset?", "Удалить ассет?"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
             ui.label(format!("{name}\n{rel}"));
             ui.label(RichText::new(tr("Its folder goes into openMapper's bin in the content folder (openMapper\\bin), from where it can be put back by hand. Maps that use it show it missing.", "Его папка переносится в корзину openMapper в папке контента (openMapper\\bin), откуда её можно вернуть вручную. Карты, где он стоит, покажут его отсутствующим.")).small());
             ui.horizontal(|ui| {

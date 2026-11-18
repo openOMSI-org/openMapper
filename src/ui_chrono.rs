@@ -318,7 +318,7 @@ impl ChronoWindow {
                 egui::Frame::new().fill(Color32::from_rgba_unmultiplied(120, 60, 20, 235)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 5)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(format!("{} «{name}»", tr("Editing the scenario", "Правка сценария"))).color(Color32::WHITE).strong());
-                        done = ui.button(tr("Done", "Готово")).clicked();
+                        done = ui.button(icons::labelled(Icon::Check, tr("Done", "Готово"))).clicked();
                     });
                 });
             });
@@ -399,7 +399,7 @@ impl ChronoWindow {
         let doc_ref: &crate::doc::Document = doc;
         let n_sel = ed.selection().len();
         let catalogue = ed.object_type.clone();
-        egui::Window::new(icons::labelled(Icon::History, tr("Chrono scenarios", "Хроно-сценарии"))).id(egui::Id::new("chrono")).open(&mut open).default_pos([330.0, 90.0]).default_size([500.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Chrono, tr("Chrono scenarios", "Хроно-сценарии"))).id(egui::Id::new("chrono")).open(&mut open).default_pos([330.0, 90.0]).default_size([500.0, 520.0]).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("How the map changes over the years: each scenario from its first day lays its own tiles, lines and tickets over the map. The view shows the map as on the day chosen here; what you edit is always the map itself.", "Как карта меняется со временем: каждый сценарий с первого дня накладывает на карту свои тайлы, линии и билеты. Вид показывает карту на выбранный здесь день; правится всегда сама карта.")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.label(tr("Show the map as on", "Показать карту на"));
@@ -412,7 +412,7 @@ impl ChronoWindow {
                 if a || b || c {
                     date = y * 10_000 + m * 100 + d;
                 }
-                if ui.button(tr("Today", "Сегодня")).clicked() {
+                if ui.button(icons::labelled(Icon::Calendar, tr("Today", "Сегодня"))).clicked() {
                     date = crate::doc::today_code();
                 }
             });
@@ -503,7 +503,7 @@ impl ChronoWindow {
                         for t in texts.iter_mut() {
                             ui.add(egui::TextEdit::singleline(t).desired_width(140.0));
                         }
-                        if ui.button(tr("Write", "Записать")).clicked() {
+                        if ui.button(icons::labelled(Icon::Save, tr("Write", "Записать"))).clicked() {
                             relabel = Some((*id, texts.clone()));
                         }
                     });
@@ -523,7 +523,7 @@ impl ChronoWindow {
                                 if crate::ui_edit::RULES.iter().any(|(k, v)| *k == r.kind && *v) {
                                     ui.add(egui::DragValue::new(&mut r.value).speed(0.1).max_decimals(2));
                                 }
-                                if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                                if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                                     remove = Some(i);
                                 }
                             });
@@ -535,7 +535,7 @@ impl ChronoWindow {
                             if ui.button(icons::labelled(Icon::Add, tr("Add a rule", "Добавить правило"))).clicked() {
                                 new.push(omsi_map::MapRule { path_index: 0, kind: "speedlimit".into(), value: 30.0, extra: 0.0, kill: false });
                             }
-                            if ui.add_enabled(new != old, egui::Button::new(tr("Write", "Записать"))).clicked() {
+                            if ui.add_enabled(new != old, egui::Button::new(icons::labelled(Icon::Save, tr("Write", "Записать")))).clicked() {
                                 write_rules = Some((*sel, old.clone(), new.clone()));
                             }
                         });
@@ -561,14 +561,14 @@ impl ChronoWindow {
                                     ui.label(RichText::new(mark).monospace().color(pal().accent));
                                     ui.label(text);
                                     if let Some(p) = at {
-                                        if ui.small_button(icons::labelled(Icon::Focus, "")).on_hover_text(tr("Go there", "Перейти туда")).clicked() {
+                                        if icons::small(ui, Icon::Focus, tr("Go there", "Перейти туда")).clicked() {
                                             look = Some(p);
                                         }
                                     }
                                     if back && ui.small_button(tr("into the map", "в карту")).on_hover_text(tr("Out of the scenario into the map itself: there on every day", "Из сценария в саму карту: будет во все дни")).clicked() {
                                         take = Some((*k, file.clone(), part, true));
                                     }
-                                    if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Take it out of the scenario", "Убрать из сценария")).clicked() {
+                                    if icons::small(ui, Icon::Delete, tr("Take it out of the scenario", "Убрать из сценария")).clicked() {
                                         take = Some((*k, file.clone(), part, false));
                                     }
                                 });
@@ -602,43 +602,43 @@ impl ChronoWindow {
                 ui.add_space(4.0);
                 if self.session.is_some() {
                     ui.label(RichText::new(tr("Its own things are on the map: select, move, change and place as usual. The map's own things stay the map's.", "Его вещи на карте: выделяйте, двигайте, меняйте и ставьте как обычно. Вещи самой карты остаются в карте.")).color(pal().accent));
-                    if ui.button(icons::labelled(Icon::CheckCircle, tr("Done: back into the scenario", "Готово: обратно в сценарий"))).clicked() {
+                    if ui.button(icons::labelled(Icon::Check, tr("Done: back into the scenario", "Готово: обратно в сценарий"))).clicked() {
                         session_toggle = true;
                     }
-                } else if ui.button(icons::labelled(Icon::Objects, tr("Edit its own things on the map", "Править его вещи на карте"))).on_hover_text(tr("What it brings in is put on the map to work with as with anything else; Done writes it back (undo starts afresh)", "То, что он добавляет, ставится на карту, с ним работают как с любым другим; «Готово» записывает обратно (история отмены начинается заново)")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its own things on the map", "Править его вещи на карте"))).on_hover_text(tr("What it brings in is put on the map to work with as with anything else; Done writes it back (undo starts afresh)", "То, что он добавляет, ставится на карту, с ним работают как с любым другим; «Готово» записывает обратно (история отмены начинается заново)")).clicked() {
                     session_toggle = true;
                 }
                 if self.tt_session.is_some() {
                     ui.label(RichText::new(tr("The Lines window shows its timetable (the map's with its own laid over): lines, trips and tours edited there are the scenario's; a line of the map taken away is taken off from its day.", "Окно линий показывает его расписание (карты с наложенным своим): правки линий, рейсов и выходов там — сценария; убранная линия карты снимается с его дня.")).color(pal().accent));
                     ui.horizontal(|ui| {
-                        if ui.button(icons::labelled(Icon::CheckCircle, tr("Done with its timetable", "Готово с расписанием"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Check, tr("Done with its timetable", "Готово с расписанием"))).clicked() {
                             tt_toggle = true;
                         }
                         if ui.button(icons::labelled(Icon::Bus, tr("Lines window", "Окно линий"))).clicked() {
                             actions.push(crate::ui::Action::OpenLines);
                         }
                     });
-                } else if ui.button(icons::labelled(Icon::Bus, tr("Edit its timetable", "Править его расписание"))).on_hover_text(tr("Its own lines, trips and tours in the Lines window; Done writes only what differs from the map's (undo starts afresh)", "Его линии, рейсы и выходы в окне линий; «Готово» записывает только отличия от карты (история отмены начинается заново)")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its timetable", "Править его расписание"))).on_hover_text(tr("Its own lines, trips and tours in the Lines window; Done writes only what differs from the map's (undo starts afresh)", "Его линии, рейсы и выходы в окне линий; «Готово» записывает только отличия от карты (история отмены начинается заново)")).clicked() {
                     tt_toggle = true;
                 }
                 if self.lists_session.is_some() {
                     ui.label(RichText::new(tr("The Traffic window shows its AI lists (the map's with its own added): vehicles and type groups added there, and a depot's own depot file, are the scenario's from its day.", "Окно трафика показывает его списки ИИ (карты с добавленным своим): добавленные там машины и группы типов и свой файл депо — сценария с его дня.")).color(pal().accent));
                     ui.horizontal(|ui| {
-                        if ui.button(icons::labelled(Icon::CheckCircle, tr("Done with its AI lists", "Готово со списками ИИ"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Check, tr("Done with its AI lists", "Готово со списками ИИ"))).clicked() {
                             lists_toggle = true;
                         }
-                        if ui.button(icons::labelled(Icon::Traffic, tr("Traffic window", "Окно трафика"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Car, tr("Traffic window", "Окно трафика"))).clicked() {
                             actions.push(crate::ui::Action::OpenTraffic);
                         }
                     });
-                } else if ui.button(icons::labelled(Icon::Traffic, tr("Edit its AI lists", "Править его списки ИИ"))).on_hover_text(tr("Vehicles it adds to the groups and depots (OMSI's ailists_#upd.cfg); taking one away is the map's own business", "Машины, которые он добавляет в группы и депо (ailists_#upd.cfg OMSI); убирать машины — дело самой карты")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its AI lists", "Править его списки ИИ"))).on_hover_text(tr("Vehicles it adds to the groups and depots (OMSI's ailists_#upd.cfg); taking one away is the map's own business", "Машины, которые он добавляет в группы и депо (ailists_#upd.cfg OMSI); убирать машины — дело самой карты")).clicked() {
                     lists_toggle = true;
                 }
                 ui.horizontal(|ui| {
                     if ui.button(icons::labelled(Icon::Save, tr("Write the scenario", "Записать сценарий"))).clicked() {
                         write = true;
                     }
-                    if ui.button(tr("Close", "Закрыть")).clicked() {
+                    if ui.button(icons::labelled(Icon::Close, tr("Close", "Закрыть"))).clicked() {
                         close_edit = true;
                     }
                 });
@@ -672,7 +672,7 @@ impl ChronoWindow {
                                 if s.cfg.start_date > 0 && ui.small_button(tr("Its first day", "Первый день")).clicked() {
                                     date = s.cfg.start_date;
                                 }
-                                if ui.small_button(tr("Properties", "Свойства")).clicked() {
+                                if ui.small_button(icons::labelled(Icon::Tune, tr("Properties", "Свойства"))).clicked() {
                                     edit = Some(Edit { dir: s.dir.clone(), title: s.title.clone(), description: s.description.clone(), start: s.cfg.start_date, end: s.cfg.end_date, lines: s.cfg.deactivate_lines.clone(), tickets: s.cfg.ticket_pack.clone(), money: s.cfg.money_system.clone() });
                                 }
                             });

@@ -206,10 +206,10 @@ impl Find {
                         });
                     });
                     ui.horizontal_wrapped(|ui| {
-                        if ui.small_button(tr("Select all", "Выбрать все")).clicked() {
+                        if ui.small_button(icons::labelled(Icon::SelectAll, tr("Select all", "Выбрать все"))).clicked() {
                             select = Some(g.at.iter().map(|a| a.0).collect());
                         }
-                        if ui.small_button(icons::labelled(Icon::Focus, tr("Next", "Следующий"))).on_hover_text(tr("Select the next one and go there", "Выбрать следующий и перейти к нему")).clicked() {
+                        if ui.small_button(icons::labelled(Icon::Right, tr("Next", "Следующий"))).on_hover_text(tr("Select the next one and go there", "Выбрать следующий и перейти к нему")).clicked() {
                             let n = match &self.walk {
                                 Some((f, i)) if f.eq_ignore_ascii_case(&g.file) => (i + 1) % g.at.len(),
                                 _ => 0,

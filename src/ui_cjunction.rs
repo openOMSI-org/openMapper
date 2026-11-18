@@ -398,7 +398,7 @@ impl ComplexJunctions {
                     }
                 }
             });
-            if ui.button(tr("New", "Новый")).clicked() {
+            if ui.button(icons::labelled(Icon::NewFile, tr("New", "Новый"))).clicked() {
                 self.load(fresh());
             }
         });
@@ -419,7 +419,7 @@ impl ComplexJunctions {
                 }
             }
         });
-        if self.tool == Tool::Curve && self.pending.len() >= 2 && ui.button(tr("Finish the curve", "Закончить кривую")).clicked() {
+        if self.tool == Tool::Curve && self.pending.len() >= 2 && ui.button(icons::labelled(Icon::Check, tr("Finish the curve", "Закончить кривую"))).clicked() {
             self.commit(lib);
         }
         check(ui, &mut self.snap, tr("Snap to the grid and to ends", "Привязка к сетке и концам"));
@@ -445,10 +445,10 @@ impl ComplexJunctions {
             });
         }
         ui.horizontal(|ui| {
-            if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(tr("Undo", "Отменить"))).on_hover_text("Ctrl+Z").clicked() {
+            if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(icons::labelled(Icon::Undo, tr("Undo", "Отменить")))).on_hover_text("Ctrl+Z").clicked() {
                 self.undo_step();
             }
-            if ui.add_enabled(!self.redo.is_empty(), egui::Button::new(tr("Redo", "Вернуть"))).on_hover_text("Ctrl+Y").clicked() {
+            if ui.add_enabled(!self.redo.is_empty(), egui::Button::new(icons::labelled(Icon::Redo, tr("Redo", "Вернуть")))).on_hover_text("Ctrl+Y").clicked() {
                 self.redo_step();
             }
         });
@@ -535,7 +535,7 @@ impl ComplexJunctions {
                 }
                 ui.label(RichText::new(if a.road.is_empty() { tr("any road type", "любой тип дороги").to_string() } else { lib.find(&a.road).map(|r| r.name.clone()).unwrap_or_else(|| a.road.clone()) }).small());
                 ui.horizontal(|ui| {
-                    if ui.button(tr("Road: the type chosen", "Дорога: выбранный тип")).clicked() {
+                    if ui.button(icons::labelled(Icon::Road, tr("Road: the type chosen", "Дорога: выбранный тип"))).clicked() {
                         if let Some(f) = chosen.clone() {
                             a.road = f;
                             a.auto = false;
@@ -580,19 +580,19 @@ impl ComplexJunctions {
         ui.add_space(6.0);
         ui.label(RichText::new(tr("The whole drawing", "Весь рисунок")).strong());
         ui.horizontal_wrapped(|ui| {
-            if ui.small_button(tr("Mirror", "Зеркало")).on_hover_text(tr("Left and right swapped", "Лево и право меняются местами")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Flip, tr("Mirror", "Зеркало"))).on_hover_text(tr("Left and right swapped", "Лево и право меняются местами")).clicked() {
                 self.layout.transform(true, 0.0);
             }
-            if ui.small_button(tr("Turn 90°", "Повернуть на 90°")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Rotate, tr("Turn 90°", "Повернуть на 90°"))).clicked() {
                 self.layout.transform(false, 90.0);
             }
-            if ui.small_button(tr("Find the arms", "Найти въезды")).on_hover_text(tr("The free ends of roads become arms", "Свободные концы дорог становятся въездами")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Search, tr("Find the arms", "Найти въезды"))).on_hover_text(tr("The free ends of roads become arms", "Свободные концы дорог становятся въездами")).clicked() {
                 let was = self.auto_arms;
                 self.layout.sync_arms(&|f| is_road(lib, f), &|f| half_of(lib, f));
                 self.rebuild();
                 self.auto_arms = was;
             }
-            if ui.small_button(tr("Clear", "Очистить")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Eraser, tr("Clear", "Очистить"))).clicked() {
                 self.layout.pieces.clear();
                 self.layout.arms.clear();
                 self.pick = None;
@@ -605,7 +605,7 @@ impl ComplexJunctions {
     /// chosen to draw with; it is laid with the Line, Arc and Curve tools like any other.
     fn paint_section(&mut self, ui: &mut egui::Ui) {
         use crate::mark_spline::{Paint, PaintStyle};
-        egui::CollapsingHeader::new(RichText::new(tr("Painted line", "Нарисованная линия")).strong()).id_salt("cj paint").default_open(false).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Brush, tr("Painted line", "Нарисованная линия"))).id_salt("cj paint").default_open(false).show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for (label, hint, preset) in [
                     (tr("Stop line", "Стоп-линия"), tr("A wide solid line across a lane: draw it across the road", "Широкая сплошная линия поперёк полосы: рисуйте её поперёк дороги"), Paint::stop_line()),
@@ -647,7 +647,7 @@ impl ComplexJunctions {
                 });
             }
             let paint = *p;
-            if ui.add_enabled(self.content.is_some(), egui::Button::new(tr("Draw with this line", "Рисовать этой линией"))).on_hover_text(tr("It is made as a spline type of the content folder (Splines\\openMapper\\marks) and chosen: draw it with Line, Arc or Curve, over the asphalt", "Создаётся как тип сплайна в папке контента (Splines\\openMapper\\marks) и выбирается: рисуйте им Линией, Дугой или Кривой поверх асфальта")).clicked() {
+            if ui.add_enabled(self.content.is_some(), egui::Button::new(icons::labelled(Icon::Brush, tr("Draw with this line", "Рисовать этой линией")))).on_hover_text(tr("It is made as a spline type of the content folder (Splines\\openMapper\\marks) and chosen: draw it with Line, Arc or Curve, over the asphalt", "Создаётся как тип сплайна в папке контента (Splines\\openMapper\\marks) и выбирается: рисуйте им Линией, Дугой или Кривой поверх асфальта")).clicked() {
                 if let Some(c) = self.content.clone() {
                     match paint.write(&c) {
                         Ok(rel) => {
@@ -690,10 +690,10 @@ impl ComplexJunctions {
                     if ui.selectable_label(self.pick == Some(Pick::Piece(i)), format!("{name} · {len:.0} m")).clicked() {
                         self.pick = Some(Pick::Piece(i));
                     }
-                    if i + 1 < n && !self.layout.pieces[i + 1].auto && ui.small_button("^").on_hover_text(tr("Higher", "Выше")).clicked() {
+                    if i + 1 < n && !self.layout.pieces[i + 1].auto && icons::small(ui, Icon::Up, tr("Higher", "Выше")).clicked() {
                         swap = Some((i, i + 1));
                     }
-                    if i > 0 && ui.small_button("v").on_hover_text(tr("Lower", "Ниже")).clicked() {
+                    if i > 0 && icons::small(ui, Icon::Down, tr("Lower", "Ниже")).clicked() {
                         swap = Some((i, i - 1));
                     }
                 });
@@ -769,21 +769,21 @@ impl ComplexJunctions {
             ui.label(tr("Lift", "Высота"));
             ui.add(egui::DragValue::new(&mut p.lift).speed(0.005).range(-0.5..=2.0).max_decimals(3).suffix(" m")).on_hover_text(tr("Above the plate: markings lie a little over the asphalt they are painted on", "Над плитой: разметка лежит чуть выше асфальта, на котором нарисована"));
         });
-        if ui.button(tr("Type: the one chosen", "Тип: выбранный")).clicked() {
+        if ui.button(icons::labelled(Icon::Dropper, tr("Type: the one chosen", "Тип: выбранный"))).clicked() {
             if let Some(f) = chosen {
                 p.file = f;
             }
         }
         ui.horizontal_wrapped(|ui| {
-            dup = ui.small_button(tr("Copy", "Копия")).on_hover_text("Ctrl+D").clicked();
-            mirror = ui.small_button(tr("Mirror", "Зеркало")).clicked();
-            quarter = ui.small_button(tr("Turn 90°", "Повернуть на 90°")).clicked();
-            reverse = ui.small_button(tr("Reverse", "Развернуть")).on_hover_text(tr("Runs the other way: the piece's start and end swap", "Идёт в другую сторону: начало и конец меняются")).clicked();
-            lower = i > 0 && ui.small_button(tr("Lower", "Ниже")).on_hover_text(tr("Under the one before it", "Под предыдущую")).clicked();
-            higher = i + 1 < self.layout.pieces.len() && ui.small_button(tr("Higher", "Выше")).on_hover_text(tr("Over the one after it", "Над следующей")).clicked();
+            dup = ui.small_button(icons::labelled(Icon::Duplicate, tr("Copy", "Копия"))).on_hover_text("Ctrl+D").clicked();
+            mirror = ui.small_button(icons::labelled(Icon::Flip, tr("Mirror", "Зеркало"))).clicked();
+            quarter = ui.small_button(icons::labelled(Icon::Rotate, tr("Turn 90°", "Повернуть на 90°"))).clicked();
+            reverse = ui.small_button(icons::labelled(Icon::Reverse, tr("Reverse", "Развернуть"))).on_hover_text(tr("Runs the other way: the piece's start and end swap", "Идёт в другую сторону: начало и конец меняются")).clicked();
+            lower = i > 0 && ui.small_button(icons::labelled(Icon::Down, tr("Lower", "Ниже"))).on_hover_text(tr("Under the one before it", "Под предыдущую")).clicked();
+            higher = i + 1 < self.layout.pieces.len() && ui.small_button(icons::labelled(Icon::Up, tr("Higher", "Выше"))).on_hover_text(tr("Over the one after it", "Над следующей")).clicked();
             delete = ui.small_button(icons::labelled(Icon::Delete, tr("Delete", "Удалить"))).clicked();
         });
-        if ui.add_enabled(self.obj_file.is_some(), egui::Button::new(tr("Objects along it", "Объекты вдоль неё")).small()).on_hover_text(tr("The object chosen with the Object tool stood along this piece at the spacing and offset set there", "Объект, выбранный инструментом «Объект», вдоль этой детали с заданными там шагом и сдвигом")).clicked() {
+        if ui.add_enabled(self.obj_file.is_some(), egui::Button::new(icons::labelled(Icon::Fence, tr("Objects along it", "Объекты вдоль неё"))).small()).on_hover_text(tr("The object chosen with the Object tool stood along this piece at the spacing and offset set there", "Объект, выбранный инструментом «Объект», вдоль этой детали с заданными там шагом и сдвигом")).clicked() {
             self.objects_along(i);
         }
         let p = &mut self.layout.pieces[i];
@@ -830,13 +830,13 @@ impl ComplexJunctions {
             ui.selectable_value(&mut self.preview, true, tr("Preview", "Просмотр")).on_hover_text(tr("The junction as it will be: the roads running out of the arms, no grid or handles", "Перекрёсток таким, каким будет: дороги от въездов, без сетки и точек"));
             check(ui, &mut self.lanes, tr("Lanes", "Полосы")).on_hover_text(tr("The lanes of the AI over the drawing, with the way they go", "Полосы движения ИИ поверх рисунка, с направлением"));
             ui.separator();
-            if ui.button("−").on_hover_text(tr("Zoom out (-)", "Отдалить (-)")).clicked() {
+            if icons::button(ui, Icon::ZoomOut, tr("Zoom out (-)", "Отдалить (-)")).clicked() {
                 self.zoom_by(1.0 / 1.35);
             }
-            if ui.button("+").on_hover_text(tr("Zoom in (+)", "Приблизить (+)")).clicked() {
+            if icons::button(ui, Icon::ZoomIn, tr("Zoom in (+)", "Приблизить (+)")).clicked() {
                 self.zoom_by(1.35);
             }
-            if ui.button(tr("Fit", "Вписать")).on_hover_text(tr("The whole drawing in view (F)", "Весь рисунок в окне (F)")).clicked() {
+            if ui.button(icons::labelled(Icon::Fit, tr("Fit", "Вписать"))).on_hover_text(tr("The whole drawing in view (F)", "Весь рисунок в окне (F)")).clicked() {
                 self.fit = true;
             }
             ui.label(RichText::new(format!("{:.0}%", self.scale / 12.0 * 100.0)).small().color(pal().text_dim));
@@ -1338,7 +1338,7 @@ impl ComplexJunctions {
             if ui.add_enabled(content.is_some() && !self.layout.pieces.is_empty(), egui::Button::new(icons::labelled(Icon::Cube, tr("Save as an object", "Сохранить как объект")))).on_hover_text(tr("The whole drawing as one scenery object of the catalogue (its meshes, and lanes for the AI along its pieces), to place anywhere like any object; arms are not needed", "Весь рисунок как один объект каталога (меши и полосы для ИИ вдоль деталей), ставится где угодно как обычный объект; въезды не нужны")).clicked() {
                 actions.push(Action::SaveComplexObject(Box::new(self.layout.clone())));
             }
-            if ui.add_enabled(content.is_some() && !self.layout.pieces.is_empty(), egui::Button::new(tr("Save the drawing", "Сохранить рисунок"))).clicked() {
+            if ui.add_enabled(content.is_some() && !self.layout.pieces.is_empty(), egui::Button::new(icons::labelled(Icon::Save, tr("Save the drawing", "Сохранить рисунок")))).clicked() {
                 if let Some(c) = content {
                     match self.layout.save(c) {
                         Ok(_) => {

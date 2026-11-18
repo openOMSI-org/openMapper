@@ -141,7 +141,7 @@ impl Guide {
         ];
         let done = steps.iter().filter(|x| x.0).count();
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Help, tr("Getting started", "С чего начать")))
+        egui::Window::new(icons::labelled(Icon::School, tr("Getting started", "С чего начать")))
             .id(egui::Id::new("guide window"))
             .open(&mut open)
             .default_pos([ctx.content_rect().right() - 640.0, 80.0])
@@ -164,7 +164,7 @@ impl Guide {
                             }
                         });
                         if let Some(b) = button {
-                            if !ok && ui.add(egui::Button::new(tr("Show me", "Показать")).min_size(Vec2::new(0.0, 22.0))).clicked() {
+                            if !ok && ui.add(egui::Button::new(icons::labelled(Icon::Visible, tr("Show me", "Показать"))).min_size(Vec2::new(0.0, 22.0))).clicked() {
                                 go.push(b);
                             }
                         }

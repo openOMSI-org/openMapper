@@ -329,7 +329,7 @@ impl RoadTypes {
                         Self::maker_ui(ui, spec, &mut self.textures, &mut self.tex_search, roots, &mut self.pics, &mut self.canvas.open);
                         ui.add_space(6.0);
                         ui.horizontal(|ui| {
-                            if ui.button(icons::labelled(Icon::CheckCircle, tr("Create the road type", "Создать тип дороги"))).clicked() {
+                            if ui.button(icons::labelled(Icon::Check, tr("Create the road type", "Создать тип дороги"))).clicked() {
                                 match spec.write(&roots.content) {
                                     Ok(rel) => {
                                         if spec.pocket > 0.0 {
@@ -359,7 +359,7 @@ impl RoadTypes {
                         }
                         let path = roots.resolve(&rel);
                         if let Some(spec) = RoadSpec::of(&path) {
-                            if ui.button(icons::labelled(Icon::Settings, tr("Change it in the road maker", "Изменить в конструкторе"))).clicked() {
+                            if ui.button(icons::labelled(Icon::Edit, tr("Change it in the road maker", "Изменить в конструкторе"))).clicked() {
                                 self.maker = Some(spec);
                             }
                         }
@@ -520,26 +520,26 @@ impl RoadTypes {
                         }
                     }
                 });
-                if ui.small_button(tr("Own…", "Своя…")).clicked() {
+                if ui.small_button(icons::labelled(Icon::Open, tr("Own…", "Своя…"))).clicked() {
                     if let Some(f) = rfd::FileDialog::new().add_filter(tr("Pictures", "Картинки"), &["png", "jpg", "bmp", "tga", "dds"]).pick_file() {
                         *cur = f;
                     }
                 }
             });
         }
-        egui::CollapsingHeader::new(RichText::new(tr("Road markings", "Дорожная разметка")).strong().color(pal().text_strong)).id_salt("road markings").default_open(s.marked).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Brush, tr("Road markings", "Дорожная разметка"))).id_salt("road markings").default_open(s.marked).show(ui, |ui| {
             ui.checkbox(&mut s.marked, tr("Paint my own markings", "Нарисовать свою разметку")).on_hover_text(tr("The maker paints the lines onto the roadway texture: pick a plain asphalt texture, or its own lines show too", "Конструктор рисует линии на текстуре проезжей части: берите гладкий асфальт, иначе проступят и его собственные линии"));
             if !s.marked {
                 return;
             }
             ui.horizontal(|ui| {
-                if ui.button(tr("Standard for these lanes", "Типовая для этих полос")).clicked() {
+                if ui.button(icons::labelled(Icon::AutoFix, tr("Standard for these lanes", "Типовая для этих полос"))).clicked() {
                     s.markings = s.standard_markings();
                 }
-                if ui.button(tr("Add a line", "Добавить линию")).clicked() {
+                if ui.button(icons::labelled(Icon::Add, tr("Add a line", "Добавить линию"))).clicked() {
                     s.markings.push(Marking::default());
                 }
-                if ui.button(tr("Clear", "Очистить")).clicked() {
+                if ui.button(icons::labelled(Icon::Eraser, tr("Clear", "Очистить"))).clicked() {
                     s.markings.clear();
                 }
             });
@@ -573,7 +573,7 @@ impl RoadTypes {
                         ui.add(egui::DragValue::new(&mut m.dash).speed(0.1).range(0.5..=12.0).fixed_decimals(1).suffix(" m")).on_hover_text(tr("Dash length", "Длина штриха"));
                         ui.add(egui::DragValue::new(&mut m.gap).speed(0.1).range(0.5..=20.0).fixed_decimals(1).suffix(" m")).on_hover_text(tr("Gap between dashes", "Промежуток между штрихами"));
                     }
-                    if ui.small_button("×").clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                         remove = Some(i);
                     }
                 });

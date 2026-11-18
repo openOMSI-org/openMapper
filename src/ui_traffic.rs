@@ -126,7 +126,7 @@ impl TrafficUi {
         let before = (doc.global.traffic_density_road.clone(), doc.global.traffic_density_passenger.clone(), doc.traffic.clone(), doc.timetable.clone());
         let global_before = (doc.global.clone(), doc.order.clone());
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Traffic, tr("Traffic and AI", "Трафик и ИИ")))
+        egui::Window::new(icons::labelled(Icon::Car, tr("Traffic and AI", "Трафик и ИИ")))
             .id(egui::Id::new("traffic window"))
             .open(&mut open)
             .default_pos([330.0, 90.0])
@@ -545,7 +545,7 @@ fn curve_table(ui: &mut egui::Ui, k: usize, title: &str, color: Color32, curve: 
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         ui.label(RichText::new(title).strong().color(color));
-        ui.menu_button(tr("Typical day…", "Типичный день…"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Schedule, tr("Typical day…", "Типичный день…")), |ui| {
             for (name, c) in [(tr("Quiet village", "Тихая деревня"), QUIET), (tr("Town with rush hours", "Город с часами пик"), TOWN), (tr("The same all day", "Весь день одинаково"), FLAT)] {
                 if ui.button(name).clicked() {
                     *curve = c.to_vec();

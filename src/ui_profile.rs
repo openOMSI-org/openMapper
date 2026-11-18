@@ -9,6 +9,7 @@ use glam::DVec2;
 use crate::doc::{tile_origin, Document, Sel};
 use crate::editor::Editor;
 use crate::i18n::tr;
+use crate::icons::Icon;
 use crate::ui::{section, Action};
 use crate::theme::pal;
 use crate::theme;
@@ -106,7 +107,7 @@ pub fn profile_section(ui: &mut egui::Ui, ed: &mut Editor, actions: &mut Vec<Act
         return;
     }
     let js = joints(doc, &chain);
-    section(ui, tr("Height profile", "Профиль высот"));
+    section(ui, Icon::Profile, tr("Height profile", "Профиль высот"));
     let mut set = None;
     egui::Frame::new().inner_margin(egui::Margin::same(8)).show(ui, |ui| {
         set = chart(ui, &pts, &js, actions);

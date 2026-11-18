@@ -180,7 +180,7 @@ impl HofUi {
                 ui.label(RichText::new(format!("{} {}", tr("Used by the depot", "Используется депо"), users.join(", "))).color(pal().text_dim));
             }
             let others: Vec<usize> = doc.traffic.groups.iter().enumerate().filter(|(_, g)| g.is_depot && !g.hof.as_deref().unwrap_or("").eq_ignore_ascii_case(&file)).map(|(k, _)| k).collect();
-            if !others.is_empty() && ui.button(tr("Use it for every depot", "Для всех депо")).on_hover_text(tr("The AI's depot groups (Vehicle groups tab) take their buses' destinations from it", "Группы депо ИИ (вкладка «Группы машин») берут из него конечные своих автобусов")).clicked() {
+            if !others.is_empty() && ui.button(icons::labelled(Icon::DoneAll, tr("Use it for every depot", "Для всех депо"))).on_hover_text(tr("The AI's depot groups (Vehicle groups tab) take their buses' destinations from it", "Группы депо ИИ (вкладка «Группы машин») берут из него конечные своих автобусов")).clicked() {
                 for k in others {
                     doc.traffic.groups[k].hof = Some(file.clone());
                 }
@@ -198,7 +198,7 @@ impl HofUi {
                 let ok = crate::timetable::valid_file_name(&t) && !doc.traffic.depots.iter().enumerate().any(|(k, h)| k != i && h.file.eq_ignore_ascii_case(&t));
                 if t != file {
                     if ok {
-                        if ui.button(tr("Rename", "Переименовать")).clicked() {
+                        if ui.button(icons::labelled(Icon::Edit, tr("Rename", "Переименовать"))).clicked() {
                             for g in doc.traffic.groups.iter_mut().filter(|g| g.hof.as_deref().unwrap_or("").eq_ignore_ascii_case(&file)) {
                                 g.hof = Some(t.clone());
                             }
@@ -222,7 +222,7 @@ impl HofUi {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             let h = &doc.traffic.depots[i];
-            for (p, icon, label, n) in [(Part::Termini, Icon::Flag, tr("Destinations", "Конечные"), h.termini.len()), (Part::Stops, Icon::Bus, tr("Stops", "Остановки"), h.stops.len()), (Part::Routes, Icon::Route, tr("Routes", "Маршруты"), h.routes.len())] {
+            for (p, icon, label, n) in [(Part::Termini, Icon::Signpost, tr("Destinations", "Конечные"), h.termini.len()), (Part::Stops, Icon::Bus, tr("Stops", "Остановки"), h.stops.len()), (Part::Routes, Icon::Route, tr("Routes", "Маршруты"), h.routes.len())] {
                 if ui.add(egui::Button::selectable(self.part == p, icons::labelled(icon, &format!("{label} ({n})")))).clicked() {
                     self.part = p;
                 }

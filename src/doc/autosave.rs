@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{Document, TileKey};
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::theme::pal;
 
 /// How often the changes are kept (`OPENMAPPER_AUTOSAVE=<seconds>` for checks).
@@ -309,7 +310,7 @@ impl Timer {
 /// drop it.
 pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
     let mut answer = None;
-    egui::Window::new(tr("Unsaved changes found", "Найдены несохранённые изменения")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Backup, tr("Unsaved changes found", "Найдены несохранённые изменения"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(380.0);
         ui.label(format!(
             "{} «{}» ({}).",
@@ -324,10 +325,10 @@ pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-            if ui.button(tr("Restore the changes", "Вернуть изменения")).clicked() {
+            if ui.button(icons::labelled(Icon::Backup, tr("Restore the changes", "Вернуть изменения"))).clicked() {
                 answer = Some(true);
             }
-            if ui.button(tr("Drop them", "Отбросить")).clicked() {
+            if ui.button(icons::labelled(Icon::Delete, tr("Drop them", "Отбросить"))).clicked() {
                 answer = Some(false);
             }
         });

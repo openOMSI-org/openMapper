@@ -2906,7 +2906,7 @@ impl CrossingPaths {
         }
         // (each page named as the crossing editor's own window names it)
         let title = match self.tab {
-            Tab::Paths => icons::labelled(Icon::Route, tr("Crossing editor", "Редактор перекрёстка")),
+            Tab::Paths => icons::labelled(Icon::Crossing, tr("Crossing editor", "Редактор перекрёстка")),
             Tab::Lights => icons::labelled(Icon::Traffic, tr("Traffic lights", "Светофоры")),
         };
         let mut window = egui::Window::new(title)
@@ -2947,10 +2947,10 @@ impl CrossingPaths {
                             ui.set_max_width(340.0);
                             ui.set_min_width(340.0);
                             ui.horizontal(|ui| {
-                                if ui.button(tr("Back to 2D", "К 2D")).on_hover_text(tr("Draw the crossing from above, in the window, and lay paths there", "Рисовать перекрёсток сверху, в окне, и проводить пути там")).clicked() {
+                                if ui.button(icons::labelled(Icon::Map, tr("Back to 2D", "К 2D"))).on_hover_text(tr("Draw the crossing from above, in the window, and lay paths there", "Рисовать перекрёсток сверху, в окне, и проводить пути там")).clicked() {
                                     self.view_3d = false;
                                 }
-                                if ui.button(tr("Frame", "Вписать")).on_hover_text(tr("Put the crossing in the middle of the map's view", "Поставить перекрёсток в середину вида карты")).clicked() {
+                                if ui.button(icons::labelled(Icon::Fit, tr("Frame", "Вписать"))).on_hover_text(tr("Put the crossing in the middle of the map's view", "Поставить перекрёсток в середину вида карты")).clicked() {
                                     self.frame_on_map = true;
                                 }
                             });
@@ -2997,7 +2997,7 @@ impl CrossingPaths {
             // (asked: Save and close / Close without saving / Cancel)
             let mut answer: Option<bool> = None;
             let screen = ctx.content_rect();
-            egui::Window::new(tr("Close the crossing editor", "Закрыть редактор перекрёстка"))
+            egui::Window::new(icons::labelled(Icon::Crossing, tr("Close the crossing editor", "Закрыть редактор перекрёстка")))
                 .id(egui::Id::new("crossing close question"))
                 .collapsible(false)
                 .resizable(false)
@@ -3010,7 +3010,7 @@ impl CrossingPaths {
                         if ui.button(icons::labelled(Icon::Save, tr("Save and close", "Сохранить и закрыть"))).clicked() {
                             answer = Some(true);
                         }
-                        if ui.button(tr("Close without saving", "Закрыть без сохранения")).clicked() {
+                        if ui.button(icons::labelled(Icon::Close, tr("Close without saving", "Закрыть без сохранения"))).clicked() {
                             answer = Some(false);
                         }
                         if ui.button(tr("Cancel", "Отмена")).clicked() {
@@ -3097,7 +3097,7 @@ impl CrossingPaths {
                 }
                 ui.separator();
                 let own = roots.and_then(|r| crossing_edit::bak_of(&me.abs, r));
-                if ui.add_enabled(own.is_some(), egui::Button::new(tr("Remove this file's .bak", "Удалить .bak этого файла"))).clicked() {
+                if ui.add_enabled(own.is_some(), egui::Button::new(icons::labelled(Icon::Delete, tr("Remove this file's .bak", "Удалить .bak этого файла")))).clicked() {
                     if crossing_edit::remove_bak(&me.abs) {
                         me.message = Some((tr("Its .bak is gone", "Его .bak удалён").into(), false));
                     }
@@ -3264,7 +3264,7 @@ impl CrossingPaths {
         ui.horizontal(|ui| {
             ui.label(RichText::new(format!("{} ({})", tr("Paths", "Пути"), sheet.crossing.paths.len())).strong());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button(icons::labelled(Icon::Add, "")).on_hover_text(tr("Add a path carried on from the picked one (N)", "Добавить путь, продолжающий выбранный (N)")).clicked() {
+                if icons::small(ui, Icon::Add, tr("Add a path carried on from the picked one (N)", "Добавить путь, продолжающий выбранный (N)")).clicked() {
                     self.with_sheet(sheet, |me| me.push_undo());
                     // (from the picked path's end, in the way it runs there - not a copy
                     // put beside it: that is what the Duplicate button is for)
@@ -3274,7 +3274,7 @@ impl CrossingPaths {
                     self.reveal = true;
                     changed = true;
                 }
-                if ui.small_button(icons::labelled(Icon::Copy, "")).on_hover_text(tr("Duplicate", "Дублировать")).clicked() {
+                if icons::small(ui, Icon::Duplicate, tr("Duplicate", "Дублировать")).clicked() {
                     if let Some(q) = self.selected.and_then(|i| sheet.crossing.paths.get(i)).cloned() {
                         sheet.crossing.paths.push(q);
                         self.pick_only(sheet.crossing.paths.len() - 1);
@@ -3301,7 +3301,7 @@ impl CrossingPaths {
         // (openOMSI joins a crossing's lanes to the roads' by geometry alone - it reads the
         // `[splinehelper]` points and does nothing with them - so the ends have to meet by
         // those numbers for its traffic to drive through)
-        if ui.button(tr("Connect the roads", "Соединить с дорогами")).on_hover_text(tr("Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers", "Совместить концы перекрёстка с концами полос дорог. openOMSI соединяет полосы по геометрии, а не по точкам привязки")).clicked() {
+        if ui.button(icons::labelled(Icon::Link, tr("Connect the roads", "Соединить с дорогами"))).on_hover_text(tr("Line the crossing's ends up with the road lanes' own ends. openOMSI joins lanes by their geometry, not by the spline helpers", "Совместить концы перекрёстка с концами полос дорог. openOMSI соединяет полосы по геометрии, а не по точкам привязки")).clicked() {
             self.link_now = true;
         }
         if !self.link_report.is_empty() {
@@ -3309,7 +3309,11 @@ impl CrossingPaths {
             let total = self.link_report.len();
             egui::CollapsingHeader::new(RichText::new(format!("{} ({ok}/{total})", tr("Link check", "Проверка соединений"))).small()).id_salt("crossing link check").default_open(ok < total).show(ui, |ui| {
                 for n in &self.link_report {
-                    ui.label(RichText::new(format!("{} {} {}", if n.ok { "✓" } else { "✗" }, n.who, n.why)).small().color(if n.ok { pal().ok } else { pal().error }));
+                    let color = if n.ok { pal().ok } else { pal().error };
+                    ui.horizontal(|ui| {
+                        ui.label(if n.ok { Icon::Check } else { Icon::Close }.text(14.0).color(color));
+                        ui.label(RichText::new(format!("{} {}", n.who, n.why)).small().color(color));
+                    });
                 }
             });
         }
@@ -3349,7 +3353,8 @@ impl CrossingPaths {
                     text.push_str(&format!("  L{l}"));
                 }
                 if !p.blocks.is_empty() {
-                    text.push_str(&format!("  ⛔{}", p.blocks.len()));
+                    // (the icon font stands behind the text fonts)
+                    text.push_str(&format!("  {}{}", Icon::Block.ch(), p.blocks.len()));
                 }
                 let on = self.selected == Some(i);
                 let also = self.multi.contains(&i);
@@ -3362,13 +3367,13 @@ impl CrossingPaths {
                         let (add, run) = ui.input(|k| (k.modifiers.command || k.modifiers.ctrl, k.modifiers.shift));
                         self.pick_path(i, add || run, run);
                     }
-                    if i > 0 && ui.small_button("↑").on_hover_text(tr("Move up", "Выше")).clicked() {
+                    if i > 0 && icons::small(ui, Icon::Up, tr("Move up", "Выше")).clicked() {
                         move_to = Some((i, i - 1));
                     }
-                    if i + 1 < sheet.crossing.paths.len() && ui.small_button("↓").on_hover_text(tr("Move down", "Ниже")).clicked() {
+                    if i + 1 < sheet.crossing.paths.len() && icons::small(ui, Icon::Down, tr("Move down", "Ниже")).clicked() {
                         move_to = Some((i, i + 1));
                     }
-                    if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Remove this path", "Удалить этот путь")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Remove this path", "Удалить этот путь")).clicked() {
                         remove = Some(i);
                     }
                 });
@@ -3402,13 +3407,13 @@ impl CrossingPaths {
         // ---- the spline helpers
         ui.separator();
         let mut helper_gone = None;
-        egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Spline helpers", "Точки привязки сплайнов"), sheet.crossing.helpers.len())).strong()).id_salt("crossing helpers").default_open(false).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Line, &format!("{} ({})", tr("Spline helpers", "Точки привязки сплайнов"), sheet.crossing.helpers.len()))).id_salt("crossing helpers").default_open(false).show(ui, |ui| {
             ui.label(RichText::new(tr("Where a road of the map snaps onto the crossing. x, height, forward in the object's frame", "Где дорога карты пристыковывается к перекрёстку. x, высота, вперёд в системе объекта")).small().color(pal().text_dim));
             for (n, h) in sheet.crossing.helpers.iter_mut().enumerate() {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(format!("#{n}")).small().color(pal().text_dim));
                     changed |= ui.add(egui::TextEdit::singleline(&mut h.spline).desired_width(120.0)).on_hover_text(tr("The road type it takes (a `.sli`)", "Тип дороги, который он принимает (`.sli`)")).changed();
-                    if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                         helper_gone = Some(n);
                     }
                 });
@@ -3433,7 +3438,7 @@ impl CrossingPaths {
                     sheet.crossing.helpers.push(Helper { spline, x: 0.0, up: 0.0, fwd: 0.0, heading: 0.0, length: 0.1, radius: 0.0 });
                     changed = true;
                 }
-                if ui.button(tr("At the picked end", "У выбранного конца")).on_hover_text(tr("A helper where the picked path ends, facing out of the crossing", "Точка там, где кончается выбранный путь, наружу от перекрёстка")).clicked() {
+                if ui.button(icons::labelled(Icon::Add, tr("At the picked end", "У выбранного конца"))).on_hover_text(tr("A helper where the picked path ends, facing out of the crossing", "Точка там, где кончается выбранный путь, наружу от перекрёстка")).clicked() {
                     if let Some(p) = self.selected.and_then(|i| sheet.crossing.paths.get(i)) {
                         let at = p.end();
                         let c = p.curve();
@@ -3710,7 +3715,7 @@ impl CrossingPaths {
                         p.v[7] = (b / 100.0) as f32;
                         changed = true;
                     }
-                    if ui.button(tr("Even grade", "Одинаковый уклон")).on_hover_text(tr("Both ends take the one rise between their heights", "Оба конца с одним уклоном между их высотами")).clicked() {
+                    if ui.button(icons::labelled(Icon::Slope, tr("Even grade", "Одинаковый уклон"))).on_hover_text(tr("Both ends take the one rise between their heights", "Оба конца с одним уклоном между их высотами")).clicked() {
                         let z = p.end().z;
                         set_end_height(p, z);
                         changed = true;
@@ -3795,7 +3800,7 @@ impl CrossingPaths {
         // the same key)
         {
             let long_enough = sheet.crossing.paths.get(i).is_some_and(|p| p.length() > 0.2);
-            if ui.add_enabled(long_enough, egui::Button::new(tr("Split", "Разделить")).small()).on_hover_text(format!("{} (K)", tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"))).clicked()
+            if ui.add_enabled(long_enough, egui::Button::new(icons::labelled(Icon::Cut, tr("Split", "Разделить"))).small()).on_hover_text(format!("{} (K)", tr("Cut in two: each piece can now be changed on its own", "Разрезана надвое: каждый кусок теперь можно менять отдельно"))).clicked()
                 && let Some(at) = split_path(&mut sheet.crossing, i, 0.5)
             {
                 self.selected = Some(at);
@@ -3837,13 +3842,13 @@ impl CrossingPaths {
     /// Above the drawing: the zoom, laying a path, and the map's own view of the object.
     fn view_bar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.button("−").on_hover_text(tr("Zoom out", "Отдалить")).clicked() {
+            if icons::button(ui, Icon::ZoomOut, tr("Zoom out", "Отдалить")).clicked() {
                 self.scale = (self.scale / 1.35).clamp(0.6, 400.0);
             }
-            if ui.button("+").on_hover_text(tr("Zoom in", "Приблизить")).clicked() {
+            if icons::button(ui, Icon::ZoomIn, tr("Zoom in", "Приблизить")).clicked() {
                 self.scale = (self.scale * 1.35).clamp(0.6, 400.0);
             }
-            if ui.button(tr("Fit", "Вписать")).on_hover_text(tr("The whole crossing in view", "Весь перекрёсток в окне")).clicked() {
+            if ui.button(icons::labelled(Icon::Fit, tr("Fit", "Вписать"))).on_hover_text(tr("The whole crossing in view", "Весь перекрёсток в окне")).clicked() {
                 self.fit = true;
             }
             ui.separator();
@@ -3854,13 +3859,13 @@ impl CrossingPaths {
             }
             ui.separator();
             let show_3d = self.view_3d;
-            if ui.selectable_label(show_3d, tr("3D", "3D")).on_hover_text(tr("Show the path on the map itself: the crossing object in 3D, with its paths", "Показать пути на самой карте: объект перекрёстка в 3D со своими путями")).clicked() {
+            if ui.selectable_label(show_3d, icons::labelled(Icon::Model3d, tr("3D", "3D"))).on_hover_text(tr("Show the path on the map itself: the crossing object in 3D, with its paths", "Показать пути на самой карте: объект перекрёстка в 3D со своими путями")).clicked() {
                 // (the map is looked at as it is: pressing 3D only changes where the paths are
                 // drawn, it does not take the view somewhere else. `Show on the map` frames it.)
                 self.view_3d = true;
                 self.draw = false;
             }
-            if ui.selectable_label(!show_3d, tr("2D", "2D")).on_hover_text(tr("Draw the crossing from above, in the window", "Рисовать перекрёсток сверху, в окне")).clicked() {
+            if ui.selectable_label(!show_3d, icons::labelled(Icon::Map, tr("2D", "2D"))).on_hover_text(tr("Draw the crossing from above, in the window", "Рисовать перекрёсток сверху, в окне")).clicked() {
                 self.view_3d = false;
                 self.frame_on_map = false;
             }
@@ -3889,19 +3894,19 @@ impl CrossingPaths {
                 ui.label(RichText::new(tr("Traffic light", "Светофор")).strong());
                 let shown = self.light.map(|i| i + 1).unwrap_or(0);
                 ui.label(RichText::new(format!("{shown} / {count}")).monospace().small().color(pal().text_dim));
-                if ui.add_enabled(self.light.is_some_and(|i| i > 0), egui::Button::new("<").small()).clicked() {
+                if ui.add_enabled(self.light.is_some_and(|i| i > 0), egui::Button::new(Icon::ChevronLeft.text(15.0)).small()).on_hover_text(tr("The light before", "Предыдущий светофор")).clicked() {
                     self.light = self.light.map(|i| i - 1);
                     self.phase = Some(0);
                 }
-                if ui.add_enabled(self.light.is_some_and(|i| i + 1 < count), egui::Button::new(">").small()).clicked() {
+                if ui.add_enabled(self.light.is_some_and(|i| i + 1 < count), egui::Button::new(Icon::ChevronRight.text(15.0)).small()).on_hover_text(tr("The next light", "Следующий светофор")).clicked() {
                     self.light = self.light.map(|i| i + 1);
                     self.phase = Some(0);
                 }
-                if ui.small_button(icons::labelled(Icon::Add, "")).on_hover_text(tr("A light", "Светофор")).clicked() {
+                if icons::small(ui, Icon::Add, tr("A light", "Светофор")).clicked() {
                     self.light = Some(sheet.crossing.add_light());
                     self.phase = Some(0);
                 }
-                if ui.add_enabled(self.light.is_some(), egui::Button::new(icons::labelled(Icon::Delete, "")).small()).on_hover_text(tr("Remove this light", "Удалить этот светофор")).clicked() {
+                if ui.add_enabled(self.light.is_some(), egui::Button::new(Icon::Delete.text(15.0)).small()).on_hover_text(tr("Remove this light", "Удалить этот светофор")).clicked() {
                     if let Some(i) = self.light {
                         sheet.crossing.remove_light(i);
                         self.light = if sheet.crossing.lights.is_empty() { None } else { Some(i.min(sheet.crossing.lights.len() - 1)) };
@@ -3946,17 +3951,17 @@ impl CrossingPaths {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(tr("Phase", "Фаза")).strong());
                     ui.label(RichText::new(format!("{} / {n}", self.phase.map(|p| p + 1).unwrap_or(0))).monospace().small().color(pal().text_dim));
-                    if ui.add_enabled(self.phase.is_some_and(|p| p > 0), egui::Button::new("<").small()).clicked() {
+                    if ui.add_enabled(self.phase.is_some_and(|p| p > 0), egui::Button::new(Icon::ChevronLeft.text(15.0)).small()).on_hover_text(tr("The phase before", "Предыдущая фаза")).clicked() {
                         self.phase = self.phase.map(|p| p - 1);
                     }
-                    if ui.add_enabled(self.phase.is_some_and(|p| p + 1 < n), egui::Button::new(">").small()).clicked() {
+                    if ui.add_enabled(self.phase.is_some_and(|p| p + 1 < n), egui::Button::new(Icon::ChevronRight.text(15.0)).small()).on_hover_text(tr("The next phase", "Следующая фаза")).clicked() {
                         self.phase = self.phase.map(|p| p + 1);
                     }
-                    if ui.small_button(icons::labelled(Icon::Add, "")).on_hover_text(tr("A phase", "Фаза")).clicked() {
+                    if icons::small(ui, Icon::Add, tr("A phase", "Фаза")).clicked() {
                         let at = self.phase.map(|p| p + 1).unwrap_or(n);
                         self.phase = sheet.crossing.insert_phase(i, at);
                     }
-                    if ui.add_enabled(self.phase.is_some(), egui::Button::new(icons::labelled(Icon::Delete, "")).small()).on_hover_text(tr("Delete", "Удалить")).clicked() {
+                    if ui.add_enabled(self.phase.is_some(), egui::Button::new(Icon::Delete.text(15.0)).small()).on_hover_text(tr("Delete", "Удалить")).clicked() {
                         if let Some(p) = self.phase {
                             sheet.crossing.remove_phase(i, p);
                             let n = sheet.crossing.lights[i].phases.len();
@@ -4024,7 +4029,7 @@ impl CrossingPaths {
                     ui.add(egui::DragValue::new(&mut s[0]).speed(0.2).prefix("L"));
                     ui.add(egui::DragValue::new(&mut s[1]).speed(0.2).suffix(" s"));
                     ui.add(egui::DragValue::new(&mut s[2]).range(0.0..=1.0).speed(0.1).prefix("req "));
-                    if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                         stop_gone = Some(n);
                     }
                 });
@@ -4039,8 +4044,8 @@ impl CrossingPaths {
                     ui.add(egui::DragValue::new(&mut j[0]).speed(0.2).prefix("L"));
                     ui.add(egui::DragValue::new(&mut j[1]).speed(0.2).suffix(" s"));
                     ui.add(egui::DragValue::new(&mut j[2]).range(0.0..=1.0).speed(0.1).prefix("req "));
-                    ui.add(egui::DragValue::new(&mut j[3]).speed(0.2).prefix("→ ").suffix(" s"));
-                    if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                    ui.add(egui::DragValue::new(&mut j[3]).speed(0.2).prefix(tr("to ", "к ")).suffix(" s"));
+                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                         jump_gone = Some(n);
                     }
                 });
@@ -4058,15 +4063,15 @@ impl CrossingPaths {
         ui.horizontal(|ui| {
             ui.label(RichText::new(tr("Timeline", "Временная диаграмма")).strong());
             ui.label(RichText::new(format!("{cycle:.0} s")).monospace().small().color(pal().text_dim));
-            if ui.small_button("−").on_hover_text(tr("Zoom out", "Отдалить")).clicked() {
+            if icons::small(ui, Icon::ZoomOut, tr("Zoom out", "Отдалить")).clicked() {
                 self.sec_px = (self.sec_px / 1.25).clamp(3.0, 80.0);
                 self.sec_fit = false;
             }
-            if ui.small_button("+").on_hover_text(tr("Zoom in", "Приблизить")).clicked() {
+            if icons::small(ui, Icon::ZoomIn, tr("Zoom in", "Приблизить")).clicked() {
                 self.sec_px = (self.sec_px * 1.25).clamp(3.0, 80.0);
                 self.sec_fit = false;
             }
-            if ui.small_button(tr("Fit", "Вписать")).on_hover_text(tr("The whole cycle across the width (as the traffic light window has it)", "Весь цикл по ширине (как в окне светофора)")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Fit, tr("Fit", "Вписать"))).on_hover_text(tr("The whole cycle across the width (as the traffic light window has it)", "Весь цикл по ширине (как в окне светофора)")).clicked() {
                 self.sec_fit = true;
             }
         });

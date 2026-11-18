@@ -108,7 +108,7 @@ impl Views {
         }
         let mut open = self.open;
         let mut changed = false;
-        egui::Window::new(icons::labelled(Icon::Focus, tr("Saved views", "Сохранённые виды"))).id(egui::Id::new("saved views")).open(&mut open).default_pos([360.0, 140.0]).resizable(false).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Bookmark, tr("Saved views", "Сохранённые виды"))).id(egui::Id::new("saved views")).open(&mut open).default_pos([360.0, 140.0]).resizable(false).show(ctx, |ui| {
             ui.label(RichText::new(tr("Places of the map to come back to: Ctrl+1…9 goes to the first nine, Ctrl+Shift+1…9 keeps the view there", "Места карты, к которым удобно возвращаться: Ctrl+1…9 ведёт к первым девяти, Ctrl+Shift+1…9 запоминает вид туда")).small().color(pal().text_dim));
             if ui.button(icons::labelled(Icon::Add, tr("Keep this view", "Запомнить этот вид"))).clicked() {
                 let n = self.list.len();
@@ -132,16 +132,16 @@ impl Views {
                         }
                         changed |= ui.add(egui::TextEdit::singleline(&mut v.name).desired_width(170.0)).lost_focus();
                         ui.spacing_mut().item_spacing = Vec2::new(2.0, 0.0);
-                        if ui.small_button(Icon::Raise.text(13.0)).on_hover_text(tr("Earlier in the list", "Выше в списке")).clicked() && i > 0 {
+                        if icons::small(ui, Icon::Raise, tr("Earlier in the list", "Выше в списке")).clicked() && i > 0 {
                             swap = Some(i - 1);
                         }
-                        if ui.small_button(Icon::Lower.text(13.0)).on_hover_text(tr("Later in the list", "Ниже в списке")).clicked() && i + 1 < n {
+                        if icons::small(ui, Icon::Lower, tr("Later in the list", "Ниже в списке")).clicked() && i + 1 < n {
                             swap = Some(i);
                         }
-                        if ui.small_button(Icon::Save.text(13.0)).on_hover_text(tr("Take the view now instead", "Заменить нынешним видом")).clicked() {
+                        if icons::small(ui, Icon::Save, tr("Take the view now instead", "Заменить нынешним видом")).clicked() {
                             retake = Some(i);
                         }
-                        if ui.small_button("×").on_hover_text(tr("Forget it", "Забыть")).clicked() {
+                        if icons::small(ui, Icon::Delete, tr("Forget it", "Забыть")).clicked() {
                             remove = Some(i);
                         }
                     });

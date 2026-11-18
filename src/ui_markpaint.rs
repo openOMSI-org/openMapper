@@ -8,6 +8,7 @@ use std::sync::Arc;
 use egui::{Color32, Pos2, Rect, RichText, Sense, Stroke, Vec2};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::road_maker::{arrow_polygon, Hand, RoadSpec, HAND_H, HAND_W, WHITE, YELLOW};
 use crate::theme::pal;
 
@@ -71,7 +72,7 @@ impl MarkCanvas {
             return;
         }
         let mut open = true;
-        egui::Window::new(tr("Draw road markings", "Рисовать разметку")).id(egui::Id::new("mark canvas")).open(&mut open).default_size(Vec2::new(940.0, 600.0)).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Brush, tr("Draw road markings", "Рисовать разметку"))).id(egui::Id::new("mark canvas")).open(&mut open).default_size(Vec2::new(940.0, 600.0)).show(ctx, |ui| {
             let (cw, len) = (spec.canvas_width(), spec.mark_period());
             ui.horizontal_top(|ui| {
                 ui.vertical(|ui| {
@@ -111,13 +112,13 @@ impl MarkCanvas {
                     ui.checkbox(&mut self.snap, tr("Snap to 5 cm", "Шаг 5 см"));
                     ui.add_space(6.0);
                     ui.horizontal(|ui| {
-                        if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(tr("Undo", "Отмена"))).clicked() {
+                        if ui.add_enabled(!self.undo.is_empty(), egui::Button::new(icons::labelled(Icon::Undo, tr("Undo", "Отмена")))).clicked() {
                             if let Some(h) = self.undo.pop() {
                                 spec.hand = h;
                                 self.rev += 1;
                             }
                         }
-                        if ui.button(tr("Clear", "Очистить")).clicked() {
+                        if ui.button(icons::labelled(Icon::Eraser, tr("Clear", "Очистить"))).clicked() {
                             self.snapshot(spec);
                             spec.hand = None;
                             self.rev += 1;

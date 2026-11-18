@@ -1943,7 +1943,7 @@ impl App {
                 self.ed.toast(if on {
                     tr("OMSI 2's editor: the middle button turns, the right button held and moved zooms, a right click goes there (Shift: menu); G moves the selection, N makes a new object, Enter confirms, the tile grid is on Shift+G", "Редактор OMSI 2: средняя кнопка вращает, правая зажатая с движением приближает, правый клик переходит туда (Shift: меню); G двигает выделенное, N создаёт объект, Enter подтверждает, сетка тайлов на Shift+G").to_string()
                 } else {
-                    tr("openMapper's own controls: the camera as chosen under Camera, the keys as in View → Controls", "Собственное управление openMapper: камера как выбрано в «Камера», клавиши как в «Вид → Управление»").to_string()
+                    tr("openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls", "Собственное управление openMapper: камера как выбрано в «Камера», клавиши как в «Вид > Управление»").to_string()
                 });
             }
             Action::SetKeySet(p) => {
@@ -1954,7 +1954,7 @@ impl App {
                 self.prefs.save();
                 self.ed.toast(match p {
                     Preset::Blender => tr("Blender's keys: G moves the selection, Shift+S scales it, X deletes, Tab edits the mesh, Shift+A adds an object, Shift+D duplicates, F3 searches. W A S D and Q E move the camera as they always do", "Клавиши Blender: G двигает выделенное, Shift+S масштабирует, X удаляет, Tab правит меш, Shift+A добавляет объект, Shift+D дублирует, F3 ищет. W A S D и Q E двигают камеру, как всегда"),
-                    _ => tr("The keys as in View → Controls", "Клавиши как в «Вид → Управление»"),
+                    _ => tr("The keys as in View > Controls", "Клавиши как в «Вид > Управление»"),
                 }.to_string());
             }
             Action::SetCamTune(t) => {
@@ -2963,7 +2963,21 @@ impl App {
         g.renderer.profile.add("editor", crate::render::profile::ms(t_ed));
         let t_ui = Instant::now();
         // the interface
-        let raw = g.egui_state.take_egui_input(&g.window);
+        let mut raw = g.egui_state.take_egui_input(&g.window);
+        // OPENMAPPER_CLICK=x,y[;x,y…]: a click at each of those window points, ten frames
+        // apart from the 40th (a menu opened for a picture with no one at the screen)
+        if let Ok(v) = std::env::var("OPENMAPPER_CLICK") {
+            let n = self.frames.wrapping_sub(40);
+            let at = v.split(';').nth((n / 10) as usize).and_then(|p| p.split_once(',')).and_then(|(x, y)| Some(egui::pos2(x.trim().parse().ok()?, y.trim().parse().ok()?)));
+            if let (true, Some(pos)) = (self.frames >= 40, at) {
+                // (moved there first, pressed and let go on later frames, as a hand does)
+                match n % 10 {
+                    0 => raw.events.push(egui::Event::PointerMoved(pos)),
+                    2 | 4 => raw.events.push(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed: n % 10 == 2, modifiers: Default::default() }),
+                    _ => {}
+                }
+            }
+        }
         let mut actions: Vec<Action> = Vec::new();
         let mut wanted_thumbs: Vec<(String, bool)> = Vec::new();
         let mut wanted_swatches: Vec<String> = Vec::new();

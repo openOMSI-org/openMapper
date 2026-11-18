@@ -422,10 +422,10 @@ impl Cmd {
     /// The keys that also do it and are not changed.
     pub fn also(self) -> &'static str {
         match self {
-            Forward => "↑",
-            Back => "↓",
-            Left => "←",
-            Right => "→",
+            Forward => tr("the up arrow", "стрелка вверх"),
+            Back => tr("the down arrow", "стрелка вниз"),
+            Left => tr("the left arrow", "стрелка влево"),
+            Right => tr("the right arrow", "стрелка вправо"),
             Redo => "Ctrl+Y",
             Commands => "Ctrl+Shift+P",
             Delete => "Backspace",

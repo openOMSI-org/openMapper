@@ -181,11 +181,11 @@ impl GameCheck {
         }
         let mut again = false;
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Play, tr("Check in openOMSI", "Проверка в openOMSI"))).id(egui::Id::new("game check")).open(&mut open).default_pos([330.0, 90.0]).default_width(440.0).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Verified, tr("Check in openOMSI", "Проверка в openOMSI"))).id(egui::Id::new("game check")).open(&mut open).default_pos([330.0, 90.0]).default_width(440.0).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("The saved map run by the game itself, unseen, with its own checks; the picture is the game's, from your view", "Сохранённая карта, запущенная самой игрой без окна, с её собственными проверками; картинка — игры, с вашего вида")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.whole, tr("Every tile (slower on a big map)", "Все тайлы (дольше на большой карте)"));
-                if ui.add_enabled(self.running.is_none(), egui::Button::new(icons::labelled(Icon::Play, tr("Run again", "Запустить снова")))).clicked() {
+                if ui.add_enabled(self.running.is_none(), egui::Button::new(icons::labelled(Icon::Refresh, tr("Run again", "Запустить снова")))).clicked() {
                     again = true;
                 }
             });

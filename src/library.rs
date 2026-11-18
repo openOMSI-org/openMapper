@@ -70,7 +70,7 @@ impl Category {
             Category::Tracks => Icon::Tram,
             Category::Paths => Icon::Walk,
             Category::Decoration => Icon::Fence,
-            Category::Technical => Icon::Settings,
+            Category::Technical => Icon::Construction,
         }
     }
 }

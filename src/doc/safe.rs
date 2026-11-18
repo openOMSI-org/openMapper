@@ -5,6 +5,7 @@
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
+use crate::icons::{self, Icon};
 use crate::theme::pal;
 
 /// What a save does to one file.
@@ -204,7 +205,7 @@ pub fn versions_window(ctx: &egui::Context, open: &mut bool, map_dir: &Path, act
         return;
     }
     let list = backups(map_dir);
-    egui::Window::new(tr("Earlier versions", "Прошлые версии")).open(open).collapsible(false).resizable(false).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Backup, tr("Earlier versions", "Прошлые версии"))).open(open).collapsible(false).resizable(false).show(ctx, |ui| {
         ui.set_width(380.0);
         ui.label(egui::RichText::new(tr("Before every save, the files it replaces are kept (the last 10 saves). Going back puts the map as it was before that save; later changes go.", "Перед каждым сохранением файлы, которые оно заменяет, сохраняются (последние 10 сохранений). Возврат вернёт карту к виду до того сохранения; более поздние изменения пропадут.")).small().color(pal().text_dim));
         ui.add_space(6.0);
@@ -216,7 +217,7 @@ pub fn versions_window(ctx: &egui::Context, open: &mut bool, map_dir: &Path, act
             ui.horizontal(|ui| {
                 ui.label(format!("{} {}", tr("before the save of", "до сохранения"), pretty(&name)));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button(tr("Go back to this", "Вернуться к этой")).clicked() {
+                    if ui.small_button(icons::labelled(Icon::Backup, tr("Go back to this", "Вернуться к этой"))).clicked() {
                         actions.push(crate::ui::Action::RestoreBackup(b.clone()));
                     }
                 });

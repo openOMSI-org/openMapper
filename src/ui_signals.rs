@@ -95,7 +95,7 @@ impl SignalWindow {
                     prop_row(ui, tr("Signal", "Сигнал"), |ui| {
                         ui.label(name_of(ed, lib, r.signal.0));
                         if let Some((id, _)) = sel_object.filter(|s| s.0 != r.signal.0) {
-                            if ui.small_button(tr("the selected", "выбранный")).clicked() {
+                            if ui.small_button(icons::labelled(Icon::Dropper, tr("the selected", "выбранный"))).clicked() {
                                 r.signal.0 = id;
                             }
                         }
@@ -107,11 +107,11 @@ impl SignalWindow {
                         prop_row(ui, label, |ui| {
                             ui.label(v.map(|id| name_of(ed, lib, id)).unwrap_or_else(|| tr("none", "нет").to_string()));
                             if let Some((id, _)) = sel_object.filter(|s| Some(s.0) != *v && s.0 != r.signal.0) {
-                                if ui.small_button(tr("the selected", "выбранный")).clicked() {
+                                if ui.small_button(icons::labelled(Icon::Dropper, tr("the selected", "выбранный"))).clicked() {
                                     *v = Some(id);
                                 }
                             }
-                            if v.is_some() && ui.small_button("×").clicked() {
+                            if v.is_some() && icons::small(ui, Icon::Close, tr("None", "Нет")).clicked() {
                                 *v = None;
                             }
                         });
@@ -137,7 +137,7 @@ impl SignalWindow {
                     if ui.add_enabled(!pieces.is_empty(), egui::Button::new(label)).on_hover_text(tr("Every rail path of the selected tracks and switches (double-click a track: all of it); replaces the pieces", "Все рельсовые пути выбранных рельсов и стрелок (двойной клик по пути — весь); заменяет участки")).clicked() {
                         r.entries = pieces.iter().map(|(id, p)| [*id, *p, 0, 0]).collect();
                     }
-                    if ui.add_enabled(!pieces.is_empty(), egui::Button::new(tr("Add them", "Добавить их"))).clicked() {
+                    if ui.add_enabled(!pieces.is_empty(), egui::Button::new(icons::labelled(Icon::Add, tr("Add them", "Добавить их")))).clicked() {
                         for (id, p) in &pieces {
                             if !r.entries.iter().any(|e| e[0] == *id && e[1] == *p) {
                                 r.entries.push([*id, *p, 0, 0]);

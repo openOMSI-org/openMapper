@@ -98,16 +98,17 @@ pub fn paint_path_numbers(ctx: &egui::Context, lanes: &[crate::lanes::Lane], cam
         if !view.contains(at) {
             continue;
         }
-        let way = match l.direction {
-            2 => "↔",
-            _ => "",
-        };
         let fill = match l.kind {
             1 => Color32::from_rgb(60, 110, 160),
             2 => Color32::from_rgb(120, 80, 150),
             _ => Color32::from_rgb(170, 120, 30),
         };
-        let galley = painter.layout_no_wrap(format!("#{}{way}", l.index), font.clone(), Color32::WHITE);
+        let mut job = egui::text::LayoutJob::simple_singleline(format!("#{}", l.index), font.clone(), Color32::WHITE);
+        // (a lane both ways)
+        if l.direction == 2 {
+            job.append(&Icon::Swap.ch().to_string(), 2.0, egui::TextFormat { font_id: Icon::font(12.0), color: Color32::WHITE, valign: egui::Align::Center, ..Default::default() });
+        }
+        let galley = painter.layout_job(job);
         let mut r = egui::Rect::from_center_size(at, galley.size() + Vec2::new(8.0, 2.0));
         // (lanes side by side: their labels one under another rather than on top)
         while taken.iter().any(|t| t.intersects(r)) {
@@ -142,8 +143,8 @@ pub fn paint_ruler(ctx: &egui::Context, ed: &Editor, cam: &crate::camera::Camera
 pub fn linked_steps(ui: &mut egui::Ui, has_prev: bool, has_next: bool) -> Option<bool> {
     let mut out = None;
     ui.horizontal(|ui| {
-        let prev = ui.add_enabled(has_prev, egui::Button::new(format!("◀ {}", tr("start", "начало"))).small()).on_hover_text(tr("Select the piece joined at its start (,)", "Выбрать кусок у его начала (,)"));
-        let next = ui.add_enabled(has_next, egui::Button::new(format!("{} ▶", tr("end", "конец"))).small()).on_hover_text(tr("Select the piece joined at its end (.)", "Выбрать кусок у его конца (.)"));
+        let prev = ui.add_enabled(has_prev, egui::Button::new(icons::labelled(Icon::ChevronLeft, tr("start", "начало"))).small()).on_hover_text(tr("Select the piece joined at its start (,)", "Выбрать кусок у его начала (,)"));
+        let next = ui.add_enabled(has_next, egui::Button::new(icons::labelled(Icon::ChevronRight, tr("end", "конец"))).small()).on_hover_text(tr("Select the piece joined at its end (.)", "Выбрать кусок у его конца (.)"));
         if prev.clicked() {
             out = Some(false);
         }
@@ -317,7 +318,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
     let sels = ed.selection();
     let objects = sels.iter().filter(|s| !matches!(s, Sel::Spline(..))).count();
     let splines = sels.len() - objects;
-    section(ui, tr("Selection", "Выделение"));
+    section(ui, Icon::SelectAll, tr("Selection", "Выделение"));
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         ui.label(RichText::new(format!("{} {}", tr("Selected:", "Выбрано:"), sels.len())).strong().color(pal().text_strong));
         ui.label(RichText::new(format!("{} {objects} · {} {splines}", tr("objects", "объектов"), tr("splines", "сплайнов"))).small().color(pal().text_dim));
@@ -353,18 +354,18 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
             Some(g) => {
                 let mut name = ed.groups()[g].name.clone();
                 ui.horizontal(|ui| {
-                    ui.label(icons::labelled(Icon::Layers, tr("Group", "Группа")));
+                    ui.label(icons::labelled(Icon::Group, tr("Group", "Группа")));
                     if ui.add(egui::TextEdit::singleline(&mut name).desired_width(140.0)).changed() {
                         ed.rename_group(g, &name);
                     }
-                    if ui.button(tr("Ungroup", "Разгруппировать")).on_hover_text("Ctrl+Shift+G").clicked() {
+                    if ui.button(icons::labelled(Icon::Ungroup, tr("Ungroup", "Разгруппировать"))).on_hover_text("Ctrl+Shift+G").clicked() {
                         ed.ungroup_selection();
                     }
                 });
                 ui.label(RichText::new(tr("A click on one of it selects all of it, Ctrl + click one alone", "Клик по любому её объекту выделяет всю группу, Ctrl + клик — один объект")).small().color(pal().text_dim));
             }
             None => {
-                if ui.button(icons::labelled(Icon::Layers, tr("Group", "Сгруппировать"))).on_hover_text(tr("Keep these together: a click on one selects all, a drag moves all (Ctrl+G)", "Держать вместе: клик по одному выделяет все, перетаскивание двигает все (Ctrl+G)")).clicked() {
+                if ui.button(icons::labelled(Icon::Group, tr("Group", "Сгруппировать"))).on_hover_text(tr("Keep these together: a click on one selects all, a drag moves all (Ctrl+G)", "Держать вместе: клик по одному выделяет все, перетаскивание двигает все (Ctrl+G)")).clicked() {
                     ed.group_selection();
                 }
             }
@@ -380,19 +381,19 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                 ui.add(egui::DragValue::new(&mut v[0]).speed(0.1).max_decimals(2).prefix("X ").suffix(" m").min_decimals(0));
                 ui.add(egui::DragValue::new(&mut v[1]).speed(0.1).max_decimals(2).prefix("Y ").suffix(" m").min_decimals(0));
             });
-            if ui.button(tr("Apply", "Применить")).clicked() {
+            if ui.button(icons::labelled(Icon::Check, tr("Apply", "Применить"))).clicked() {
                 act = Some(0);
             }
             ui.end_row();
             ui.label(RichText::new(tr("Height", "Высота")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut v[2]).speed(0.05).max_decimals(2).prefix("Z ").suffix(" m"));
-            if ui.button(tr("Apply", "Применить")).clicked() {
+            if ui.button(icons::labelled(Icon::Check, tr("Apply", "Применить"))).clicked() {
                 act = Some(1);
             }
             ui.end_row();
             ui.label(RichText::new(tr("Turn", "Поворот")).color(pal().text_dim));
             ui.add(egui::DragValue::new(&mut v[3]).speed(1.0).range(-360.0..=360.0).suffix("°"));
-            if ui.button(tr("Apply", "Применить")).clicked() {
+            if ui.button(icons::labelled(Icon::Check, tr("Apply", "Применить"))).clicked() {
                 act = Some(2);
             }
             ui.end_row();
@@ -419,7 +420,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
                     }
                 }
                 let snap_armed = ed.vertex_snap.is_some();
-                if ui.add(egui::Button::new(icons::labelled(Icon::Focus, &format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_armed))
+                if ui.add(egui::Button::new(icons::labelled(Icon::Snap, &format!("{}{}", tr("Snap vertex to vertex", "Привязать вершину к вершине"), crate::controls::key_hint(crate::controls::Cmd::SnapVertex)))).selected(snap_armed))
                     .on_hover_text(tr("Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel", "Привязать вершину выбранного объекта к вершине другого объекта\nShift: только по горизонтали, Esc/ПКМ: отмена"))
                     .clicked()
                 {
@@ -455,31 +456,31 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
         if objects > 1 {
             ui.add_space(4.0);
             ui.horizontal_wrapped(|ui| {
-                if ui.button(tr("Random headings", "Случайные повороты")).on_hover_text(tr("Every selected object turned its own random way (trees, bushes, rocks)", "Каждый выбранный объект повёрнут случайно (деревья, кусты, камни)")).clicked() {
+                if ui.button(icons::labelled(Icon::Shuffle, tr("Random headings", "Случайные повороты"))).on_hover_text(tr("Every selected object turned its own random way (trees, bushes, rocks)", "Каждый выбранный объект повёрнут случайно (деревья, кусты, камни)")).clicked() {
                     ed.turn_objects(true);
                 }
-                if ui.button(tr("Along the road", "Вдоль дороги")).on_hover_text(tr("Each turned the way the nearest road runs beside it", "Каждый повёрнут по ходу ближайшей дороги рядом")).clicked() {
+                if ui.button(icons::labelled(Icon::Road, tr("Along the road", "Вдоль дороги"))).on_hover_text(tr("Each turned the way the nearest road runs beside it", "Каждый повёрнут по ходу ближайшей дороги рядом")).clicked() {
                     let n = ed.align_to_roads();
                     ed.toast(format!("{} {n}", tr("Turned:", "Повёрнуто:")));
                 }
-                if ui.add_enabled(matches!(ed.selected, Some(Sel::Object(..))), egui::Button::new(tr("All like this one", "Все как этот"))).on_hover_text(tr("Every selected object takes the heading of the one in the properties", "Все выбранные объекты получают поворот того, что в свойствах")).clicked() {
+                if ui.add_enabled(matches!(ed.selected, Some(Sel::Object(..))), egui::Button::new(icons::labelled(Icon::SelectAll, tr("All like this one", "Все как этот")))).on_hover_text(tr("Every selected object takes the heading of the one in the properties", "Все выбранные объекты получают поворот того, что в свойствах")).clicked() {
                     ed.turn_objects(false);
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                if ui.button(tr("Lean with the ground", "Наклонить по земле")).on_hover_text(lean_help()).clicked() {
+                if ui.button(icons::labelled(Icon::Terrain, tr("Lean with the ground", "Наклонить по земле"))).on_hover_text(lean_help()).clicked() {
                     ed.lean_objects(true);
                 }
-                if ui.button(tr("Stand upright", "Поставить ровно")).clicked() {
+                if ui.button(icons::labelled(Icon::Restart, tr("Stand upright", "Поставить ровно"))).clicked() {
                     ed.lean_objects(false);
                 }
             });
             if objects > 2 {
                 ui.horizontal_wrapped(|ui| {
-                    if ui.button(tr("Line up", "В линию")).on_hover_text(tr("On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)", "На прямой между двумя самыми дальними, с равным шагом (столбы, фонари, ряд деревьев)")).clicked() {
+                    if ui.button(icons::labelled(Icon::LineUp, tr("Line up", "В линию"))).on_hover_text(tr("On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)", "На прямой между двумя самыми дальними, с равным шагом (столбы, фонари, ряд деревьев)")).clicked() {
                         ed.line_up(true);
                     }
-                    if ui.button(tr("Space evenly", "Расставить поровну")).on_hover_text(tr("Equal steps between the two farthest apart, each keeping its distance to the side", "Равный шаг между двумя самыми дальними, каждый сохраняет отступ вбок")).clicked() {
+                    if ui.button(icons::labelled(Icon::Spread, tr("Space evenly", "Расставить поровну"))).on_hover_text(tr("Equal steps between the two farthest apart, each keeping its distance to the side", "Равный шаг между двумя самыми дальними, каждый сохраняет отступ вбок")).clicked() {
                         ed.line_up(false);
                     }
                 });
@@ -496,19 +497,19 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
         }
         if splines > 0 {
             ui.add_space(4.0);
-            if ui.button(tr("Lay them on the ground", "Положить их на землю")).on_hover_text(lay_help()).clicked() {
+            if ui.button(icons::labelled(Icon::Ground, tr("Lay them on the ground", "Положить их на землю"))).on_hover_text(lay_help()).clicked() {
                 ed.lay_selected_on_ground();
             }
-            if ui.button(tr("Reverse their direction", "Развернуть их направление")).on_hover_text(reverse_help()).clicked() {
+            if ui.button(icons::labelled(Icon::Reverse, tr("Reverse their direction", "Развернуть их направление"))).on_hover_text(reverse_help()).clicked() {
                 ed.reverse_selected();
             }
-            if ui.button(icons::labelled(Icon::Route, tr("Complete to", "Достроить до"))).on_hover_text(crate::complete::help()).clicked() {
+            if ui.button(icons::labelled(Icon::Complete, tr("Complete to", "Достроить до"))).on_hover_text(crate::complete::help()).clicked() {
                 ed.complete_to();
             }
         }
         if splines > 1 {
             ui.add_space(4.0);
-            if ui.button(tr("Even slope along them", "Ровный уклон вдоль них")).on_hover_text(tr("One chain of roads: from the height at one end to that at the other, evenly (a bridge, a ramp)", "Одна цепочка дорог: от высоты на одном конце до высоты на другом, равномерно (мост, пандус)")).clicked() {
+            if ui.button(icons::labelled(Icon::Slope, tr("Even slope along them", "Ровный уклон вдоль них"))).on_hover_text(tr("One chain of roads: from the height at one end to that at the other, evenly (a bridge, a ramp)", "Одна цепочка дорог: от высоты на одном конце до высоты на другом, равномерно (мост, пандус)")).clicked() {
                 ed.even_selected_chain();
             }
         }
@@ -526,13 +527,13 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
             if ui.button(icons::labelled(Icon::Copy, tr("Copy", "Копировать"))).clicked() {
                 ed.copy(lib);
             }
-            if ui.button(tr("Duplicate", "Дублировать")).clicked() {
+            if ui.button(icons::labelled(Icon::Duplicate, tr("Duplicate", "Дублировать"))).clicked() {
                 ed.duplicate(lib);
             }
             if ui.button(icons::labelled(Icon::Delete, tr("Delete", "Удалить"))).clicked() {
                 ed.delete_selected();
             }
-            if ui.button(tr("Deselect", "Снять выделение")).clicked() {
+            if ui.button(icons::labelled(Icon::Deselect, tr("Deselect", "Снять выделение"))).clicked() {
                 ed.select(None);
             }
         });
@@ -596,7 +597,7 @@ pub fn spline_ends(ui: &mut egui::Ui, doc: &crate::doc::Document, k: TileKey, id
             });
         }
     });
-    if ui.button(tr("Even slope end to end", "Ровный уклон от начала до конца")).on_hover_text(tr("Both gradients to the straight climb between the ends' heights", "Оба уклона: по прямой между высотами концов")).clicked() {
+    if ui.button(icons::labelled(Icon::Slope, tr("Even slope end to end", "Ровный уклон от начала до конца"))).on_hover_text(tr("Both gradients to the straight climb between the ends' heights", "Оба уклона: по прямой между высотами концов")).clicked() {
         out.even = Some((z1 - z0) / s.length.max(0.1) * 100.0);
     }
     out
@@ -659,7 +660,7 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
     let mut changed = false;
     let mut numbered = false;
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
-        egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Path rules", "Правила путей"), rules.iter().filter(|r| !r.kill).count())).strong()).id_salt("rules").default_open((1..=6).contains(&rules.iter().filter(|r| !r.kill).count())).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Route, &format!("{} ({})", tr("Path rules", "Правила путей"), rules.iter().filter(|r| !r.kill).count()))).id_salt("rules").default_open((1..=6).contains(&rules.iter().filter(|r| !r.kill).count())).show(ui, |ui| {
             ui.label(RichText::new(tr("For the AI and the player on one path (lane) of it, counted from 0: the view shows their numbers", "Для ИИ и игрока на одном пути (полосе), считая от 0: их номера видны в окне вида")).small().color(pal().text_dim));
             numbered = true;
             let mut remove = None;
@@ -687,7 +688,7 @@ pub fn rules_section(ui: &mut egui::Ui, ed: &mut Editor, sel: Sel) {
                     if RULES.iter().any(|(k, v)| *k == r.kind && *v) || !RULES.iter().any(|(k, _)| *k == r.kind) {
                         changed |= ui.add(egui::DragValue::new(&mut r.value).speed(0.1).max_decimals(2)).changed();
                     }
-                    if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                         remove = Some(i);
                     }
                 });
@@ -724,7 +725,7 @@ pub fn attach_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: Tile
     let mut go: Option<Sel> = None;
     let mut add = false;
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
-        egui::CollapsingHeader::new(RichText::new(format!("{} ({})", tr("Hanging on it", "Висит на нём"), hung.len())).strong()).id_salt("attach").show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Link, &format!("{} ({})", tr("Hanging on it", "Висит на нём"), hung.len()))).id_salt("attach").show(ui, |ui| {
             ui.label(RichText::new(format!("{} {points}", tr("Points to hang objects on:", "Точек для крепления:"))).small().color(pal().text_dim));
             for (aid, at, file) in &hung {
                 ui.horizontal(|ui| {
@@ -765,7 +766,7 @@ pub fn array_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
     // (count, step x, step y, turn, rows, row step x, row step y: kept between frames)
     let mut v: [f64; 7] = ui.data_mut(|d| *d.get_temp_mut_or_insert_with(key, || [5.0, 10.0, 0.0, 0.0, 1.0, 0.0, 10.0]));
     let mut go = false;
-    egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| egui::CollapsingHeader::new(RichText::new(tr("Copies in a row", "Копии в ряд")).strong()).id_salt("array").show(ui, |ui| {
+    egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| egui::CollapsingHeader::new(icons::heading(Icon::LineUp, tr("Copies in a row", "Копии в ряд"))).id_salt("array").show(ui, |ui| {
         ui.label(RichText::new(tr("A fence, a row of houses, an avenue: the selection copied again and again, a step on each time", "Забор, ряд домов, аллея: выделение копируется снова и снова, каждый раз на шаг дальше")).small().color(pal().text_dim));
         egui::Grid::new("array").num_columns(2).spacing(Vec2::new(6.0, 5.0)).show(ui, |ui| {
             prop_row(ui, tr("Copies", "Копий"), |ui| {
@@ -828,10 +829,10 @@ fn parallel_inner(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKey,
     let mut dist: f64 = ui.data_mut(|d| *d.get_temp_mut_or_insert_with(key, || width));
     ui.horizontal(|ui| {
         ui.add(egui::DragValue::new(&mut dist).speed(0.05).range(0.5..=200.0).max_decimals(2).suffix(" m"));
-        if ui.button(tr("To the left", "Слева")).clicked() {
+        if ui.button(icons::labelled(Icon::Left, tr("To the left", "Слева"))).clicked() {
             ed.parallel_copy(-dist);
         }
-        if ui.button(tr("To the right", "Справа")).clicked() {
+        if ui.button(icons::labelled(Icon::Right, tr("To the right", "Справа"))).clicked() {
             ed.parallel_copy(dist);
         }
     });
@@ -874,7 +875,7 @@ pub fn paint_along_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
     }
     let Some(doc) = ed.doc.as_ref() else { return };
     let names: Vec<String> = doc.global.ground_textures.iter().map(|g| std::path::Path::new(&g.texture.replace('\\', "/")).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()).collect();
-    egui::CollapsingHeader::new(RichText::new(tr("Paint the ground along it", "Покрасить землю вдоль")).strong()).id_salt("paint along").show(ui, |ui| {
+    egui::CollapsingHeader::new(icons::heading(Icon::Paint, tr("Paint the ground along it", "Покрасить землю вдоль"))).id_salt("paint along").show(ui, |ui| {
         if names.len() < 2 {
             ui.label(RichText::new(tr("Add a ground texture in the Paint tool first: the base ground is under everything", "Сначала добавьте текстуру земли в инструменте «Покраска»: основа лежит под всем")).small().color(pal().text_dim));
             return;
@@ -915,7 +916,7 @@ pub fn rows_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
     if !sels.iter().any(|s| matches!(s, Sel::Spline(..))) {
         return;
     }
-    section(ui, tr("Objects along the road", "Объекты вдоль дороги"));
+    section(ui, Icon::Fence, tr("Objects along the road", "Объекты вдоль дороги"));
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         let name_of = |f: &str| lib.find(f).map(|a| a.name.clone()).unwrap_or_else(|| f.rsplit('\\').next().unwrap_or(f).to_string());
         // the rows already on a road selected alone
@@ -953,7 +954,7 @@ pub fn rows_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
                             for (i, t) in b.strings.iter_mut().enumerate() {
                                 ui.horizontal(|ui| {
                                     ui.add(egui::TextEdit::singleline(t).desired_width(120.0));
-                                    if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                                    if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                                         drop = Some(i);
                                     }
                                 });
@@ -1025,7 +1026,7 @@ pub fn rows_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
             if ui.add_enabled(ed.object_type.is_some(), egui::Button::new(icons::labelled(Icon::Add, tr("Place along the road", "Расставить вдоль дороги")))).clicked() {
                 ed.place_rows();
             }
-            if ed.selection().len() > 1 && ui.button(tr("Remove all rows", "Убрать все ряды")).clicked() {
+            if ed.selection().len() > 1 && ui.button(icons::labelled(Icon::Delete, tr("Remove all rows", "Убрать все ряды"))).clicked() {
                 ed.remove_rows_of_selection();
             }
         });
@@ -1123,7 +1124,7 @@ pub fn road_entry(ctx: &egui::Context, ed: &mut Editor, view: egui::Rect, action
                         enter = true;
                     }
                 }
-                if ed.typed_text.iter().any(|t| !t.is_empty()) && ui.small_button(tr("Clear", "Сброс")).clicked() {
+                if ed.typed_text.iter().any(|t| !t.is_empty()) && ui.small_button(icons::labelled(Icon::Eraser, tr("Clear", "Сброс"))).clicked() {
                     ed.typed_text = Default::default();
                     ed.replan = true;
                 }
@@ -1153,7 +1154,7 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
             o
         }
     };
-    section(ui, tr("Junction", "Перекрёсток"));
+    section(ui, Icon::Junction, tr("Junction", "Перекрёсток"));
     let mut new = opts.clone();
     let mut apply = false;
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
@@ -1177,7 +1178,7 @@ pub fn junction_section(ui: &mut egui::Ui, ed: &mut Editor, k: TileKey, id: i64)
             });
             ui.data_mut(|d| d.insert_temp(tid, g));
             if (g.0 - opts.main_green).abs() > 1e-6 || (g.1 - opts.side_green).abs() > 1e-6 {
-                if ui.button(tr("Apply", "Применить")).clicked() {
+                if ui.button(icons::labelled(Icon::Check, tr("Apply", "Применить"))).clicked() {
                     new.main_green = g.0;
                     new.side_green = g.1;
                     apply = true;
@@ -1258,7 +1259,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
     let mut pick = false;
     let count = parent.is_some() as usize + children.len();
     egui::Frame::new().inner_margin(Margin::symmetric(8, 2)).show(ui, |ui| {
-        egui::CollapsingHeader::new(RichText::new(format!("{} ({count})", tr("Linked objects", "Связанные объекты"))).strong()).id_salt("varparent").default_open(head || count > 0).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::heading(Icon::Link, &format!("{} ({count})", tr("Linked objects", "Связанные объекты")))).id_salt("varparent").default_open(head || count > 0).show(ui, |ui| {
             ui.label(RichText::new(tr("An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.", "Объект может брать состояние от другого ([varparent]): светофор показывает сигнал программы своего перекрёстка, табло остановки — свою остановку.")).small().color(pal().text_dim));
             match &parent {
                 Some((pid, Some((pk, name, _)))) => {
@@ -1312,7 +1313,7 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
                 if ui.add(egui::Button::new(icons::labelled(Icon::Traffic, label)).selected(picking)).on_hover_text(tr("Then click the object it is to take its state from (a crossing for a signal head)", "Затем щёлкните объект, от которого брать состояние (перекрёсток для светофора)")).clicked() {
                     pick = true;
                 }
-                if parent.is_some() && ui.button(icons::labelled(Icon::Delete, tr("Unlink", "Отвязать"))).clicked() {
+                if parent.is_some() && ui.button(icons::labelled(Icon::LinkOff, tr("Unlink", "Отвязать"))).clicked() {
                     set_parent = Some(None);
                 }
             });
@@ -1359,7 +1360,7 @@ pub fn end_junction_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, a
     if !free_start && !free_end {
         return;
     }
-    section(ui, tr("Junction on an end", "Перекрёсток на конце дороги"));
+    section(ui, Icon::Junction, tr("Junction on an end", "Перекрёсток на конце дороги"));
     egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
         let (pieces, fits) = lib.junction_pieces(&file);
         if pieces.is_empty() {
@@ -1386,10 +1387,10 @@ pub fn end_junction_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, a
         }
         let Some(piece) = pick else { return };
         ui.horizontal(|ui| {
-            if free_start && ui.button(tr("At the start", "У начала")).clicked() {
+            if free_start && ui.button(icons::labelled(Icon::Add, tr("At the start", "У начала"))).clicked() {
                 actions.push(crate::ui::Action::JunctionAtEnd(k, id, false, piece.clone()));
             }
-            if free_end && ui.button(tr("At the end", "У конца")).clicked() {
+            if free_end && ui.button(icons::labelled(Icon::Add, tr("At the end", "У конца"))).clicked() {
                 actions.push(crate::ui::Action::JunctionAtEnd(k, id, true, piece.clone()));
             }
         });

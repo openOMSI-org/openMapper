@@ -62,14 +62,14 @@ impl Groups {
         let abs = |f: &str| lib.find(f).map(|a| a.abs_height).unwrap_or(false);
         let mut open = self.open;
         let mut reread = false;
-        egui::Window::new(icons::labelled(Icon::Objects, tr("Groups for other maps", "Группы для других карт"))).id(egui::Id::new("groups")).open(&mut open).default_pos([360.0, 120.0]).default_size([340.0, 420.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Inventory, tr("Groups for other maps", "Группы для других карт"))).id(egui::Id::new("groups")).open(&mut open).default_pos([360.0, 120.0]).default_size([340.0, 420.0]).resizable(true).show(ctx, |ui| {
             ui.label(RichText::new(tr("A selection kept under a name, to put down again in any map (a stop with its shelter and signs, a crossing with its lights)", "Выделение, сохранённое под именем, чтобы ставить его снова на любой карте (остановка с павильоном и знаками, перекрёсток со светофорами)")).small().color(pal().text_dim));
             ui.add_space(4.0);
             let n = ed.selection().len();
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.name).hint_text(tr("Name", "Название")).desired_width(170.0));
                 let can = n > 0 && !self.name.trim().is_empty() && ed.doc.is_some();
-                let r = ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Save, tr("Keep the selection", "Сохранить выделение"))));
+                let r = ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Inventory, tr("Keep the selection", "Сохранить выделение"))));
                 if r.clicked() {
                     if let Some(doc) = &ed.doc {
                         let clip = crate::clipboard::copy(doc, &ed.selection(), abs);
@@ -100,7 +100,7 @@ impl Groups {
                         ui.label(RichText::new(&e.name).color(pal().text_strong));
                         ui.label(RichText::new(format!("{} {}", e.count, if e.count == 1 { tr("thing", "шт.") } else { tr("things", "шт.") })).small().color(pal().text_dim));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Delete the group (to openMapper's bin)", "Удалить группу (в корзину openMapper)")).clicked() {
+                            if icons::small(ui, Icon::Delete, tr("Delete the group (to openMapper's bin)", "Удалить группу (в корзину openMapper)")).clicked() {
                                 let bin = crate::install::content_dir().join("openMapper").join("bin").join("groups");
                                 let to = bin.join(e.path.file_name().unwrap_or_default());
                                 if std::fs::create_dir_all(&bin).and_then(|_| std::fs::rename(&e.path, &to)).is_ok() {

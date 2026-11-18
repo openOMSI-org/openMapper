@@ -68,7 +68,7 @@ impl MergeWindow {
             return;
         }
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Tiles, tr("Tiles from another map", "Тайлы из другой карты"))).id(egui::Id::new("merge tiles")).open(&mut open).default_pos([340.0, 110.0]).resizable(false).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Merge, tr("Tiles from another map", "Тайлы из другой карты"))).id(egui::Id::new("merge tiles")).open(&mut open).default_pos([340.0, 110.0]).resizable(false).show(ctx, |ui| {
             ui.set_width(380.0);
             ui.label(RichText::new(tr("Its ground, painting, water, objects and roads, put beside or into this map. Lines, timetable and AI lists stay with the other map.", "Её земля, покраска, вода, объекты и дороги — рядом с этой картой или в неё. Линии, расписание и списки ИИ остаются в той карте.")).small().color(pal().text_dim));
             ui.add_space(4.0);

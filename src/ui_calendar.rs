@@ -126,7 +126,7 @@ impl CalendarWindow {
         let (t, cal) = (&mut doc.traffic, &mut doc.timetable.calendar);
         let mut touched: Vec<File> = Vec::new();
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Schedule, tr("Calendar and place", "Календарь и место"))).id(egui::Id::new("calendar window")).open(&mut open).default_pos([340.0, 100.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Calendar, tr("Calendar and place", "Календарь и место"))).id(egui::Id::new("calendar window")).open(&mut open).default_pos([340.0, 100.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 for (tab, label) in [(Tab::Place, tr("Place and time", "Место и время")), (Tab::Holidays, tr("Holidays", "Праздники и каникулы")), (Tab::Plates, tr("Number plates", "Номера машин"))] {
                     if ui.selectable_label(self.tab == tab, label).clicked() {
@@ -174,7 +174,7 @@ impl CalendarWindow {
                         ui.add(egui::DragValue::new(&mut self.dst_years.0).range(1900..=2100));
                         ui.label("–");
                         ui.add(egui::DragValue::new(&mut self.dst_years.1).range(1900..=2100));
-                        if ui.button(tr("EU rules for these years", "Правила ЕС на эти годы")).on_hover_text(tr("Last Sunday of March to last Sunday of October, replacing what is set for these years", "С последнего воскресенья марта по последнее воскресенье октября, вместо заданного на эти годы")).clicked() {
+                        if ui.button(icons::labelled(Icon::AutoFix, tr("EU rules for these years", "Правила ЕС на эти годы"))).on_hover_text(tr("Last Sunday of March to last Sunday of October, replacing what is set for these years", "С последнего воскресенья марта по последнее воскресенье октября, вместо заданного на эти годы")).clicked() {
                             let (from, to) = (self.dst_years.0.min(self.dst_years.1), self.dst_years.0.max(self.dst_years.1));
                             z.dst.retain(|d| d.start / 10_000 < from || d.start / 10_000 > to);
                             z.dst.extend(eu_summer_time(from, to));
@@ -207,7 +207,7 @@ impl CalendarWindow {
                             ui.horizontal(|ui| {
                                 date_field(ui, &mut h.date);
                                 ui.add(egui::TextEdit::singleline(&mut h.name).desired_width(200.0));
-                                if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                                if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                                     remove = Some(i);
                                 }
                             });
@@ -231,7 +231,7 @@ impl CalendarWindow {
                                 // (school holidays over New Year end in the next year)
                                 date_field(ui, &mut r.end);
                                 ui.add(egui::TextEdit::singleline(&mut r.name).desired_width(120.0));
-                                if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                                if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                                     remove = Some(i);
                                 }
                             });
@@ -253,7 +253,7 @@ impl CalendarWindow {
                     ui.horizontal(|ui| {
                         ui.add(egui::TextEdit::singleline(&mut self.pattern).desired_width(110.0)).on_hover_text(tr("X: a letter, 9: a digit", "X: буква, 9: цифра"));
                         ui.add(egui::DragValue::new(&mut self.count).range(1..=5000).prefix("× "));
-                        if ui.button(tr("Make", "Создать")).on_hover_text(tr("Replaces the list with plates of the pattern", "Заменяет список номерами по образцу")).clicked() {
+                        if ui.button(icons::labelled(Icon::Add, tr("Make", "Создать"))).on_hover_text(tr("Replaces the list with plates of the pattern", "Заменяет список номерами по образцу")).clicked() {
                             let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(7);
                             *text = plates(&self.pattern, self.count, seed).join("\n");
                         }

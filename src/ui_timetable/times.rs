@@ -98,7 +98,7 @@ impl TimetableUi {
                         ui.end_row();
                     }
                 });
-                if times.iter().skip(1).take(n.saturating_sub(2)).any(|t| t.2) && ui.button(tr("Spread all by distance", "Распределить по расстоянию")).clicked() {
+                if times.iter().skip(1).take(n.saturating_sub(2)).any(|t| t.2) && ui.button(icons::labelled(Icon::Spread, tr("Spread all by distance", "Распределить по расстоянию"))).clicked() {
                     clear = true;
                 }
             });
