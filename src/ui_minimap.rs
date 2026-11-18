@@ -90,7 +90,31 @@ fn dot(img: &mut egui::ColorImage, x: f32, y: f32, r: f32, c: Color32) {
 /// A line between two places in the picture, a dot each pixel of it (a stroke's own way, without
 /// the tessellator's): the later lines lie over the earlier ones, as the shapes did.
 fn line_into(img: &mut egui::ColorImage, x0: f32, y0: f32, x1: f32, y1: f32, r: f32, c: Color32) {
+    // (only the part over the picture is drawn: a broken spline of a map file, one end 10^22 m
+    // out, made billions of dots - the window hung - and overflowed the pixel numbers)
+    if ![x0, y0, x1, y1].iter().all(|v| v.is_finite()) {
+        return;
+    }
     let (dx, dy) = (x1 - x0, y1 - y0);
+    let m = r + 1.0;
+    let (w, h) = (img.size[0] as f32, img.size[1] as f32);
+    let (mut t0, mut t1) = (0.0f32, 1.0f32);
+    for (p, q) in [(-dx, x0 + m), (dx, w + m - x0), (-dy, y0 + m), (dy, h + m - y0)] {
+        if p == 0.0 {
+            if q < 0.0 {
+                return;
+            }
+        } else if p < 0.0 {
+            t0 = t0.max(q / p);
+        } else {
+            t1 = t1.min(q / p);
+        }
+    }
+    if t0 > t1 {
+        return;
+    }
+    let (x0, y0) = (x0 + dx * t0, y0 + dy * t0);
+    let (dx, dy) = (dx * (t1 - t0), dy * (t1 - t0));
     let steps = dx.abs().max(dy.abs()).ceil().max(1.0) as i32;
     for i in 0..=steps {
         let t = i as f32 / steps as f32;
@@ -310,6 +334,24 @@ mod tests {
     use super::*;
     use crate::library::{Asset, Kind};
     use crate::selection::tests::{add_spline, flat_map};
+
+    /// A line running far off the picture draws its part over the picture, and quickly: one
+    /// end of a broken spline of Solnechnogorsk_2024 lies 10^22 m out, and the overview
+    /// overflowed the pixel numbers (or, built for speed, drew billions of dots and hung).
+    #[test]
+    fn a_line_far_off_the_picture_draws_its_part_over_it() {
+        let mut img = egui::ColorImage { size: [16, 16], pixels: vec![Color32::TRANSPARENT; 256], source_size: egui::Vec2::new(16.0, 16.0) };
+        let t = std::time::Instant::now();
+        line_into(&mut img, 2.0, 2.0, 1e20, 1e20, 0.5, Color32::WHITE);
+        line_into(&mut img, 2.0, 12.0, f32::INFINITY, 12.0, 0.5, Color32::WHITE);
+        assert!(t.elapsed().as_millis() < 100, "{:?}", t.elapsed());
+        assert_eq!(img.pixels[5 * 16 + 5], Color32::WHITE, "the diagonal over the picture is drawn");
+        assert_eq!(img.pixels[15 * 16 + 15], Color32::WHITE, "to its edge");
+        assert_eq!(img.pixels[12 * 16 + 8], Color32::TRANSPARENT, "a line to nowhere is not");
+        // (one wholly within it as before)
+        line_into(&mut img, 0.0, 8.0, 15.0, 8.0, 0.5, Color32::RED);
+        assert!((0..16).all(|x| img.pixels[8 * 16 + x] == Color32::RED));
+    }
 
     /// The catalogue growing while it is read does not make the thumbnail again more than
     /// every two seconds (on a city that was three times a second for minutes, a good part of
