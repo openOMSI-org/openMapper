@@ -2915,10 +2915,16 @@ impl App {
         if let Some(p) = self.pinned_cursor {
             self.ed.cursor = Some(p);
         }
-        if self.ed.doc.is_some() && (self.mouse.moved || cam_moving || self.mouse.left || self.assets.as_ref().map(|a| a.pending > 0).unwrap_or(false)) {
+        if self.ed.doc.is_some() && (self.mouse.moved || cam_moving || self.ed.hover_ground_only || self.mouse.left || self.assets.as_ref().map(|a| a.pending > 0).unwrap_or(false)) {
             if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
                 if !self.mouse.over_ui {
+                    self.ed.hover_ground_only = cam_moving;
+                    let t_hover = Instant::now();
                     self.ed.hover_ray(assets, &self.lib, o, d);
+                    let ms = t_hover.elapsed().as_secs_f32() * 1000.0;
+                    if ms > 200.0 {
+                        log::warn!("cursor pick took {ms:.0} ms (camera moving: {cam_moving})");
+                    }
                 }
             }
             self.mouse.moved = false;
