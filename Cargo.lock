@@ -1428,6 +1428,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.34.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "627003914c6057c9c8f0832ee4f870b5a4f599d0cfa83f4072675114860cd0ff"
+
+[[package]]
 name = "glifo"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2680,7 +2686,7 @@ name = "omsi-geometry"
 version = "0.1.0"
 source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
- "glam",
+ "glam 0.30.10",
  "log",
  "omsi-cfg",
  "omsi-map",
@@ -2695,7 +2701,7 @@ version = "0.1.0"
 source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "bytemuck",
- "glam",
+ "glam 0.30.10",
  "hashbrown 0.17.1",
  "log",
  "memmap2",
@@ -2736,7 +2742,7 @@ version = "0.1.0"
 source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
  "encoding_rs",
- "glam",
+ "glam 0.30.10",
  "gltf",
  "half",
  "log",
@@ -2806,7 +2812,7 @@ name = "omsi-world"
 version = "0.1.0"
 source = "git+https://github.com/openOMSI-org/openOMSI?rev=a2828c998a059afabee706729935992b2f7fc031#a2828c998a059afabee706729935992b2f7fc031"
 dependencies = [
- "glam",
+ "glam 0.30.10",
  "hashbrown 0.17.1",
  "log",
  "omsi-cfg",
@@ -2875,7 +2881,7 @@ dependencies = [
  "embed-resource",
  "env_logger",
  "full_moon",
- "glam",
+ "glam 0.34.3",
  "gltf",
  "image",
  "log",
@@ -2926,7 +2932,7 @@ dependencies = [
 name = "openmapper-mesh"
 version = "0.1.0"
 dependencies = [
- "glam",
+ "glam 0.30.10",
  "serde",
  "serde_json",
  "zip",
