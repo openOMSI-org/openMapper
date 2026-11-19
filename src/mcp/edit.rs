@@ -522,9 +522,13 @@ impl Server {
                         let k = crate::trolley_kit::KitDef { name: name.clone(), ..k };
                         let scope = if c.str("scope") == Some("shared") { crate::trolley_kit::Scope::Shared } else { crate::trolley_kit::Scope::Map };
                         let r = crate::trolley_kit::KitRef { scope, stem: crate::trolley_kit::stem_of(&name) };
+                        let old = crate::trolley_kit::load(&self.roots, &doc.dir, &r.id());
                         crate::trolley_kit::save(&self.roots, &doc.dir, &r, &k).map_err(|e| e.to_string())?;
-                        let n = if c.bool("renew").unwrap_or(false) { crate::trolley_kit::renew(&mut self.ed, &self.roots, &k) } else { 0 };
-                        said = json!({ "kit": r.id(), "cfg": k.text(), "renewed": n });
+                        let n = match (c.bool("renew").unwrap_or(false), old) {
+                            (true, Some(old)) => crate::trolley_kit::renew(&mut self.ed, &self.roots, &old, &k),
+                            _ => 0,
+                        };
+                        said = json!({ "kit": r.id(), "cfg": k.text(), "problems": k.problems(&self.roots), "renewed": n });
                     }
                 }
             }

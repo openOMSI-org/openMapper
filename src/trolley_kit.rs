@@ -1,330 +1,136 @@
-//! What shows the trolleybus wire on the map, made from a **kit**: a `.cfg` file the map maker
-//! writes (in the Trolleybus wire window, or by hand) saying what the wire is - how many wires,
-//! how far apart, how high, how thick, what colour - how masts are laid (every so many metres,
-//! the arm reaching so far), and what the mast, the frog and the section insulator look like,
-//! each built of parts (boxes, cylinders, cones, spheres, tubes, capsules, or any object of the
-//! content). openMapper ships none: from a kit it writes ordinary OMSI content - a wire spline
-//! (`Splines\openMapper\Trolley`, wires high over a lane, as trolleybus maps for OMSI 2 draw
-//! theirs, so openOMSI also reads them as the wire) and the objects
-//! (`Sceneryobjects\openMapper\Trolley`) - named after the kit and what it says, so a changed
-//! kit makes new files.
+//! What shows the trolleybus wire on the map: a **kit**, a `.cfg` file the map maker writes
+//! (by hand, or in the kit's window) naming their own content: the wire spline (`.sli`, made in
+//! Blender or anywhere, its wires at their height in its profile) and the mast, frog and section
+//! insulator objects (`.sco`), with how far apart masts stand and how far a mast is from its
+//! wire. openMapper makes no models of its own: it lays the files the kit names.
 //!
 //! A kit is the map's (`<map>\trolley\<name>.cfg`) or shared by every map
 //! (`<content>\openMapper\trolley\<name>.cfg`).
 //!
-//! Laying wire over a road puts a copy of each road piece of the wire type on the map and masts
-//! beside it every so many metres; wire over a junction's lanes (or drawn by hand) is laid as
-//! short straight wire pieces. What a span laid is kept with it (`Span::laid`) and goes with
-//! it; the frogs and insulators are put again wherever the wire's are after every change. All
-//! of it with the wire's file in one undo step.
+//! Laying wire over a road puts a copy of each road piece of the kit's wire spline on the map,
+//! moved sideways so the wire hangs over the lane, and masts beside it every so many metres;
+//! wire over a junction's lanes (or drawn by hand) is laid as short straight pieces. What a
+//! span laid is kept with it (`Span::laid`) and goes with it; the frogs and insulators are put
+//! again wherever the wire's are after every change (`Wire::marks`). All of it with the wire's
+//! file in one undo step.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use glam::{DMat4, DVec2, DVec3, Mat4, Vec3};
+use glam::{DVec2, DVec3};
 use omsi_map::{MapObject, MapSpline};
-use openmapper_mesh::primitives::Primitive;
-use openmapper_mesh::{Material, Mesh, Model, Part};
 
 use crate::doc::{tile_of, tile_origin, Document};
-use crate::editable::Source;
 use crate::editor::Editor;
 use crate::history::History;
 use crate::i18n::tr;
 use crate::install::Roots;
 use crate::trolley::{RoadLane, Span, Wire};
 
-/// The folders of what openMapper makes from the kits.
-const SPLINES: &str = "Splines\\openMapper\\Trolley";
-const OBJECTS: &str = "Sceneryobjects\\openMapper\\Trolley";
-
 // ------------------------------------------------------------------------------ the kit
-
-/// A part of a kit's object.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Shape {
-    Box,
-    Cylinder,
-    Cone,
-    Sphere,
-    Tube,
-    Capsule,
-    /// Another object of the content, as it is (`PartDef::file`).
-    Object,
-}
-
-pub const SHAPES: [Shape; 7] = [Shape::Box, Shape::Cylinder, Shape::Cone, Shape::Sphere, Shape::Tube, Shape::Capsule, Shape::Object];
-
-impl Shape {
-    fn word(self) -> &'static str {
-        match self {
-            Shape::Box => "box",
-            Shape::Cylinder => "cylinder",
-            Shape::Cone => "cone",
-            Shape::Sphere => "sphere",
-            Shape::Tube => "tube",
-            Shape::Capsule => "capsule",
-            Shape::Object => "object",
-        }
-    }
-
-    fn of(w: &str) -> Option<Shape> {
-        SHAPES.into_iter().find(|s| s.word().eq_ignore_ascii_case(w.trim()))
-    }
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Shape::Box => tr("Box", "Брус"),
-            Shape::Cylinder => tr("Cylinder", "Цилиндр"),
-            Shape::Cone => tr("Cone", "Конус"),
-            Shape::Sphere => tr("Sphere", "Сфера"),
-            Shape::Tube => tr("Tube", "Труба"),
-            Shape::Capsule => tr("Capsule", "Капсула"),
-            Shape::Object => tr("An object", "Объект"),
-        }
-    }
-
-    /// What the three numbers of its size are.
-    pub fn size_names(self) -> [&'static str; 3] {
-        match self {
-            Shape::Box => [tr("width", "ширина"), tr("depth", "глубина"), tr("height", "высота")],
-            Shape::Cylinder | Shape::Capsule => [tr("radius", "радиус"), tr("length", "длина"), ""],
-            Shape::Cone => [tr("radius below", "радиус снизу"), tr("length", "длина"), tr("radius above", "радиус сверху")],
-            Shape::Sphere => [tr("radius", "радиус"), "", ""],
-            Shape::Tube => [tr("outer radius", "внешний радиус"), tr("length", "длина"), tr("inner radius", "внутренний радиус")],
-            Shape::Object => [tr("scale", "масштаб"), "", ""],
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct PartDef {
-    pub shape: Shape,
-    /// Metres: x right, y forward, z up, from the object's origin (a mast's foot).
-    pub pos: [f32; 3],
-    /// Degrees about x, y and z, in that order.
-    pub rot: [f32; 3],
-    pub size: [f32; 3],
-    pub colour: [u8; 3],
-    /// For `Shape::Object`: its file in the content (`Sceneryobjects\…\x.sco`).
-    pub file: String,
-}
-
-impl PartDef {
-    pub fn new(shape: Shape) -> PartDef {
-        let size = match shape {
-            Shape::Box => [0.2, 0.2, 0.2],
-            Shape::Cylinder | Shape::Capsule => [0.1, 1.0, 0.0],
-            Shape::Cone => [0.15, 1.0, 0.1],
-            Shape::Sphere => [0.15, 0.0, 0.0],
-            Shape::Tube => [0.1, 1.0, 0.08],
-            Shape::Object => [1.0, 0.0, 0.0],
-        };
-        PartDef { shape, pos: [0.0; 3], rot: [0.0; 3], size, colour: [110, 112, 116], file: String::new() }
-    }
-
-    /// Its mesh where it stands (none for an object of the content).
-    pub fn mesh(&self) -> Option<Mesh> {
-        let [a, b, c] = self.size.map(|v| v.max(0.001));
-        let p = match self.shape {
-            Shape::Box => Primitive::Cube { size: Vec3::new(a, b, c) },
-            Shape::Cylinder => Primitive::Cylinder { radius: a, height: b, segments: 12 },
-            Shape::Cone => Primitive::Cone { radius_bottom: a, radius_top: self.size[2].max(0.0), height: b, segments: 12 },
-            Shape::Sphere => Primitive::UvSphere { radius: a, segments: 12, rings: 8 },
-            Shape::Tube => Primitive::Tube { outer: a, inner: c.min(a * 0.99), height: b, segments: 12 },
-            Shape::Capsule => Primitive::Capsule { radius: a, height: b, segments: 12, rings: 4 },
-            Shape::Object => return None,
-        };
-        let mut m = p.build();
-        m.transform(self.matrix());
-        for f in &mut m.faces {
-            f.smooth = p.round();
-        }
-        Some(m)
-    }
-
-    pub fn matrix(&self) -> Mat4 {
-        let r = self.rot.map(f32::to_radians);
-        Mat4::from_translation(Vec3::from(self.pos)) * Mat4::from_rotation_z(r[2]) * Mat4::from_rotation_y(r[1]) * Mat4::from_rotation_x(r[0])
-    }
-}
-
-/// The three objects of a kit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Piece {
-    Mast,
-    Frog,
-    Insulator,
-}
-
-pub const PIECES: [Piece; 3] = [Piece::Mast, Piece::Frog, Piece::Insulator];
-
-impl Piece {
-    fn word(self) -> &'static str {
-        match self {
-            Piece::Mast => "mast",
-            Piece::Frog => "frog",
-            Piece::Insulator => "insulator",
-        }
-    }
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Piece::Mast => tr("Mast", "Опора"),
-            Piece::Frog => tr("Frog", "Развилка"),
-            Piece::Insulator => tr("Section insulator", "Секционный изолятор"),
-        }
-    }
-
-    pub fn help(self) -> &'static str {
-        match self {
-            Piece::Mast => tr("Stands beside the road, its foot at the origin; its arm reaches along -y to the wire, which hangs `reach` metres away at the wire's height (the guide in the drawing).", "Стоит у дороги, основание в начале координат; кронштейн тянется вдоль -y к проводу, который висит в `вылет` метрах на высоте провода (направляющая на рисунке)."),
-            Piece::Frog => tr("Hangs where the wire branches, the origin on the wire, y along it.", "Висит там, где провод ветвится; начало координат на проводе, y вдоль него."),
-            Piece::Insulator => tr("Hangs where two sections meet, the origin on the wire, y along it.", "Висит на стыке двух секций; начало координат на проводе, y вдоль него."),
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct KitDef {
     pub name: String,
-    /// How many wires (2: a trolleybus's pair).
-    pub wires: u32,
-    /// Metres between neighbouring wires.
-    pub spacing: f64,
-    /// The wires' height over the road.
-    pub height: f64,
-    /// A wire's thickness (m).
-    pub thickness: f64,
-    pub colour: [u8; 3],
+    /// The wire spline (`Splines\…\x.sli`): laid along the wire.
+    pub wire: String,
+    /// The objects (`Sceneryobjects\…\x.sco`); empty: none put.
+    pub mast: String,
+    pub frog: String,
+    pub insulator: String,
     /// Metres between masts along a road.
     pub step: f64,
-    /// Metres from a mast to the wire it holds (its arm).
+    /// Metres from a mast's foot to the wire it holds, across the road.
     pub reach: f64,
-    pub meshes: [Vec<PartDef>; 3],
+    /// Degrees a mast is turned more (clockwise from above): 0 when its model's arm reaches
+    /// along its -y, 90 along its -x, -90 along its +x.
+    pub turn: f64,
 }
 
 impl Default for KitDef {
-    /// A kit to start from: the wire as trolleybus nets mostly have it, no mesh at all.
     fn default() -> KitDef {
-        KitDef { name: String::new(), wires: 2, spacing: 0.6, height: 5.6, thickness: 0.012, colour: [46, 42, 38], step: 30.0, reach: 2.5, meshes: Default::default() }
+        KitDef { name: String::new(), wire: String::new(), mast: String::new(), frog: String::new(), insulator: String::new(), step: 30.0, reach: 2.5, turn: 0.0 }
     }
 }
 
 fn f(v: f64) -> String {
-    let s = format!("{v:.4}");
+    let s = format!("{v:.3}");
     s.trim_end_matches('0').trim_end_matches('.').to_string()
 }
 
+/// Where the objects stand, said in the kit's file for whoever writes it by hand.
+const HELP: &str = "# A trolleybus wire kit of openMapper (Map > Trolleybus wire): your own content, laid where\n\
+# the wire runs. Files are paths in the content (or OMSI 2) folder; leave one empty for none.\n\
+# [wire]       the wire spline (.sli): its profile puts the wires at their height over the road\n\
+# [mast]       an object (.sco): its origin at its foot, its arm reaching along its -y to the wire\n\
+# [frog]       an object hung where the wire branches: its origin on the wire, y along it\n\
+# [insulator]  an object hung where two sections meet: its origin on the wire, y along it\n\
+# [masts]      metres between masts, metres from a mast's foot to its wire, and degrees the\n\
+#              mast is turned (0: its arm along -y, 90: along -x, -90: along +x)\n\n";
+
 impl KitDef {
-    pub fn mesh(&self, p: Piece) -> &Vec<PartDef> {
-        &self.meshes[p as usize]
-    }
-
-    pub fn mesh_mut(&mut self, p: Piece) -> &mut Vec<PartDef> {
-        &mut self.meshes[p as usize]
-    }
-
     /// The kit as its `.cfg` file.
     pub fn text(&self) -> String {
-        let mut s = String::from("# A trolleybus wire kit of openMapper (Map > Trolleybus wire). Lengths in metres,\n# angles in degrees, colours as red green blue (0-255); x right, y forward, z up.\n\n");
+        let mut s = String::from(HELP);
         let _ = writeln!(s, "[name]\n{}\n", self.name.replace(['\r', '\n'], " "));
-        let _ = writeln!(s, "[wire]\n# wires, metres apart, height over the road, thickness, colour\n{}\n{}\n{}\n{}\n{} {} {}\n", self.wires, f(self.spacing), f(self.height), f(self.thickness), self.colour[0], self.colour[1], self.colour[2]);
-        let _ = writeln!(s, "[masts]\n# metres between masts, metres from a mast to its wire\n{}\n{}\n", f(self.step), f(self.reach));
-        for p in PIECES {
-            for part in self.mesh(p) {
-                let v = |a: [f32; 3]| a.map(|x| f(x as f64)).join(" ");
-                let _ = writeln!(s, "[part]\n{}\n{}\n{}\n{}\n{}\n{} {} {}", p.word(), part.shape.word(), v(part.pos), v(part.rot), v(part.size), part.colour[0], part.colour[1], part.colour[2]);
-                if part.shape == Shape::Object {
-                    let _ = writeln!(s, "{}", part.file);
-                }
-                s.push('\n');
-            }
+        for (key, v) in [("wire", &self.wire), ("mast", &self.mast), ("frog", &self.frog), ("insulator", &self.insulator)] {
+            let _ = writeln!(s, "[{key}]\n{}\n", v.trim());
         }
+        let _ = writeln!(s, "[masts]\n{}\n{}\n{}", f(self.step), f(self.reach), f(self.turn));
         s
     }
 
-    /// A kit read from its `.cfg` (what it does not understand is left out).
+    /// A kit read from its `.cfg` (what it does not understand is left out; a block with no
+    /// line after it is empty).
     pub fn parse(text: &str) -> KitDef {
-        let mut k = KitDef { meshes: Default::default(), ..KitDef::default() };
-        let mut lines = text.lines().map(|l| l.split('#').next().unwrap_or("").trim()).filter(|l| !l.is_empty()).peekable();
-        let nums = |l: &str| -> Vec<f64> { l.split_whitespace().filter_map(|x| x.parse().ok()).collect() };
-        let three = |l: Option<&str>| -> [f32; 3] {
-            let n = l.map(nums).unwrap_or_default();
-            [0, 1, 2].map(|i| n.get(i).copied().unwrap_or(0.0) as f32)
-        };
-        let rgb = |l: Option<&str>| -> [u8; 3] { three(l).map(|v| v.clamp(0.0, 255.0) as u8) };
-        while let Some(l) = lines.next() {
-            match l.to_ascii_lowercase().as_str() {
-                "[name]" => k.name = lines.next().unwrap_or("").to_string(),
-                "[wire]" => {
-                    k.wires = lines.next().and_then(|l| l.parse().ok()).unwrap_or(2).clamp(1, 8);
-                    k.spacing = lines.next().and_then(|l| l.parse().ok()).unwrap_or(0.6);
-                    k.height = lines.next().and_then(|l| l.parse().ok()).unwrap_or(5.6);
-                    k.thickness = lines.next().and_then(|l| l.parse().ok()).unwrap_or(0.012);
-                    k.colour = rgb(lines.next());
-                }
+        let mut k = KitDef::default();
+        let lines: Vec<&str> = text.lines().map(|l| l.split('#').next().unwrap_or("").trim()).collect();
+        let mut i = 0;
+        // the lines of a block up to the next block or blank line
+        let body = |i: usize| -> Vec<&str> { lines[i + 1..].iter().take_while(|l| !l.is_empty() && !l.starts_with('[')).copied().collect() };
+        while i < lines.len() {
+            let key = lines[i].to_ascii_lowercase();
+            let b = body(i);
+            let first = b.first().map(|x| x.to_string()).unwrap_or_default();
+            match key.as_str() {
+                "[name]" => k.name = first,
+                "[wire]" => k.wire = first,
+                "[mast]" => k.mast = first,
+                "[frog]" => k.frog = first,
+                "[insulator]" => k.insulator = first,
                 "[masts]" => {
-                    k.step = lines.next().and_then(|l| l.parse().ok()).unwrap_or(30.0);
-                    k.reach = lines.next().and_then(|l| l.parse().ok()).unwrap_or(2.5);
-                }
-                "[part]" => {
-                    let piece = lines.next().unwrap_or("");
-                    let shape = lines.next().and_then(Shape::of);
-                    let (pos, rot, size, colour) = (three(lines.next()), three(lines.next()), three(lines.next()), rgb(lines.next()));
-                    let file = if shape == Some(Shape::Object) && lines.peek().is_some_and(|l| !l.starts_with('[')) { lines.next().unwrap_or("").to_string() } else { String::new() };
-                    if let (Some(p), Some(shape)) = (PIECES.into_iter().find(|p| p.word().eq_ignore_ascii_case(piece)), shape) {
-                        k.mesh_mut(p).push(PartDef { shape, pos, rot, size, colour, file });
-                    }
+                    k.step = b.first().and_then(|l| l.parse().ok()).unwrap_or(30.0);
+                    k.reach = b.get(1).and_then(|l| l.parse().ok()).unwrap_or(2.5);
+                    k.turn = b.get(2).and_then(|l| l.parse().ok()).unwrap_or(0.0);
                 }
                 _ => {}
             }
+            i += 1;
         }
         k
     }
 
-    /// What the files made from the kit are named after: its name and what it says.
-    fn stamp(&self) -> String {
-        use std::hash::{Hash, Hasher};
-        let mut h = std::collections::hash_map::DefaultHasher::new();
-        self.text().hash(&mut h);
-        let slug: String = self.name.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
-        format!("{}_{:08x}", if slug.trim_matches('_').is_empty() { "Kit" } else { slug.trim_matches('_') }, h.finish() as u32)
+    /// The wire spline's wires: their middle across it, how far apart, how high (None: the
+    /// file is not there, or its profile is no pair of wires).
+    pub fn profile(&self, roots: &Roots) -> Option<(f64, f64, f64)> {
+        let def = omsi_scenery::sli::Spline::load(&roots.resolve(self.wire.trim())).ok()?;
+        crate::trolley::wire_profile(&def)
     }
 
-    /// The object a piece is made of, as an openMapper object (its parts' meshes, an object of
-    /// the content as it is); None when the kit has no parts for it.
-    pub fn source(&self, roots: &Roots, p: Piece, tmp: &Path) -> Option<Source> {
-        let parts = self.mesh(p);
-        if parts.is_empty() {
-            return None;
-        }
-        let mut materials: Vec<Material> = Vec::new();
-        let mut body = Mesh::default();
-        for part in parts {
-            let Some(m) = part.mesh() else { continue };
-            let c = part.colour.map(|v| v as f32 / 255.0);
-            let i = materials.iter().position(|x| x.color[..3] == c).unwrap_or_else(|| {
-                materials.push(Material::colored(&format!("Colour {} {} {}", part.colour[0], part.colour[1], part.colour[2]), [c[0], c[1], c[2], 1.0]));
-                materials.len() - 1
-            });
-            body.append(&m, i as u32);
-        }
-        let mut src = Source { name: format!("{} ({})", self.name, p.label()), model: Model { parts: Vec::new(), materials }, ..Default::default() };
-        if !body.faces.is_empty() {
-            src.model.parts.push(Part::new("Body", body));
-        }
-        for part in parts.iter().filter(|x| x.shape == Shape::Object && !x.file.trim().is_empty()) {
-            match crate::editable::source_of(roots, part.file.trim(), tmp) {
-                Ok(other) => {
-                    let s = part.size[0].max(0.001) as f64;
-                    let m = DMat4::from_cols_array(&part.matrix().to_cols_array().map(f64::from)) * DMat4::from_scale(DVec3::splat(s));
-                    crate::editable::merge_into(&mut src, DMat4::IDENTITY, &other, m);
-                }
-                Err(e) => log::warn!("{}: {e}", part.file),
+    /// What is wrong with it: files named that are not there.
+    pub fn problems(&self, roots: &Roots) -> Vec<String> {
+        let mut out = Vec::new();
+        for (what, v) in [(tr("the wire spline", "сплайн провода"), &self.wire), (tr("the mast", "опора"), &self.mast), (tr("the frog", "развилка"), &self.frog), (tr("the insulator", "изолятор"), &self.insulator)] {
+            if !v.trim().is_empty() && !roots.resolve(v.trim()).is_file() {
+                out.push(format!("{what}: {} {}", v.trim(), tr("is not there", "не найден")));
             }
         }
-        (!src.model.parts.is_empty()).then_some(src)
+        if self.wire.trim().is_empty() {
+            out.push(tr("no wire spline: nothing of the wire is shown on the map", "нет сплайна провода: сам провод на карте не показывается").into());
+        } else if roots.resolve(self.wire.trim()).is_file() && self.profile(roots).is_none() {
+            out.push(tr("the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt", "профиль сплайна провода — не пара тонких проводов выше 3 м: он кладётся как есть, и openOMSI без trolley.txt не примет его за провод").into());
+        }
+        out
     }
 }
 
@@ -422,85 +228,6 @@ pub fn move_to(roots: &Roots, map_dir: &Path, r: &KitRef, to: Scope) -> anyhow::
     Ok(new)
 }
 
-// ------------------------------------------------------------------------- the files
-
-/// The wire spline of a kit: its wires `x` right of the spline's line. Written once; its
-/// relative path.
-pub fn wire_spline(content: &Path, k: &KitDef, x: f64) -> anyhow::Result<String> {
-    let stamp = k.stamp();
-    let rel = format!("{SPLINES}\\{stamp}_x{}.sli", (x * 100.0).round() as i64);
-    let path = omsi_cfg::resolve_path(content, &rel);
-    if path.is_file() {
-        return Ok(rel);
-    }
-    let dir = path.parent().unwrap().to_path_buf();
-    std::fs::create_dir_all(dir.join("texture"))?;
-    let tex_name = format!("{stamp}.tga");
-    let tex = dir.join("texture").join(&tex_name);
-    if !tex.is_file() {
-        image::RgbaImage::from_pixel(4, 4, image::Rgba([k.colour[0], k.colour[1], k.colour[2], 255])).save(&tex)?;
-    }
-    // (each wire a narrow V: seen from below and the side, thin enough that openOMSI takes a
-    // pair for the wire when the map has no trolley.txt)
-    let r = (k.thickness * 0.5).max(0.002);
-    let mut s = format!("File created with openMapper from the trolleybus wire kit {}\n\n[friendlyname]\n{} {:+.2} m\n\n[texture]\n{tex_name}\n\n", k.name, k.name, x);
-    let n = k.wires.max(1);
-    for i in 0..n {
-        let c = x + (i as f64 - (n - 1) as f64 * 0.5) * k.spacing;
-        s += "[profile]\n0\n\n";
-        for (dx, dz, u) in [(-r, 0.0, 0.0), (0.0, -r, 0.5), (r, 0.0, 1.0)] {
-            s += &format!("[profilepnt]\n{:.4}\n{:.4}\n{u}\n1\n\n", c + dx, k.height + dz);
-        }
-    }
-    crate::doc::safe::write_atomic(&path, &omsi_cfg::encode_text(&s.replace('\n', "\r\n")))?;
-    Ok(rel)
-}
-
-/// A piece of the kit written once; its relative path (None: the kit has no mesh for it).
-fn object(roots: &Roots, k: &KitDef, p: Piece) -> Option<String> {
-    let stamp = k.stamp();
-    let rel = format!("{OBJECTS}\\{stamp}\\{}.sco", p.word());
-    if !omsi_cfg::resolve_path(&roots.content, &rel).is_file() {
-        let tmp = omsi_cfg::resolve_path(&roots.content, &format!("{OBJECTS}\\{stamp}"));
-        let src = k.source(roots, p, &tmp)?;
-        if let Err(e) = crate::editable::save(roots, &rel, &src) {
-            log::warn!("{rel}: {e}");
-            return None;
-        }
-    }
-    Some(rel)
-}
-
-/// Whether a file is one made from a kit (the map's wire, its masts, frogs and insulators).
-pub fn is_kit(file: &str) -> bool {
-    let f = file.to_ascii_lowercase();
-    // (with the folder's backslash: a map called Trolley… has its junctions beside it)
-    [SPLINES, OBJECTS].iter().any(|d| f.starts_with(&format!("{}\\", d.to_ascii_lowercase())))
-}
-
-/// A frog's or an insulator's object (put again after every change of the wire).
-fn is_mark(file: &str) -> bool {
-    let f = file.to_ascii_lowercase();
-    is_kit(&f) && (f.ends_with("\\frog.sco") || f.ends_with("\\insulator.sco"))
-}
-
-/// Wire pieces and masts of a kit on the map that no span of the wire names (the wire's file
-/// taken away by hand, or the span deleted outside openMapper): where they stand.
-pub fn orphans(doc: &Document) -> Vec<(crate::doc::Sel, DVec2)> {
-    let named: std::collections::HashSet<i64> = doc.traffic.trolley.iter().flat_map(|w| w.spans.iter().flat_map(|s| s.laid.iter().copied())).collect();
-    let mut out = Vec::new();
-    for (k, t) in &doc.tiles {
-        let org = tile_origin(*k);
-        for o in t.tile.objects.iter().filter(|o| is_kit(&o.file) && !is_mark(&o.file) && !named.contains(&o.id)) {
-            out.push((crate::doc::Sel::Object(*k, o.id), org + DVec2::new(o.pos[0], o.pos[1])));
-        }
-        for s in t.tile.splines.iter().filter(|s| !s.deleted && is_kit(&s.file) && !named.contains(&s.id)) {
-            out.push((crate::doc::Sel::Spline(*k, s.id), org + DVec2::new(s.pos[0], s.pos[1])));
-        }
-    }
-    out
-}
-
 // ------------------------------------------------------------------------- on the map
 
 fn put_object(doc: &mut Document, hist: &mut History, file: &str, at: DVec3, heading: f64) -> i64 {
@@ -554,6 +281,33 @@ fn simplified(pts: &[DVec3], tol: f64) -> Vec<DVec3> {
     left
 }
 
+/// Whether a file is the kit's wire spline or mast.
+fn of_kit(k: &KitDef, file: &str) -> bool {
+    [&k.wire, &k.mast].iter().any(|f| !f.trim().is_empty() && f.trim().eq_ignore_ascii_case(file.trim()))
+}
+
+/// A copy of a road piece `off` metres to its right (an arc keeps its centre, as
+/// `parallel::copy` makes them): its tile, the copy, where it starts. None where the bend is
+/// too tight for it.
+fn sideways(s: &MapSpline, org: DVec2, off: f64) -> Option<(MapSpline, DVec2)> {
+    let h = s.heading.to_radians();
+    let right = DVec2::new(h.cos(), -h.sin());
+    let start = org + DVec2::new(s.pos[0], s.pos[1]) + right * off;
+    let (radius, length) = if s.radius == 0.0 {
+        (0.0, s.length)
+    } else {
+        let r = s.radius - off;
+        if r == 0.0 || r.signum() != s.radius.signum() {
+            return None;
+        }
+        (r, s.length * r / s.radius)
+    };
+    let scale = s.length / length.max(0.01);
+    let no = tile_origin(tile_of(start));
+    let c = MapSpline { pos: [start.x - no.x, start.y - no.y, s.pos[2]], radius, length, grad_start: s.grad_start * scale, grad_end: s.grad_end * scale, ..s.clone() };
+    Some((c, start))
+}
+
 /// How new wire is shown with a kit: its wire splines, its masts.
 #[derive(Clone, Copy)]
 pub struct Use<'a> {
@@ -565,21 +319,21 @@ pub struct Use<'a> {
 /// The wire splines and masts of a new span, their IDCodes kept in it.
 fn lay_span(doc: &mut Document, hist: &mut History, roots: &Roots, span: &mut Span, road: Option<RoadLane>, u: Use) {
     let k = u.kit;
+    let wire = k.wire.trim().to_string();
+    // (the wire spline's wires hang `mid` right of its line and `height` over it)
+    let (mid, _, height) = k.profile(roots).unwrap_or((0.0, 0.0, 0.0));
     match road {
         Some(r) => {
             let Some(sp) = doc.spline(r.tile, r.id).cloned() else { return };
-            if u.wires {
-                if let Ok(file) = wire_spline(&roots.content, k, r.x) {
-                    let id = doc.new_id();
-                    // (a copy of the road piece: the wire follows its bends, gradients and cant)
-                    let w = MapSpline { file, id, prev_id: 0, next_id: 0, mirror: false, terrain_align: None, terrain_align_flag: false, rules: Vec::new(), ..sp.clone() };
-                    span.laid.push(put_spline(doc, hist, w, tile_origin(r.tile) + DVec2::new(sp.pos[0], sp.pos[1])));
+            if u.wires && !wire.is_empty() {
+                // (a copy of the road piece: the wire follows its bends, gradients and cant)
+                let base = MapSpline { file: wire.clone(), id: doc.new_id(), prev_id: 0, next_id: 0, mirror: false, terrain_align: None, terrain_align_flag: false, rules: Vec::new(), ..sp.clone() };
+                if let Some((w, at)) = sideways(&base, tile_origin(r.tile), r.x - mid) {
+                    span.laid.push(put_spline(doc, hist, w, at));
                 }
             }
-            if u.masts && k.step >= 3.0 {
-                let Some(file) = object(roots, k, Piece::Mast) else { return };
+            if u.masts && !k.mast.trim().is_empty() && k.step >= 3.0 {
                 let side = if r.x < 0.0 { -1.0 } else { 1.0 };
-                // (the mast stands so its arm, `reach` long, ends over the wire)
                 let foot_x = r.x + side * k.reach;
                 let curve = omsi_geometry::SplineCurve::from_map(&sp, tile_origin(r.tile));
                 let mut s = k.step * 0.5;
@@ -587,15 +341,15 @@ fn lay_span(doc: &mut Document, hist: &mut History, roots: &Roots, span: &mut Sp
                     let foot = curve.offset_point(s, foot_x, 0.0);
                     let over = curve.offset_point(s, r.x, 0.0);
                     let foot = DVec3::new(foot.x, foot.y, doc.ground(foot.truncate()));
-                    // (its arm, toward its -y, reaches over the wire)
-                    let heading = crate::roads::heading_of(-(over - foot).truncate());
-                    span.laid.push(put_object(doc, hist, &file, foot, heading));
+                    // (its arm, toward its -y, reaches over the wire; the kit turns models made
+                    // the other way)
+                    let heading = crate::roads::heading_of(-(over - foot).truncate()) + k.turn;
+                    span.laid.push(put_object(doc, hist, k.mast.trim(), foot, heading));
                     s += k.step;
                 }
             }
         }
-        None if u.wires => {
-            let Ok(file) = wire_spline(&roots.content, k, 0.0) else { return };
+        None if u.wires && !wire.is_empty() => {
             let pts = simplified(&span.points, 0.05);
             for w in pts.windows(2) {
                 let (a, b) = (w[0], w[1]);
@@ -603,19 +357,22 @@ fn lay_span(doc: &mut Document, hist: &mut History, roots: &Roots, span: &mut Sp
                 if flat < 0.05 {
                     continue;
                 }
-                let t = tile_of(a.truncate());
-                let local = a.truncate() - tile_origin(t);
+                let h = crate::roads::heading_of((b - a).truncate());
+                let hr = h.to_radians();
+                // (the spline's line where its wires hang over the span's points)
+                let start = a.truncate() - DVec2::new(hr.cos(), -hr.sin()) * mid;
+                let t = tile_of(start);
+                let local = start - tile_origin(t);
                 let grad = (b.z - a.z) / flat * 100.0;
-                let id = doc.new_id();
-                let s = MapSpline { file: file.clone(), id, pos: [local.x, local.y, a.z - k.height], heading: crate::roads::heading_of((b - a).truncate()), length: flat, grad_start: grad, grad_end: grad, ..Default::default() };
-                span.laid.push(put_spline(doc, hist, s, a.truncate()));
+                let s = MapSpline { file: wire.clone(), id: doc.new_id(), pos: [local.x, local.y, a.z - height], heading: h, length: flat, grad_start: grad, grad_end: grad, ..Default::default() };
+                span.laid.push(put_spline(doc, hist, s, start));
             }
         }
         None => {}
     }
 }
 
-/// Take away objects and splines by IDCode (what a span had laid).
+/// Take away objects and splines by IDCode (what a span laid, the marks put).
 fn remove(doc: &mut Document, hist: &mut History, ids: &[i64]) {
     for id in ids {
         if let Some((k, _)) = doc.find_spline(*id) {
@@ -631,43 +388,43 @@ fn remove(doc: &mut Document, hist: &mut History, ids: &[i64]) {
     }
 }
 
-/// The frogs and insulators put again where the wire has them now, from the wire's kit.
+/// The frogs and insulators put again where the wire has them now, as its kit names them;
+/// their IDCodes kept in the wire.
 fn put_marks(doc: &mut Document, hist: &mut History, roots: Option<&Roots>) {
-    let keys: Vec<_> = doc.tiles.iter().filter(|(_, t)| t.tile.objects.iter().any(|o| is_mark(&o.file))).map(|(k, _)| *k).collect();
-    for k in keys {
-        hist.touch_tile(doc, k);
-        let t = doc.tiles.get_mut(&k).unwrap();
-        t.tile.objects.retain(|o| !is_mark(&o.file));
-        t.touch_content();
-    }
-    let (Some(roots), Some(w)) = (roots, doc.traffic.trolley.clone()) else { return };
-    let Some(kit) = w.kit.as_deref().and_then(|id| load(roots, &doc.dir, id)) else { return };
-    let js = crate::trolley::joints(&w);
-    // (the way the wire runs through a joint: along its first span there)
-    let heading = |j: &crate::trolley::Joint| {
-        let (i, far) = j.ends[0];
-        let p = &w.spans[i].points;
-        let d = if far { p[p.len() - 1] - p[p.len() - 2] } else { p[1] - p[0] };
-        crate::roads::heading_of(d.truncate())
-    };
-    let frog_file = object(roots, &kit, Piece::Frog);
-    let ins_file = object(roots, &kit, Piece::Insulator);
-    for j in js.iter().filter(|j| j.ends.len() == 3) {
-        if let Some(f) = &frog_file {
-            put_object(doc, hist, f, j.pos, heading(j));
+    let Some(mut w) = doc.traffic.trolley.clone() else { return };
+    remove(doc, hist, &w.marks);
+    w.marks.clear();
+    if let Some(kit) = roots.and_then(|r| w.kit.as_deref().and_then(|id| load(r, &doc.dir, id))) {
+        let js = crate::trolley::joints(&w);
+        // (the way the wire runs through a joint: along its first span there)
+        let heading = |j: &crate::trolley::Joint| {
+            let (i, far) = j.ends[0];
+            let p = &w.spans[i].points;
+            let d = if far { p[p.len() - 1] - p[p.len() - 2] } else { p[1] - p[0] };
+            crate::roads::heading_of(d.truncate())
+        };
+        let mut ids = Vec::new();
+        if !kit.frog.trim().is_empty() {
+            for j in js.iter().filter(|j| j.ends.len() == 3) {
+                ids.push(put_object(doc, hist, kit.frog.trim(), j.pos, heading(j)));
+            }
         }
-    }
-    for (p, _, _) in crate::trolley::section_breaks(&w, &js) {
-        if let (Some(f), Some(j)) = (&ins_file, js.iter().find(|j| j.pos.distance(p) < 0.01)) {
-            put_object(doc, hist, f, p, heading(j));
+        if !kit.insulator.trim().is_empty() {
+            for (p, _, _) in crate::trolley::section_breaks(&w, &js) {
+                if let Some(j) = js.iter().find(|j| j.pos.distance(p) < 0.01) {
+                    ids.push(put_object(doc, hist, kit.insulator.trim(), p, heading(j)));
+                }
+            }
         }
+        w.marks = ids;
     }
+    doc.traffic.trolley = Some(w);
 }
 
 /// The map's wire made `after` in one undo step, with what shows it: the new spans (their
-/// places in `after`, and the road lane each runs over) get their wire splines and masts from
-/// the kit, what spans no longer there had laid goes, the frogs and insulators stand where the
-/// wire's are.
+/// places in `after`, and the road lane each runs over) get the kit's wire splines and masts,
+/// what spans no longer there had laid goes, the frogs and insulators stand where the wire's
+/// are.
 pub fn apply(ed: &mut Editor, roots: Option<&Roots>, mut after: Option<Wire>, new: Vec<(usize, Option<RoadLane>)>, u: Option<Use>) {
     let Some(doc) = ed.doc.as_mut() else { return };
     let hist = &mut ed.history;
@@ -677,68 +434,60 @@ pub fn apply(ed: &mut Editor, roots: Option<&Roots>, mut after: Option<Wire>, ne
     let kept: std::collections::HashSet<i64> = after.iter().flat_map(|w| w.spans.iter().flat_map(|s| s.laid.iter().copied())).collect();
     let gone: Vec<i64> = doc.traffic.trolley.iter().flat_map(|w| w.spans.iter().flat_map(|s| s.laid.iter().copied())).filter(|id| !kept.contains(id)).collect();
     remove(doc, hist, &gone);
+    // (the marks put last time go with the wire they stood on)
+    if let (Some(a), Some(b)) = (after.as_mut(), doc.traffic.trolley.as_ref()) {
+        a.marks = b.marks.clone();
+    } else if after.is_none() {
+        let old = doc.traffic.trolley.as_ref().map(|w| w.marks.clone()).unwrap_or_default();
+        remove(doc, hist, &old);
+    }
     if let (Some(w), Some(roots), Some(u)) = (after.as_mut(), roots, u) {
         for (i, road) in new {
             if let Some(span) = w.spans.get_mut(i) {
                 lay_span(doc, hist, roots, span, road, u);
             }
         }
-        omsi_cfg::content_changed();
     }
     doc.traffic.trolley = after;
-    doc.traffic.touch(crate::traffic::File::Trolley);
     put_marks(doc, hist, roots);
+    doc.traffic.touch(crate::traffic::File::Trolley);
     hist.commit();
 }
 
-/// What is on the map from an older state of a kit made from it as it is now: every wire piece
-/// and mast of the kit's earlier files takes the new ones (in place: a changed reach or step
-/// shows on wire laid from now on). How many were changed.
-pub fn renew(ed: &mut Editor, roots: &Roots, kit: &KitDef) -> usize {
+/// What is on the map from a kit as it was (`old`) made as it is now (`new`): its wire splines
+/// and masts take the new files, the frogs and insulators are put again. How many changed.
+pub fn renew(ed: &mut Editor, roots: &Roots, old: &KitDef, new: &KitDef) -> usize {
     let Some(doc) = ed.doc.as_mut() else { return 0 };
-    // (the kit's files of any state: its name, then a stamp of 8 hex digits)
-    let stamp = kit.stamp();
-    let base = stamp[..stamp.len() - 9].to_ascii_lowercase();
-    let mine = |file: &str| {
-        let f = file.to_ascii_lowercase();
-        let name = if f.ends_with(".sli") { f.rsplit('\\').next() } else { f.rsplit('\\').nth(1) }.unwrap_or("");
-        is_kit(&f) && name.strip_prefix(&format!("{base}_")).is_some_and(|rest| rest.len() >= 8 && rest[..8].chars().all(|c| c.is_ascii_hexdigit()))
-    };
-    let mast = object(roots, kit, Piece::Mast);
+    let laid: std::collections::HashSet<i64> = doc.traffic.trolley.iter().flat_map(|w| w.spans.iter().flat_map(|s| s.laid.iter().copied())).collect();
     let mut n = 0;
     ed.history.begin(tr("Renew the wire from its kit", "Обновить провод по комплекту"));
+    ed.history.touch_traffic(doc);
     let keys: Vec<_> = doc.tiles.keys().copied().collect();
     for k in keys {
         let t = &doc.tiles[&k];
-        let touches = t.tile.splines.iter().any(|s| s.file.ends_with(".sli") && mine(&s.file)) || t.tile.objects.iter().any(|o| mine(&o.file) && !is_mark(&o.file));
-        if !touches {
+        let ours = |id: i64, file: &str| laid.contains(&id) && of_kit(old, file);
+        if !t.tile.splines.iter().any(|s| ours(s.id, &s.file)) && !t.tile.objects.iter().any(|o| ours(o.id, &o.file)) {
             continue;
         }
         ed.history.touch_tile(doc, k);
         let t = doc.tiles.get_mut(&k).unwrap();
-        for s in t.tile.splines.iter_mut().filter(|s| mine(&s.file)) {
-            // (the wire's offset is kept in its file name)
-            let x = s.file.rsplit("_x").next().and_then(|v| v.trim_end_matches(".sli").parse::<f64>().ok()).unwrap_or(0.0) / 100.0;
-            if let Ok(f) = wire_spline(&roots.content, kit, x) {
-                if f != s.file {
-                    s.file = f;
-                    n += 1;
-                }
+        for s in t.tile.splines.iter_mut().filter(|s| laid.contains(&s.id) && s.file.eq_ignore_ascii_case(old.wire.trim())) {
+            if !new.wire.trim().is_empty() && s.file != new.wire.trim() {
+                s.file = new.wire.trim().to_string();
+                n += 1;
             }
         }
-        for o in t.tile.objects.iter_mut().filter(|o| mine(&o.file) && !is_mark(&o.file)) {
-            if let Some(f) = &mast {
-                if *f != o.file {
-                    o.file = f.clone();
-                    n += 1;
-                }
+        for o in t.tile.objects.iter_mut().filter(|o| laid.contains(&o.id) && o.file.eq_ignore_ascii_case(old.mast.trim())) {
+            if !new.mast.trim().is_empty() && o.file != new.mast.trim() {
+                o.file = new.mast.trim().to_string();
+                n += 1;
             }
         }
         t.touch_content();
     }
     put_marks(doc, &mut ed.history, Some(roots));
+    doc.traffic.touch(crate::traffic::File::Trolley);
     ed.history.commit();
-    omsi_cfg::content_changed();
     n
 }
 
@@ -747,42 +496,42 @@ mod tests {
     use super::*;
 
     fn kit() -> KitDef {
-        let mut k = KitDef { name: "Test net".into(), ..KitDef::default() };
-        k.mesh_mut(Piece::Mast).push(PartDef { pos: [0.0, 0.0, 3.0], ..PartDef::new(Shape::Cylinder) });
-        k.mesh_mut(Piece::Mast).push(PartDef { pos: [0.0, -1.25, 5.8], rot: [90.0, 0.0, 0.0], size: [0.04, 2.5, 0.0], ..PartDef::new(Shape::Cylinder) });
-        k.mesh_mut(Piece::Frog).push(PartDef::new(Shape::Box));
-        k
+        KitDef { name: "Test net".into(), wire: "Splines\\Net\\wire.sli".into(), mast: "Sceneryobjects\\Net\\mast.sco".into(), frog: "Sceneryobjects\\Net\\frog.sco".into(), insulator: String::new(), step: 30.0, reach: 2.5, turn: -90.0 }
+    }
+
+    /// The map maker's own wire spline: a pair of wires 0.6 m apart, 5.6 m up, `mid` across.
+    fn content(roots: &Roots, mid: f64) {
+        let dir = roots.content.join("Splines").join("Net");
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut s = String::from("[texture]\r\nw.tga\r\n\r\n");
+        for c in [mid - 0.3, mid + 0.3] {
+            s += "[profile]\r\n0\r\n\r\n";
+            for (dx, z) in [(-0.006, 5.6), (0.006, 5.6)] {
+                s += &format!("[profilepnt]\r\n{:.3}\r\n{z}\r\n0\r\n1\r\n\r\n", c + dx);
+            }
+        }
+        std::fs::write(dir.join("wire.sli"), s).unwrap();
+        let obj = roots.content.join("Sceneryobjects").join("Net");
+        std::fs::create_dir_all(&obj).unwrap();
+        for o in ["mast.sco", "frog.sco"] {
+            std::fs::write(obj.join(o), "[mesh]\r\nx.o3d\r\n").unwrap();
+        }
     }
 
     #[test]
-    fn a_kit_reads_back_as_it_was_written() {
-        let mut k = kit();
-        k.mesh_mut(Piece::Insulator).push(PartDef { file: "Sceneryobjects\\x\\y.sco".into(), ..PartDef::new(Shape::Object) });
+    fn a_kit_reads_back_as_it_was_written_and_as_written_by_hand() {
+        let k = kit();
         let text = k.text();
         assert_eq!(KitDef::parse(&text), k, "{text}");
-        assert_eq!(KitDef::parse(&text).text(), text);
-        // (a kit is changed by hand: what it says is read)
-        let hand = text.replace("[masts]\n# metres between masts, metres from a mast to its wire\n30\n2.5", "[masts]\n40 # wider\n3");
-        let h = KitDef::parse(&hand);
-        assert_eq!((h.step, h.reach), (40.0, 3.0));
+        let hand = "[name]\nMy net\n\n[wire]\nSplines\\A\\w.sli  # mine\n\n[mast]\nSceneryobjects\\A\\m.sco\n\n[frog]\n\n[masts]\n40\n3\n";
+        let h = KitDef::parse(hand);
+        assert_eq!((h.name.as_str(), h.wire.as_str(), h.frog.as_str(), h.insulator.as_str(), h.step, h.reach, h.turn), ("My net", "Splines\\A\\w.sli", "", "", 40.0, 3.0, 0.0));
     }
 
     #[test]
     fn a_line_keeps_only_its_corners() {
         let pts: Vec<DVec3> = [(0.0, 0.0), (5.0, 0.01), (10.0, 0.0), (10.0, 10.0)].iter().map(|p| DVec3::new(p.0, p.1, 6.0)).collect();
         assert_eq!(simplified(&pts, 0.05), vec![pts[0], pts[2], pts[3]]);
-    }
-
-    /// The wire spline is the pair openOMSI reads as a wire, where the kit says.
-    #[test]
-    fn the_wire_spline_reads_as_a_pair_of_wires() {
-        let content = crate::doc::tests::scratch("trolley_kit").content;
-        let rel = wire_spline(&content, &kit(), 1.6).unwrap();
-        let def = omsi_scenery::sli::Spline::load(&omsi_cfg::resolve_path(&content, &rel)).unwrap();
-        let (mid, spacing, h) = crate::trolley::wire_profile(&def).unwrap();
-        assert!((mid - 1.6).abs() < 1e-3 && (spacing - 0.6).abs() < 1e-3 && (h - 5.594).abs() < 0.01, "{mid} {spacing} {h}");
-        assert!(is_kit(&rel) && !is_mark(&rel));
-        assert!(!is_kit("Sceneryobjects\\openMapper\\TrolleyTest\\junction_1.sco"));
     }
 
     #[test]
@@ -797,25 +546,31 @@ mod tests {
         assert!(roots.content.join("openMapper/trolley/Test_net.cfg").is_file());
         assert_eq!(load(&roots, &map, &shared.id()), Some(kit()));
         assert_eq!(list(&roots, &roots.content.join("maps").join("Other"))[0].0, shared);
+        // (files named that are not there are named)
+        assert_eq!(kit().problems(&roots).len(), 3);
     }
 
-    /// Laid over a road: the wire's copy of the road and masts beside it, the frog where three
-    /// spans meet (the kit has no insulator: none), all gone again with one undo.
+    /// Laid over a road: the map maker's wire spline moved over the lane and their masts
+    /// beside it, their frog where three spans meet (the kit names no insulator: none), all
+    /// gone again with one undo; a kit changed renews what is laid.
     #[test]
-    fn the_wire_is_shown_from_its_kit_and_undone_in_one_step() {
+    fn the_wire_is_shown_with_the_kits_files_and_undone_in_one_step() {
         let roots = crate::doc::tests::scratch("trolley_kit_lay");
+        content(&roots, 0.4);
         let mut ed = Editor::default();
         let mut doc = crate::selection::tests::flat_map(1);
         doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines.push(MapSpline { file: "Splines\\road.sli".into(), id: 500, pos: [10.0, 50.0, 0.0], heading: 90.0, length: 100.0, ..Default::default() });
         let k = kit();
+        assert!(k.problems(&roots).is_empty(), "{:?}", k.problems(&roots));
+        assert_eq!(k.profile(&roots).map(|p| (p.0 * 10.0).round() / 10.0), Some(0.4));
         let r = KitRef { scope: Scope::Map, stem: stem_of(&k.name) };
         save(&roots, &doc.dir, &r, &k).unwrap();
         ed.doc = Some(doc);
         let at = |x: f64, y: f64| DVec3::new(x, y, 5.6);
         let spans = vec![
-            (Span { section: 1, points: vec![at(10.0, 51.6), at(110.0, 51.6)], ..Default::default() }, Some(RoadLane { tile: (0, 0), id: 500, x: 1.6, height: 5.6 })),
-            (Span { section: 1, points: vec![at(110.0, 51.6), at(150.0, 51.6)], ..Default::default() }, None),
-            (Span { section: 2, points: vec![at(110.0, 51.6), at(130.0, 80.0)], ..Default::default() }, None),
+            (Span { section: 1, points: vec![at(10.0, 48.4), at(110.0, 48.4)], ..Default::default() }, Some(RoadLane { tile: (0, 0), id: 500, x: 1.6, height: 5.6 })),
+            (Span { section: 1, points: vec![at(110.0, 48.4), at(150.0, 48.4)], ..Default::default() }, None),
+            (Span { section: 2, points: vec![at(110.0, 48.4), at(130.0, 80.0)], ..Default::default() }, None),
         ];
         let mut w = crate::trolley::or_new(None);
         w.kit = Some(r.id());
@@ -823,21 +578,32 @@ mod tests {
         apply(&mut ed, Some(&roots), Some(w), added, Some(Use { kit: &k, wires: true, masts: true }));
         let doc = ed.doc.as_ref().unwrap();
         let t = &doc.tiles[&(0, 0)].tile;
-        let count = |what: &str| t.objects.iter().filter(|o| o.file.ends_with(what)).count();
-        let wires = t.splines.iter().filter(|s| is_kit(&s.file)).count();
-        assert_eq!((wires, count("\\mast.sco"), count("\\frog.sco"), count("\\insulator.sco")), (3, 3, 1, 0));
+        let count = |f: &str| t.objects.iter().filter(|o| o.file == f).count();
+        let wires: Vec<&MapSpline> = t.splines.iter().filter(|s| s.file == k.wire).collect();
+        assert_eq!((wires.len(), count(&k.mast), count(&k.frog)), (3, 3, 1));
+        // (the road's copy moved right by the lane's 1.6 m less the spline's own 0.4 m:
+        // heading 90 is east, its right is south)
+        assert!((wires[0].pos[1] - 48.8).abs() < 1e-6 && (wires[0].pos[0] - 10.0).abs() < 1e-6, "{:?}", wires[0].pos);
         let w = doc.traffic.trolley.as_ref().unwrap();
-        assert_eq!(w.spans[0].laid.len(), 4);
-        assert_eq!(crate::trolley::parse(&crate::trolley::text(w)).kit, w.kit);
-        // a changed kit renews what is laid
+        assert_eq!(w.marks.len(), 1);
+        let back = crate::trolley::parse(&crate::trolley::text(w));
+        assert_eq!((back.kit.clone(), back.marks.clone()), (w.kit.clone(), w.marks.clone()));
+        // a span deleted takes what it laid; the frog goes with the branch
+        let mut less = w.clone();
+        less.spans.remove(2);
+        crate::trolley::set(&mut ed, Some(&roots), Some(less));
+        let t = &ed.doc.as_ref().unwrap().tiles[&(0, 0)].tile;
+        assert_eq!(t.objects.iter().filter(|o| o.file == k.frog).count(), 0);
+        ed.undo();
+        // a kit changed: the laid masts take its new mast
         let mut k2 = k.clone();
-        k2.colour = [200, 0, 0];
-        let n = renew(&mut ed, &roots, &k2);
-        assert_eq!(n, 6, "3 wires and 3 masts");
+        k2.mast = "Sceneryobjects\\Net\\frog.sco".into();
+        assert_eq!(renew(&mut ed, &roots, &k, &k2), 3);
         ed.undo();
         ed.undo();
         let doc = ed.doc.as_ref().unwrap();
         assert!(doc.traffic.trolley.is_none());
-        assert!(!doc.tiles[&(0, 0)].tile.objects.iter().any(|o| is_kit(&o.file)) && !doc.tiles[&(0, 0)].tile.splines.iter().any(|s| is_kit(&s.file)));
+        let t = &doc.tiles[&(0, 0)].tile;
+        assert!(t.objects.is_empty() && t.splines.len() == 1, "{:?}", t.objects);
     }
 }

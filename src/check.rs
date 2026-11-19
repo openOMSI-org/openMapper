@@ -899,9 +899,6 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
             out.push(Issue { severity: Severity::Warning, kind: Kind::TrolleyWire, title: tr("Trolleybus wire", "Контактная сеть").to_string(), detail: text, at: Some(p.truncate()), sel: None, fix: None });
         }
     }
-    for (sel, at) in crate::trolley_kit::orphans(d) {
-        out.push(Issue { severity: Severity::Info, kind: Kind::TrolleyWire, title: tr("Trolleybus wire", "Контактная сеть").to_string(), detail: tr("a wire piece or mast of openMapper's that no span of the wire names any more (delete it, or lay the wire there again)", "провод или столб openMapper, который больше не относится ни к одному пролёту (удалите его или проложите сеть там заново)").to_string(), at: Some(at), sel: Some(sel), fix: None });
-    }
     // chrono scenarios: their changes name things of the map or of a scenario
     let root = omsi_cfg::resolve_path(&d.chrono_root(), "Chrono");
     let mut patches: Vec<(String, omsi_map::Tile)> = Vec::new();

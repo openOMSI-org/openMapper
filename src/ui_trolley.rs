@@ -14,7 +14,7 @@ use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::trolley::{self, Initial, Lay, Mode, Section};
-use crate::trolley_kit::{KitDef, KitRef, PartDef, Piece, Scope, Shape, PIECES, SHAPES};
+use crate::trolley_kit::{KitDef, KitRef, Scope};
 use crate::theme::pal;
 use crate::ui::{check, prop_row, Action};
 
@@ -63,8 +63,8 @@ struct KitEdit {
     scope: Scope,
     def: KitDef,
     saved: KitDef,
-    piece: Piece,
-    part: Option<usize>,
+    /// The kit's file as text, edited as it is (None: the form is shown).
+    text: Option<String>,
 }
 
 fn way_name(w: &str) -> &'static str {
@@ -94,7 +94,7 @@ impl TrolleyWindow {
         let Some(doc) = ed.doc.as_ref() else { return };
         if let (Some(id), Some(roots)) = (self.pending_kit.take(), roots) {
             if let (Some(r), Some(k)) = (KitRef::of_id(&id), crate::trolley_kit::load(roots, &doc.dir, &id)) {
-                self.edit = Some(KitEdit { scope: r.scope, r: Some(r), saved: k.clone(), def: k, piece: Piece::Mast, part: Some(1) });
+                self.edit = Some(KitEdit { scope: r.scope, r: Some(r), saved: k.clone(), def: k, text: None });
             }
         }
         let lay = self.lay.get_or_insert_with(|| Lay { left_hand: doc.global.left_hand_traffic, ..Default::default() });
@@ -199,32 +199,37 @@ impl TrolleyWindow {
                                     });
                                     if icons::small(ui, Icon::AddBox, tr("A new kit", "Новый комплект")).clicked() {
                                         let def = KitDef { name: tr("My wire", "Мой провод").into(), ..KitDef::default() };
-                                        self.edit = Some(KitEdit { r: None, scope: Scope::Map, saved: def.clone(), def, piece: Piece::Mast, part: None });
+                                        self.edit = Some(KitEdit { r: None, scope: Scope::Map, saved: def.clone(), def, text: None });
                                     }
                                     let chosen = self.kit.as_ref().and_then(|i| kits.iter().find(|k| &k.0.id() == i)).cloned();
                                     if let Some((r, k)) = chosen {
                                         if icons::small(ui, Icon::Tune, tr("Change this kit", "Изменить этот комплект")).clicked() {
-                                            self.edit = Some(KitEdit { scope: r.scope, r: Some(r), saved: k.clone(), def: k, piece: Piece::Mast, part: None });
+                                            self.edit = Some(KitEdit { scope: r.scope, r: Some(r), saved: k.clone(), def: k, text: None });
                                         }
                                     }
                                 });
                                 let chosen = self.kit.as_ref().and_then(|i| kits.iter().find(|k| &k.0.id() == i)).map(|k| k.1.clone());
                                 match chosen {
                                     Some(k) => {
-                                        lay.height = k.height;
+                                        if let Some((_, _, h)) = roots.and_then(|r| k.profile(r)) {
+                                            lay.height = h;
+                                        }
                                         let mut wires = !self.no_wires;
-                                        check(ui, &mut wires, tr("its wire", "его провод"));
+                                        ui.add_enabled_ui(!k.wire.trim().is_empty(), |ui| check(ui, &mut wires, tr("its wire spline", "его сплайн провода")));
                                         self.no_wires = !wires;
-                                        let has_mast = !k.mesh(Piece::Mast).is_empty();
+                                        let has_mast = !k.mast.trim().is_empty();
                                         let mut masts = !self.no_masts && has_mast;
-                                        ui.add_enabled_ui(has_mast, |ui| check(ui, &mut masts, &format!("{} {} m", tr("its masts, every", "его опоры, через каждые"), k.step))).response.on_disabled_hover_text(tr("The kit has no mast: give it one in the kit's window", "У комплекта нет опоры: задайте её в окне комплекта"));
+                                        ui.add_enabled_ui(has_mast, |ui| check(ui, &mut masts, &format!("{} {} m", tr("its masts, every", "его опоры, через каждые"), k.step))).response.on_disabled_hover_text(tr("The kit names no mast", "В комплекте не указана опора"));
                                         if has_mast {
                                             self.no_masts = !masts;
                                         }
-                                        ui.label(RichText::new(tr("Frogs and section insulators are put where the wire has them, as the kit makes them.", "Стрелки и секционные изоляторы ставятся там, где они есть в сети, такими, как их делает комплект.")).small().color(pal().text_dim));
+                                        ui.label(RichText::new(tr("Frogs and section insulators are put where the wire has them, as the kit names them.", "Стрелки и секционные изоляторы ставятся там, где они есть в сети, — те, что указаны в комплекте.")).small().color(pal().text_dim));
+                                        for p in roots.map(|r| k.problems(r)).unwrap_or_default() {
+                                            ui.label(RichText::new(p).small().color(pal().warn));
+                                        }
                                     }
                                     None => {
-                                        ui.label(RichText::new(tr("Nothing is laid on the map: make a kit (+) to say what the wire, its masts, frogs and insulators look like.", "На карту ничего не кладётся: сделайте комплект (+), чтобы задать, как выглядят провод, опоры, стрелки и изоляторы.")).small().color(pal().text_dim));
+                                        ui.label(RichText::new(tr("Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.", "На карту ничего не кладётся, провод только для игры. Комплект (+) указывает ваши модели провода, опор, стрелок и изоляторов.")).small().color(pal().text_dim));
                                     }
                                 }
                             });
@@ -493,11 +498,13 @@ impl TrolleyWindow {
         }
     }
 
-    /// The window of a kit: what the wire, its masts, frogs and insulators look like.
+    /// The window of a kit: the map maker's files the wire, its masts, frogs and insulators are
+    /// shown with, and how masts stand.
     fn kit_window(&mut self, ctx: &egui::Context, ed: &mut Editor, roots: &crate::install::Roots) {
         let Some(map_dir) = ed.doc.as_ref().map(|d| d.dir.clone()) else { return };
-        let selected_file = match ed.selected {
-            Some(Sel::Object(k, id)) => ed.doc.as_ref().and_then(|d| crate::selection::any_object(d, k, id)).map(|o| o.file.clone()),
+        let selected: Option<(String, bool)> = match ed.selected {
+            Some(Sel::Object(k, id)) => ed.doc.as_ref().and_then(|d| crate::selection::any_object(d, k, id)).map(|o| (o.file.clone(), false)),
+            Some(Sel::Spline(k, id)) => ed.doc.as_ref().and_then(|d| d.spline(k, id)).map(|s| (s.file.clone(), true)),
             _ => None,
         };
         let Some(e) = self.edit.as_mut() else { return };
@@ -505,150 +512,101 @@ impl TrolleyWindow {
         let mut done: Option<&str> = None;
         let mut message: Option<String> = None;
         let title = format!("{}: {}", tr("Wire kit", "Комплект контактной сети"), e.def.name);
-        egui::Window::new(icons::labelled(Icon::Tune, &title)).id(egui::Id::new("trolley kit window")).open(&mut open).default_size([760.0, 600.0]).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("Everything shown on the map comes from here: openMapper has no wire or mast models of its own. The kit is a .cfg file; change it here or in any text editor.", "Всё, что видно на карте, берётся отсюда: своих моделей провода и опор у openMapper нет. Комплект — это файл .cfg; меняйте его здесь или в любом текстовом редакторе.")).small().color(pal().text_dim));
-            egui::Grid::new("kit head").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
-                kit_row(ui, tr("Name", "Название"), |ui| {
-                    ui.add_enabled(e.r.is_none(), egui::TextEdit::singleline(&mut e.def.name).desired_width(240.0)).on_disabled_hover_text(tr("The name is the kit's file: make a copy to rename it", "Название — это файл комплекта: чтобы переименовать, сделайте копию"));
-                });
-                kit_row(ui, tr("For", "Для"), |ui| {
-                    ui.radio_value(&mut e.scope, Scope::Map, tr("this map", "этой карты"));
-                    ui.radio_value(&mut e.scope, Scope::Shared, tr("every map", "всех карт"));
-                });
-                kit_row(ui, tr("Wires", "Провода"), |ui| {
-                    ui.add(egui::DragValue::new(&mut e.def.wires).range(1..=8));
-                    ui.label(tr("apart", "через"));
-                    ui.add(egui::DragValue::new(&mut e.def.spacing).range(0.05..=3.0).speed(0.01).suffix(" m"));
-                });
-                kit_row(ui, tr("Height", "Высота"), |ui| {
-                    ui.add(egui::DragValue::new(&mut e.def.height).range(2.0..=12.0).speed(0.02).suffix(" m")).on_hover_text(tr("Over the road surface", "Над покрытием дороги"));
-                    ui.label(tr("thickness", "толщина"));
-                    ui.add(egui::DragValue::new(&mut e.def.thickness).range(0.002..=0.1).speed(0.001).fixed_decimals(3).suffix(" m"));
-                    ui.color_edit_button_srgb(&mut e.def.colour);
-                });
-                kit_row(ui, tr("Masts", "Опоры"), |ui| {
-                    ui.label(tr("every", "через"));
-                    ui.add(egui::DragValue::new(&mut e.def.step).range(5.0..=120.0).speed(0.5).suffix(" m"));
-                    ui.label(tr("arm reaching", "кронштейн на"));
-                    ui.add(egui::DragValue::new(&mut e.def.reach).range(0.2..=20.0).speed(0.05).suffix(" m")).on_hover_text(tr("A mast stands this far beside its wire, its arm reaching over it", "Опора стоит на таком расстоянии от провода, её кронштейн дотягивается до него"));
-                });
+        egui::Window::new(icons::labelled(Icon::Tune, &title)).id(egui::Id::new("trolley kit window")).open(&mut open).default_size([620.0, 420.0]).resizable(true).show(ctx, |ui| {
+            ui.label(RichText::new(tr("Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.", "Ваши модели (сделанные в Blender или где угодно и положенные в папку контента), которыми сеть показывается на карте: сплайн провода и объекты опоры, стрелки и изолятора. Комплект — это файл .cfg, где они указаны; меняйте его здесь, как текст или в любом текстовом редакторе.")).small().color(pal().text_dim));
+            ui.horizontal(|ui| {
+                let mut as_text = e.text.is_some();
+                if ui.toggle_value(&mut as_text, icons::labelled(Icon::Description, tr("As text", "Как текст"))).changed() {
+                    e.text = as_text.then(|| e.def.text());
+                }
             });
             ui.separator();
-            ui.horizontal(|ui| {
-                for p in PIECES {
-                    let n = e.def.mesh(p).len();
-                    let icon = match p {
-                        Piece::Mast => Icon::Construction,
-                        Piece::Frog => Icon::Split,
-                        Piece::Insulator => Icon::Bolt,
-                    };
-                    if ui.selectable_label(e.piece == p, icons::labelled(icon, &format!("{} ({n})", p.label()))).clicked() {
-                        e.piece = p;
-                        e.part = None;
+            if let Some(text) = e.text.as_mut() {
+                let r = egui::ScrollArea::vertical().max_height(320.0).show(ui, |ui| ui.add(egui::TextEdit::multiline(text).code_editor().desired_width(f32::INFINITY).desired_rows(18))).inner;
+                if r.changed() {
+                    let name = e.def.name.clone();
+                    e.def = KitDef::parse(text);
+                    // (the name is the kit's file once it is saved)
+                    if e.r.is_some() {
+                        e.def.name = name;
                     }
                 }
-            });
-            ui.label(RichText::new(e.piece.help()).small().color(pal().text_dim));
-            let piece = e.piece;
-            ui.columns(2, |cols| {
-                let ui = &mut cols[0];
-                // the parts
-                let parts = e.def.mesh_mut(piece);
-                egui::ScrollArea::vertical().id_salt("kit parts").max_height(150.0).show(ui, |ui| {
-                    if parts.is_empty() {
-                        ui.label(RichText::new(tr("No parts: nothing is put on the map for it. Add a part below.", "Нет деталей: на карту для этого ничего не кладётся. Добавьте деталь ниже.")).small().color(pal().text_dim));
-                    }
-                    for (i, p) in parts.iter().enumerate() {
-                        let text = if p.shape == Shape::Object { format!("{}. {}", i + 1, p.file.rsplit('\\').next().unwrap_or("")) } else { format!("{}. {}", i + 1, p.shape.label()) };
-                        if ui.selectable_label(e.part == Some(i), text).clicked() {
-                            e.part = Some(i);
-                        }
-                    }
-                });
-                ui.horizontal_wrapped(|ui| {
-                    ui.menu_button(icons::labelled(Icon::Add, tr("Part", "Деталь")), |ui| {
-                        for sh in SHAPES {
-                            if ui.button(sh.label()).clicked() {
-                                let mut p = PartDef::new(sh);
-                                if let (Shape::Object, Some(f)) = (sh, selected_file.as_ref()) {
-                                    p.file = f.clone();
-                                }
-                                parts.push(p);
-                                e.part = Some(parts.len() - 1);
-                                ui.close();
-                            }
-                        }
+            } else {
+                egui::Grid::new("kit head").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
+                    kit_row(ui, tr("Name", "Название"), |ui| {
+                        ui.add_enabled(e.r.is_none(), egui::TextEdit::singleline(&mut e.def.name).desired_width(240.0)).on_disabled_hover_text(tr("The name is the kit's file: make a copy to rename it", "Название — это файл комплекта: чтобы переименовать, сделайте копию"));
                     });
-                    if let Some(i) = e.part.filter(|i| *i < parts.len()) {
-                        if icons::small(ui, Icon::Duplicate, tr("Duplicate", "Дублировать")).clicked() {
-                            let p = parts[i].clone();
-                            parts.insert(i + 1, p);
-                            e.part = Some(i + 1);
-                        }
-                        if icons::small(ui, Icon::Delete, tr("Remove", "Удалить")).clicked() {
-                            parts.remove(i);
-                            e.part = None;
-                        }
-                    }
-                });
-                // the part picked
-                if let Some(p) = e.part.and_then(|i| parts.get_mut(i)) {
-                    ui.separator();
-                    egui::Grid::new("kit part").num_columns(2).spacing(Vec2::new(8.0, 4.0)).show(ui, |ui| {
-                        kit_row(ui, tr("Shape", "Форма"), |ui| {
-                            egui::ComboBox::from_id_salt("kit shape").selected_text(p.shape.label()).show_ui(ui, |ui| {
-                                for sh in SHAPES {
-                                    ui.selectable_value(&mut p.shape, sh, sh.label());
-                                }
-                            });
-                        });
-                        if p.shape == Shape::Object {
-                            kit_row(ui, tr("Object", "Объект"), |ui| {
-                                ui.add(egui::TextEdit::singleline(&mut p.file).desired_width(180.0));
-                                if let Some(f) = &selected_file {
-                                    if ui.small_button(icons::labelled(Icon::Select, tr("The selected one", "Выбранный"))).clicked() {
-                                        p.file = f.clone();
+                    kit_row(ui, tr("For", "Для"), |ui| {
+                        ui.radio_value(&mut e.scope, Scope::Map, tr("this map", "этой карты"));
+                        ui.radio_value(&mut e.scope, Scope::Shared, tr("every map", "всех карт"));
+                    });
+                    let mut file = |ui: &mut egui::Ui, name: &str, help: &str, v: &mut String, spline: bool| {
+                        kit_row(ui, name, |ui| {
+                            ui.add(egui::TextEdit::singleline(v).desired_width(300.0).hint_text(tr("none", "нет"))).on_hover_text(help);
+                            let take = selected.as_ref().filter(|s| s.1 == spline);
+                            if ui.add_enabled(take.is_some(), egui::Button::new(icons::labelled(Icon::Select, ""))).on_hover_text(tr("Take the one selected on the map", "Взять выделенный на карте")).on_disabled_hover_text(if spline { tr("Select a spline of it on the map first", "Сначала выделите такой сплайн на карте") } else { tr("Select such an object on the map first", "Сначала выделите такой объект на карте") }).clicked() {
+                                *v = take.unwrap().0.clone();
+                            }
+                            if icons::small(ui, Icon::Folder, tr("Choose the file", "Выбрать файл")).clicked() {
+                                let ext = if spline { "sli" } else { "sco" };
+                                if let Some(p) = rfd::FileDialog::new().add_filter(ext, &[ext]).set_directory(&roots.content).pick_file() {
+                                    match roots.all().iter().find_map(|r| p.strip_prefix(r).ok()) {
+                                        Some(rel) => *v = rel.to_string_lossy().replace('/', "\\"),
+                                        None => message = Some(tr("The file must lie in the content folder or in OMSI 2's", "Файл должен лежать в папке контента или OMSI 2").into()),
                                     }
                                 }
-                            });
-                        }
-                        let xyz = |ui: &mut egui::Ui, v: &mut [f32; 3], speed: f64, suffix: &str| {
-                            for (c, n) in v.iter_mut().zip(["x", "y", "z"]) {
-                                ui.add(egui::DragValue::new(c).speed(speed).prefix(format!("{n} ")).suffix(suffix));
                             }
-                        };
-                        kit_row(ui, tr("Position", "Положение"), |ui| xyz(ui, &mut p.pos, 0.01, " m"));
-                        kit_row(ui, tr("Turn", "Поворот"), |ui| xyz(ui, &mut p.rot, 1.0, "°"));
-                        kit_row(ui, tr("Size", "Размер"), |ui| {
-                            for (c, n) in p.size.iter_mut().zip(p.shape.size_names()) {
-                                if !n.is_empty() {
-                                    ui.add(egui::DragValue::new(c).range(0.0..=50.0).speed(0.005).prefix(format!("{n} ")));
-                                }
+                            if !v.trim().is_empty() && !roots.resolve(v.trim()).is_file() {
+                                ui.label(RichText::new(icons::Icon::Warning.ch().to_string()).color(pal().warn)).on_hover_text(tr("Not there", "Не найден"));
                             }
                         });
-                        if p.shape != Shape::Object {
-                            kit_row(ui, tr("Colour", "Цвет"), |ui| {
-                                ui.color_edit_button_srgb(&mut p.colour);
-                            });
+                    };
+                    file(ui, tr("Wire spline", "Сплайн провода"), tr("A .sli whose profile puts the wires at their height over the road; it is laid along every span", ".sli, профиль которого ставит провода на их высоту над дорогой; кладётся вдоль каждого пролёта"), &mut e.def.wire, true);
+                    file(ui, tr("Mast", "Опора"), tr("A .sco: its origin at its foot, its arm reaching along its -y to the wire", ".sco: начало координат у основания, кронштейн тянется вдоль -y к проводу"), &mut e.def.mast, false);
+                    file(ui, tr("Frog", "Стрелка"), tr("A .sco hung where the wire branches: its origin on the wire, y along it", ".sco, висящий там, где провод ветвится: начало координат на проводе, y вдоль него"), &mut e.def.frog, false);
+                    file(ui, tr("Insulator", "Изолятор"), tr("A .sco hung where two sections meet: its origin on the wire, y along it", ".sco на стыке двух секций: начало координат на проводе, y вдоль него"), &mut e.def.insulator, false);
+                    kit_row(ui, tr("Masts", "Опоры"), |ui| {
+                        ui.label(tr("every", "через"));
+                        ui.add(egui::DragValue::new(&mut e.def.step).range(5.0..=120.0).speed(0.5).suffix(" m"));
+                        ui.label(tr("standing", "на расстоянии"));
+                        ui.add(egui::DragValue::new(&mut e.def.reach).range(0.2..=20.0).speed(0.05).suffix(" m")).on_hover_text(tr("From a mast's foot to its wire, across the road", "От основания опоры до её провода поперёк дороги"));
+                        ui.label(tr("from the wire", "от провода"));
+                    });
+                    kit_row(ui, tr("Mast turned", "Поворот опоры"), |ui| {
+                        ui.add(egui::DragValue::new(&mut e.def.turn).range(-180.0..=180.0).speed(1.0).suffix("°")).on_hover_text(tr("For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y", "Для модели, у которой кронштейн не вдоль -y: 90, если он вдоль -x, -90 вдоль +x, 180 вдоль +y"));
+                        for (v, l) in [(0.0, "-y"), (90.0, "-x"), (-90.0, "+x"), (180.0, "+y")] {
+                            if ui.selectable_label(e.def.turn == v, format!("{} {l}", tr("arm", "кронштейн"))).clicked() {
+                                e.def.turn = v;
+                            }
                         }
                     });
+                });
+            }
+            ui.separator();
+            match e.def.profile(roots) {
+                Some((mid, spacing, h)) => {
+                    ui.label(RichText::new(format!("{}: {:.2} m {}, {:.2} m {}, {:+.2} m {}", tr("The wire spline's wires", "Провода сплайна"), h, tr("high", "высота"), spacing, tr("apart", "между ними"), mid, tr("across its line", "от его оси"))).small());
                 }
-                // the drawing
-                let ui = &mut cols[1];
-                kit_drawing(ui, &e.def, piece, e.part);
-            });
+                None => {}
+            }
+            for p in e.def.problems(roots) {
+                ui.label(RichText::new(p).small().color(pal().warn));
+            }
             ui.separator();
             ui.horizontal(|ui| {
                 let dirty = e.def != e.saved || e.r.as_ref().map(|r| r.scope != e.scope).unwrap_or(true);
                 if ui.add_enabled(dirty, egui::Button::new(icons::labelled(Icon::Save, tr("Save", "Сохранить")))).clicked() {
                     done = Some("save");
                 }
-                if ui.add_enabled(e.r.is_some(), egui::Button::new(icons::labelled(Icon::Refresh, tr("Save and renew the map's wire", "Сохранить и обновить провод карты")))).on_hover_text(tr("What is laid from this kit is made anew as it now says (a changed reach or step shows on wire laid from now on)", "То, что проложено по этому комплекту, переделывается по нему (изменённые вылет и шаг действуют для новой укладки)")).clicked() {
+                if ui.add_enabled(e.r.is_some(), egui::Button::new(icons::labelled(Icon::Refresh, tr("Save and renew the map's wire", "Сохранить и обновить провод карты")))).on_hover_text(tr("The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again", "Сплайны провода и опоры, проложенные по этому комплекту, получают его новые файлы; стрелки и изоляторы ставятся заново")).clicked() {
                     done = Some("renew");
                 }
                 if ui.add_enabled(dirty, egui::Button::new(icons::labelled(Icon::Undo, tr("Revert", "Вернуть")))).clicked() {
                     e.def = e.saved.clone();
                     e.scope = e.r.as_ref().map(|r| r.scope).unwrap_or(Scope::Map);
+                    if e.text.is_some() {
+                        e.text = Some(e.def.text());
+                    }
                 }
                 if e.r.is_some() {
                     if ui.button(icons::labelled(Icon::Duplicate, tr("Copy", "Копия"))).on_hover_text(tr("A new kit from this one (to rename it, or change it apart)", "Новый комплект из этого (чтобы переименовать или менять отдельно)")).clicked() {
@@ -687,14 +645,14 @@ impl TrolleyWindow {
                                     trolley::set(ed, Some(roots), Some(w));
                                 }
                             }
+                            if done == Some("renew") {
+                                let n = crate::trolley_kit::renew(ed, roots, &e.saved, &e.def);
+                                ed.toast(format!("{} {n}", tr("Changed to the kit's files:", "Заменено на файлы комплекта:")));
+                            }
                             e.saved = e.def.clone();
                             e.r = Some(r.clone());
                             self.kit = Some(r.id());
                             self.kits = None;
-                            if done == Some("renew") {
-                                let n = crate::trolley_kit::renew(ed, roots, &e.def);
-                                ed.toast(format!("{} {n}", tr("Made anew from the kit:", "Переделано по комплекту:")));
-                            }
                         }
                         Err(x) => message = Some(x.to_string()),
                     }
@@ -721,69 +679,6 @@ fn kit_row(ui: &mut egui::Ui, name: &str, add: impl FnOnce(&mut egui::Ui)) {
     ui.label(RichText::new(name).color(pal().text_dim));
     ui.horizontal(add);
     ui.end_row();
-}
-
-/// A kit's piece drawn from the side, the front and above, with the wire where it hangs.
-fn kit_drawing(ui: &mut egui::Ui, k: &KitDef, piece: Piece, picked: Option<usize>) {
-    let p = pal();
-    // the parts' edges, the picked one brighter
-    let mut lines: Vec<(glam::Vec3, glam::Vec3, bool)> = Vec::new();
-    for (i, part) in k.mesh(piece).iter().enumerate() {
-        let Some(m) = part.mesh() else { continue };
-        for f in &m.faces {
-            for w in 0..f.verts.len() {
-                let (a, b) = (f.verts[w], f.verts[(w + 1) % f.verts.len()]);
-                if a < b {
-                    lines.push((m.positions[a as usize], m.positions[b as usize], picked == Some(i)));
-                }
-            }
-        }
-    }
-    // the wire: across the mast's arm, or along the frog and insulator
-    let n = k.wires.max(1) as f32;
-    let wires: Vec<glam::Vec3> = (0..k.wires.max(1)).map(|i| {
-        let off = (i as f32 - (n - 1.0) * 0.5) * k.spacing as f32;
-        if piece == Piece::Mast { glam::Vec3::new(0.0, -k.reach as f32 + off, k.height as f32) } else { glam::Vec3::new(off, 0.0, 0.0) }
-    }).collect();
-    let views: [(&str, fn(glam::Vec3) -> egui::Vec2); 3] = [
-        (tr("From the side", "Сбоку"), |v| egui::vec2(v.y, -v.z)),
-        (tr("From the front", "Спереди"), |v| egui::vec2(v.x, -v.z)),
-        (tr("From above", "Сверху"), |v| egui::vec2(v.x, -v.y)),
-    ];
-    // (the three side by side as wide as there is room for)
-    let w = ((ui.available_width() - 16.0) / 3.0).clamp(100.0, 260.0);
-    ui.horizontal(|ui| {
-        for (title, f) in views {
-            ui.vertical(|ui| {
-                ui.label(RichText::new(title).small());
-                let (rect, _) = ui.allocate_exact_size(egui::vec2(w, w), egui::Sense::hover());
-                let paint = ui.painter_at(rect);
-                paint.rect_filled(rect, 3.0, p.canvas);
-                let mut lo = egui::vec2(f32::MAX, f32::MAX);
-                let mut hi = egui::vec2(f32::MIN, f32::MIN);
-                for q in lines.iter().flat_map(|l| [l.0, l.1]).chain(wires.iter().copied()).chain([glam::Vec3::ZERO]) {
-                    let v = f(q);
-                    lo = lo.min(v);
-                    hi = hi.max(v);
-                }
-                let size = (hi - lo).max(egui::vec2(0.5, 0.5));
-                let scale = (rect.width() - 20.0) / size.x.max(size.y);
-                let mid = (lo + hi) * 0.5;
-                let at = |q: glam::Vec3| rect.center() + (f(q) - mid) * scale;
-                // the ground or the wire's line, and the origin
-                paint.line_segment([egui::pos2(rect.left(), at(glam::Vec3::ZERO).y), egui::pos2(rect.right(), at(glam::Vec3::ZERO).y)], egui::Stroke::new(1.0, p.grid_major));
-                paint.circle_stroke(at(glam::Vec3::ZERO), 3.0, egui::Stroke::new(1.0, p.ink_dim));
-                for (a, b, hot) in &lines {
-                    paint.line_segment([at(*a), at(*b)], egui::Stroke::new(if *hot { 1.4 } else { 0.8 }, if *hot { p.accent } else { p.ink }));
-                }
-                for q in &wires {
-                    paint.circle_filled(at(*q), 3.0, egui::Color32::from_rgb(k.colour[0], k.colour[1], k.colour[2]).gamma_multiply(1.0));
-                    paint.circle_stroke(at(*q), 4.0, egui::Stroke::new(1.0, p.warn));
-                }
-            });
-        }
-    });
-    ui.label(RichText::new(tr("Orange rings: the wires. Objects of the content are drawn on the map, not here.", "Оранжевые кольца: провода. Объекты контента видны на карте, не здесь.")).small().color(pal().text_dim));
 }
 
 fn section_combo(ui: &mut egui::Ui, id: &str, sections: &[Section], value: &mut i32) {

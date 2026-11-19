@@ -65,7 +65,7 @@ can drive in service.
 * **Lines and traffic**: timetable, tours, depot files, AI traffic and paths.
 * **Your own models**: import glTF, FBX, OBJ and more, edit meshes, make materials and PBR maps, export.
 * **Scripts**: the map's Lua scripts for openOMSI as a project in a small IDE (completion of the game's API, checks as you type), run and debugged in the editor with breakpoints and steps, built into a shareable `.oop`; a Rust plugin too.
-* **Trolleybus wire**: overhead wire with sections, insulators and switches, shown on the map with masts, frogs and insulators from a kit you design (a `.cfg`, for one map or all).
+* **Trolleybus wire**: overhead wire with sections, insulators and switches, shown on the map with your own wire spline, masts, frogs and insulators named in a kit (a `.cfg`, for one map or all).
 * **Check and drive**: a map check, the game's own checks, safe saving with earlier versions, and a test drive in openOMSI on one key (`F5`).
 
 The full list is in [docs/FEATURES.md](docs/FEATURES.md), the controls in its last section, and

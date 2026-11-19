@@ -42,11 +42,13 @@ pub struct Wire {
     /// The kit (`trolley_kit`) its wire, masts, frogs and insulators are made from, as
     /// `map:<name>` or `shared:<name>` (a comment line the game skips).
     pub kit: Option<String>,
+    /// The IDCodes of the frogs and insulators put on the map from the kit (a comment line).
+    pub marks: Vec<i64>,
 }
 
 impl Default for Wire {
     fn default() -> Wire {
-        Wire { voltage: 600.0, spacing: 0.6, roughness: 0.0012, net_extra: Vec::new(), sections: Vec::new(), spans: Vec::new(), switches: Vec::new(), insulators: Vec::new(), other: Vec::new(), kit: None }
+        Wire { voltage: 600.0, spacing: 0.6, roughness: 0.0012, net_extra: Vec::new(), sections: Vec::new(), spans: Vec::new(), switches: Vec::new(), insulators: Vec::new(), other: Vec::new(), kit: None, marks: Vec::new() }
     }
 }
 
@@ -195,6 +197,8 @@ fn nums(l: &str) -> Vec<f64> {
 const LAID: &str = "// openmapper laid";
 /// The comment line of the net naming the kit its wire is shown with.
 const KIT: &str = "// openmapper kit";
+/// The comment line of the net naming the frogs and insulators put from the kit.
+const MARKS: &str = "// openmapper marks";
 
 /// `trolley.txt` read (what it does not know kept as it is).
 pub fn parse(text: &str) -> Wire {
@@ -212,6 +216,10 @@ pub fn parse(text: &str) -> Wire {
         }
     };
     for line in text.lines() {
+        if let (Some(ids), "trolley_net") = (line.trim().strip_prefix(MARKS), block.as_str()) {
+            w.marks.extend(ids.split_whitespace().filter_map(|x| x.parse::<i64>().ok()));
+            continue;
+        }
         if let (Some(k), "trolley_net") = (line.trim().strip_prefix(KIT), block.as_str()) {
             w.kit = Some(k.trim().to_string()).filter(|k| !k.is_empty());
             continue;
@@ -335,6 +343,9 @@ pub fn text(w: &Wire) -> String {
     s += &format!("[trolley_net]\nvoltage {}\nspacing {}\nroughness {}\n", num(w.voltage), num(w.spacing), w.roughness);
     if let Some(k) = &w.kit {
         s += &format!("{KIT} {k}\n");
+    }
+    if !w.marks.is_empty() {
+        s += &format!("{MARKS} {}\n", w.marks.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(" "));
     }
     for l in &w.net_extra {
         s += l;
