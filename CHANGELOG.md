@@ -4,6 +4,17 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.2.1 - 2026-11-20
+
+### Changed
+- **Picking under the cursor is fast on city-sized maps**: on a map of 485 tiles, moving the mouse over the view took one to two seconds per pick, now a few milliseconds. While the view is still moving the cursor follows the ground, and what stands under it is looked for once the view settles, or at once when you click.
+- **The whole interface is translated again in all 26 languages**: the trolleybus wire, the script editor and debugger, and the newer checks and hints showed in English.
+
+### Fixed
+- The light theme was called "traffic light" in every language but English and Russian (and the mesh editor's light setting too).
+- Hungarian: a road's cant is *túlemelés*.
+- Updated crates: rfd 0.18 (file dialogs), zip 9.5, ureq.
+
 ## 0.2.0 - 2026-11-18
 
 ### Added
