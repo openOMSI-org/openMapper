@@ -2891,3 +2891,335 @@ Paths of the way	พาธของเส้นทาง
 Cut before the first stop	ตัดก่อนป้ายแรก
 Cut after the last stop	ตัดหลังป้ายสุดท้าย
 path	พาธ
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	การควบคุมของ openMapper เอง: กล้องตามที่เลือกใน กล้อง ปุ่มตาม มุมมอง > การควบคุม
+The keys as in View > Controls	ปุ่มตาม มุมมอง > การควบคุม
+A copy of its own was made for the script: the original type is unchanged	สร้างสำเนาของตัวเองสำหรับสคริปต์แล้ว: ชนิดต้นฉบับไม่เปลี่ยน
+Trolleybus wire the game cannot use	สายไฟโทรลลีย์บัสที่เกมใช้ไม่ได้
+Rows the game does not show	แถวที่เกมไม่แสดง
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	แถววัตถุตามถนน (โคมไฟ เสา ช่องจอดรถ) เริ่มก่อนถนนที่วางอยู่: ระยะของแถวนับจากจุดเริ่มต้นของสายต่อของถนน และค่านี้น้อยกว่าความยาวของสายต่อก่อนถึงถนนนั้น OMSI 2 และ openOMSI ไม่แสดงแถวนี้เลย ตัวแก้ไขก็เช่นกัน วางแถวใหม่ หรือกำหนดจุดเริ่มต้นให้มากขึ้นในคุณสมบัติ
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI สร้างสวิตช์เฉพาะจุดที่ช่วงสายไฟเหนือหัวบรรจบกันสามช่วงพอดี และสวิตช์ที่ตั้งไว้ตรงที่ไม่มีช่วงสายบรรจบกันแล้วจะถูกข้าม ช่วงสายในเซกชันที่เครือข่ายไม่มีจะไม่มีสถานีไฟฟ้าย่อย เปิด แผนที่ > สายไฟโทรลลีย์บัส เพื่อแก้ไข
+Trolleybus wire	สายไฟโทรลลีย์บัส
+Select the next road piece (joined at its end; Shift: add it)	เลือกชิ้นถนนถัดไป (ต่อที่ปลาย; Shift: เพิ่ม)
+Select the previous road piece (joined at its start; Shift: add it)	เลือกชิ้นถนนก่อนหน้า (ต่อที่จุดเริ่มต้น; Shift: เพิ่ม)
+the up arrow	ลูกศรขึ้น
+the down arrow	ลูกศรลง
+the left arrow	ลูกศรซ้าย
+the right arrow	ลูกศรขวา
+Select three objects or more (the two farthest apart stay)	เลือกวัตถุสามชิ้นขึ้นไป (สองชิ้นที่ห่างกันที่สุดอยู่กับที่)
+Line up	เรียงเป็นแนว
+Space evenly	เว้นระยะเท่ากัน
+Splines laid	วางสไปลน์แล้ว
+The spline reaches past the map: add tiles there first	สไปลน์ยื่นเลยแผนที่: เพิ่มไทล์ตรงนั้นก่อน
+Ground painted over areas	ระบายสีพื้นดินตามพื้นที่แล้ว
+Track beds	ฐานราง
+Ground under surfaces	พื้นดินใต้พื้นผิว
+Form the ground	ปรับพื้นดินตามพื้นผิว
+Select a road piece first	เลือกชิ้นถนนก่อน
+Nothing is joined at its end	ไม่มีอะไรต่อที่ปลาย
+Nothing is joined at its start	ไม่มีอะไรต่อที่จุดเริ่มต้น
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	ย้าย: ลากลูกศรตามแกน X, Y หรือ Z ลากสี่เหลี่ยมในระนาบของมัน ลากวงกลมบนพื้น
+Rotate: drag a ring to turn about X, Y or Z	หมุน: ลากวงแหวนเพื่อหมุนรอบแกน X, Y หรือ Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	ปรับขนาด: ลากลูกศรเพื่อปรับขนาดตามแกนนั้น ลากสี่เหลี่ยมสำหรับสองแกน ลากวงกลมสำหรับทั้งสามแกน
+Junctions where the roads meet	ทางแยกตรงที่ถนนบรรจบกัน
+Streets from the street model	ถนนสายย่อยจากแบบจำลองถนน
+perimeter	เส้นรอบรูป
+needs	ต้องการสิทธิ์
+built	สร้างแล้ว
+signed by	ลงนามโดย
+not signed: the game loads it with a warning that its author is not known	ไม่ได้ลงนาม: เกมจะโหลดพร้อมคำเตือนว่าไม่ทราบผู้สร้าง
+openOMSI has no such function (the API of version	openOMSI ไม่มีฟังก์ชันนี้ (API เวอร์ชัน
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` มีเฉพาะในสคริปต์ของแผนที่ สคริปต์ของวัตถุมีแค่ฟังก์ชัน omsi
+no such module in the project (modules/…)	ไม่มีโมดูลนี้ในโปรเจกต์ (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	เกมไม่ส่งเหตุการณ์นี้ (เว้นแต่สคริปต์จะส่งด้วย omsi.emit)
+a name is needed	ต้องมีชื่อ
+a file of that name is there already	มีไฟล์ชื่อนี้อยู่แล้ว
+Empty module	โมดูลว่าง
+Test run of	ทดลองรัน
+does nothing in the test run (no game): it gives false	ไม่ทำอะไรในการทดลองรัน (ไม่มีเกม): คืนค่า false
+has nothing to read in the test run (no game): it gives nil	ไม่มีอะไรให้อ่านในการทดลองรัน (ไม่มีเกม): คืนค่า nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	วัตถุของการติดตั้ง OMSI 2 จะไม่ถูกแก้ไข: ทำให้เป็นวัตถุของคุณเองก่อน
+Dark	มืด
+As the system	ตามระบบ
+power (current on: branch)	ตามกระแสไฟ (มีกระแส: ทางแยก)
+indicator	ตามไฟเลี้ยว
+radio	ตามวิทยุ
+to the branch	ไปทางแยก
+at random	สุ่ม
+spans meet in one point: the game makes no switch there (a frog is three)	ช่วงสายบรรจบกันที่จุดเดียว: เกมจะไม่สร้างสวิตช์ตรงนี้ (จุดแยกสายต้องมีสามช่วง)
+Switch	สวิตช์
+no three spans meet there any more	ตรงนี้ไม่มีช่วงสายสามช่วงบรรจบกันแล้ว
+A span is in section	ช่วงสายอยู่ในเซกชัน
+that the network does not have	ที่เครือข่ายไม่มี
+the wire spline	สไปลน์สายไฟ
+the mast	เสา
+the frog	จุดแยกสาย
+the insulator	ฉนวน
+is not there	ไม่พบ
+no wire spline: nothing of the wire is shown on the map	ไม่มีสไปลน์สายไฟ: ไม่มีส่วนใดของสายไฟแสดงบนแผนที่
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	โปรไฟล์ของสไปลน์สายไฟไม่ใช่สายเส้นเล็กคู่ที่สูงกว่า 3 m: จะวางตามที่เป็น และ openOMSI จะไม่ถือว่าเป็นสายไฟหากไม่มี trolley.txt
+a kit of that name is there already	มีชุดชื่อนี้อยู่แล้ว
+Renew the wire from its kit	สร้างสายไฟใหม่จากชุด
+Theme	ธีม
+Back to the 3D view	กลับสู่มุมมอง 3D
+The plan view from above, north up	มุมมองแผนผังจากด้านบน ทิศเหนืออยู่บน
+Put the windows back in their first places	คืนหน้าต่างไปยังตำแหน่งเดิม
+Trolleybus wire…	สายไฟโทรลลีย์บัส…
+: there are unsaved changes	: มีการแก้ไขที่ยังไม่ได้บันทึก
+Assets: every object and road type, with pictures	แอสเซ็ต: วัตถุและชนิดถนนทั้งหมด พร้อมรูปภาพ
+Close the openOMSI session started from here	ปิดเซสชัน openOMSI ที่เริ่มจากที่นี่
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	เลือกจุดเริ่มต้น ยานพาหนะ เวลา และสภาพอากาศ แล้วขับแผนที่ใน openOMSI
+Search commands	ค้นหาคำสั่ง
+Every command of the menus by its name	ทุกคำสั่งในเมนูตามชื่อ
+Right-click the view for what can be done there; Search commands finds the rest	คลิกขวาที่มุมมองเพื่อดูสิ่งที่ทำได้ตรงนั้น ค้นหาคำสั่ง จะหาส่วนที่เหลือ
+Right-click the view: its menu	คลิกขวาที่มุมมอง: เมนูของมุมมอง
+Snap vertex	สแนปจุดยอด
+Snap edge	สแนปขอบ
+Out of the mix	นำออกจากส่วนผสม
+more as OMSI 2 is read…	จะมีเพิ่มขณะอ่าน OMSI 2…
+Reading the content of OMSI 2…	กำลังอ่านเนื้อหาของ OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	ไม่พบ: ลองพิมพ์ตัวอักษรให้น้อยลง หรือเลือก ทั้งหมด ใน แสดง
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	ไม่มีของประเภทนี้: เลือก ทั้งหมด ใน แสดง หรือนำเข้าแอสเซ็ต (ไฟล์ > นำเข้าแอสเซ็ต)
+a table of functions	ตารางฟังก์ชัน
+a module	โมดูล
+Next (Enter)	ถัดไป (Enter)
+Previous (Shift+Enter)	ก่อนหน้า (Shift+Enter)
+Match case	ตรงตามตัวพิมพ์
+Replace	แทนที่
+Replace…	แทนที่…
+Click: a breakpoint (F9 on the cursor's line)	คลิก: เบรกพอยต์ (F9 ที่บรรทัดของเคอร์เซอร์)
+permission	สิทธิ์
+The light before	สัญญาณไฟก่อนหน้า
+The next light	สัญญาณไฟถัดไป
+The phase before	เฟสก่อนหน้า
+The next phase	เฟสถัดไป
+to 	ไปที่ 
+Select the piece joined at its start (,)	เลือกชิ้นที่ต่อที่จุดเริ่มต้น (,)
+Select the piece joined at its end (.)	เลือกชิ้นที่ต่อที่ปลาย (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	คลิกสองจุดเพื่อวัดระยะและความลาดระหว่างกัน (U) · Shift + คลิก: มุมของพื้นที่ (ขนาดและเส้นรอบรูป) · คลิกขวา: ปิด
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	สแนปจุดยอดของวัตถุที่เลือกไปยังจุดยอดของวัตถุอื่น\nShift: แนวนอนเท่านั้น, Esc/คลิกขวา: ยกเลิก
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	จัดแนวขอบของวัตถุที่เลือกให้ตรงกับขอบหรือถนน\nหมุนและสแนปให้อยู่ในแนวเดียวกัน\nShift: แนวนอนเท่านั้น, Esc/คลิกขวา: ยกเลิก
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	บนเส้นตรงระหว่างสองชิ้นที่ห่างกันที่สุด เว้นระยะเท่ากัน (เสา โคมไฟ แถวต้นไม้)
+Equal steps between the two farthest apart, each keeping its distance to the side	ระยะเท่ากันระหว่างสองชิ้นที่ห่างกันที่สุด แต่ละชิ้นคงระยะห่างด้านข้างไว้
+height, m	ความสูง, m
+gradient, %	ความลาด, %
+cant, %	ความเอียงโค้ง, %
+Rotate, °	หมุน, °
+Name, file, IDCode, stop, x, y or tile x y	ชื่อ, ไฟล์, IDCode, ป้าย, x, y หรือ ไทล์ x y
+listed, no file	อยู่ในรายการ ไม่มีไฟล์
+The camera over the tile's middle	กล้องเหนือกึ่งกลางไทล์
+its folder	โฟลเดอร์ของมัน
+Line up the selected objects	เรียงวัตถุที่เลือกเป็นแนว
+Space the selected objects evenly	เว้นระยะวัตถุที่เลือกให้เท่ากัน
+Next road piece	ชิ้นถนนถัดไป
+Previous road piece	ชิ้นถนนก่อนหน้า
+The run ended	การรันจบแล้ว
+installed as	ติดตั้งเป็น
+failed	ล้มเหลว
+Run	รัน
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	รันสคริปต์ที่นี่ในตัวแก้ไข พร้อมฟังก์ชันของเกม (F5 ในโค้ด)
+Step in	เริ่มทีละขั้น
+Run and stop at the first line (F11)	รันแล้วหยุดที่บรรทัดแรก (F11)
+Continue	ทำต่อ
+Pause	หยุดชั่วคราว
+Stop the clock; a script running stops at its next line	หยุดนาฬิกา สคริปต์ที่กำลังทำงานจะหยุดที่บรรทัดถัดไป
+Over	ข้าม
+Step over (F10)	ก้าวข้าม (F10)
+Into	เข้า
+Step into (F11)	ก้าวเข้า (F11)
+Out	ออก
+Step out (Shift+F11)	ก้าวออก (Shift+F11)
+Restart	เริ่มใหม่
+The map's scripts	สคริปต์ของแผนที่
+The game's clock in the run	นาฬิกาของเกมในการรัน
+Set the game's clock of the run (sends minute)	ตั้งนาฬิกาของเกมในการรัน (ส่ง minute)
+starts 	เริ่ม 
+The hour the run starts at	ชั่วโมงที่การรันเริ่ม
+Save all	บันทึกทั้งหมด
+Build .oop	สร้าง .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	ไฟล์เดียวของสคริปต์แผนที่สำหรับแบ่งปัน: คอมไพล์และอำพรางโค้ดแล้ว พร้อมสิทธิ์ที่ต้องใช้ (คอมไพเลอร์ของ Development Tools)
+API	API
+The game's functions and events	ฟังก์ชันและเหตุการณ์ของเกม
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	แผนที่นี้ยังไม่มีสคริปต์ สคริปต์ของแผนที่ทำงานใน openOMSI ขณะเล่น โดยตอบสนองต่อเหตุการณ์ (ป้าย ชั่วโมง เที่ยว) แสดงข้อความ เปลี่ยนการจราจรและสภาพอากาศ
+Start the map's scripts	เริ่มสคริปต์ของแผนที่
+Object scripts (Lua)	สคริปต์วัตถุ (Lua)
+No object on the map has a Lua script.	ไม่มีวัตถุใดบนแผนที่ที่มีสคริปต์ Lua
+Refresh	รีเฟรช
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	สคริปต์ที่วัตถุฉากระบุไว้ใน [lua_script]: สคริปต์หนึ่งทำงานให้วัตถุชนิดนั้นทุกชิ้นที่อยู่ใกล้กล้อง (เฉพาะ openOMSI)
+Selected object	วัตถุที่เลือก
+Select one object on the map to see its scripts.	เลือกวัตถุหนึ่งชิ้นบนแผนที่เพื่อดูสคริปต์ของมัน
+No OMSI 2 script (.osc).	ไม่มีสคริปต์ OMSI 2 (.osc)
+Lua script (openOMSI)	สคริปต์ Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	สคริปต์สำหรับวัตถุชนิดนี้ทุกชิ้น อยู่ข้าง .sco และระบุไว้ในไฟล์นั้น ([lua_script]) OMSI 2 จะข้ามไป วัตถุของการติดตั้งจะกลายเป็นสำเนาของแผนที่เองก่อน
+OMSI 2 script (.osc)	สคริปต์ OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	สคริปต์ของวัตถุเองพร้อมรายการตัวแปร ทำงานโดย OMSI 2 และ openOMSI โคมไฟและส่วน [visible] ของวัตถุเป็นไปตามตัวแปรที่สคริปต์กำหนด
+Rust plugin	ปลั๊กอิน Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	ปลั๊กอินของแผนที่ที่เขียนด้วย Rust คอมไพล์เป็น WebAssembly ลงใน .oop การสร้างต้องใช้ Rust (rustup) พร้อมเป้าหมาย wasm32-unknown-unknown
+Make the Rust plugin	สร้างปลั๊กอิน Rust
+Build and install	สร้างและติดตั้ง
+cargo builds it, the .oop goes into the content folder's plugins	cargo สร้างให้ แล้ว .oop จะไปอยู่ใน plugins ของโฟลเดอร์เนื้อหา
+Starts with the map	เริ่มพร้อมแผนที่
+Rename…	เปลี่ยนชื่อ…
+Earlier in the order	เลื่อนขึ้นในลำดับ
+Later in the order	เลื่อนลงในลำดับ
+Delete (into openMapper's bin)	ลบ (ไปถังขยะของ openMapper)
+New script	สคริปต์ใหม่
+New module	โมดูลใหม่
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	แต่ละสคริปต์เริ่มเมื่อเล่นแผนที่ ตามลำดับนี้ (คลิกขวาเพื่อย้าย) สคริปต์ที่ล้มเหลวไม่กระทบสคริปต์อื่น ใช้ map.on, map.every, map.after ซึ่งมีผลกับแผนที่นี้เท่านั้น
+Modules	โมดูล
+Code the scripts share: local util = require("modules.util")	โค้ดที่สคริปต์ใช้ร่วมกัน: local util = require("modules.util")
+Data	ข้อมูล
+Files the scripts read (data/), pictures and sounds	ไฟล์ที่สคริปต์อ่าน (data/) รูปภาพและเสียง
+Made by openMapper	สร้างโดย openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	เปิดสคริปต์ทางซ้าย หรือสร้างใหม่\n\nF5 รันสคริปต์ที่นี่ในตัวแก้ไข F9 ตั้งเบรกพอยต์ F10 / F11 ทีละขั้น\nCtrl+Space เติมคำ Ctrl+F ค้นหา Ctrl+G ไปยังบรรทัด Ctrl+/ คอมเมนต์
+Read only: a file of the installation or made by openMapper	อ่านอย่างเดียว: ไฟล์ของการติดตั้งหรือที่ openMapper สร้าง
+Problems	ปัญหา
+Console	คอนโซล
+Debugger	ดีบักเกอร์
+Events	เหตุการณ์
+error	ข้อผิดพลาด
+warning	คำเตือน
+No problems in the open files.	ไม่มีปัญหาในไฟล์ที่เปิดอยู่
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	สิ่งที่สคริปต์พิมพ์ แสดงบนหน้าจอ และข้อผิดพลาดของสคริปต์ จะปรากฏที่นี่เมื่อรัน (รัน, F5)
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua ที่จะรันในสคริปต์ (ในเฟรมที่หยุดอยู่ ถ้าหยุดอยู่) ขึ้นและลง: ประวัติ
+Start a run first (Run, F5)	เริ่มการรันก่อน (รัน, F5)
+(empty)	(ว่าง)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	กำลังทำงาน เบรกพอยต์ (คลิกทางซ้ายของหมายเลขบรรทัด หรือ F9) จะหยุดสคริปต์ตรงนั้น หยุดชั่วคราว จะหยุดที่บรรทัดถัดไป
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	ไม่ได้ทำงาน รันสคริปต์ (F5) เบรกพอยต์จะหยุดสคริปต์ และที่นี่จะแสดงคอลสแต็ก ตัวแปรของแต่ละฟังก์ชัน และค่าที่เฝ้าดู
+Stopped	หยุดอยู่
+Call stack	คอลสแต็ก
+Locals	ตัวแปรภายใน
+Upvalues	ตัวแปรภายนอก (upvalues)
+The console evaluates in this frame: a name, an expression, an assignment.	คอนโซลประเมินผลในเฟรมนี้: ชื่อ นิพจน์ การกำหนดค่า
+Storage and objects	ที่เก็บข้อมูลและวัตถุ
+Send	ส่ง
+As if the game sent it: every handler of it runs	เหมือนเกมส่งมา: ตัวจัดการทุกตัวของเหตุการณ์นี้จะทำงาน
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	รันสคริปต์เพื่อส่งเหตุการณ์ของเกมด้วยตนเอง: ถึงป้าย ประตู ชั่วโมงใหม่… นาฬิกาส่ง frame, minute และ hour เอง
+Listening	กำลังรอฟัง
+timers	ตัวจับเวลา
+Sign with the key	ลงนามด้วยคีย์
+a secret key file of oopc keygen (optional)	ไฟล์คีย์ลับของ oopc keygen (ไม่บังคับ)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	สร้าง .oop จะรวมสคริปต์ของแผนที่เป็นไฟล์เดียวสำหรับแบ่งปัน (ในโฟลเดอร์ dist ของโปรเจกต์): คอมไพล์ อำพรางโค้ด พร้อมสิทธิ์ที่โค้ดต้องใช้ เกมรันโฟลเดอร์สคริปต์ตามที่เป็นอยู่ ส่วน .oop มีไว้แจกจ่ายโดยไม่ต้องให้ซอร์สโค้ด
+Search functions and events	ค้นหาฟังก์ชันและเหตุการณ์
+since	ตั้งแต่เวอร์ชัน
+for an .oop	สำหรับ .oop
+Double-click puts it into the script at the cursor.	ดับเบิลคลิกเพื่อแทรกลงในสคริปต์ที่เคอร์เซอร์
+A stop on this path	ป้ายบนเส้นทางนี้
+branch	ทางแยก
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	สายไฟเหนือหัวที่รถโทรลลีย์บัสของ openOMSI วิ่งอยู่ข้างใต้ (trolley.txt ข้างแผนที่ OMSI 2 ไม่สนใจไฟล์นี้) หากไม่มี เกมจะอ่านสไปลน์สายไฟของแผนที่
+Start a wire for this map	เริ่มสายไฟสำหรับแผนที่นี้
+Lay	วาง
+Sections	เซกชัน
+Spans	ช่วงสาย
+Switches	สวิตช์
+Pick in the view	เลือกในมุมมอง
+A click in the view picks a span or a switch (yellow dot)	คลิกในมุมมองเพื่อเลือกช่วงสายหรือสวิตช์ (จุดสีเหลือง)
+The wires over the road surface	สายไฟเหนือผิวถนน
+the kerb lane each way	เลนริมขอบทางแต่ละทิศ
+the way the road runs	ตามทิศของถนน
+against the road's way	สวนทิศของถนน
+Section	เซกชัน
+Kit	ชุด
+ (every map)	 (ทุกแผนที่)
+none: the wire for the game only	ไม่มี: สายไฟสำหรับเกมเท่านั้น
+A new kit	ชุดใหม่
+My wire	สายไฟของฉัน
+Change this kit	แก้ไขชุดนี้
+its wire spline	สไปลน์สายไฟของชุด
+its masts, every	เสาของชุด ทุก ๆ
+The kit names no mast	ชุดไม่ได้ระบุเสา
+Frogs and section insulators are put where the wire has them, as the kit names them.	จุดแยกสายและฉนวนเซกชันจะถูกวางตรงที่สายไฟมี ตามที่ชุดระบุไว้
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	ไม่มีอะไรถูกวางบนแผนที่ สายไฟมีไว้สำหรับเกมเท่านั้น ชุด (+) ระบุโมเดลของคุณเองสำหรับสายไฟ เสา จุดแยกสาย และฉนวน
+Over the selected roads	เหนือถนนที่เลือก
+Select roads in the view first (double-click: a whole road)	เลือกถนนในมุมมองก่อน (ดับเบิลคลิก: ทั้งเส้น)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	เลนของวัตถุที่เลือก (ทางแยก): ติ๊กเลนที่สายไฟผ่านด้านบน ช่วงสายสามช่วงที่บรรจบกันจะเป็นจุดแยกสาย
+It has no street lanes.	ไม่มีเลนสำหรับรถ
+lane	เลน
+Over the ticked lanes	เหนือเลนที่ติ๊ก
+Select one junction to lay the wire over its lanes.	เลือกทางแยกหนึ่งแห่งเพื่อวางสายไฟเหนือเลนของทางแยก
+Draw a span by hand	วาดช่วงสายเอง
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	คลิกจุดของช่วงสายในมุมมอง ถ้าเริ่มหรือจบที่ปลายช่วงสายจะต่อเข้ากัน ถ้าอยู่กลางช่วงสายจะแยกออกตรงนั้น (จุดแยกสาย)
+points: click the next in the view	จุด: คลิกจุดถัดไปในมุมมอง
+Finish	เสร็จสิ้น
+Read the map's wire splines	อ่านสไปลน์สายไฟของแผนที่
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	สไปลน์ที่วาดเป็นสายคู่ (แผนที่โทรลลีย์บัสที่ทำสำหรับ OMSI 2): ช่วงสายตามแต่ละเส้น ตามที่เกมอ่าน
+Network	เครือข่าย
+Voltage	แรงดันไฟฟ้า
+Wire spacing	ระยะห่างสายไฟ
+How uneven the contact wire is: worn or icy wire 0.003 and more	ความไม่เรียบของสายสัมผัส: สายที่สึกหรอหรือมีน้ำแข็ง 0.003 ขึ้นไป
+Delete the whole wire	ลบสายไฟทั้งหมด
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt จะถูกลบเมื่อบันทึกครั้งถัดไป เกมจะอ่านสไปลน์สายไฟของแผนที่อีกครั้ง
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	ช่วงที่รับไฟจากสถานีไฟฟ้าย่อยเดียวกัน ตรงที่สองช่วงบรรจบกันจะมีช่วงไม่มีไฟ (ฉนวน)
+name	ชื่อ
+live	มีไฟ
+The feeder's resistance: the voltage drops with the current	ความต้านทานของสายป้อน: แรงดันลดลงตามกระแส
+Power the feeder takes back from a braking bus	กำลังไฟที่สายป้อนรับคืนจากรถที่กำลังเบรก
+spans	ช่วงสาย
+Add a section	เพิ่มเซกชัน
+Insulators (where sections meet)	ฉนวน (จุดที่เซกชันบรรจบกัน)
+ m dead	 m ไม่มีไฟ
+Span	ช่วงสาย
+points	จุด
+Spacing	ระยะห่าง
+its own	ของตัวเอง
+Drag: the whole span up or down	ลาก: ทั้งช่วงสายขึ้นหรือลง
+The span the other way: the positive wire is on the right of its way	กลับทิศช่วงสาย: สายบวกอยู่ทางขวาตามทิศของช่วงสาย
+Pick a span in the view, or in the list.	เลือกช่วงสายในมุมมองหรือในรายการ
+section	เซกชัน
+A switch where three spans meet (yellow in the view). Every frog gets one.	สวิตช์ตรงที่ช่วงสายสามช่วงบรรจบกัน (สีเหลืองในมุมมอง) จุดแยกสายทุกจุดมีสวิตช์
+No frogs yet: lay three spans meeting in one point (a branch).	ยังไม่มีจุดแยกสาย: วางช่วงสายสามช่วงให้บรรจบที่จุดเดียว (ทางแยก)
+Spans laid:	วางช่วงสายแล้ว:
+Wire kit	ชุดสายไฟ
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	โมเดลของคุณเอง (สร้างใน Blender หรือที่ใดก็ได้ แล้ววางในโฟลเดอร์เนื้อหา) ที่แสดงสายไฟบนแผนที่: สไปลน์สายไฟ และวัตถุเสา จุดแยกสาย และฉนวน ชุดคือไฟล์ .cfg ที่ระบุรายการเหล่านี้ แก้ไขได้ที่นี่ แบบข้อความ หรือในโปรแกรมแก้ไขข้อความใดก็ได้
+As text	แบบข้อความ
+The name is the kit's file: make a copy to rename it	ชื่อคือไฟล์ของชุด: ทำสำเนาเพื่อเปลี่ยนชื่อ
+For	สำหรับ
+this map	แผนที่นี้
+every map	ทุกแผนที่
+Take the one selected on the map	ใช้อันที่เลือกบนแผนที่
+Select a spline of it on the map first	เลือกสไปลน์ชนิดนี้บนแผนที่ก่อน
+Select such an object on the map first	เลือกวัตถุชนิดนี้บนแผนที่ก่อน
+Choose the file	เลือกไฟล์
+The file must lie in the content folder or in OMSI 2's	ไฟล์ต้องอยู่ในโฟลเดอร์เนื้อหาหรือโฟลเดอร์ของ OMSI 2
+Not there	ไม่พบ
+Wire spline	สไปลน์สายไฟ
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	.sli ที่โปรไฟล์วางสายไฟไว้ที่ความสูงเหนือถนน วางตามทุกช่วงสาย
+Mast	เสา
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: จุดกำเนิดอยู่ที่โคน แขนยื่นตามแกน -y ไปถึงสายไฟ
+Frog	จุดแยกสาย
+A .sco hung where the wire branches: its origin on the wire, y along it	.sco ที่แขวนตรงจุดที่สายไฟแยก: จุดกำเนิดอยู่บนสายไฟ แกน y ตามสาย
+Insulator	ฉนวน
+A .sco hung where two sections meet: its origin on the wire, y along it	.sco ที่แขวนตรงจุดที่สองเซกชันบรรจบกัน: จุดกำเนิดอยู่บนสายไฟ แกน y ตามสาย
+Masts	เสา
+every	ทุก ๆ
+From a mast's foot to its wire, across the road	จากโคนเสาถึงสายไฟ ตามแนวขวางถนน
+from the wire	จากสายไฟ
+Mast turned	การหมุนเสา
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	สำหรับโมเดลที่แขนไม่ได้ยื่นตามแกน -y: 90 ถ้ายื่นตาม -x, -90 ตาม +x, 180 ตาม +y
+arm	แขน
+The wire spline's wires	สายไฟของสไปลน์
+high	สูง
+across its line	จากแนวกึ่งกลาง
+Save and renew the map's wire	บันทึกและสร้างสายไฟของแผนที่ใหม่
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	สไปลน์สายไฟและเสาที่วางจากชุดนี้จะใช้ไฟล์ตามที่เป็นอยู่ตอนนี้ จุดแยกสายและฉนวนจะถูกวางใหม่
+A new kit from this one (to rename it, or change it apart)	ชุดใหม่จากชุดนี้ (เพื่อเปลี่ยนชื่อ หรือแก้ไขแยกต่างหาก)
+Show the file	แสดงไฟล์
+Changed to the kit's files:	เปลี่ยนเป็นไฟล์ของชุดแล้ว:
+a display shows the switch of its name	ป้ายแสดงสวิตช์ที่มีชื่อนี้
+Set by	ควบคุมโดย
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	ตำแหน่งเมื่อเกมอ่านสายไฟ (สุ่ม: สุ่มครั้งเดียวต่อการรัน ในเกมออนไลน์เป็นทางตรง)
+Contact plate	แผ่นสัมผัส
+ m before the frog	 m ก่อนจุดแยกสาย
+Power on from	มีกระแสตั้งแต่
+Invert	กลับด้าน
+the other way round	กลับกัน
+Channel	ช่อง
+any	ใดก็ได้
+Range	ระยะ
+Route codes	รหัสสาย
+A route code	รหัสสาย
+Flip	พลิก
+Left to right	ซ้ายไปขวา
+Top to bottom	บนลงล่าง
+Dark theme	ธีมมืด
+Light theme	ธีมสว่าง
+Lit	แสงไฟ

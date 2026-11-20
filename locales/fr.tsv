@@ -2889,3 +2889,335 @@ Paths of the way	Voies du chemin
 Cut before the first stop	Couper avant le premier arrêt
 Cut after the last stop	Couper après le dernier arrêt
 path	voie
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Commandes propres à openMapper : la caméra telle que choisie dans Caméra, les touches comme dans Affichage > Commandes
+The keys as in View > Controls	Les touches comme dans Affichage > Commandes
+A copy of its own was made for the script: the original type is unchanged	Une copie propre a été faite pour le script : le type d'origine est inchangé
+Trolleybus wire the game cannot use	Caténaire de trolleybus inutilisable par le jeu
+Rows the game does not show	Rangées que le jeu n'affiche pas
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Une rangée d'objets le long d'une route (lampadaires, poteaux, places de stationnement) commence avant la route sur laquelle elle est posée : sa distance compte depuis le début de la chaîne de la route, et celle-ci est inférieure à la longueur de la chaîne avant sa route. OMSI 2 et openOMSI n'en affichent rien, l'éditeur non plus. Reposez la rangée ou donnez-lui un début plus grand dans ses propriétés.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI ne fait un aiguillage que là où se rejoignent exactement trois tronçons de la caténaire, et un aiguillage placé là où il n'y en a plus est ignoré ; un tronçon dans une section absente du réseau n'a pas de sous-station. Ouvrez Carte > Caténaire de trolleybus pour corriger.
+Trolleybus wire	Caténaire de trolleybus
+Select the next road piece (joined at its end; Shift: add it)	Sélectionner l'élément de route suivant (joint à sa fin ; Shift : l'ajouter)
+Select the previous road piece (joined at its start; Shift: add it)	Sélectionner l'élément de route précédent (joint à son début ; Shift : l'ajouter)
+the up arrow	la flèche haut
+the down arrow	la flèche bas
+the left arrow	la flèche gauche
+the right arrow	la flèche droite
+Select three objects or more (the two farthest apart stay)	Sélectionnez trois objets ou plus (les deux plus éloignés restent en place)
+Line up	Aligner
+Space evenly	Répartir uniformément
+Splines laid	Splines posés
+The spline reaches past the map: add tiles there first	Le spline dépasse la carte : ajoutez-y d'abord des tuiles
+Ground painted over areas	Sol peint sur les zones
+Track beds	Ballast des voies
+Ground under surfaces	Sol sous les surfaces
+Form the ground	Modeler le sol
+Select a road piece first	Sélectionnez d'abord un élément de route
+Nothing is joined at its end	Rien n'est joint à sa fin
+Nothing is joined at its start	Rien n'est joint à son début
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Déplacer : tirez une flèche le long de X, Y ou Z, un carré dans son plan, le cercle sur le sol
+Rotate: drag a ring to turn about X, Y or Z	Rotation : tirez un anneau pour tourner autour de X, Y ou Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Échelle : tirez une flèche pour mettre à l'échelle sur cet axe, un carré pour deux axes, le cercle pour les trois
+Junctions where the roads meet	Carrefours là où les routes se rejoignent
+Streets from the street model	Rues d'après le modèle de rues
+perimeter	périmètre
+needs	nécessite
+built	construit
+signed by	signé par
+not signed: the game loads it with a warning that its author is not known	non signé : le jeu le charge avec un avertissement indiquant que son auteur est inconnu
+openOMSI has no such function (the API of version	openOMSI n'a pas cette fonction (l'API de la version
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` est réservé aux scripts de la carte ; un script d'objets n'a que les fonctions omsi
+no such module in the project (modules/…)	aucun module de ce nom dans le projet (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	le jeu n'envoie pas cet événement (sauf si un script l'envoie avec omsi.emit)
+a name is needed	un nom est nécessaire
+a file of that name is there already	un fichier de ce nom existe déjà
+Empty module	Module vide
+Test run of	Exécution d'essai de
+does nothing in the test run (no game): it gives false	ne fait rien en exécution d'essai (pas de jeu) : renvoie false
+has nothing to read in the test run (no game): it gives nil	n'a rien à lire en exécution d'essai (pas de jeu) : renvoie nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	un objet de l'installation OMSI 2 n'est jamais modifié : faites-en d'abord votre propre objet
+Dark	Sombre
+As the system	Comme le système
+power (current on: branch)	par le courant (avec courant : dérivation)
+indicator	par le clignotant
+radio	par radio
+to the branch	vers la dérivation
+at random	au hasard
+spans meet in one point: the game makes no switch there (a frog is three)	tronçons se rejoignent en un point : le jeu n'y fait pas d'aiguillage (un embranchement, c'est trois)
+Switch	Aiguillage
+no three spans meet there any more	trois tronçons ne s'y rejoignent plus
+A span is in section	Un tronçon est dans la section
+that the network does not have	que le réseau n'a pas
+the wire spline	le spline de fil
+the mast	le mât
+the frog	l'embranchement
+the insulator	l'isolateur
+is not there	est introuvable
+no wire spline: nothing of the wire is shown on the map	pas de spline de fil : rien de la caténaire n'est affiché sur la carte
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	le profil du spline de fil n'est pas une paire de fils fins à plus de 3 m : il est posé tel quel, et openOMSI ne le prendra pas pour la caténaire sans trolley.txt
+a kit of that name is there already	un kit de ce nom existe déjà
+Renew the wire from its kit	Renouveler la caténaire depuis son kit
+Theme	Thème
+Back to the 3D view	Retour à la vue 3D
+The plan view from above, north up	Le plan vu de dessus, nord en haut
+Put the windows back in their first places	Remettre les fenêtres à leur place d'origine
+Trolleybus wire…	Caténaire de trolleybus…
+: there are unsaved changes	 : modifications non enregistrées
+Assets: every object and road type, with pictures	Ressources : tous les objets et types de route, avec images
+Close the openOMSI session started from here	Fermer la session openOMSI lancée d'ici
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Choisir le point de départ, le véhicule, l'heure et la météo, puis parcourir la carte dans openOMSI
+Search commands	Rechercher des commandes
+Every command of the menus by its name	Toute commande des menus par son nom
+Right-click the view for what can be done there; Search commands finds the rest	Clic droit sur la vue pour ce qu'on peut y faire ; Rechercher des commandes trouve le reste
+Right-click the view: its menu	Clic droit sur la vue : son menu
+Snap vertex	Aimanter un sommet
+Snap edge	Aimanter un bord
+Out of the mix	Retirer du mélange
+more as OMSI 2 is read…	d'autres à venir pendant la lecture d'OMSI 2…
+Reading the content of OMSI 2…	Lecture du contenu d'OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Rien trouvé : essayez moins de lettres, ou Tout dans Afficher
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Rien de ce genre : choisissez Tout dans Afficher, ou importez des ressources (Fichier > Importer des ressources)
+a table of functions	une table de fonctions
+a module	un module
+Next (Enter)	Suivant (Enter)
+Previous (Shift+Enter)	Précédent (Shift+Enter)
+Match case	Respecter la casse
+Replace	Remplacer
+Replace…	Remplacer…
+Click: a breakpoint (F9 on the cursor's line)	Clic : point d'arrêt (F9 sur la ligne du curseur)
+permission	permission
+The light before	Le feu précédent
+The next light	Le feu suivant
+The phase before	La phase précédente
+The next phase	La phase suivante
+to 	à 
+Select the piece joined at its start (,)	Sélectionner l'élément joint à son début (,)
+Select the piece joined at its end (.)	Sélectionner l'élément joint à sa fin (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Cliquez deux points pour mesurer la distance et la pente entre eux (U) · Shift + clics : les coins d'une zone (sa surface et son périmètre) · clic droit : désactiver
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Aligner un sommet de l'objet sélectionné sur un sommet d'un autre objet\nMaj : horizontal uniquement, Échap/Clic droit : Annuler
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Aligner un bord de l'objet sélectionné sur un bord ou une route\nFait pivoter et accroche en colinéaire\nMaj : horizontal uniquement, Échap/Clic droit : Annuler
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Sur la ligne droite entre les deux plus éloignés, à pas égaux (poteaux, lampadaires, rangée d'arbres)
+Equal steps between the two farthest apart, each keeping its distance to the side	Pas égaux entre les deux plus éloignés, chacun gardant son écart latéral
+height, m	hauteur, m
+gradient, %	pente, %
+cant, %	dévers, %
+Rotate, °	Rotation, °
+Name, file, IDCode, stop, x, y or tile x y	Nom, fichier, IDCode, arrêt, x, y ou tuile x y
+listed, no file	listée, sans fichier
+The camera over the tile's middle	La caméra au-dessus du milieu de la tuile
+its folder	son dossier
+Line up the selected objects	Aligner les objets sélectionnés
+Space the selected objects evenly	Répartir uniformément les objets sélectionnés
+Next road piece	Élément de route suivant
+Previous road piece	Élément de route précédent
+The run ended	L'exécution est terminée
+installed as	installé sous
+failed	échec
+Run	Exécuter
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Exécuter les scripts ici, dans l'éditeur, avec les fonctions du jeu (F5 dans le code)
+Step in	Entrer
+Run and stop at the first line (F11)	Exécuter et s'arrêter à la première ligne (F11)
+Continue	Continuer
+Pause	Pause
+Stop the clock; a script running stops at its next line	Arrêter l'horloge ; un script en cours s'arrête à sa ligne suivante
+Over	Par-dessus
+Step over (F10)	Pas à pas principal (F10)
+Into	Dedans
+Step into (F11)	Pas à pas détaillé (F11)
+Out	Sortir
+Step out (Shift+F11)	Pas à pas sortant (Shift+F11)
+Restart	Redémarrer
+The map's scripts	Les scripts de la carte
+The game's clock in the run	L'horloge du jeu pendant l'exécution
+Set the game's clock of the run (sends minute)	Régler l'horloge du jeu de l'exécution (envoie minute)
+starts 	départ 
+The hour the run starts at	L'heure à laquelle commence l'exécution
+Save all	Tout enregistrer
+Build .oop	Construire le .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Un seul fichier des scripts de la carte à partager : compilé et obscurci, avec les permissions nécessaires (le compilateur des Development Tools)
+API	API
+The game's functions and events	Les fonctions et événements du jeu
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Cette carte n'a pas encore de scripts. Ses scripts s'exécutent dans openOMSI pendant qu'on y joue : ils réagissent à ce qui se passe (un arrêt, une heure, un trajet), affichent des messages, changent la circulation et la météo.
+Start the map's scripts	Commencer les scripts de la carte
+Object scripts (Lua)	Scripts d'objets (Lua)
+No object on the map has a Lua script.	Aucun objet de la carte n'a de script Lua.
+Refresh	Actualiser
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Scripts qu'un objet de décor nomme dans [lua_script] : un seul s'exécute pour chaque objet de son type près de la caméra (openOMSI uniquement)
+Selected object	Objet sélectionné
+Select one object on the map to see its scripts.	Sélectionnez un objet sur la carte pour voir ses scripts.
+No OMSI 2 script (.osc).	Pas de script OMSI 2 (.osc).
+Lua script (openOMSI)	Script Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Un script pour chaque objet de ce type, à côté de son .sco et nommé dedans ([lua_script]) ; OMSI 2 l'ignore. Un objet de l'installation devient d'abord une copie propre à la carte.
+OMSI 2 script (.osc)	Script OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Le script propre de l'objet avec sa liste de variables, exécuté par OMSI 2 et openOMSI ; ses lampes et ses parties [visible] suivent les variables qu'il définit
+Rust plugin	Plugin Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Un plugin de la carte écrit en Rust, compilé en WebAssembly dans un .oop. Le construire nécessite Rust (rustup) avec la cible wasm32-unknown-unknown.
+Make the Rust plugin	Créer le plugin Rust
+Build and install	Construire et installer
+cargo builds it, the .oop goes into the content folder's plugins	cargo le construit, le .oop va dans plugins du dossier de contenu
+Starts with the map	Démarre avec la carte
+Rename…	Renommer…
+Earlier in the order	Plus tôt dans l'ordre
+Later in the order	Plus tard dans l'ordre
+Delete (into openMapper's bin)	Supprimer (vers la corbeille d'openMapper)
+New script	Nouveau script
+New module	Nouveau module
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Chacun démarre quand on joue la carte, dans cet ordre (clic droit pour en déplacer un) ; si l'un échoue, les autres continuent. Utilisez map.on, map.every, map.after : ils n'agissent que sur cette carte.
+Modules	Modules
+Code the scripts share: local util = require("modules.util")	Code partagé par les scripts : local util = require("modules.util")
+Data	Données
+Files the scripts read (data/), pictures and sounds	Fichiers que les scripts lisent (data/), images et sons
+Made by openMapper	Fait par openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Ouvrez un script à gauche, ou créez-en un.\n\nF5 exécute les scripts ici dans l'éditeur, F9 pose un point d'arrêt, F10 / F11 avancent pas à pas,\nCtrl+Space complète, Ctrl+F recherche, Ctrl+G va à une ligne, Ctrl+/ commente.
+Read only: a file of the installation or made by openMapper	Lecture seule : un fichier de l'installation ou fait par openMapper
+Problems	Problèmes
+Console	Console
+Debugger	Débogueur
+Events	Événements
+error	erreur
+warning	avertissement
+No problems in the open files.	Aucun problème dans les fichiers ouverts.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Ce que les scripts impriment et affichent à l'écran, et les erreurs qu'ils font, apparaissent ici quand ils tournent (Exécuter, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua à exécuter dans les scripts (dans le cadre où l'on est arrêté, le cas échéant) ; Haut et Bas : historique
+Start a run first (Run, F5)	Lancez d'abord une exécution (Exécuter, F5)
+(empty)	(vide)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	En cours. Un point d'arrêt (clic à gauche d'un numéro de ligne, ou F9) y arrête les scripts ; Pause les arrête à leur ligne suivante.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	À l'arrêt. Exécutez (F5) les scripts ; un point d'arrêt les arrête, et ici apparaissent la pile d'appels, les variables de chaque fonction et les valeurs à surveiller.
+Stopped	Arrêté
+Call stack	Pile d'appels
+Locals	Locales
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	La console évalue dans ce cadre : un nom, une expression, une affectation.
+Storage and objects	Stockage et objets
+Send	Envoyer
+As if the game sent it: every handler of it runs	Comme si le jeu l'envoyait : chacun de ses gestionnaires s'exécute
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Exécutez les scripts pour leur envoyer à la main les événements du jeu : un arrêt atteint, une porte, une nouvelle heure… L'horloge envoie d'elle-même frame, minute et hour.
+Listening	À l'écoute
+timers	minuteurs
+Sign with the key	Signer avec la clé
+a secret key file of oopc keygen (optional)	un fichier de clé secrète d'oopc keygen (facultatif)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Construire le .oop fait un seul fichier des scripts de la carte à partager (dans le dossier dist du projet) : compilé, obscurci, avec les permissions dont son code a besoin. Le jeu exécute le dossier des scripts tel quel ; le .oop sert à les donner sans leurs sources.
+Search functions and events	Rechercher fonctions et événements
+since	depuis
+for an .oop	pour un .oop
+Double-click puts it into the script at the cursor.	Un double-clic l'insère dans le script au curseur.
+A stop on this path	Un arrêt sur ce chemin
+branch	dérivation
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	La caténaire sous laquelle roulent les trolleybus d'openOMSI (trolley.txt à côté de la carte ; OMSI 2 l'ignore). Sans elle, le jeu lit les splines de fil de la carte.
+Start a wire for this map	Commencer une caténaire pour cette carte
+Lay	Pose
+Sections	Sections
+Spans	Tronçons
+Switches	Aiguillages
+Pick in the view	Choisir dans la vue
+A click in the view picks a span or a switch (yellow dot)	Un clic dans la vue choisit un tronçon ou un aiguillage (point jaune)
+The wires over the road surface	Les fils au-dessus de la chaussée
+the kerb lane each way	la voie côté trottoir dans chaque sens
+the way the road runs	dans le sens de la route
+against the road's way	à contresens de la route
+Section	Section
+Kit	Kit
+ (every map)	 (toutes les cartes)
+none: the wire for the game only	aucun : la caténaire pour le jeu seulement
+A new kit	Un nouveau kit
+My wire	Ma caténaire
+Change this kit	Modifier ce kit
+its wire spline	son spline de fil
+its masts, every	ses mâts, tous les
+The kit names no mast	Le kit ne nomme aucun mât
+Frogs and section insulators are put where the wire has them, as the kit names them.	Les embranchements et isolateurs de section sont placés là où la caténaire en a, tels que le kit les nomme.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Rien n'est posé sur la carte, la caténaire est pour le jeu seulement. Un kit (+) nomme vos propres modèles du fil, de ses mâts, embranchements et isolateurs.
+Over the selected roads	Au-dessus des routes sélectionnées
+Select roads in the view first (double-click: a whole road)	Sélectionnez d'abord des routes dans la vue (double-clic : toute une route)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Les voies de l'objet sélectionné (un carrefour) : cochez celles au-dessus desquelles passe le fil. Trois tronçons qui se rejoignent font un embranchement.
+It has no street lanes.	Il n'a pas de voies de circulation.
+lane	voie
+Over the ticked lanes	Au-dessus des voies cochées
+Select one junction to lay the wire over its lanes.	Sélectionnez un carrefour pour poser le fil au-dessus de ses voies.
+Draw a span by hand	Dessiner un tronçon à la main
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Cliquez ses points dans la vue ; commencé ou fini sur l'extrémité d'un tronçon, il s'y joint ; sur le milieu d'un tronçon, il s'en détache (un embranchement)
+points: click the next in the view	points : cliquez le suivant dans la vue
+Finish	Terminer
+Read the map's wire splines	Lire les splines de fil de la carte
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Splines dessinés comme une paire de fils (cartes trolleybus faites pour OMSI 2) : un tronçon le long de chacun, comme le jeu les lit
+Network	Réseau
+Voltage	Tension
+Wire spacing	Écart des fils
+How uneven the contact wire is: worn or icy wire 0.003 and more	Irrégularité du fil de contact : fil usé ou givré 0.003 et plus
+Delete the whole wire	Supprimer toute la caténaire
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt disparaît au prochain enregistrement ; le jeu relit les splines de fil de la carte
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Portions alimentées par une même sous-station. Là où deux se rejoignent, il y a une zone neutre (un isolateur).
+name	nom
+live	sous tension
+The feeder's resistance: the voltage drops with the current	La résistance du feeder : la tension baisse avec le courant
+Power the feeder takes back from a braking bus	Puissance que le feeder reprend d'un bus qui freine
+spans	tronçons
+Add a section	Ajouter une section
+Insulators (where sections meet)	Isolateurs (là où les sections se rejoignent)
+ m dead	 m neutres
+Span	Tronçon
+points	points
+Spacing	Écart
+its own	propre
+Drag: the whole span up or down	Tirer : tout le tronçon vers le haut ou le bas
+The span the other way: the positive wire is on the right of its way	Le tronçon dans l'autre sens : le fil positif est à droite de son sens
+Pick a span in the view, or in the list.	Choisissez un tronçon dans la vue, ou dans la liste.
+section	section
+A switch where three spans meet (yellow in the view). Every frog gets one.	Un aiguillage là où trois tronçons se rejoignent (en jaune dans la vue). Chaque embranchement en a un.
+No frogs yet: lay three spans meeting in one point (a branch).	Pas encore d'embranchements : posez trois tronçons se rejoignant en un point (une dérivation).
+Spans laid:	Tronçons posés :
+Wire kit	Kit de caténaire
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Vos propres modèles (faits dans Blender ou ailleurs, mis dans le dossier de contenu) qui montrent la caténaire sur la carte : le spline de fil et les objets mât, embranchement et isolateur. Le kit est un fichier .cfg qui les nomme ; modifiez-le ici, en texte, ou dans n'importe quel éditeur de texte.
+As text	En texte
+The name is the kit's file: make a copy to rename it	Le nom est le fichier du kit : faites-en une copie pour le renommer
+For	Pour
+this map	cette carte
+every map	toutes les cartes
+Take the one selected on the map	Prendre celui sélectionné sur la carte
+Select a spline of it on the map first	Sélectionnez d'abord un de ses splines sur la carte
+Select such an object on the map first	Sélectionnez d'abord un tel objet sur la carte
+Choose the file	Choisir le fichier
+The file must lie in the content folder or in OMSI 2's	Le fichier doit se trouver dans le dossier de contenu ou dans celui d'OMSI 2
+Not there	Introuvable
+Wire spline	Spline de fil
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Un .sli dont le profil place les fils à leur hauteur au-dessus de la route ; il est posé le long de chaque tronçon
+Mast	Mât
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Un .sco : son origine à son pied, son bras s'étendant le long de son -y jusqu'au fil
+Frog	Embranchement
+A .sco hung where the wire branches: its origin on the wire, y along it	Un .sco suspendu là où le fil bifurque : son origine sur le fil, y le long de celui-ci
+Insulator	Isolateur
+A .sco hung where two sections meet: its origin on the wire, y along it	Un .sco suspendu là où deux sections se rejoignent : son origine sur le fil, y le long de celui-ci
+Masts	Mâts
+every	tous les
+From a mast's foot to its wire, across the road	Du pied d'un mât à son fil, en travers de la route
+from the wire	du fil
+Mast turned	Rotation du mât
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Pour un modèle dont le bras ne s'étend pas le long de son -y : 90 s'il s'étend le long de -x, -90 le long de +x, 180 le long de +y
+arm	bras
+The wire spline's wires	Les fils du spline de fil
+high	de haut
+across its line	de son axe
+Save and renew the map's wire	Enregistrer et renouveler la caténaire de la carte
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Les splines de fil et mâts posés depuis ce kit prennent ses fichiers tels qu'ils sont maintenant ; embranchements et isolateurs sont replacés
+A new kit from this one (to rename it, or change it apart)	Un nouveau kit à partir de celui-ci (pour le renommer, ou le modifier à part)
+Show the file	Afficher le fichier
+Changed to the kit's files:	Remplacé par les fichiers du kit :
+a display shows the switch of its name	un afficheur montre l'aiguillage de ce nom
+Set by	Commandé par
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Position quand le jeu lit la caténaire (au hasard : tiré une fois par partie ; droit en jeu en ligne)
+Contact plate	Plaque de contact
+ m before the frog	 m avant l'embranchement
+Power on from	Courant à partir de
+Invert	Inverser
+the other way round	dans l'autre sens
+Channel	Canal
+any	tous
+Range	Portée
+Route codes	Codes d'itinéraire
+A route code	Un code d'itinéraire
+Flip	Retourner
+Left to right	De gauche à droite
+Top to bottom	De haut en bas
+Dark theme	Thème sombre
+Light theme	Thème clair
+Lit	Éclairage

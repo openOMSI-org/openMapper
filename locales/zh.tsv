@@ -2887,3 +2887,335 @@ Paths of the way	路线的路径
 Cut before the first stop	剪掉第一站之前
 Cut after the last stop	剪掉最后一站之后
 path	路径
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMapper 自己的操作方式：相机按“相机”中的选择，按键按 视图 > 操作方式
+The keys as in View > Controls	按键按 视图 > 操作方式
+A copy of its own was made for the script: the original type is unchanged	已为脚本创建其自己的副本：原类型未改变
+Trolleybus wire the game cannot use	游戏无法使用的无轨电车架空线
+Rows the game does not show	游戏不显示的物体行
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	沿道路的一行物体（路灯、立柱、停车位）起点早于它所在的道路：其距离从道路链的起点算起，而此处的距离小于该道路之前那段链的长度。OMSI 2 和 openOMSI 都完全不显示它，编辑器也不显示。请重新放置这一行，或在其属性中增大起点。
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI 只在恰好三条架空线线段相交处生成道岔，不再有线段相交处设置的道岔会被略过；位于网络中不存在的分区内的线段没有变电站。请打开 地图 > 无轨电车架空线 进行修正。
+Trolleybus wire	无轨电车架空线
+Select the next road piece (joined at its end; Shift: add it)	选择下一段道路（接在其末端；Shift：加选）
+Select the previous road piece (joined at its start; Shift: add it)	选择上一段道路（接在其起点；Shift：加选）
+the up arrow	上方向键
+the down arrow	下方向键
+the left arrow	左方向键
+the right arrow	右方向键
+Select three objects or more (the two farthest apart stay)	请选择三个或更多物体（相距最远的两个保持不动）
+Line up	排成一线
+Space evenly	等距分布
+Splines laid	Spline线已铺设
+The spline reaches past the map: add tiles there first	Spline线超出了地图：请先在那里添加图块
+Ground painted over areas	已按区域涂绘地面
+Track beds	轨道道床
+Ground under surfaces	铺面下的地面
+Form the ground	按铺面塑造地形
+Select a road piece first	请先选择一段道路
+Nothing is joined at its end	其末端没有连接任何东西
+Nothing is joined at its start	其起点没有连接任何东西
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	移动：沿 X、Y 或 Z 拖动箭头，拖动方块在其平面内移动，拖动圆圈沿地面移动
+Rotate: drag a ring to turn about X, Y or Z	旋转：拖动圆环绕 X、Y 或 Z 旋转
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	缩放：拖动箭头沿该轴缩放，方块为两轴，圆圈为三轴
+Junctions where the roads meet	道路交汇处的路口
+Streets from the street model	按街道模型生成的街道
+perimeter	周长
+needs	需要权限
+built	已构建
+signed by	签名者
+not signed: the game loads it with a warning that its author is not known	未签名：游戏加载时会警告其作者未知
+openOMSI has no such function (the API of version	openOMSI 没有这个函数 (API 版本
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` 仅供地图脚本使用；物体脚本只有 omsi 函数
+no such module in the project (modules/…)	项目中没有这个模块 (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	游戏不会发送这个事件（除非某个脚本用 omsi.emit 发送它）
+a name is needed	需要名称
+a file of that name is there already	已存在同名文件
+Empty module	空模块
+Test run of	测试运行
+does nothing in the test run (no game): it gives false	在测试运行中不起作用（没有游戏）：返回 false
+has nothing to read in the test run (no game): it gives nil	在测试运行中没有可读取的内容（没有游戏）：返回 nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	OMSI 2 安装目录中的物体永远不会被修改：请先将其做成你自己的物体
+Dark	深色
+As the system	跟随系统
+power (current on: branch)	按电流（通电：分支）
+indicator	按转向灯
+radio	按无线电
+to the branch	转向分支
+at random	随机
+spans meet in one point: the game makes no switch there (a frog is three)	条线段交于一点：游戏不会在此生成道岔（分线器需要三条）
+Switch	道岔
+no three spans meet there any more	此处已不再有三条线段相交
+A span is in section	有线段位于分区
+that the network does not have	，但网络中没有该分区
+the wire spline	导线Spline线
+the mast	立杆
+the frog	分线器
+the insulator	绝缘器
+is not there	不存在
+no wire spline: nothing of the wire is shown on the map	没有导线Spline线：地图上不会显示任何导线
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	导线Spline线的剖面不是高于 3 m 的一对细导线：它按原样铺设，没有 trolley.txt 时 openOMSI 不会将其视为导线
+a kit of that name is there already	已存在同名套件
+Renew the wire from its kit	按套件更新架空线
+Theme	主题
+Back to the 3D view	返回 3D 视图
+The plan view from above, north up	俯视平面图，北向上
+Put the windows back in their first places	将窗口放回初始位置
+Trolleybus wire…	无轨电车架空线…
+: there are unsaved changes	：有未保存的更改
+Assets: every object and road type, with pictures	资源：所有物体和道路类型，附带图片
+Close the openOMSI session started from here	关闭从此处启动的 openOMSI 会话
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	选择起点、车辆、时间和天气，然后在 openOMSI 中驾驶这张地图
+Search commands	搜索命令
+Every command of the menus by its name	按名称查找菜单中的任意命令
+Right-click the view for what can be done there; Search commands finds the rest	右键点击视图可查看能在该处执行的操作；“搜索命令”可找到其余操作
+Right-click the view: its menu	右键点击视图：其菜单
+Snap vertex	吸附顶点
+Snap edge	吸附边缘
+Out of the mix	从混合中移除
+more as OMSI 2 is read…	读取 OMSI 2 期间还会增加…
+Reading the content of OMSI 2…	正在读取 OMSI 2 的内容…
+Nothing found: try fewer letters, or Everything in Show	未找到任何内容：请尝试减少字母，或在“显示”中选择“全部”
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	没有这类内容：请在“显示”中选择“全部”，或导入资源（文件 > 导入资源）
+a table of functions	函数表
+a module	模块
+Next (Enter)	下一个 (Enter)
+Previous (Shift+Enter)	上一个 (Shift+Enter)
+Match case	区分大小写
+Replace	替换
+Replace…	替换…
+Click: a breakpoint (F9 on the cursor's line)	点击：断点（光标所在行按 F9）
+permission	权限
+The light before	上一个信号灯
+The next light	下一个信号灯
+The phase before	上一个相位
+The next phase	下一个相位
+to 	至 
+Select the piece joined at its start (,)	选择接在其起点的一段 (,)
+Select the piece joined at its end (.)	选择接在其末端的一段 (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	点击两点测量其间距离和坡度 (U) · Shift + 点击：区域的各个角（其面积和周长）· 右键：关闭
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	将所选物体的顶点吸附到另一物体的顶点\nShift：仅水平，Esc／右键：取消
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	将所选物体的边缘对齐到边缘或道路\n旋转并共线吸附\nShift：仅水平，Esc／右键：取消
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	在相距最远的两个之间的直线上，等距排列（立柱、路灯、一排树）
+Equal steps between the two farthest apart, each keeping its distance to the side	在相距最远的两个之间等距排列，各自保持其横向距离
+height, m	高度, m
+gradient, %	坡度, %
+cant, %	超高, %
+Rotate, °	旋转, °
+Name, file, IDCode, stop, x, y or tile x y	名称、文件、IDCode、站点、x, y 或 图块 x y
+listed, no file	在列表中，无文件
+The camera over the tile's middle	相机移到图块中央上方
+its folder	其文件夹
+Line up the selected objects	将所选物体排成一线
+Space the selected objects evenly	将所选物体等距分布
+Next road piece	下一段道路
+Previous road piece	上一段道路
+The run ended	运行已结束
+installed as	已安装为
+failed	失败
+Run	运行
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	在此编辑器中用游戏的函数运行脚本（在代码中按 F5）
+Step in	单步进入
+Run and stop at the first line (F11)	运行并停在第一行 (F11)
+Continue	继续
+Pause	暂停
+Stop the clock; a script running stops at its next line	停止时钟；正在运行的脚本会停在其下一行
+Over	跳过
+Step over (F10)	单步跳过 (F10)
+Into	进入
+Step into (F11)	单步进入 (F11)
+Out	跳出
+Step out (Shift+F11)	单步跳出 (Shift+F11)
+Restart	重新开始
+The map's scripts	地图的脚本
+The game's clock in the run	运行中的游戏时钟
+Set the game's clock of the run (sends minute)	设置运行中的游戏时钟（发送 minute）
+starts 	开始 
+The hour the run starts at	运行开始的时刻
+Save all	全部保存
+Build .oop	构建 .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	将地图脚本打包成一个文件以便分享：已编译并混淆，附带所需权限（Development Tools 的编译器）
+API	API
+The game's functions and events	游戏的函数和事件
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	这张地图还没有脚本。它的脚本在 openOMSI 中玩这张地图时运行：对发生的事情作出反应（站点、整点、班次），显示消息，改变交通和天气。
+Start the map's scripts	创建地图脚本
+Object scripts (Lua)	物体脚本 (Lua)
+No object on the map has a Lua script.	地图上没有任何物体带有 Lua 脚本。
+Refresh	刷新
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	场景物体在 [lua_script] 中指定的脚本：相机附近该类型的所有物体共用一个脚本运行（仅 openOMSI）
+Selected object	所选物体
+Select one object on the map to see its scripts.	在地图上选择一个物体即可查看其脚本。
+No OMSI 2 script (.osc).	没有 OMSI 2 脚本 (.osc)。
+Lua script (openOMSI)	Lua 脚本 (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	供该类型所有物体使用的脚本，位于其 .sco 旁并在其中指定（[lua_script]）；OMSI 2 会忽略它。安装目录中的物体会先变成地图自己的副本。
+OMSI 2 script (.osc)	OMSI 2 脚本 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	物体自己的脚本及其变量列表，由 OMSI 2 和 openOMSI 运行；其灯和 [visible] 部件随它设置的变量变化
+Rust plugin	Rust 插件
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	用 Rust 编写的地图插件，编译为 WebAssembly 并打包成 .oop。构建需要带 wasm32-unknown-unknown 目标的 Rust (rustup)。
+Make the Rust plugin	创建 Rust 插件
+Build and install	构建并安装
+cargo builds it, the .oop goes into the content folder's plugins	由 cargo 构建，.oop 放入内容文件夹的 plugins
+Starts with the map	随地图启动
+Rename…	重命名…
+Earlier in the order	在顺序中提前
+Later in the order	在顺序中延后
+Delete (into openMapper's bin)	删除（移入 openMapper 回收站）
+New script	新建脚本
+New module	新建模块
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	玩这张地图时，每个脚本按此顺序启动（右键可移动）；一个失败不影响其他继续运行。请使用 map.on、map.every、map.after：它们只作用于这张地图。
+Modules	模块
+Code the scripts share: local util = require("modules.util")	脚本共用的代码：local util = require("modules.util")
+Data	数据
+Files the scripts read (data/), pictures and sounds	脚本读取的文件 (data/)、图片和声音
+Made by openMapper	由 openMapper 生成
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	打开左侧的脚本，或新建一个。\n\nF5 在此编辑器中运行脚本，F9 设置断点，F10 / F11 单步执行，\nCtrl+Space 补全，Ctrl+F 查找，Ctrl+G 跳转到行，Ctrl+/ 注释。
+Read only: a file of the installation or made by openMapper	只读：安装目录中的文件或由 openMapper 生成的文件
+Problems	问题
+Console	控制台
+Debugger	调试器
+Events	事件
+error	错误
+warning	警告
+No problems in the open files.	打开的文件中没有问题。
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	脚本运行时（运行，F5），它们打印的内容、在屏幕上显示的内容以及出现的错误会显示在这里。
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	在脚本中运行的 Lua（若已停止，则在停止处的帧中）；上下方向键：历史记录
+Start a run first (Run, F5)	请先开始运行（运行，F5）
+(empty)	（空）
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	正在运行。断点（点击行号左侧，或按 F9）会让脚本停在那里；“暂停”会让它们停在下一行。
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	未运行。运行 (F5) 脚本；断点会让它们停下，这里会显示调用栈、每个函数的变量以及要监视的值。
+Stopped	已停止
+Call stack	调用栈
+Locals	局部变量
+Upvalues	上值 (upvalues)
+The console evaluates in this frame: a name, an expression, an assignment.	控制台在此帧中求值：名称、表达式、赋值。
+Storage and objects	存储与物体
+Send	发送
+As if the game sent it: every handler of it runs	如同游戏发送了它：它的所有处理函数都会运行
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	运行脚本后，可手动向它们发送游戏事件：到达站点、车门、新的整点… 时钟会自行发送 frame、minute 和 hour。
+Listening	监听
+timers	计时器
+Sign with the key	用密钥签名
+a secret key file of oopc keygen (optional)	oopc keygen 生成的私钥文件（可选）
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	“构建 .oop”会将地图脚本打包成一个文件以便分享（位于项目的 dist 文件夹）：已编译、混淆，附带其代码所需的权限。游戏按原样运行脚本文件夹；.oop 用于在不附源代码的情况下分发它们。
+Search functions and events	搜索函数和事件
+since	起始版本
+for an .oop	用于 .oop
+Double-click puts it into the script at the cursor.	双击可将其插入脚本的光标处。
+A stop on this path	此路径上的一个站点
+branch	分支
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	openOMSI 无轨电车行驶其下的架空线（地图旁的 trolley.txt；OMSI 2 会忽略它）。没有它时，游戏读取地图的导线Spline线。
+Start a wire for this map	为此地图创建架空线
+Lay	铺设
+Sections	分区
+Spans	线段
+Switches	道岔
+Pick in the view	在视图中选取
+A click in the view picks a span or a switch (yellow dot)	在视图中点击可选取线段或道岔（黄点）
+The wires over the road surface	道路路面上方的导线
+the kerb lane each way	双向的最外侧车道
+the way the road runs	沿道路方向
+against the road's way	逆道路方向
+Section	分区
+Kit	套件
+ (every map)	（所有地图）
+none: the wire for the game only	无：导线仅供游戏使用
+A new kit	新套件
+My wire	我的架空线
+Change this kit	修改此套件
+its wire spline	其导线Spline线
+its masts, every	其立杆，每隔
+The kit names no mast	套件未指定立杆
+Frogs and section insulators are put where the wire has them, as the kit names them.	分线器和分段绝缘器会按套件中指定的模型放在架空线上有它们的位置。
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	地图上不铺设任何东西，架空线仅供游戏使用。套件 (+) 指定你自己的导线、立杆、分线器和绝缘器模型。
+Over the selected roads	在所选道路上方
+Select roads in the view first (double-click: a whole road)	请先在视图中选择道路（双击：整条道路）
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	所选物体（路口）的车道：勾选导线经过其上方的车道。三条线段相交即形成分线器。
+It has no street lanes.	它没有机动车道。
+lane	车道
+Over the ticked lanes	在勾选的车道上方
+Select one junction to lay the wire over its lanes.	请选择一个路口，以便在其车道上方铺设导线。
+Draw a span by hand	手动绘制线段
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	在视图中点击其各个点；在某线段的端点开始或结束时会与其相连，在线段中间则从那里分岔（分线器）
+points: click the next in the view	个点：在视图中点击下一个
+Finish	完成
+Read the map's wire splines	读取地图的导线Spline线
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	绘制为一对导线的Spline线（为 OMSI 2 制作的无轨电车地图）：沿每条生成一条线段，与游戏的读取方式相同
+Network	网络
+Voltage	电压
+Wire spacing	导线间距
+How uneven the contact wire is: worn or icy wire 0.003 and more	接触导线的不平整度：磨损或结冰的导线为 0.003 及以上
+Delete the whole wire	删除整个架空线
+trolley.txt goes with the next save; the game reads the map's wire splines again	下次保存时删除 trolley.txt；游戏将重新读取地图的导线Spline线
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	由同一变电站供电的区段。两个分区相接处有一段无电区（绝缘器）。
+name	名称
+live	带电
+The feeder's resistance: the voltage drops with the current	馈线电阻：电压随电流下降
+Power the feeder takes back from a braking bus	馈线从制动中的无轨电车回收的功率
+spans	条线段
+Add a section	添加分区
+Insulators (where sections meet)	绝缘器（分区相接处）
+ m dead	 m 无电
+Span	线段
+points	个点
+Spacing	间距
+its own	单独设置
+Drag: the whole span up or down	拖动：整条线段上移或下移
+The span the other way: the positive wire is on the right of its way	反转线段方向：正极导线在其行进方向的右侧
+Pick a span in the view, or in the list.	在视图或列表中选取一条线段。
+section	分区
+A switch where three spans meet (yellow in the view). Every frog gets one.	三条线段相交处的道岔（视图中为黄色）。每个分线器都有一个。
+No frogs yet: lay three spans meeting in one point (a branch).	还没有分线器：铺设三条交于一点的线段（分支）。
+Spans laid:	已铺设线段：
+Wire kit	架空线套件
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	你自己的模型（在 Blender 或任何地方制作，放入内容文件夹），用于在地图上显示架空线：导线Spline线，以及立杆、分线器和绝缘器物体。套件是指定这些模型的 .cfg 文件；可在此处修改，也可作为文本修改，或用任意文本编辑器修改。
+As text	作为文本
+The name is the kit's file: make a copy to rename it	名称即套件的文件名：如需重命名，请制作副本
+For	用于
+this map	此地图
+every map	所有地图
+Take the one selected on the map	使用地图上所选的那个
+Select a spline of it on the map first	请先在地图上选择一条这种Spline线
+Select such an object on the map first	请先在地图上选择一个这种物体
+Choose the file	选择文件
+The file must lie in the content folder or in OMSI 2's	文件必须位于内容文件夹或 OMSI 2 文件夹中
+Not there	不存在
+Wire spline	导线Spline线
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	一个 .sli，其剖面将导线置于路面上方的应有高度；沿每条线段铺设
+Mast	立杆
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	一个 .sco：原点在其底部，悬臂沿其 -y 伸向导线
+Frog	分线器
+A .sco hung where the wire branches: its origin on the wire, y along it	一个 .sco，悬挂在导线分岔处：原点在导线上，y 沿导线方向
+Insulator	绝缘器
+A .sco hung where two sections meet: its origin on the wire, y along it	一个 .sco，悬挂在两个分区相接处：原点在导线上，y 沿导线方向
+Masts	立杆
+every	每隔
+From a mast's foot to its wire, across the road	从立杆底部到其导线的距离，横跨道路
+from the wire	距导线
+Mast turned	立杆转角
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	用于悬臂不沿其 -y 伸出的模型：沿 -x 时为 90，沿 +x 时为 -90，沿 +y 时为 180
+arm	悬臂
+The wire spline's wires	导线Spline线的导线
+high	高
+across its line	偏离中线
+Save and renew the map's wire	保存并更新地图的架空线
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	按此套件铺设的导线Spline线和立杆将使用其当前文件；分线器和绝缘器会重新放置
+A new kit from this one (to rename it, or change it apart)	以此为基础的新套件（用于重命名，或单独修改）
+Show the file	显示文件
+Changed to the kit's files:	已替换为套件的文件：
+a display shows the switch of its name	显示屏显示同名的道岔
+Set by	控制方式
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	游戏读取架空线时它所处的位置（随机：每次运行抽取一次；联机游戏中为直行）
+Contact plate	触点
+ m before the frog	 m（分线器前）
+Power on from	通电电流自
+Invert	反向
+the other way round	反过来
+Channel	频道
+any	任意
+Range	范围
+Route codes	线路代码
+A route code	一个线路代码
+Flip	翻转
+Left to right	从左到右
+Top to bottom	从上到下
+Dark theme	深色主题
+Light theme	浅色主题
+Lit	亮灯

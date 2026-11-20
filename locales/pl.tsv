@@ -2891,3 +2891,335 @@ Paths of the way	Ścieżki trasy
 Cut before the first stop	Obetnij przed pierwszym przystankiem
 Cut after the last stop	Obetnij za ostatnim przystankiem
 path	ścieżka
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Własne sterowanie openMapper: kamera jak wybrano w „Kamera”, klawisze jak w Widok > Sterowanie
+The keys as in View > Controls	Klawisze jak w Widok > Sterowanie
+A copy of its own was made for the script: the original type is unchanged	Dla skryptu utworzono osobną kopię: oryginalny typ pozostał bez zmian
+Trolleybus wire the game cannot use	Sieć trolejbusowa, której gra nie może użyć
+Rows the game does not show	Rzędy, których gra nie pokazuje
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Rząd obiektów wzdłuż drogi (latarnie, słupki, miejsca parkingowe) zaczyna się przed drogą, na której leży: jego odległość liczy się od początku łańcucha dróg, a tu jest mniejsza niż długość łańcucha przed tą drogą. OMSI 2 i openOMSI w ogóle go nie pokazują, edytor też nie. Ułóż rząd ponownie lub zwiększ jego początek we właściwościach.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI tworzy zwrotnicę tylko tam, gdzie schodzą się dokładnie trzy przęsła sieci trakcyjnej, a zwrotnicę ustawioną tam, gdzie już się nie schodzą, pomija; przęsło w sekcji, której sieć nie ma, zostaje bez podstacji. Otwórz Mapa > Sieć trolejbusowa, aby to naprawić.
+Trolleybus wire	Sieć trolejbusowa
+Select the next road piece (joined at its end; Shift: add it)	Zaznacz następny odcinek drogi (połączony na jego końcu; Shift: dodaj go)
+Select the previous road piece (joined at its start; Shift: add it)	Zaznacz poprzedni odcinek drogi (połączony na jego początku; Shift: dodaj go)
+the up arrow	strzałka w górę
+the down arrow	strzałka w dół
+the left arrow	strzałka w lewo
+the right arrow	strzałka w prawo
+Select three objects or more (the two farthest apart stay)	Zaznacz trzy obiekty lub więcej (dwa najdalsze zostają na miejscu)
+Line up	Ustaw w linii
+Space evenly	Rozmieść równomiernie
+Splines laid	Ułożono spline'y
+The spline reaches past the map: add tiles there first	Spline wychodzi poza mapę: najpierw dodaj tam kafelki
+Ground painted over areas	Grunt pomalowany na obszarach
+Track beds	Podsypka torów
+Ground under surfaces	Grunt pod powierzchniami
+Form the ground	Ukształtuj grunt
+Select a road piece first	Najpierw zaznacz odcinek drogi
+Nothing is joined at its end	Do jego końca nic nie jest podłączone
+Nothing is joined at its start	Do jego początku nic nie jest podłączone
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Przesuwanie: przeciągnij strzałkę wzdłuż X, Y lub Z, kwadrat w jego płaszczyźnie, koło po gruncie
+Rotate: drag a ring to turn about X, Y or Z	Obrót: przeciągnij pierścień, aby obracać wokół X, Y lub Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Skala: przeciągnij strzałkę, aby skalować wzdłuż osi, kwadrat dla dwóch, koło dla wszystkich trzech
+Junctions where the roads meet	Skrzyżowania tam, gdzie drogi się spotykają
+Streets from the street model	Ulice według modelu ulic
+perimeter	obwód
+needs	wymaga
+built	zbudowano
+signed by	podpisano przez
+not signed: the game loads it with a warning that its author is not known	bez podpisu: gra wczyta go z ostrzeżeniem, że autor jest nieznany
+openOMSI has no such function (the API of version	openOMSI nie ma takiej funkcji (API wersji
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` jest dla skryptów mapy; skrypt obiektów ma tylko funkcje omsi
+no such module in the project (modules/…)	w projekcie nie ma takiego modułu (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	gra nie wysyła takiego zdarzenia (chyba że wyśle je skrypt przez omsi.emit)
+a name is needed	potrzebna jest nazwa
+a file of that name is there already	plik o tej nazwie już istnieje
+Empty module	Pusty moduł
+Test run of	Testowe uruchomienie
+does nothing in the test run (no game): it gives false	w testowym uruchomieniu nic nie robi (nie ma gry): zwraca false
+has nothing to read in the test run (no game): it gives nil	w testowym uruchomieniu nie ma czego odczytać (nie ma gry): zwraca nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	obiekt instalacji OMSI 2 nigdy nie jest zmieniany: najpierw zrób z niego własny obiekt
+Dark	Ciemny
+As the system	Jak w systemie
+power (current on: branch)	prądem (z prądem: odgałęzienie)
+indicator	kierunkowskazem
+radio	radiem
+to the branch	na odgałęzienie
+at random	losowo
+spans meet in one point: the game makes no switch there (a frog is three)	przęseł schodzi się w jednym punkcie: gra nie zrobi tu zwrotnicy (rozgałęzienie to trzy)
+Switch	Zwrotnica
+no three spans meet there any more	nie schodzą się tu już trzy przęsła
+A span is in section	Przęsło leży w sekcji
+that the network does not have	której sieć nie ma
+the wire spline	spline przewodu
+the mast	słup
+the frog	rozgałęzienie
+the insulator	izolator
+is not there	nie istnieje
+no wire spline: nothing of the wire is shown on the map	brak spline'a przewodu: sam przewód nie jest pokazywany na mapie
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	profil spline'a przewodu nie jest parą cienkich przewodów powyżej 3 m: zostaje ułożony tak, jak jest, a openOMSI bez trolley.txt nie uzna go za przewód
+a kit of that name is there already	zestaw o tej nazwie już istnieje
+Renew the wire from its kit	Odnów przewód z jego zestawu
+Theme	Motyw
+Back to the 3D view	Wróć do widoku 3D
+The plan view from above, north up	Widok planu z góry, północ u góry
+Put the windows back in their first places	Przywróć okna na ich pierwotne miejsca
+Trolleybus wire…	Sieć trolejbusowa…
+: there are unsaved changes	: są niezapisane zmiany
+Assets: every object and road type, with pictures	Zasoby: wszystkie obiekty i typy dróg, z obrazami
+Close the openOMSI session started from here	Zamknij sesję openOMSI uruchomioną stąd
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Wybierz miejsce startu, pojazd, godzinę i pogodę, a potem przejedź mapę w openOMSI
+Search commands	Szukaj poleceń
+Every command of the menus by its name	Każde polecenie z menu po jego nazwie
+Right-click the view for what can be done there; Search commands finds the rest	Prawy klik na widoku: co można tam zrobić; „Szukaj poleceń” znajdzie resztę
+Right-click the view: its menu	Prawy klik na widoku: jego menu
+Snap vertex	Przyciągnij wierzchołek
+Snap edge	Przyciągnij krawędź
+Out of the mix	Usuń z mieszanki
+more as OMSI 2 is read…	będzie więcej w miarę wczytywania OMSI 2…
+Reading the content of OMSI 2…	Wczytywanie zawartości OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Nic nie znaleziono: spróbuj mniej liter lub „Wszystko” w „Pokaż”
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Nic tego rodzaju: wybierz „Wszystko” w „Pokaż” lub zaimportuj zasoby (Plik > Importuj zasoby)
+a table of functions	tabela funkcji
+a module	moduł
+Next (Enter)	Następne (Enter)
+Previous (Shift+Enter)	Poprzednie (Shift+Enter)
+Match case	Uwzględniaj wielkość liter
+Replace	Zamień
+Replace…	Zamień…
+Click: a breakpoint (F9 on the cursor's line)	Klik: punkt przerwania (F9 w wierszu kursora)
+permission	uprawnienie
+The light before	Poprzedni sygnalizator
+The next light	Następny sygnalizator
+The phase before	Poprzednia faza
+The next phase	Następna faza
+to 	do 
+Select the piece joined at its start (,)	Zaznacz odcinek połączony na jego początku (,)
+Select the piece joined at its end (.)	Zaznacz odcinek połączony na jego końcu (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Kliknij dwa punkty, aby zmierzyć odległość i nachylenie między nimi (U) · Shift + kliknięcia: narożniki obszaru (jego powierzchnia i obwód) · prawy klik: wyłącz
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Przyciągnij wierzchołek wybranego obiektu do wierzchołka innego obiektu\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Wyrównaj krawędź wybranego obiektu do krawędzi lub drogi\nObraca i przyciąga współliniowo\nShift: Tylko w poziomie, Esc/kliknięcie prawym przyciskiem myszy: Anuluj
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Na prostej między dwoma najdalszymi, w równych odstępach (słupki, latarnie, rząd drzew)
+Equal steps between the two farthest apart, each keeping its distance to the side	Równe odstępy między dwoma najdalszymi, każdy zachowuje swoją odległość w bok
+height, m	wysokość, m
+gradient, %	nachylenie, %
+cant, %	przechyłka, %
+Rotate, °	Obrót, °
+Name, file, IDCode, stop, x, y or tile x y	Nazwa, plik, IDCode, przystanek, x, y lub kafelek x y
+listed, no file	na liście, bez pliku
+The camera over the tile's middle	Kamera nad środkiem kafelka
+its folder	jego folder
+Line up the selected objects	Ustaw zaznaczone obiekty w linii
+Space the selected objects evenly	Rozmieść zaznaczone obiekty równomiernie
+Next road piece	Następny odcinek drogi
+Previous road piece	Poprzedni odcinek drogi
+The run ended	Uruchomienie zakończone
+installed as	zainstalowano jako
+failed	nie powiodło się
+Run	Uruchom
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Uruchom skrypty tutaj, w edytorze, z funkcjami gry (F5 w kodzie)
+Step in	Wejdź
+Run and stop at the first line (F11)	Uruchom i zatrzymaj na pierwszym wierszu (F11)
+Continue	Kontynuuj
+Pause	Pauza
+Stop the clock; a script running stops at its next line	Zatrzymaj zegar; działający skrypt zatrzyma się w następnym wierszu
+Over	Przez
+Step over (F10)	Krok przez (F10)
+Into	Do wnętrza
+Step into (F11)	Krok do wnętrza (F11)
+Out	Wyjdź
+Step out (Shift+F11)	Wyjdź z funkcji (Shift+F11)
+Restart	Od nowa
+The map's scripts	Skrypty mapy
+The game's clock in the run	Zegar gry w uruchomieniu
+Set the game's clock of the run (sends minute)	Ustaw zegar gry w uruchomieniu (wysyła minute)
+starts 	start 
+The hour the run starts at	Godzina, o której zaczyna się uruchomienie
+Save all	Zapisz wszystko
+Build .oop	Zbuduj .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Jeden plik ze skryptami mapy do udostępnienia: skompilowany i zaciemniony, z potrzebnymi uprawnieniami (kompilator Development Tools)
+API	API
+The game's functions and events	Funkcje i zdarzenia gry
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Ta mapa nie ma jeszcze skryptów. Jej skrypty działają w openOMSI podczas gry na niej: reagują na to, co się dzieje (przystanek, godzina, kurs), pokazują komunikaty, zmieniają ruch i pogodę.
+Start the map's scripts	Utwórz skrypty mapy
+Object scripts (Lua)	Skrypty obiektów (Lua)
+No object on the map has a Lua script.	Żaden obiekt na mapie nie ma skryptu Lua.
+Refresh	Odśwież
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Skrypty wskazane przez obiekt scenerii w [lua_script]: jeden działa dla każdego obiektu jego typu w pobliżu kamery (tylko openOMSI)
+Selected object	Zaznaczony obiekt
+Select one object on the map to see its scripts.	Zaznacz jeden obiekt na mapie, aby zobaczyć jego skrypty.
+No OMSI 2 script (.osc).	Brak skryptu OMSI 2 (.osc).
+Lua script (openOMSI)	Skrypt Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Skrypt dla każdego obiektu tego typu, obok jego .sco i wskazany w nim ([lua_script]); OMSI 2 go pomija. Obiekt instalacji najpierw staje się własną kopią mapy.
+OMSI 2 script (.osc)	Skrypt OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Własny skrypt obiektu z listą zmiennych, wykonywany przez OMSI 2 i openOMSI; jego lampy i części [visible] podążają za zmiennymi, które ustawia
+Rust plugin	Wtyczka w Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Wtyczka mapy napisana w Rust, skompilowana do WebAssembly w pliku .oop. Do zbudowania potrzebny jest Rust (rustup) z celem wasm32-unknown-unknown.
+Make the Rust plugin	Utwórz wtyczkę w Rust
+Build and install	Zbuduj i zainstaluj
+cargo builds it, the .oop goes into the content folder's plugins	cargo ją buduje, .oop trafia do plugins folderu zawartości
+Starts with the map	Uruchamia się z mapą
+Rename…	Zmień nazwę…
+Earlier in the order	Wcześniej w kolejności
+Later in the order	Później w kolejności
+Delete (into openMapper's bin)	Usuń (do kosza openMapper)
+New script	Nowy skrypt
+New module	Nowy moduł
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Każdy uruchamia się, gdy mapa jest grana, w tej kolejności (prawy klik, aby go przesunąć); ten, który zawiedzie, nie zatrzymuje pozostałych. Używaj map.on, map.every, map.after: działają tylko na tej mapie.
+Modules	Moduły
+Code the scripts share: local util = require("modules.util")	Kod wspólny dla skryptów: local util = require("modules.util")
+Data	Dane
+Files the scripts read (data/), pictures and sounds	Pliki, które czytają skrypty (data/), obrazy i dźwięki
+Made by openMapper	Utworzone przez openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Otwórz skrypt po lewej lub utwórz nowy.\n\nF5 uruchamia skrypty tutaj, w edytorze, F9 ustawia punkt przerwania, F10 / F11 wykonują krok,\nCtrl+Space uzupełnia, Ctrl+F szuka, Ctrl+G przechodzi do wiersza, Ctrl+/ zamienia w komentarz.
+Read only: a file of the installation or made by openMapper	Tylko do odczytu: plik instalacji lub utworzony przez openMapper
+Problems	Problemy
+Console	Konsola
+Debugger	Debuger
+Events	Zdarzenia
+error	błąd
+warning	ostrzeżenie
+No problems in the open files.	Brak problemów w otwartych plikach.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Tu pojawia się to, co skrypty wypisują i pokazują na ekranie, oraz ich błędy, gdy działają (Uruchom, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua do wykonania w skryptach (w ramce zatrzymania, jeśli są zatrzymane); strzałki w górę i w dół: historia
+Start a run first (Run, F5)	Najpierw uruchom (Uruchom, F5)
+(empty)	(pusto)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Działa. Punkt przerwania (klik na lewo od numeru wiersza lub F9) zatrzymuje tam skrypty; Pauza zatrzymuje je w następnym wierszu.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Nie działa. Uruchom (F5) skrypty; punkt przerwania je zatrzyma, a tutaj będą stos wywołań, zmienne każdej funkcji i obserwowane wartości.
+Stopped	Zatrzymano
+Call stack	Stos wywołań
+Locals	Zmienne lokalne
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	Konsola oblicza w tej ramce: nazwę, wyrażenie, przypisanie.
+Storage and objects	Magazyn i obiekty
+Send	Wyślij
+As if the game sent it: every handler of it runs	Jakby wysłała je gra: wykonują się wszystkie jego procedury obsługi
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Uruchom skrypty, aby wysyłać im zdarzenia gry ręcznie: osiągnięty przystanek, drzwi, nowa godzina… Zegar sam wysyła frame, minute i hour.
+Listening	Nasłuchują
+timers	timery
+Sign with the key	Podpisz kluczem
+a secret key file of oopc keygen (optional)	plik klucza prywatnego z oopc keygen (opcjonalnie)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	„Zbuduj .oop” tworzy jeden plik ze skryptami mapy do udostępnienia (w folderze dist projektu): skompilowany, zaciemniony, z uprawnieniami, których potrzebuje jego kod. Gra uruchamia folder skryptów tak, jak jest; .oop służy do przekazania ich bez źródeł.
+Search functions and events	Szukaj funkcji i zdarzeń
+since	od wersji
+for an .oop	dla .oop
+Double-click puts it into the script at the cursor.	Dwuklik wstawia to do skryptu w miejscu kursora.
+A stop on this path	Przystanek na tej ścieżce
+branch	odgałęzienie
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Sieć trakcyjna, pod którą jeżdżą trolejbusy openOMSI (trolley.txt obok mapy; OMSI 2 go pomija). Bez niej gra odczytuje spline'y przewodów z mapy.
+Start a wire for this map	Utwórz sieć trakcyjną dla tej mapy
+Lay	Układanie
+Sections	Sekcje
+Spans	Przęsła
+Switches	Zwrotnice
+Pick in the view	Wybieraj w widoku
+A click in the view picks a span or a switch (yellow dot)	Klik w widoku wybiera przęsło lub zwrotnicę (żółta kropka)
+The wires over the road surface	Przewody nad nawierzchnią drogi
+the kerb lane each way	skrajny pas w każdą stronę
+the way the road runs	w kierunku drogi
+against the road's way	przeciwnie do kierunku drogi
+Section	Sekcja
+Kit	Zestaw
+ (every map)	 (wszystkie mapy)
+none: the wire for the game only	brak: przewód tylko dla gry
+A new kit	Nowy zestaw
+My wire	Mój przewód
+Change this kit	Zmień ten zestaw
+its wire spline	jego spline przewodu
+its masts, every	jego słupy, co
+The kit names no mast	Zestaw nie wskazuje słupa
+Frogs and section insulators are put where the wire has them, as the kit names them.	Rozgałęzienia i izolatory sekcyjne są stawiane tam, gdzie ma je sieć, tak jak wskazuje je zestaw.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Na mapie nic nie jest układane, przewód jest tylko dla gry. Zestaw (+) wskazuje Twoje własne modele przewodu, jego słupów, rozgałęzień i izolatorów.
+Over the selected roads	Nad zaznaczonymi drogami
+Select roads in the view first (double-click: a whole road)	Najpierw zaznacz drogi w widoku (dwuklik: cała droga)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Pasy zaznaczonego obiektu (skrzyżowania): zaznacz te, nad którymi idzie przewód. Trzy schodzące się przęsła tworzą rozgałęzienie.
+It has no street lanes.	Nie ma pasów ulicznych.
+lane	pas
+Over the ticked lanes	Nad zaznaczonymi pasami
+Select one junction to lay the wire over its lanes.	Zaznacz jedno skrzyżowanie, aby ułożyć przewód nad jego pasami.
+Draw a span by hand	Narysuj przęsło ręcznie
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Klikaj jego punkty w widoku; zaczęte lub zakończone na końcu przęsła łączy się z nim, na środku przęsła odgałęzia się od niego (rozgałęzienie)
+points: click the next in the view	punktów: kliknij następny w widoku
+Finish	Zakończ
+Read the map's wire splines	Odczytaj spline'y przewodów z mapy
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Spline'y rysowane jako para przewodów (mapy trolejbusowe dla OMSI 2): przęsło wzdłuż każdego, tak jak odczytuje je gra
+Network	Sieć
+Voltage	Napięcie
+Wire spacing	Rozstaw przewodów
+How uneven the contact wire is: worn or icy wire 0.003 and more	Jak nierówny jest przewód jezdny: zużyty lub oblodzony przewód 0.003 i więcej
+Delete the whole wire	Usuń całą sieć trakcyjną
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt zniknie przy następnym zapisie; gra znów odczyta spline'y przewodów z mapy
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Odcinki zasilane z jednej podstacji. Tam, gdzie dwa się spotykają, jest odcinek bez napięcia (izolator).
+name	nazwa
+live	pod napięciem
+The feeder's resistance: the voltage drops with the current	Rezystancja linii zasilającej: napięcie spada wraz z prądem
+Power the feeder takes back from a braking bus	Moc, którą linia zasilająca przyjmuje z powrotem od hamującego pojazdu
+spans	przęseł
+Add a section	Dodaj sekcję
+Insulators (where sections meet)	Izolatory (styki sekcji)
+ m dead	 m bez napięcia
+Span	Przęsło
+points	punktów
+Spacing	Rozstaw
+its own	własny
+Drag: the whole span up or down	Przeciągnij: całe przęsło w górę lub w dół
+The span the other way: the positive wire is on the right of its way	Przęsło w drugą stronę: przewód dodatni jest po prawej stronie w jego kierunku
+Pick a span in the view, or in the list.	Wybierz przęsło w widoku lub na liście.
+section	sekcja
+A switch where three spans meet (yellow in the view). Every frog gets one.	Zwrotnica tam, gdzie schodzą się trzy przęsła (żółta w widoku). Każde rozgałęzienie ma jedną.
+No frogs yet: lay three spans meeting in one point (a branch).	Nie ma jeszcze rozgałęzień: ułóż trzy przęsła schodzące się w jednym punkcie (odgałęzienie).
+Spans laid:	Ułożone przęsła:
+Wire kit	Zestaw sieci trakcyjnej
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Twoje własne modele (zrobione w Blenderze lub gdziekolwiek, umieszczone w folderze zawartości), które pokazują sieć na mapie: spline przewodu oraz obiekty słupa, zwrotnicy i izolatora. Zestaw to plik .cfg, który je wskazuje; zmieniaj go tutaj, jako tekst lub w dowolnym edytorze tekstu.
+As text	Jako tekst
+The name is the kit's file: make a copy to rename it	Nazwa to plik zestawu: aby zmienić nazwę, zrób kopię
+For	Dla
+this map	tej mapy
+every map	wszystkich map
+Take the one selected on the map	Weź zaznaczony na mapie
+Select a spline of it on the map first	Najpierw zaznacz jego spline na mapie
+Select such an object on the map first	Najpierw zaznacz taki obiekt na mapie
+Choose the file	Wybierz plik
+The file must lie in the content folder or in OMSI 2's	Plik musi leżeć w folderze zawartości lub w folderze OMSI 2
+Not there	Nie znaleziono
+Wire spline	Spline przewodu
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	.sli, którego profil umieszcza przewody na ich wysokości nad drogą; układany wzdłuż każdego przęsła
+Mast	Słup
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: początek układu u jego podstawy, wysięgnik sięga wzdłuż jego -y do przewodu
+Frog	Zwrotnica
+A .sco hung where the wire branches: its origin on the wire, y along it	.sco zawieszony tam, gdzie przewód się rozgałęzia: początek układu na przewodzie, y wzdłuż niego
+Insulator	Izolator
+A .sco hung where two sections meet: its origin on the wire, y along it	.sco zawieszony tam, gdzie spotykają się dwie sekcje: początek układu na przewodzie, y wzdłuż niego
+Masts	Słupy
+every	co
+From a mast's foot to its wire, across the road	Od podstawy słupa do jego przewodu, w poprzek drogi
+from the wire	od przewodu
+Mast turned	Obrót słupa
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Dla modelu, którego wysięgnik nie sięga wzdłuż -y: 90, gdy sięga wzdłuż -x, -90 wzdłuż +x, 180 wzdłuż +y
+arm	wysięgnik
+The wire spline's wires	Przewody spline'a
+high	wysokości
+across its line	od jego osi
+Save and renew the map's wire	Zapisz i odnów przewód mapy
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Spline'y przewodu i słupy ułożone z tego zestawu przyjmują jego pliki w obecnej postaci; rozgałęzienia i izolatory są stawiane od nowa
+A new kit from this one (to rename it, or change it apart)	Nowy zestaw z tego (aby zmienić nazwę lub zmieniać go osobno)
+Show the file	Pokaż plik
+Changed to the kit's files:	Zmieniono na pliki zestawu:
+a display shows the switch of its name	tablica pokazuje zwrotnicę o tej nazwie
+Set by	Sterowanie
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Położenie, gdy gra wczytuje sieć (losowo: losowane raz na uruchomienie; w grze online prosto)
+Contact plate	Płytka stykowa
+ m before the frog	 m przed rozgałęzieniem
+Power on from	Prąd od
+Invert	Odwróć
+the other way round	na odwrót
+Channel	Kanał
+any	dowolny
+Range	Zasięg
+Route codes	Kody tras
+A route code	Kod trasy
+Flip	Odbij
+Left to right	Z lewej na prawo
+Top to bottom	Z góry na dół
+Dark theme	Ciemny motyw
+Light theme	Jasny motyw
+Lit	Światło

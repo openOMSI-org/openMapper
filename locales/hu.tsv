@@ -1164,7 +1164,7 @@ Its lanes become AI paths of their own (the same lines, the same way) that the L
 Ends (joined roads follow)	Végek (a csatlakozó utak követik)
 height	magasság
 gradient	lejtés
-cant	áttétel
+cant	túlemelés
 Banking across the road, %: positive lowers its right side (into a right bend)	Keresztirányú dőlés, %: pozitív esetén a jobb oldal lesüllyed (jobb kanyarba)
 End	End
 Even slope end to end	Egyenletes lejtés elejétől végéig
@@ -1211,7 +1211,7 @@ Soft edge	Lágy él
 A gravel verge, dirt by a track, grass along a path: the brush of the Paint tool touches it up afterwards	Kavicsos pad, föld a pálya mellett, fű az ösvény mentén: a Festés eszköz keféje utána kijavítja
 Beside	Mellette
 Lean with the road	Dőlés az úttal
-Each object leans with the road's gradient and banking (bays and arrows on the road); off, it stands upright	Minden objektum dől az út lejtésével és áttételével (öblök és nyilak az úton); kikapcsolva egyenesen áll
+Each object leans with the road's gradient and banking (bays and arrows on the road); off, it stands upright	Minden objektum dől az út lejtésével és túlemelésével (öblök és nyilak az úton); kikapcsolva egyenesen áll
 A text the row's objects show (@ starts a new line)	A sor objektumai által mutatott szöveg (@ új sort kezd)
 Object:	Objektum:
 Pick an object (a lamp, a tree, a bollard) in the Objects tool's catalogue	Válassz objektumot (lámpa, fa, oszlop) az Objektumok eszköz katalógusában
@@ -2891,3 +2891,335 @@ Paths of the way	Az út útvonalai
 Cut before the first stop	Levágás az első megálló előtt
 Cut after the last stop	Levágás az utolsó megálló után
 path	útvonal
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Az openMapper saját vezérlése: a kamera a Kamera alatt választott módon, a billentyűk a Nézet > Vezérlés szerint
+The keys as in View > Controls	A billentyűk a Nézet > Vezérlés szerint
+A copy of its own was made for the script: the original type is unchanged	A szkript saját másolatot kapott: az eredeti típus változatlan
+Trolleybus wire the game cannot use	Trolibusz-felsővezeték, amelyet a játék nem tud használni
+Rows the game does not show	Sorok, amelyeket a játék nem mutat
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Egy út menti objektumsor (lámpák, oszlopok, parkolóhelyek) korábban kezdődik, mint az út, amelyen fekszik: a távolsága az útlánc elejétől számít, és itt kisebb, mint a lánc hossza az útja előtt. Az OMSI 2 és az openOMSI semmit sem mutat belőle, és a szerkesztő sem. Rakd le újra a sort, vagy adj neki nagyobb kezdetet a tulajdonságaiban.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	Az openOMSI csak ott hoz létre váltót, ahol pontosan három felsővezeték-szakasz találkozik, és kihagyja azt a váltót, ahol már egy sem találkozik; az a szakasz, amelynek szekciója nincs a hálózatban, nem kap alállomást. Javítsd a Térkép > Trolibusz-felsővezeték alatt.
+Trolleybus wire	Trolibusz-felsővezeték
+Select the next road piece (joined at its end; Shift: add it)	A következő útdarab kijelölése (a végénél csatlakozik; Shift: hozzáadás)
+Select the previous road piece (joined at its start; Shift: add it)	Az előző útdarab kijelölése (az elejénél csatlakozik; Shift: hozzáadás)
+the up arrow	a felfelé nyíl
+the down arrow	a lefelé nyíl
+the left arrow	a balra nyíl
+the right arrow	a jobbra nyíl
+Select three objects or more (the two farthest apart stay)	Jelölj ki három vagy több objektumot (a két legtávolabbi a helyén marad)
+Line up	Egy vonalba
+Space evenly	Egyenletes elosztás
+Splines laid	Splinek lerakva
+The spline reaches past the map: add tiles there first	A spline kinyúlik a térképről: előbb adj hozzá ott csempéket
+Ground painted over areas	Talaj befestve a területeken
+Track beds	Vágányágyak
+Ground under surfaces	Talaj a felületek alatt
+Form the ground	Talaj formázása
+Select a road piece first	Előbb jelölj ki egy útdarabot
+Nothing is joined at its end	A végéhez semmi sem csatlakozik
+Nothing is joined at its start	Az elejéhez semmi sem csatlakozik
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Mozgatás: húzz egy nyilat X, Y vagy Z mentén, a négyzetet a síkjában, a kört a talajon
+Rotate: drag a ring to turn about X, Y or Z	Forgatás: húzz egy gyűrűt az X, Y vagy Z körüli forgatáshoz
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Méretezés: húzz egy nyilat az adott tengely mentén, négyzetet kettőhöz, kört mindhárom tengelyhez
+Junctions where the roads meet	Csomópontok, ahol az utak találkoznak
+Streets from the street model	Utcák az utcamodellből
+perimeter	kerület
+needs	szükséges
+built	elkészült
+signed by	aláírta
+not signed: the game loads it with a warning that its author is not known	aláírás nélkül: a játék figyelmeztetéssel tölti be, hogy a szerzője ismeretlen
+openOMSI has no such function (the API of version	az openOMSI-ban nincs ilyen függvény (API-verzió
+`map` is for the map's scripts; a script of objects has the omsi functions only	a `map` a térkép szkriptjeihez való; az objektumok szkriptjének csak az omsi függvényei vannak
+no such module in the project (modules/…)	nincs ilyen modul a projektben (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	a játék nem küld ilyen eseményt (hacsak egy szkript el nem küldi az omsi.emit-tel)
+a name is needed	név szükséges
+a file of that name is there already	ilyen nevű fájl már van
+Empty module	Üres modul
+Test run of	Tesztfuttatás
+does nothing in the test run (no game): it gives false	a tesztfuttatásban nem csinál semmit (nincs játék): false-t ad
+has nothing to read in the test run (no game): it gives nil	a tesztfuttatásban nincs mit olvasnia (nincs játék): nil-t ad
+an object of the OMSI 2 installation is never changed: make it an object of your own first	az OMSI 2 telepítésének objektuma soha nem változik: előbb tedd saját objektummá
+Dark	Sötét
+As the system	Rendszer szerint
+power (current on: branch)	árammal (áram alatt: elágazás)
+indicator	irányjelzővel
+radio	rádióval
+to the branch	az elágazásra
+at random	véletlenszerűen
+spans meet in one point: the game makes no switch there (a frog is three)	szakasz találkozik egy pontban: a játék itt nem hoz létre váltót (az elágazás három)
+Switch	Váltó
+no three spans meet there any more	itt már nem találkozik három szakasz
+A span is in section	Egy szakasz szekciója:
+that the network does not have	– ilyen nincs a hálózatban
+the wire spline	a vezeték-spline
+the mast	az oszlop
+the frog	az elágazás
+the insulator	a szigetelő
+is not there	nem található
+no wire spline: nothing of the wire is shown on the map	nincs vezeték-spline: magából a vezetékből semmi sem látszik a térképen
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	a vezeték-spline profilja nem két vékony vezeték 3 m felett: úgy rakódik le, ahogy van, és az openOMSI trolley.txt nélkül nem veszi vezetéknek
+a kit of that name is there already	ilyen nevű készlet már van
+Renew the wire from its kit	A vezeték megújítása a készletéből
+Theme	Téma
+Back to the 3D view	Vissza a 3D nézetbe
+The plan view from above, north up	Felülnézet, észak felül
+Put the windows back in their first places	Az ablakok visszarakása az eredeti helyükre
+Trolleybus wire…	Trolibusz-felsővezeték…
+: there are unsaved changes	: vannak nem mentett módosítások
+Assets: every object and road type, with pictures	Eszközök: minden objektum- és úttípus, képekkel
+Close the openOMSI session started from here	Az innen indított openOMSI munkamenet bezárása
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Válaszd ki az indulás helyét, a járművet, az időt és az időjárást, majd járd be a pályát az openOMSI-ban
+Search commands	Parancsok keresése
+Every command of the menus by its name	A menük bármely parancsa a neve alapján
+Right-click the view for what can be done there; Search commands finds the rest	Jobb kattintás a nézetben: ami ott elvégezhető; a többit a Parancsok keresése megtalálja
+Right-click the view: its menu	Jobb kattintás a nézetben: a menüje
+Snap vertex	Csúcs illesztése
+Snap edge	Él illesztése
+Out of the mix	Eltávolítás a keverékből
+more as OMSI 2 is read…	még több jön, ahogy az OMSI 2 beolvasása halad…
+Reading the content of OMSI 2…	Az OMSI 2 tartalmának beolvasása…
+Nothing found: try fewer letters, or Everything in Show	Nincs találat: próbálj kevesebb betűt, vagy a Minden lehetőséget a Megjelenítés alatt
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Nincs ilyen fajta: válaszd a Minden lehetőséget a Megjelenítés alatt, vagy importálj eszközöket (Fájl > Eszközök importálása)
+a table of functions	függvénytábla
+a module	modul
+Next (Enter)	Következő (Enter)
+Previous (Shift+Enter)	Előző (Shift+Enter)
+Match case	Kis- és nagybetűk megkülönböztetése
+Replace	Csere
+Replace…	Csere…
+Click: a breakpoint (F9 on the cursor's line)	Kattintás: töréspont (F9 a kurzor sorában)
+permission	engedély
+The light before	Előző lámpa
+The next light	Következő lámpa
+The phase before	Előző fázis
+The next phase	Következő fázis
+to 	eddig: 
+Select the piece joined at its start (,)	Az elejénél csatlakozó darab kijelölése (,)
+Select the piece joined at its end (.)	A végénél csatlakozó darab kijelölése (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Kattints két pontra, hogy megmérd köztük a távolságot és a lejtést (U) · Shift + kattintások: egy terület sarkai (a mérete és a kerülete) · jobb kattintás: ki
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	A kiválasztott objektum csúcsának rögzítése egy másik objektum csúcsához\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	A kijelölt objektum élének igazítása egy élhez vagy úthoz\nElforgatja és kollineárisan rögzíti\nShift: Csak vízszintes, Esc/Jobb gomb: Mégse
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Egyenesen a két legtávolabbi között, egyenlő lépésekben (oszlopok, lámpák, fasor)
+Equal steps between the two farthest apart, each keeping its distance to the side	Egyenlő lépések a két legtávolabbi között, mindegyik megtartja oldalirányú távolságát
+height, m	magasság, m
+gradient, %	lejtés, %
+cant, %	túlemelés, %
+Rotate, °	Forgatás, °
+Name, file, IDCode, stop, x, y or tile x y	Név, fájl, IDCode, megálló, x, y vagy csempe x y
+listed, no file	listában, fájl nélkül
+The camera over the tile's middle	A kamera a csempe közepe fölé
+its folder	a mappája
+Line up the selected objects	A kijelölt objektumok egy vonalba állítása
+Space the selected objects evenly	A kijelölt objektumok egyenletes elosztása
+Next road piece	Következő útdarab
+Previous road piece	Előző útdarab
+The run ended	A futtatás véget ért
+installed as	telepítve mint
+failed	sikertelen
+Run	Futtatás
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	A szkriptek futtatása itt, a szerkesztőben, a játék függvényeivel (F5 a kódban)
+Step in	Belépés
+Run and stop at the first line (F11)	Futtatás és megállás az első sorban (F11)
+Continue	Folytatás
+Pause	Szünet
+Stop the clock; a script running stops at its next line	Megállítja az órát; a futó szkript a következő sorában megáll
+Over	Át
+Step over (F10)	Átlépés (F10)
+Into	Be
+Step into (F11)	Belépés (F11)
+Out	Ki
+Step out (Shift+F11)	Kilépés (Shift+F11)
+Restart	Újraindítás
+The map's scripts	A térkép szkriptjei
+The game's clock in the run	A játék órája a futtatásban
+Set the game's clock of the run (sends minute)	A futtatás játékórájának átállítása (minute eseményt küld)
+starts 	kezdés 
+The hour the run starts at	Az óra, amikor a futtatás kezdődik
+Save all	Összes mentése
+Build .oop	.oop készítése
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Egyetlen fájl a térkép szkriptjeiből megosztáshoz: lefordítva és obfuszkálva, a szükséges engedélyekkel (a Development Tools fordítója)
+API	API
+The game's functions and events	A játék függvényei és eseményei
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Ennek a térképnek még nincsenek szkriptjei. A szkriptjei az openOMSI-ban futnak, amíg játszanak rajta: reagálnak a történésekre (megálló, óra, menet), üzeneteket mutatnak, megváltoztatják a forgalmat és az időjárást.
+Start the map's scripts	A térkép szkriptjeinek létrehozása
+Object scripts (Lua)	Objektumszkriptek (Lua)
+No object on the map has a Lua script.	A térképen egyetlen objektumnak sincs Lua-szkriptje.
+Refresh	Frissítés
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Szkriptek, amelyeket egy díszletobjektum a [lua_script] alatt megnevez: egy fut a típusa minden objektumára a kamera közelében (csak openOMSI)
+Selected object	Kijelölt objektum
+Select one object on the map to see its scripts.	Jelölj ki egy objektumot a térképen, hogy lásd a szkriptjeit.
+No OMSI 2 script (.osc).	Nincs OMSI 2 szkript (.osc).
+Lua script (openOMSI)	Lua-szkript (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Szkript e típus minden objektumához, a .sco mellett és abban megnevezve ([lua_script]); az OMSI 2 kihagyja. A telepítés objektumából előbb a térkép saját másolata lesz.
+OMSI 2 script (.osc)	OMSI 2 szkript (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Az objektum saját szkriptje a változólistájával, az OMSI 2 és az openOMSI futtatja; a lámpái és [visible] részei az általa beállított változókat követik
+Rust plugin	Rust-bővítmény
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	A térkép Rustban írt bővítménye, WebAssemblyre fordítva egy .oop fájlba. Az építéséhez Rust (rustup) kell a wasm32-unknown-unknown céllal.
+Make the Rust plugin	Rust-bővítmény létrehozása
+Build and install	Építés és telepítés
+cargo builds it, the .oop goes into the content folder's plugins	a cargo megépíti, a .oop a tartalommappa plugins mappájába kerül
+Starts with the map	A térképpel indul
+Rename…	Átnevezés…
+Earlier in the order	Előrébb a sorrendben
+Later in the order	Hátrébb a sorrendben
+Delete (into openMapper's bin)	Törlés (az openMapper kukájába)
+New script	Új szkript
+New module	Új modul
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Mindegyik elindul, amikor a térképen játszanak, ebben a sorrendben (jobb kattintással mozgathatod); amelyik hibára fut, a többit futni hagyja. Használd a map.on, map.every, map.after függvényeket: csak erre a térképre hatnak.
+Modules	Modulok
+Code the scripts share: local util = require("modules.util")	A szkriptek közös kódja: local util = require("modules.util")
+Data	Adatok
+Files the scripts read (data/), pictures and sounds	A szkriptek által olvasott fájlok (data/), képek és hangok
+Made by openMapper	Az openMapper készítette
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Nyiss meg egy szkriptet a bal oldalon, vagy hozz létre újat.\n\nAz F5 itt a szerkesztőben futtatja a szkripteket, az F9 töréspontot tesz, az F10 / F11 léptet,\na Ctrl+Space kiegészít, a Ctrl+F keres, a Ctrl+G sorra ugrik, a Ctrl+/ megjegyzésbe tesz.
+Read only: a file of the installation or made by openMapper	Csak olvasható: a telepítés fájlja vagy az openMapper készítette
+Problems	Problémák
+Console	Konzol
+Debugger	Hibakereső
+Events	Események
+error	hiba
+warning	figyelmeztetés
+No problems in the open files.	A megnyitott fájlokban nincs probléma.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Itt jelenik meg, amit a szkriptek kiírnak és a képernyőn mutatnak, valamint a hibáik, amikor futnak (Futtatás, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	A szkriptekben futtatandó Lua (megállásnál abban a keretben, ahol megálltak); fel és le: előzmények
+Start a run first (Run, F5)	Előbb indíts egy futtatást (Futtatás, F5)
+(empty)	(üres)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Fut. Egy töréspont (kattintás a sorszámtól balra vagy F9) ott megállítja a szkripteket; a Szünet a következő sorukban állítja meg őket.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Nem fut. Futtasd (F5) a szkripteket; egy töréspont megállítja őket, és itt látszik a hívási verem, minden függvény változói és a figyelt értékek.
+Stopped	Megállítva
+Call stack	Hívási verem
+Locals	Helyi változók
+Upvalues	Upvalue-k
+The console evaluates in this frame: a name, an expression, an assignment.	A konzol ebben a keretben értékel ki: nevet, kifejezést, értékadást.
+Storage and objects	Tároló és objektumok
+Send	Küldés
+As if the game sent it: every handler of it runs	Mintha a játék küldte volna: minden kezelője lefut
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Futtasd a szkripteket, hogy kézzel küldhesd nekik a játék eseményeit: elért megálló, ajtó, új óra… Az óra magától küldi a frame, minute és hour eseményeket.
+Listening	Figyelők
+timers	időzítők
+Sign with the key	Aláírás kulccsal
+a secret key file of oopc keygen (optional)	egy oopc keygen titkoskulcs-fájl (nem kötelező)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Az .oop készítése egyetlen fájlt készít a térkép szkriptjeiből megosztáshoz (a projekt dist mappájában): lefordítva, obfuszkálva, a kódjának szükséges engedélyekkel. A játék a szkriptek mappáját úgy futtatja, ahogy van; az .oop arra való, hogy forráskód nélkül add tovább őket.
+Search functions and events	Függvények és események keresése
+since	ettől a verziótól:
+for an .oop	egy .oop-hoz
+Double-click puts it into the script at the cursor.	Dupla kattintással a szkriptbe kerül a kurzor helyére.
+A stop on this path	Megálló ezen az útvonalon
+branch	elágazás
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	A felsővezeték, amely alatt az openOMSI trolibuszai közlekednek (trolley.txt a térkép mellett; az OMSI 2 figyelmen kívül hagyja). Nélküle a játék a térkép vezeték-spline-jait olvassa.
+Start a wire for this map	Felsővezeték indítása ehhez a térképhez
+Lay	Lerakás
+Sections	Szekciók
+Spans	Szakaszok
+Switches	Váltók
+Pick in the view	Kiválasztás a nézetben
+A click in the view picks a span or a switch (yellow dot)	Egy kattintás a nézetben kiválaszt egy szakaszt vagy váltót (sárga pont)
+The wires over the road surface	A vezetékek az útfelület felett
+the kerb lane each way	a külső sáv mindkét irányban
+the way the road runs	az út irányában
+against the road's way	az út irányával szemben
+Section	Szekció
+Kit	Készlet
+ (every map)	 (minden térkép)
+none: the wire for the game only	nincs: a vezeték csak a játéknak
+A new kit	Új készlet
+My wire	Saját vezeték
+Change this kit	A készlet módosítása
+its wire spline	a vezeték-spline-ja
+its masts, every	az oszlopai, egymástól
+The kit names no mast	A készlet nem nevez meg oszlopot
+Frogs and section insulators are put where the wire has them, as the kit names them.	Az elágazások és szakaszszigetelők oda kerülnek, ahol a vezetéknek vannak, ahogy a készlet megnevezi őket.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	A térképre semmi sem kerül, a vezeték csak a játéknak szól. Egy készlet (+) megnevezi a saját modelljeidet a vezetékhez, az oszlopaihoz, elágazásaihoz és szigetelőihez.
+Over the selected roads	A kijelölt utak felett
+Select roads in the view first (double-click: a whole road)	Előbb jelölj ki utakat a nézetben (dupla kattintás: egy egész út)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	A kijelölt objektum (csomópont) sávjai: jelöld be azokat, amelyek felett a vezeték halad. Három találkozó szakasz elágazást alkot.
+It has no street lanes.	Nincsenek utcai sávjai.
+lane	sáv
+Over the ticked lanes	A bejelölt sávok felett
+Select one junction to lay the wire over its lanes.	Jelölj ki egy csomópontot, hogy a vezetéket a sávjai fölé rakd.
+Draw a span by hand	Szakasz rajzolása kézzel
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Kattints a pontjaira a nézetben; ha egy szakasz végén kezded vagy fejezed be, csatlakozik hozzá, ha egy szakasz közepén, ott leágazik belőle (elágazás)
+points: click the next in the view	pont: kattints a következőre a nézetben
+Finish	Kész
+Read the map's wire splines	A térkép vezeték-spline-jainak beolvasása
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Vezetékpárként rajzolt splinek (OMSI 2-höz készült trolibuszos térképek): mindegyik mentén egy szakasz, ahogy a játék olvassa őket
+Network	Hálózat
+Voltage	Feszültség
+Wire spacing	Vezetéktávolság
+How uneven the contact wire is: worn or icy wire 0.003 and more	Mennyire egyenetlen a munkavezeték: kopott vagy jeges vezeték 0.003 és több
+Delete the whole wire	A teljes felsővezeték törlése
+trolley.txt goes with the next save; the game reads the map's wire splines again	a trolley.txt a következő mentéskor törlődik; a játék ismét a térkép vezeték-spline-jait olvassa
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Vezetékrészek, amelyeket egy alállomás táplál. Ahol kettő találkozik, ott feszültségmentes rész van (szigetelő).
+name	név
+live	feszültség alatt
+The feeder's resistance: the voltage drops with the current	A tápkábel ellenállása: a feszültség az árammal együtt esik
+Power the feeder takes back from a braking bus	A teljesítmény, amelyet a tápkábel visszavesz egy fékező járműtől
+spans	szakasz
+Add a section	Szekció hozzáadása
+Insulators (where sections meet)	Szigetelők (ahol szekciók találkoznak)
+ m dead	 m feszültségmentes
+Span	Szakasz
+points	pont
+Spacing	Vezetéktávolság
+its own	saját
+Drag: the whole span up or down	Húzás: az egész szakasz fel vagy le
+The span the other way: the positive wire is on the right of its way	A szakasz fordítva: a pozitív vezeték a haladási iránya jobb oldalán van
+Pick a span in the view, or in the list.	Válassz szakaszt a nézetben vagy a listában.
+section	szekció
+A switch where three spans meet (yellow in the view). Every frog gets one.	Váltó ott, ahol három szakasz találkozik (sárga a nézetben). Minden elágazás kap egyet.
+No frogs yet: lay three spans meeting in one point (a branch).	Még nincs elágazás: rakj le három, egy pontban találkozó szakaszt (leágazás).
+Spans laid:	Lerakott szakaszok:
+Wire kit	Felsővezeték-készlet
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	A saját modelljeid (Blenderben vagy bárhol készítve, a tartalommappába téve), amelyek a vezetéket mutatják a térképen: a vezeték-spline, valamint az oszlop-, váltó- és szigetelőobjektumok. A készlet egy .cfg fájl, amely megnevezi őket; módosítsd itt, szövegként vagy bármilyen szövegszerkesztőben.
+As text	Szövegként
+The name is the kit's file: make a copy to rename it	A név a készlet fájlja: az átnevezéshez készíts másolatot
+For	Érvényes
+this map	erre a térképre
+every map	minden térképre
+Take the one selected on the map	A térképen kijelölt átvétele
+Select a spline of it on the map first	Előbb jelölj ki egy ilyen spline-t a térképen
+Select such an object on the map first	Előbb jelölj ki egy ilyen objektumot a térképen
+Choose the file	Fájl kiválasztása
+The file must lie in the content folder or in OMSI 2's	A fájlnak a tartalommappában vagy az OMSI 2 mappájában kell lennie
+Not there	Nem található
+Wire spline	Vezeték-spline
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Egy .sli, amelynek profilja a vezetékeket az út feletti magasságukba helyezi; minden szakasz mentén lerakódik
+Mast	Oszlop
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Egy .sco: az origója a talpánál, a karja a -y tengelye mentén nyúlik a vezetékig
+Frog	Váltó
+A .sco hung where the wire branches: its origin on the wire, y along it	Egy .sco, amely ott függ, ahol a vezeték elágazik: origója a vezetéken, y mentén
+Insulator	Szigetelő
+A .sco hung where two sections meet: its origin on the wire, y along it	Egy .sco, amely ott függ, ahol két szekció találkozik: origója a vezetéken, y mentén
+Masts	Oszlopok
+every	távköz
+From a mast's foot to its wire, across the road	Az oszlop talpától a vezetékéig, az úton keresztben
+from the wire	a vezetéktől
+Mast turned	Oszlop elforgatása
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Olyan modellhez, amelynek karja nem a -y mentén nyúlik: 90, ha a -x mentén, -90 a +x mentén, 180 a +y mentén
+arm	kar
+The wire spline's wires	A vezeték-spline vezetékei
+high	magasan
+across its line	a tengelyétől
+Save and renew the map's wire	A térkép vezetékének mentése és megújítása
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Az ebből a készletből lerakott vezeték-spline-ok és oszlopok a mostani fájljait kapják; az elágazások és szigetelők újra lerakódnak
+A new kit from this one (to rename it, or change it apart)	Új készlet ebből (az átnevezéshez vagy külön módosításhoz)
+Show the file	A fájl megmutatása
+Changed to the kit's files:	A készlet fájljaira cserélve:
+a display shows the switch of its name	egy kijelző a nevével mutatja a váltót
+Set by	Vezérlés
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Az állása, amikor a játék beolvassa a vezetéket (véletlenszerűen: futtatásonként egyszer sorsolva; online játékban egyenes)
+Contact plate	Érintkező
+ m before the frog	 m-rel az elágazás előtt
+Power on from	Áramküszöb
+Invert	Megfordítás
+the other way round	fordítva
+Channel	Csatorna
+any	bármelyik
+Range	Hatótáv
+Route codes	Útvonalkódok
+A route code	Egy útvonalkód
+Flip	Tükrözés
+Left to right	Balról jobbra
+Top to bottom	Fentről lefelé
+Dark theme	Sötét téma
+Light theme	Világos téma
+Lit	Fény
