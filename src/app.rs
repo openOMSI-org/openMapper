@@ -2480,6 +2480,19 @@ impl App {
         !self.prefs.omsi_controls && self.prefs.camera != "map"
     }
 
+    /// While the view was moving only the ground was followed under the cursor (a city-sized map
+    /// cannot be searched every frame): what stands there is looked for now, before a click
+    /// takes it.
+    fn fresh_hover(&mut self) {
+        if !self.ed.hover_ground_only {
+            return;
+        }
+        self.ed.hover_ground_only = false;
+        if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
+            self.ed.hover_ray(assets, &self.lib, o, d);
+        }
+    }
+
     /// What a drag of the map holds: the point under the cursor, else where the cursor's ray
     /// meets the level of the point looked at.
     fn grab_point(&self) -> Option<DVec3> {
@@ -2915,10 +2928,16 @@ impl App {
         if let Some(p) = self.pinned_cursor {
             self.ed.cursor = Some(p);
         }
-        if self.ed.doc.is_some() && (self.mouse.moved || cam_moving || self.mouse.left || self.assets.as_ref().map(|a| a.pending > 0).unwrap_or(false)) {
+        if self.ed.doc.is_some() && (self.mouse.moved || cam_moving || self.ed.hover_ground_only || self.mouse.left || self.assets.as_ref().map(|a| a.pending > 0).unwrap_or(false)) {
             if let (Some((o, d)), Some(assets)) = (self.view_ray(), self.assets.as_mut()) {
                 if !self.mouse.over_ui {
+                    self.ed.hover_ground_only = cam_moving;
+                    let t_hover = Instant::now();
                     self.ed.hover_ray(assets, &self.lib, o, d);
+                    let ms = t_hover.elapsed().as_secs_f32() * 1000.0;
+                    if ms > 200.0 {
+                        log::warn!("cursor pick took {ms:.0} ms (camera moving: {cam_moving})");
+                    }
                 }
             }
             self.mouse.moved = false;
@@ -4090,6 +4109,9 @@ impl ApplicationHandler for App {
                 let over_ui = self.mouse.over_ui;
                 match button {
                     MouseButton::Left => {
+                        if pressed && !over_ui {
+                            self.fresh_hover();
+                        }
                         if pressed && !over_ui && self.crossing_pick_on_map() {
                             // (an end of the crossing's paths, taken on the map: the drag
                             // moves it, and no tool of the map does anything with the click)
@@ -4216,6 +4238,9 @@ impl ApplicationHandler for App {
                             }
                             // (the crossing editor holds the map: no right-click menu of it,
                             // and nothing of the map is picked by one)
+                            if self.mouse.right_moved < 5.0 {
+                                self.fresh_hover();
+                            }
                             let menu = !self.crossing_holds() && self.mouse.right_moved < 5.0 && self.ed.right_click();
                             if self.crossing_holds() {
                                 // (nothing)

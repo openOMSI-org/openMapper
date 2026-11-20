@@ -52,7 +52,8 @@ pub fn attachment_first(doc: &Document, k: TileKey, id: i64) -> Option<crate::pl
     crate::place::row_objects(a, &t.tile.splines, tile_origin(k), &crate::place::row_index(doc)).into_iter().min_by_key(|o| o.index)
 }
 
-/// Every copy a record places (where it is drawn, for picking).
+/// The copies a record places, for a caller that has no index of the whole map to hand.
+#[cfg(test)]
 pub fn attachment_copies(doc: &Document, k: TileKey, id: i64) -> Vec<crate::place::RowObject> {
     let Some(t) = doc.tiles.get(&k) else { return Vec::new() };
     let Some(a) = t.tile.spline_attachments.iter().find(|a| a.id == id) else { return Vec::new() };

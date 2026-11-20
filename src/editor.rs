@@ -410,6 +410,9 @@ pub struct Editor {
     hover_stack: Vec<Sel>,
     /// The grip of the selected spline under the cursor.
     pub hover_handle: Option<Handle>,
+    /// The camera is still moving: the cursor follows the ground, and the full pick waits
+    /// until the view settles. A city-sized map cannot be searched under the cursor every frame.
+    pub hover_ground_only: bool,
     /// The box being dragged out on the screen (window points: where it began, where it is).
     pub select_box: Option<[(f32, f32); 2]>,
     /// What was copied.
@@ -774,6 +777,7 @@ impl Default for Editor {
             hover: None,
             hover_stack: Vec::new(),
             hover_handle: None,
+            hover_ground_only: false,
             select_box: None,
             clip: None,
             crossing_draft: None,
@@ -1708,7 +1712,14 @@ impl Editor {
         let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
         let mut best: Option<(f64, DVec3)> = None;
         for (k, t) in doc.tiles.iter() {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, limit) {
+                continue;
+            }
+            let org = tile_origin(*k);
             for ob in &t.tile.objects {
+                if Self::object_off_ray(doc, o, dv, org, ob) {
+                    continue;
+                }
                 let Some(model) = assets.object(&ob.file) else { continue };
                 if model.parts.is_empty() || model.technical && !extras.show_technical || crate::render::hidden_layer(&model, &extras) {
                     continue;
@@ -1753,9 +1764,15 @@ impl Editor {
         let dv = d.as_vec3();
         let mut best: Option<(f64, DVec3)> = None;
         for (k, t) in doc.tiles.iter() {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, limit) {
+                continue;
+            }
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 if skip.contains(&(*k, s.id)) {
+                    continue;
+                }
+                if Self::spline_off_ray(o, dv, org, s) {
                     continue;
                 }
                 let Some(model) = assets.spline(&s.file) else { continue };
@@ -1833,6 +1850,82 @@ impl Editor {
         self.pick_into(assets, o, d, ground, &mut stack)
     }
 
+    /// How far an object's model is taken to reach from where it stands, for passing by the
+    /// objects a ray cannot meet before their models are read.
+    const OBJECT_REACH: f64 = 400.0;
+
+    /// The ray, out to `tmax`, meets this tile, widened by `pad` (`tile_overhang`) for what
+    /// stands on it and reaches past its edge.
+    fn ray_meets_tile(k: TileKey, pad: f64, o: DVec3, d: DVec3, tmax: f64) -> bool {
+        let org = tile_origin(k);
+        let ts = tile_size();
+        let lo = [org.x - pad, org.y - pad];
+        let hi = [org.x + ts + pad, org.y + ts + pad];
+        let mut t0 = 0.0f64;
+        let mut t1 = tmax.max(0.0);
+        for i in 0..2 {
+            if d[i].abs() < 1e-9 {
+                if o[i] < lo[i] || o[i] > hi[i] {
+                    return false;
+                }
+            } else {
+                let (mut a, mut b) = ((lo[i] - o[i]) / d[i], (hi[i] - o[i]) / d[i]);
+                if a > b {
+                    std::mem::swap(&mut a, &mut b);
+                }
+                t0 = t0.max(a);
+                t1 = t1.min(b);
+                if t0 > t1 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    /// How far past its own square anything on a tile can be met: an object's model
+    /// (`OBJECT_REACH` from where it stands), a spline that runs on past the tile it starts in
+    /// (a long straight one goes hundreds of metres). From positions and lengths only.
+    fn tile_overhang(t: &crate::doc::TileDoc) -> f64 {
+        let ts = tile_size();
+        let out = |p: [f64; 3]| (-p[0]).max(p[0] - ts).max(-p[1]).max(p[1] - ts).max(0.0);
+        let objects = t.tile.objects.iter().map(|ob| out(ob.pos) + Self::OBJECT_REACH).fold(0.0, f64::max);
+        t.tile.splines.iter().filter(|s| !s.deleted).map(|s| out(s.pos) + s.length + Self::spline_climb(s) + Self::SPLINE_MARGIN).fold(objects, f64::max)
+    }
+
+    /// What a spline's surface takes beyond its line: the road's width, a wall's height, a cant.
+    const SPLINE_MARGIN: f64 = 80.0;
+
+    /// The most a spline's height moves away from its start's: its height runs as a cubic
+    /// between its gradients (or a parabola), ending `delta_h` higher.
+    fn spline_climb(s: &MapSpline) -> f64 {
+        s.delta_h.unwrap_or(0.0).abs() + s.length * s.grad_start.abs().max(s.grad_end.abs()) / 100.0
+    }
+
+    /// The ray cannot meet this spline. Decided from its start, heading and length, before a
+    /// curve is built or its model is read: a city has tens of thousands of splines, and the
+    /// view looks at all of them whenever the camera moves.
+    fn spline_off_ray(o: DVec3, d: glam::Vec3, org: DVec2, s: &MapSpline) -> bool {
+        let start = DVec3::new(org.x + s.pos[0], org.y + s.pos[1], s.pos[2]);
+        let climb = Self::spline_climb(s);
+        let (centre, reach) = if s.radius.abs() < 1.0 {
+            (start + roads::dir(s.heading).extend(0.0) * (s.length * 0.5), s.length * 0.5 + climb + Self::SPLINE_MARGIN)
+        } else {
+            // (an arc stays within its own length of where it starts)
+            (start, s.length + climb + Self::SPLINE_MARGIN)
+        };
+        !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, d, (centre - o).as_vec3(), reach.max(1.0) as f32)
+    }
+
+    /// The ray cannot meet this object, from where it stands, before its model is read. Its
+    /// height is the ground's plus its own, unless the model stands at an absolute height,
+    /// which only the model says: both are looked at.
+    fn object_off_ray(doc: &Document, o: DVec3, d: glam::Vec3, org: DVec2, ob: &MapObject) -> bool {
+        let p = DVec2::new(org.x + ob.pos[0], org.y + ob.pos[1]);
+        let off = |z: f64| !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, d, (DVec3::new(p.x, p.y, z) - o).as_vec3(), Self::OBJECT_REACH as f32);
+        off(ob.pos[2]) && off(doc.ground(p) + ob.pos[2])
+    }
+
     /// The object or spline under a ray. `stack` receives everything the ray meets, nearest first.
     fn pick_into(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>, stack: &mut Vec<Sel>) -> Option<Sel> {
         let doc = self.doc.as_ref()?;
@@ -1847,11 +1940,24 @@ impl Editor {
         let dv = d.as_vec3();
         let gdist = ground.map(|g| (g - o).length()).unwrap_or(f64::MAX);
         let paths_only = self.editing_paths();
+        let t_pick = Instant::now();
+        let mut n_obj = 0usize;
+        let mut n_swept = 0usize;
         // (what is not drawn is not picked)
         let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
         let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
         for (k, t) in doc.tiles.iter().filter(|_| !paths_only) {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, gdist + 2.0) {
+                continue;
+            }
+            let org = tile_origin(*k);
             for ob in &t.tile.objects {
+                // (the model is not read for an object the ray cannot reach: a city has tens of
+                // thousands, and looking each one up on every move of the view took seconds)
+                if Self::object_off_ray(doc, o, dv, org, ob) {
+                    continue;
+                }
+                n_obj += 1;
                 let Some(model) = assets.object(&ob.file) else { continue };
                 if unseen(&model) {
                     continue;
@@ -1892,12 +1998,14 @@ impl Editor {
         }
         // what hangs on objects and rows (signs on posts, lamps on masts), placed as they are drawn
         // (only near where the ray meets the ground: rows are worked out along their roads)
+        let t_obj = t_pick.elapsed().as_secs_f64() * 1000.0;
         let near = |k: &TileKey| ground.map(|g| (tile_origin(*k) + DVec2::splat(tile_size() * 0.5) - g.truncate()).length() < tile_size() * 1.5).unwrap_or(false);
-        let rows = crate::place::row_index(doc);
+        let mut rows: Option<std::sync::Arc<omsi_world::map_index::MapIndex>> = None;
         for (k, t) in doc.tiles.iter().filter(|_| !paths_only) {
             if t.tile.attach_objects.is_empty() || !near(k) {
                 continue;
             }
+            let rows = rows.get_or_insert_with(|| crate::place::row_index(doc));
             let mut parents: std::collections::HashMap<i64, (crate::place::Pose, std::sync::Arc<crate::assets::ObjectModel>)> = std::collections::HashMap::new();
             for ob in &t.tile.objects {
                 let Some(model) = assets.object(&ob.file) else { continue };
@@ -1905,7 +2013,7 @@ impl Editor {
             }
             for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
                 let Some(model) = assets.object(&a.file) else { continue };
-                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), &rows);
+                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), rows);
                 if let Some(first) = objs.iter().min_by_key(|o| o.index) {
                     parents.entry(a.id).or_insert((first.pose, model));
                 }
@@ -1940,6 +2048,7 @@ impl Editor {
                 }
             }
         }
+        let t_att1 = t_pick.elapsed().as_secs_f64() * 1000.0;
         // the lamps, posts and bays that stand along a spline (`[splineAtt]` rows): each record
         // is a thing of its own (its copies are one object), so a click on one of its copies
         // picks that record and its properties.
@@ -1948,9 +2057,10 @@ impl Editor {
                 if t.tile.spline_attachments.is_empty() || !near(k) {
                     continue;
                 }
+                let rows = rows.get_or_insert_with(|| crate::place::row_index(doc));
                 for a in &t.tile.spline_attachments {
                     let Some(model) = assets.object(&a.file) else { continue };
-                    for ro in crate::selection::attachment_copies(doc, *k, a.id) {
+                    for ro in crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), rows) {
                         let m = ro.pose.matrix_from(o);
                         let c = m.transform_point3(model.centre());
                         if !omsi_geometry::ray_near_sphere(ov, dv, c, model.radius().max(0.5)) {
@@ -1987,9 +2097,16 @@ impl Editor {
         // ground is behind the hillside, not under the cursor.
         let limit = gdist + 2.0;
         let mut sbest: Option<(f64, f64, f64, Sel)> = None;
+        let t_att = t_pick.elapsed().as_secs_f64() * 1000.0;
         for (k, t) in doc.tiles.iter().filter(|_| !self.hide[2] || paths_only) {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, gdist + 2.0) {
+                continue;
+            }
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                if Self::spline_off_ray(o, dv, org, s) {
+                    continue;
+                }
                 let model = assets.spline(&s.file);
                 let ai = model.as_ref().map(|m| m.is_ai_path()).unwrap_or(false);
                 if paths_only && !ai {
@@ -2013,6 +2130,7 @@ impl Editor {
                 if !omsi_geometry::ray_near_sphere(ov, dv, centre, reach) {
                     continue;
                 }
+                n_swept += 1;
                 let n = (s.length / 1.0).ceil().max(2.0) as usize;
                 // (the road's own surface is where the ray meets *its height there*, not where
                 // the ray first comes within the road's width. A ray at a slant comes within a
@@ -2075,6 +2193,10 @@ impl Editor {
             }
         }
         all.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let total = t_pick.elapsed().as_secs_f64() * 1000.0;
+        if total > 150.0 {
+            log::warn!("pick {total:.0} ms: objects {t_obj:.0} (near {n_obj}), rows/attached {:.0}, copies {:.0}, splines {:.0} (swept {n_swept}), ground {gdist:.0} m", t_att1 - t_obj, t_att - t_att1, total - t_att);
+        }
         stack.clear();
         for (_, s) in all {
             if !stack.contains(&s) {
@@ -2106,7 +2228,10 @@ impl Editor {
         self.aim = Some((o, d));
         // (the face of an object, or the edge of a road, under the cursor: where a spline's end
         // goes if it is laid on it. Only the roads tool draws it, but any tool snaps to it.)
-        self.surface = if self.snap_surface { self.surface_hit(assets, o, d, g) } else { None };
+        self.surface = if self.snap_surface && !self.hover_ground_only { self.surface_hit(assets, o, d, g) } else { None };
+        if self.hover_ground_only {
+            return;
+        }
         self.hover = None;
         self.hover_stack.clear();
         self.hover_tile = None;
@@ -12601,6 +12726,70 @@ mod tests {
         // and from under it, looking up at it
         let got = ed.pick(&mut assets, DVec3::new(x, y, z - 2.0), DVec3::Z, None);
         assert_eq!(got, Some(Sel::Spline((0, 0), 2)), "the flyover from below");
+    }
+
+    /// The look past what the ray cannot meet takes an object at its height on the ground: on
+    /// a map whose ground stands hundreds of metres high, an object stood on it is picked.
+    #[test]
+    fn an_object_on_high_ground_is_picked() {
+        use glam::Vec3;
+        let mut doc = flat_map(1);
+        doc.tiles.insert((0, 0), crate::doc::TileDoc::new_flat(700.0));
+        add_object(&mut doc, (0, 0), 9, 150.0, 150.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\wall.sco".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let wall = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(0.0, -4.0, 0.0), Vec3::new(0.0, 4.0, 0.0), Vec3::new(0.0, 4.0, 4.0), Vec3::new(0.0, -4.0, 4.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let wall = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: wall, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.1, -4.0, 0.0),
+            hi: Vec3::new(0.1, 4.0, 4.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\wall.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(wall)));
+        // (from the west, level, two metres above the ground the wall stands on)
+        let got = ed.pick(&mut assets, DVec3::new(100.0, 150.0, 702.0), DVec3::X, None);
+        assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the wall on the ground 700 m up");
+    }
+
+    /// A long straight road is picked far past the tile it starts in: the tiles a ray is
+    /// looked for on reach as far as what stands on them does.
+    #[test]
+    fn a_long_spline_is_picked_far_past_its_own_tile() {
+        let mut doc = flat_map(3);
+        // (east from (100, 150), 700 m: it ends in the third tile)
+        add_spline(&mut doc, (0, 0), 1, 100.0, 150.0, 90.0, 700.0, 0, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        // (straight down onto it 550 m from where it starts, two tiles on)
+        let got = ed.pick(&mut assets, DVec3::new(650.0, 150.0, 50.0), -DVec3::Z, None);
+        assert_eq!(got, Some(Sel::Spline((0, 0), 1)));
     }
 
     /// A spline drawn in front of an object is the one a click gives, even though the two
