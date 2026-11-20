@@ -279,8 +279,8 @@ impl Choice {
 
     pub fn name(self) -> &'static str {
         match self {
-            Choice::Dark => tr("Dark", "Тёмная"),
-            Choice::Light => tr("Light", "Светлая"),
+            Choice::Dark => tr("Dark theme", "Тёмная"),
+            Choice::Light => tr("Light theme", "Светлая"),
             Choice::System => tr("As the system", "Как в системе"),
         }
     }

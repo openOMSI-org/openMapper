@@ -2891,3 +2891,335 @@ Paths of the way	Vägens körfält
 Cut before the first stop	Klipp före den första hållplatsen
 Cut after the last stop	Klipp efter den sista hållplatsen
 path	körfält
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMappers egna kontroller: kameran som valts under Kamera, tangenterna som i Visa > Kontroller
+The keys as in View > Controls	Tangenterna som i Visa > Kontroller
+A copy of its own was made for the script: the original type is unchanged	En egen kopia gjordes för skriptet: den ursprungliga typen är oförändrad
+Trolleybus wire the game cannot use	Kontaktledning som spelet inte kan använda
+Rows the game does not show	Rader som spelet inte visar
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	En rad av objekt längs en väg (lampor, stolpar, parkeringsfickor) börjar före vägen den ligger på: dess avstånd räknas från början av vägkedjan, och det här är mindre än längden på kedjan före dess väg. OMSI 2 och openOMSI visar ingenting av den, och inte editorn heller. Lägg raden igen, eller ge den en större start i dess egenskaper.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI gör en växel bara där exakt tre spann av kontaktledningen möts, och en växel satt där inga längre möts utelämnas; ett spann i en sektion som nätet saknar har ingen likriktarstation. Öppna Karta > Kontaktledning för att rätta till det.
+Trolleybus wire	Kontaktledning
+Select the next road piece (joined at its end; Shift: add it)	Markera nästa vägdel (ansluten vid dess slut; Shift: lägg till den)
+Select the previous road piece (joined at its start; Shift: add it)	Markera föregående vägdel (ansluten vid dess början; Shift: lägg till den)
+the up arrow	uppåtpilen
+the down arrow	nedåtpilen
+the left arrow	vänsterpilen
+the right arrow	högerpilen
+Select three objects or more (the two farthest apart stay)	Markera tre objekt eller fler (de två som ligger längst ifrån varandra stannar)
+Line up	Ställ på linje
+Space evenly	Fördela jämnt
+Splines laid	Splines lagda
+The spline reaches past the map: add tiles there first	Splinen når utanför kartan: lägg till kartrutor där först
+Ground painted over areas	Mark målad över områden
+Track beds	Spårbäddar
+Ground under surfaces	Mark under ytor
+Form the ground	Forma marken
+Select a road piece first	Markera en vägdel först
+Nothing is joined at its end	Ingenting är anslutet vid dess slut
+Nothing is joined at its start	Ingenting är anslutet vid dess början
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Flytta: dra en pil längs X, Y eller Z, en kvadrat i dess plan, cirkeln över marken
+Rotate: drag a ring to turn about X, Y or Z	Rotera: dra en ring för att vrida kring X, Y eller Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Skala: dra en pil för att skala längs den axeln, en kvadrat för två, cirkeln för alla tre
+Junctions where the roads meet	Korsningar där vägarna möts
+Streets from the street model	Gator från gatumodellen
+perimeter	omkrets
+needs	behöver
+built	byggd
+signed by	signerad av
+not signed: the game loads it with a warning that its author is not known	osignerad: spelet läser in den med en varning om att dess upphovsperson är okänd
+openOMSI has no such function (the API of version	openOMSI har ingen sådan funktion (API:t i version
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` finns bara för kartans skript; ett objektskript har bara omsi-funktionerna
+no such module in the project (modules/…)	ingen sådan modul i projektet (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	spelet skickar ingen sådan händelse (om inte ett skript skickar den med omsi.emit)
+a name is needed	ett namn behövs
+a file of that name is there already	en fil med det namnet finns redan
+Empty module	Tom modul
+Test run of	Testkörning av
+does nothing in the test run (no game): it gives false	gör ingenting i testkörningen (inget spel): ger false
+has nothing to read in the test run (no game): it gives nil	har inget att läsa i testkörningen (inget spel): ger nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	ett objekt i OMSI 2-installationen ändras aldrig: gör det till ett eget objekt först
+Dark	Mörkt
+As the system	Som systemet
+power (current on: branch)	ström (med ström: avgrening)
+indicator	körriktningsvisare
+radio	radio
+to the branch	mot avgreningen
+at random	slumpvis
+spans meet in one point: the game makes no switch there (a frog is three)	spann möts i en punkt: spelet gör ingen växel där (en luftväxel har tre)
+Switch	Växel
+no three spans meet there any more	här möts inte längre tre spann
+A span is in section	Ett spann ligger i sektion
+that the network does not have	som nätet inte har
+the wire spline	ledningssplinen
+the mast	stolpen
+the frog	luftväxeln
+the insulator	isolatorn
+is not there	finns inte
+no wire spline: nothing of the wire is shown on the map	ingen ledningsspline: ingenting av själva ledningen visas på kartan
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	ledningssplinens profil är inte ett par tunna trådar över 3 m: den läggs som den är, och openOMSI tar den inte för kontaktledningen utan trolley.txt
+a kit of that name is there already	en sats med det namnet finns redan
+Renew the wire from its kit	Förnya ledningen från dess sats
+Theme	Tema
+Back to the 3D view	Tillbaka till 3D-vyn
+The plan view from above, north up	Planvyn uppifrån, norr uppåt
+Put the windows back in their first places	Sätt tillbaka fönstren på sina ursprungliga platser
+Trolleybus wire…	Kontaktledning…
+: there are unsaved changes	: det finns osparade ändringar
+Assets: every object and road type, with pictures	Tillgångar: alla objekt och vägtyper, med bilder
+Close the openOMSI session started from here	Stäng openOMSI-sessionen som startades härifrån
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Välj startplats, fordon, tid och väder och kör sedan kartan i openOMSI
+Search commands	Sök kommandon
+Every command of the menus by its name	Alla kommandon i menyerna efter namn
+Right-click the view for what can be done there; Search commands finds the rest	Högerklicka i vyn för det som kan göras där; ”Sök kommandon” hittar resten
+Right-click the view: its menu	Högerklicka i vyn: dess meny
+Snap vertex	Fäst vertex
+Snap edge	Fäst kant
+Out of the mix	Ta bort från blandningen
+more as OMSI 2 is read…	fler kommer medan OMSI 2 läses…
+Reading the content of OMSI 2…	Läser innehållet i OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Ingenting hittades: prova färre bokstäver, eller ”Allt” under ”Visa”
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Inget av det här slaget: välj ”Allt” under ”Visa”, eller importera tillgångar (Arkiv > Importera tillgångar)
+a table of functions	en tabell med funktioner
+a module	en modul
+Next (Enter)	Nästa (Enter)
+Previous (Shift+Enter)	Föregående (Shift+Enter)
+Match case	Matcha skiftläge
+Replace	Ersätt
+Replace…	Ersätt…
+Click: a breakpoint (F9 on the cursor's line)	Klick: en brytpunkt (F9 på markörens rad)
+permission	behörighet
+The light before	Föregående trafiksignal
+The next light	Nästa trafiksignal
+The phase before	Föregående fas
+The next phase	Nästa fas
+to 	till 
+Select the piece joined at its start (,)	Markera delen som är ansluten vid dess början (,)
+Select the piece joined at its end (.)	Markera delen som är ansluten vid dess slut (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Klicka på två punkter för att mäta avstånd och lutning mellan dem (U) · Shift + klick: hörnen på ett område (dess storlek och omkrets) · högerklick: av
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Fäst en vertex av det markerade objektet till en vertex av ett annat objekt\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Justera en kant på det markerade objektet mot en kant eller väg\nRoterar och fäster kolinjärt\nShift: Endast horisontellt, Esc/Högerklicka: Avbryt
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	På den raka linjen mellan de två som ligger längst ifrån varandra, med lika steg (stolpar, lampor, en trädrad)
+Equal steps between the two farthest apart, each keeping its distance to the side	Lika steg mellan de två som ligger längst ifrån varandra, var och en behåller sitt avstånd åt sidan
+height, m	höjd, m
+gradient, %	lutning, %
+cant, %	överhöjning, %
+Rotate, °	Rotera, °
+Name, file, IDCode, stop, x, y or tile x y	Namn, fil, IDCode, hållplats, x, y eller kartruta x y
+listed, no file	listad, ingen fil
+The camera over the tile's middle	Kameran över kartrutans mitt
+its folder	dess mapp
+Line up the selected objects	Ställ de markerade objekten på linje
+Space the selected objects evenly	Fördela de markerade objekten jämnt
+Next road piece	Nästa vägdel
+Previous road piece	Föregående vägdel
+The run ended	Körningen är slut
+installed as	installerad som
+failed	misslyckades
+Run	Kör
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Kör skripten här, i editorn, med spelets funktioner (F5 i koden)
+Step in	Stega
+Run and stop at the first line (F11)	Kör och stanna på första raden (F11)
+Continue	Fortsätt
+Pause	Paus
+Stop the clock; a script running stops at its next line	Stoppa klockan; ett skript som körs stannar på sin nästa rad
+Over	Över
+Step over (F10)	Stega över (F10)
+Into	In
+Step into (F11)	Stega in (F11)
+Out	Ut
+Step out (Shift+F11)	Stega ut (Shift+F11)
+Restart	Starta om
+The map's scripts	Kartans skript
+The game's clock in the run	Spelets klocka i körningen
+Set the game's clock of the run (sends minute)	Ställ spelets klocka i körningen (skickar minute)
+starts 	start 
+The hour the run starts at	Timmen då körningen börjar
+Save all	Spara alla
+Build .oop	Bygg .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	En fil med kartans skript att dela: kompilerad och obfuskerad, med de behörigheter de behöver (Development Tools kompilator)
+API	API
+The game's functions and events	Spelets funktioner och händelser
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Den här kartan har inga skript än. Dess skript körs i openOMSI medan den spelas: de reagerar på det som händer (en hållplats, en timme, en tur), visar meddelanden, ändrar trafiken och vädret.
+Start the map's scripts	Påbörja kartans skript
+Object scripts (Lua)	Objektskript (Lua)
+No object on the map has a Lua script.	Inget objekt på kartan har ett Lua-skript.
+Refresh	Uppdatera
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Skript som ett scenobjekt anger i [lua_script]: ett körs för varje objekt av dess typ nära kameran (endast openOMSI)
+Selected object	Markerat objekt
+Select one object on the map to see its scripts.	Markera ett objekt på kartan för att se dess skript.
+No OMSI 2 script (.osc).	Inget OMSI 2-skript (.osc).
+Lua script (openOMSI)	Lua-skript (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Ett skript för varje objekt av den här typen, bredvid dess .sco och angivet i den ([lua_script]); OMSI 2 hoppar över det. Ett objekt från installationen blir först kartans egen kopia.
+OMSI 2 script (.osc)	OMSI 2-skript (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Objektets eget skript med dess variabellista, körs av OMSI 2 och openOMSI; dess lampor och [visible]-delar följer variablerna det sätter
+Rust plugin	Rust-plugin
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Ett plugin för kartan skrivet i Rust, kompilerat till WebAssembly i en .oop. För att bygga det behövs Rust (rustup) med målet wasm32-unknown-unknown.
+Make the Rust plugin	Skapa Rust-pluginet
+Build and install	Bygg och installera
+cargo builds it, the .oop goes into the content folder's plugins	cargo bygger det, .oop-filen hamnar i innehållsmappens plugins
+Starts with the map	Startar med kartan
+Rename…	Byt namn…
+Earlier in the order	Tidigare i ordningen
+Later in the order	Senare i ordningen
+Delete (into openMapper's bin)	Ta bort (till openMapper-papperskorgen)
+New script	Nytt skript
+New module	Ny modul
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Vart och ett startar när kartan spelas, i den här ordningen (högerklicka för att flytta ett); ett som misslyckas låter de andra fortsätta. Använd map.on, map.every, map.after: de verkar bara på den här kartan.
+Modules	Moduler
+Code the scripts share: local util = require("modules.util")	Kod som skripten delar: local util = require("modules.util")
+Data	Data
+Files the scripts read (data/), pictures and sounds	Filer som skripten läser (data/), bilder och ljud
+Made by openMapper	Skapat av openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Öppna ett skript till vänster, eller skapa ett nytt.\n\nF5 kör skripten här i editorn, F9 sätter en brytpunkt, F10 / F11 stegar,\nCtrl+Mellanslag kompletterar, Ctrl+F söker, Ctrl+G går till en rad, Ctrl+/ kommenterar bort.
+Read only: a file of the installation or made by openMapper	Skrivskyddad: en fil från installationen eller skapad av openMapper
+Problems	Problem
+Console	Konsol
+Debugger	Felsökare
+Events	Händelser
+error	fel
+warning	varning
+No problems in the open files.	Inga problem i de öppna filerna.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Det skripten skriver ut och visar på skärmen, och felen de gör, visas här när de körs (Kör, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua att köra i skripten (i ramen där det stannade, om det har stannat); uppåt- och nedåtpil: historik
+Start a run first (Run, F5)	Starta en körning först (Kör, F5)
+(empty)	(tom)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Körs. En brytpunkt (ett klick till vänster om ett radnummer, eller F9) stoppar skripten där; Paus stoppar dem på deras nästa rad.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Körs inte. Kör (F5) skripten; en brytpunkt stoppar dem, och här visas då anropsstacken, varje funktions variabler och de bevakade värdena.
+Stopped	Stoppad
+Call stack	Anropsstack
+Locals	Lokala
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	Konsolen utvärderar i den här ramen: ett namn, ett uttryck, en tilldelning.
+Storage and objects	Lagring och objekt
+Send	Skicka
+As if the game sent it: every handler of it runs	Som om spelet skickade den: alla dess hanterare körs
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Kör skripten för att skicka spelets händelser till dem för hand: en hållplats nådd, en dörr, en ny timme… Klockan skickar frame, minute och hour av sig själv.
+Listening	Lyssnar
+timers	timers
+Sign with the key	Signera med nyckeln
+a secret key file of oopc keygen (optional)	en hemlig nyckelfil från oopc keygen (valfritt)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	”Bygg .oop” gör en fil av kartans skript att dela (i projektets dist-mapp): kompilerad, obfuskerad, med de behörigheter dess kod behöver. Spelet kör skriptmappen som den är; .oop-filen är till för att ge bort dem utan deras källkod.
+Search functions and events	Sök funktioner och händelser
+since	sedan
+for an .oop	för en .oop
+Double-click puts it into the script at the cursor.	Dubbelklick infogar den i skriptet vid markören.
+A stop on this path	En hållplats på den här vägen
+branch	avgrening
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Kontaktledningen som openOMSI:s trolleybussar går under (trolley.txt bredvid kartan; OMSI 2 ignorerar den). Utan den läser spelet kartans ledningssplines.
+Start a wire for this map	Påbörja en kontaktledning för den här kartan
+Lay	Lägg
+Sections	Sektioner
+Spans	Spann
+Switches	Växlar
+Pick in the view	Välj i vyn
+A click in the view picks a span or a switch (yellow dot)	Ett klick i vyn väljer ett spann eller en växel (gul prick)
+The wires over the road surface	Trådarna över vägbanan
+the kerb lane each way	det yttersta körfältet åt vardera hållet
+the way the road runs	i vägens riktning
+against the road's way	mot vägens riktning
+Section	Sektion
+Kit	Sats
+ (every map)	 (alla kartor)
+none: the wire for the game only	ingen: ledningen bara för spelet
+A new kit	En ny sats
+My wire	Min ledning
+Change this kit	Ändra den här satsen
+its wire spline	dess ledningsspline
+its masts, every	dess stolpar, var
+The kit names no mast	Satsen anger ingen stolpe
+Frogs and section insulators are put where the wire has them, as the kit names them.	Luftväxlar och sektionsisolatorer sätts där ledningen har dem, som satsen anger dem.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Ingenting läggs på kartan, ledningen är bara för spelet. En sats (+) anger dina egna modeller av ledningen, dess stolpar, luftväxlar och isolatorer.
+Over the selected roads	Över de markerade vägarna
+Select roads in the view first (double-click: a whole road)	Markera vägar i vyn först (dubbelklick: en hel väg)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Det markerade objektets körfält (en korsning): kryssa för dem som ledningen går över. Tre spann som möts gör en luftväxel.
+It has no street lanes.	Det har inga körfält för fordon.
+lane	körfält
+Over the ticked lanes	Över de förkryssade körfälten
+Select one junction to lay the wire over its lanes.	Markera en korsning för att lägga ledningen över dess körfält.
+Draw a span by hand	Rita ett spann för hand
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Klicka på dess punkter i vyn; påbörjat eller avslutat på ett spanns ände ansluts det dit, på ett spanns mitt grenar det av där (en luftväxel)
+points: click the next in the view	punkter: klicka på nästa i vyn
+Finish	Klart
+Read the map's wire splines	Läs kartans ledningssplines
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Splines ritade som ett par trådar (trolleybusskartor gjorda för OMSI 2): ett spann längs var och en, som spelet läser dem
+Network	Nät
+Voltage	Spänning
+Wire spacing	Trådavstånd
+How uneven the contact wire is: worn or icy wire 0.003 and more	Hur ojämn kontakttråden är: sliten eller isig tråd 0.003 och mer
+Delete the whole wire	Ta bort hela kontaktledningen
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt försvinner vid nästa sparning; spelet läser kartans ledningssplines igen
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Sträckor som matas av en likriktarstation. Där två möts finns en strömlös sträcka (en isolator).
+name	namn
+live	strömförande
+The feeder's resistance: the voltage drops with the current	Matarkabelns resistans: spänningen sjunker med strömmen
+Power the feeder takes back from a braking bus	Effekt som matarkabeln tar tillbaka från en bromsande buss
+spans	spann
+Add a section	Lägg till en sektion
+Insulators (where sections meet)	Isolatorer (där sektioner möts)
+ m dead	 m strömlöst
+Span	Spann
+points	punkter
+Spacing	Avstånd
+its own	eget
+Drag: the whole span up or down	Dra: hela spannet uppåt eller nedåt
+The span the other way: the positive wire is on the right of its way	Spannet åt andra hållet: plustråden ligger till höger i dess riktning
+Pick a span in the view, or in the list.	Välj ett spann i vyn eller i listan.
+section	sektion
+A switch where three spans meet (yellow in the view). Every frog gets one.	En växel där tre spann möts (gul i vyn). Varje luftväxel får en.
+No frogs yet: lay three spans meeting in one point (a branch).	Inga luftväxlar än: lägg tre spann som möts i en punkt (en avgrening).
+Spans laid:	Spann lagda:
+Wire kit	Kontaktledningssats
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Dina egna modeller (gjorda i Blender eller var som helst och lagda i innehållsmappen) som visar ledningen på kartan: ledningssplinen och objekten för stolpe, luftväxel och isolator. Satsen är en .cfg-fil som anger dem; ändra den här, som text, eller i valfri textredigerare.
+As text	Som text
+The name is the kit's file: make a copy to rename it	Namnet är satsens fil: gör en kopia för att byta namn på den
+For	För
+this map	den här kartan
+every map	alla kartor
+Take the one selected on the map	Ta den som är markerad på kartan
+Select a spline of it on the map first	Markera en sådan spline på kartan först
+Select such an object on the map first	Markera ett sådant objekt på kartan först
+Choose the file	Välj filen
+The file must lie in the content folder or in OMSI 2's	Filen måste ligga i innehållsmappen eller i OMSI 2:s
+Not there	Finns inte
+Wire spline	Ledningsspline
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	En .sli vars profil placerar trådarna på deras höjd över vägen; den läggs längs varje spann
+Mast	Stolpe
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	En .sco: dess origo vid foten, dess arm når längs dess -y till ledningen
+Frog	Luftväxel
+A .sco hung where the wire branches: its origin on the wire, y along it	En .sco som hängs där ledningen grenar sig: dess origo på ledningen, y längs den
+Insulator	Isolator
+A .sco hung where two sections meet: its origin on the wire, y along it	En .sco som hängs där två sektioner möts: dess origo på ledningen, y längs den
+Masts	Stolpar
+every	var
+From a mast's foot to its wire, across the road	Från en stolpes fot till dess ledning, tvärs över vägen
+from the wire	från ledningen
+Mast turned	Stolpe vriden
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	För en modell vars arm inte når längs dess -y: 90 när den når längs -x, -90 längs +x, 180 längs +y
+arm	arm
+The wire spline's wires	Ledningssplinens trådar
+high	högt
+across its line	från dess linje
+Save and renew the map's wire	Spara och förnya kartans ledning
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Ledningssplines och stolpar som lagts från den här satsen får dess filer som de är nu; luftväxlar och isolatorer sätts ut igen
+A new kit from this one (to rename it, or change it apart)	En ny sats från den här (för att byta namn på den, eller ändra den separat)
+Show the file	Visa filen
+Changed to the kit's files:	Bytt till satsens filer:
+a display shows the switch of its name	en display visar växeln med det här namnet
+Set by	Styrs av
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Hur den står när spelet läser ledningen (slumpvis: dras en gång per körning; rakt fram i ett onlinespel)
+Contact plate	Kontaktplatta
+ m before the frog	 m före luftväxeln
+Power on from	Ström från
+Invert	Invertera
+the other way round	tvärtom
+Channel	Kanal
+any	valfri
+Range	Räckvidd
+Route codes	Linjekoder
+A route code	En linjekod
+Flip	Vänd
+Left to right	Vänster till höger
+Top to bottom	Uppifrån och ned
+Dark theme	Mörkt tema
+Light theme	Ljust tema
+Lit	Ljus
