@@ -1401,7 +1401,7 @@ pub fn extra_makers(ui: &mut egui::Ui, s: &mut crate::makers::Settings, actions:
         ui.label(RichText::new(tr("Light reach, m", "Дальность света, м")).small().color(pal().text_dim));
         ui.add(egui::DragValue::new(&mut s.light_range).range(1.0..=200.0));
         ui.end_row();
-        ui.label(RichText::new(tr("Light", "Свет")).small().color(pal().text_dim));
+        ui.label(RichText::new(tr("Lit", "Свет")).small().color(pal().text_dim));
         ui.horizontal(|ui| {
             ui.selectable_value(&mut s.light_night_only, true, tr("at night", "ночью"));
             ui.selectable_value(&mut s.light_night_only, false, tr("always", "всегда"));

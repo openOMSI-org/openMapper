@@ -2891,3 +2891,335 @@ Paths of the way	Güzergâhın yolları
 Cut before the first stop	İlk duraktan öncesini kes
 Cut after the last stop	Son duraktan sonrasını kes
 path	yol
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMapper'ın kendi kontrolleri: kamera Kamera'da seçildiği gibi, tuşlar Görünüm > Kontroller'deki gibi
+The keys as in View > Controls	Tuşlar Görünüm > Kontroller'deki gibi
+A copy of its own was made for the script: the original type is unchanged	Betik için ayrı bir kopya yapıldı: asıl tür değişmedi
+Trolleybus wire the game cannot use	Oyunun kullanamayacağı troleybüs havai hattı
+Rows the game does not show	Oyunun göstermediği sıralar
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Bir yol boyunca uzanan nesne sırası (lambalar, direkler, park yerleri) üzerine döşendiği yoldan önce başlıyor: mesafesi yolun zincirinin başından sayılır ve buradaki değer zincirin bu yola kadarki uzunluğundan küçük. OMSI 2 ve openOMSI bunun hiçbirini göstermez, editör de göstermez. Sırayı yeniden döşeyin ya da özelliklerinden daha büyük bir başlangıç verin.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI makası yalnızca havai hattın tam üç hat parçasının buluştuğu yerde oluşturur ve artık hiçbirinin buluşmadığı yere konmuş bir makası atlar; şebekede olmayan bir bölümdeki hat parçasının trafo merkezi yoktur. Düzeltmek için Harita > Troleybüs havai hattı'nı açın.
+Trolleybus wire	Troleybüs havai hattı
+Select the next road piece (joined at its end; Shift: add it)	Sonraki yol parçasını seç (ucuna bağlı; Shift: seçime ekle)
+Select the previous road piece (joined at its start; Shift: add it)	Önceki yol parçasını seç (başına bağlı; Shift: seçime ekle)
+the up arrow	yukarı ok
+the down arrow	aşağı ok
+the left arrow	sol ok
+the right arrow	sağ ok
+Select three objects or more (the two farthest apart stay)	Üç veya daha fazla nesne seçin (en uzaktaki ikisi yerinde kalır)
+Line up	Hizaya diz
+Space evenly	Eşit aralıkla dağıt
+Splines laid	Spline'lar döşendi
+The spline reaches past the map: add tiles there first	Spline haritanın dışına taşıyor: önce oraya karo ekleyin
+Ground painted over areas	Alanlar boyunca zemin boyandı
+Track beds	Ray yatakları
+Ground under surfaces	Kaplamaların altındaki zemin
+Form the ground	Zemini biçimlendir
+Select a road piece first	Önce bir yol parçası seçin
+Nothing is joined at its end	Ucuna hiçbir şey bağlı değil
+Nothing is joined at its start	Başına hiçbir şey bağlı değil
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Taşı: X, Y veya Z boyunca bir oku, kendi düzleminde bir kareyi, zemin üzerinde daireyi sürükleyin
+Rotate: drag a ring to turn about X, Y or Z	Döndür: X, Y veya Z etrafında çevirmek için bir halkayı sürükleyin
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Ölçek: o eksen boyunca ölçeklemek için bir oku, iki eksen için bir kareyi, üçü için daireyi sürükleyin
+Junctions where the roads meet	Yolların buluştuğu kavşaklar
+Streets from the street model	Sokak modelinden sokaklar
+perimeter	çevre
+needs	gerekli izin
+built	oluşturuldu
+signed by	imzalayan
+not signed: the game loads it with a warning that its author is not known	imzasız: oyun onu, yazarının bilinmediği uyarısıyla yükler
+openOMSI has no such function (the API of version	openOMSI'de böyle bir fonksiyon yok (API sürümü
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` haritanın betikleri içindir; nesne betiğinde yalnızca omsi fonksiyonları vardır
+no such module in the project (modules/…)	projede böyle bir modül yok (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	oyun böyle bir olay göndermez (bir betik onu omsi.emit ile göndermedikçe)
+a name is needed	bir ad gerekli
+a file of that name is there already	bu adda bir dosya zaten var
+Empty module	Boş modül
+Test run of	Test çalıştırması
+does nothing in the test run (no game): it gives false	test çalıştırmasında hiçbir şey yapmaz (oyun yok): false döndürür
+has nothing to read in the test run (no game): it gives nil	test çalıştırmasında okunacak bir şey yok (oyun yok): nil döndürür
+an object of the OMSI 2 installation is never changed: make it an object of your own first	OMSI 2 kurulumundaki bir nesne asla değiştirilmez: önce onu kendi nesneniz yapın
+Dark	Koyu
+As the system	Sistemdeki gibi
+power (current on: branch)	akımla (akım varken: sapak)
+indicator	sinyalle
+radio	telsizle
+to the branch	sapağa
+at random	rastgele
+spans meet in one point: the game makes no switch there (a frog is three)	hat parçası tek noktada buluşuyor: oyun orada makas oluşturmaz (makas üç parçayla olur)
+Switch	Makas
+no three spans meet there any more	orada artık üç hat parçası buluşmuyor
+A span is in section	Hat parçasının bölümü
+that the network does not have	şebekede yok
+the wire spline	tel spline'ı
+the mast	direk
+the frog	ayrım
+the insulator	izolatör
+is not there	bulunamadı
+no wire spline: nothing of the wire is shown on the map	tel spline'ı yok: telin kendisi haritada gösterilmez
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	tel spline'ının profili 3 m üzerinde bir çift ince tel değil: olduğu gibi döşenir ve openOMSI onu trolley.txt olmadan tel olarak kabul etmez
+a kit of that name is there already	bu adda bir set zaten var
+Renew the wire from its kit	Hattı setinden yenile
+Theme	Tema
+Back to the 3D view	3B görünüme dön
+The plan view from above, north up	Yukarıdan plan görünümü, kuzey yukarıda
+Put the windows back in their first places	Pencereleri ilk yerlerine geri koy
+Trolleybus wire…	Troleybüs havai hattı…
+: there are unsaved changes	: kaydedilmemiş değişiklikler var
+Assets: every object and road type, with pictures	Varlıklar: resimleriyle tüm nesne ve yol türleri
+Close the openOMSI session started from here	Buradan başlatılan openOMSI oturumunu kapat
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Başlangıç yerini, aracı, saati ve havayı seçin, sonra haritada openOMSI'de sürün
+Search commands	Komutları ara
+Every command of the menus by its name	Menülerdeki her komut, adıyla
+Right-click the view for what can be done there; Search commands finds the rest	Orada yapılabilecekler için görünüme sağ tıklayın; geri kalanını Komutları ara bulur
+Right-click the view: its menu	Görünüme sağ tıklayın: menüsü
+Snap vertex	Köşeyi yasla
+Snap edge	Kenarı yasla
+Out of the mix	Karışımdan çıkar
+more as OMSI 2 is read…	OMSI 2 okundukça daha fazlası…
+Reading the content of OMSI 2…	OMSI 2 içeriği okunuyor…
+Nothing found: try fewer letters, or Everything in Show	Hiçbir şey bulunamadı: daha az harf deneyin ya da Göster'de Her şey'i seçin
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Bu türden hiçbir şey yok: Göster'de Her şey'i seçin ya da varlıkları içe aktarın (Dosya > Varlıkları içe aktar)
+a table of functions	bir fonksiyon tablosu
+a module	bir modül
+Next (Enter)	Sonraki (Enter)
+Previous (Shift+Enter)	Önceki (Shift+Enter)
+Match case	Büyük/küçük harf duyarlı
+Replace	Değiştir
+Replace…	Değiştir…
+Click: a breakpoint (F9 on the cursor's line)	Tık: kesme noktası (imlecin satırında F9)
+permission	izin
+The light before	Önceki trafik ışığı
+The next light	Sonraki trafik ışığı
+The phase before	Önceki evre
+The next phase	Sonraki evre
+to 	bitiş 
+Select the piece joined at its start (,)	Başına bağlı parçayı seç (,)
+Select the piece joined at its end (.)	Ucuna bağlı parçayı seç (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Aralarındaki mesafe ve eğimi ölçmek için iki noktaya tıklayın (U) · Shift + tıklamalar: bir alanın köşeleri (büyüklüğü ve çevresi) · sağ tık: kapat
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Seçili nesnenin bir köşesini başka bir nesnenin köşesine yasla\nShift: Yalnızca yatay, Esc/Sağ tık: İptal
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Seçili nesnenin bir kenarını bir kenara veya yola hizala\nDöndürür ve aynı doğruya yaslar\nShift: Yalnızca yatay, Esc/Sağ tık: İptal
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	En uzaktaki ikisi arasındaki düz çizgi üzerinde, eşit aralıklarla (direkler, lambalar, ağaç sırası)
+Equal steps between the two farthest apart, each keeping its distance to the side	En uzaktaki ikisi arasında eşit aralıklar; her biri yana olan mesafesini korur
+height, m	yükseklik, m
+gradient, %	eğim, %
+cant, %	yan eğim, %
+Rotate, °	Döndür, °
+Name, file, IDCode, stop, x, y or tile x y	Ad, dosya, IDCode, durak, x, y veya karo x y
+listed, no file	listede, dosya yok
+The camera over the tile's middle	Kamera karonun ortasının üzerinde
+its folder	klasörü
+Line up the selected objects	Seçili nesneleri hizaya diz
+Space the selected objects evenly	Seçili nesneleri eşit aralıkla dağıt
+Next road piece	Sonraki yol parçası
+Previous road piece	Önceki yol parçası
+The run ended	Çalıştırma bitti
+installed as	şuraya kuruldu:
+failed	başarısız
+Run	Çalıştır
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Betikleri burada, editörde, oyunun fonksiyonlarıyla çalıştır (kodda F5)
+Step in	Adımla başla
+Run and stop at the first line (F11)	Çalıştır ve ilk satırda dur (F11)
+Continue	Devam
+Pause	Duraklat
+Stop the clock; a script running stops at its next line	Saati durdur; çalışan bir betik bir sonraki satırında durur
+Over	Üzerinden
+Step over (F10)	Üzerinden geç (F10)
+Into	İçine
+Step into (F11)	İçine gir (F11)
+Out	Dışına
+Step out (Shift+F11)	Dışına çık (Shift+F11)
+Restart	Yeniden başlat
+The map's scripts	Haritanın betikleri
+The game's clock in the run	Çalıştırmadaki oyun saati
+Set the game's clock of the run (sends minute)	Çalıştırmadaki oyun saatini ayarla (minute gönderir)
+starts 	başlangıç 
+The hour the run starts at	Çalıştırmanın başladığı saat
+Save all	Tümünü kaydet
+Build .oop	.oop oluştur
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Paylaşmak için haritanın betiklerinden tek dosya: derlenmiş ve gizlenmiş, gereken izinlerle (Development Tools derleyicisi)
+API	API
+The game's functions and events	Oyunun fonksiyonları ve olayları
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Bu haritanın henüz betiği yok. Betikleri harita oynanırken openOMSI'de çalışır: olanlara tepki verir (bir durak, bir saat, bir sefer), mesaj gösterir, trafiği ve havayı değiştirir.
+Start the map's scripts	Haritanın betiklerini başlat
+Object scripts (Lua)	Nesne betikleri (Lua)
+No object on the map has a Lua script.	Haritadaki hiçbir nesnenin Lua betiği yok.
+Refresh	Yenile
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Bir sahne nesnesinin [lua_script] içinde adını verdiği betikler: kameranın yakınındaki o türden her nesne için bir tane çalışır (yalnızca openOMSI)
+Selected object	Seçili nesne
+Select one object on the map to see its scripts.	Betiklerini görmek için haritada bir nesne seçin.
+No OMSI 2 script (.osc).	OMSI 2 betiği (.osc) yok.
+Lua script (openOMSI)	Lua betiği (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Bu türden her nesne için bir betik; .sco dosyasının yanında durur ve içinde adı geçer ([lua_script]); OMSI 2 onu atlar. Kurulumdaki bir nesne önce haritanın kendi kopyası olur.
+OMSI 2 script (.osc)	OMSI 2 betiği (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Nesnenin değişken listesiyle kendi betiği, OMSI 2 ve openOMSI tarafından çalıştırılır; lambaları ve [visible] parçaları ayarladığı değişkenleri izler
+Rust plugin	Rust eklentisi
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Haritanın Rust ile yazılmış, WebAssembly'ye derlenip bir .oop içine konan eklentisi. Derlemek için wasm32-unknown-unknown hedefiyle Rust (rustup) gerekir.
+Make the Rust plugin	Rust eklentisini oluştur
+Build and install	Derle ve kur
+cargo builds it, the .oop goes into the content folder's plugins	cargo onu derler, .oop içerik klasörünün plugins klasörüne gider
+Starts with the map	Haritayla başlar
+Rename…	Yeniden adlandır…
+Earlier in the order	Sırada daha önce
+Later in the order	Sırada daha sonra
+Delete (into openMapper's bin)	Sil (openMapper çöp kutusuna)
+New script	Yeni betik
+New module	Yeni modül
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Her biri harita oynandığında bu sırayla başlar (birini taşımak için sağ tıklayın); başarısız olan diğerlerini durdurmaz. map.on, map.every, map.after kullanın: yalnızca bu haritada etki ederler.
+Modules	Modüller
+Code the scripts share: local util = require("modules.util")	Betiklerin paylaştığı kod: local util = require("modules.util")
+Data	Veri
+Files the scripts read (data/), pictures and sounds	Betiklerin okuduğu dosyalar (data/), resimler ve sesler
+Made by openMapper	openMapper tarafından yapıldı
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Soldan bir betik açın ya da yenisini oluşturun.\n\nF5 betikleri burada, editörde çalıştırır, F9 kesme noktası koyar, F10 / F11 adım atar,\nCtrl+Space tamamlar, Ctrl+F bulur, Ctrl+G bir satıra gider, Ctrl+/ yorum satırı yapar.
+Read only: a file of the installation or made by openMapper	Salt okunur: kurulumun ya da openMapper'ın yaptığı bir dosya
+Problems	Sorunlar
+Console	Konsol
+Debugger	Hata ayıklayıcı
+Events	Olaylar
+error	hata
+warning	uyarı
+No problems in the open files.	Açık dosyalarda sorun yok.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Betiklerin yazdırdıkları, ekranda gösterdikleri ve yaptıkları hatalar çalıştıklarında burada görünür (Çalıştır, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Betiklerde çalıştırılacak Lua (durulduysa, durulan çerçevede); Yukarı ve Aşağı: geçmiş
+Start a run first (Run, F5)	Önce bir çalıştırma başlatın (Çalıştır, F5)
+(empty)	(boş)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Çalışıyor. Bir kesme noktası (satır numarasının soluna tıklama ya da F9) betikleri orada durdurur; Duraklat onları bir sonraki satırlarında durdurur.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Çalışmıyor. Betikleri çalıştırın (F5); bir kesme noktası onları durdurur ve burada çağrı yığını, her fonksiyonun değişkenleri ve izlenecek değerler görünür.
+Stopped	Durdu
+Call stack	Çağrı yığını
+Locals	Yereller
+Upvalues	Üst değerler (upvalues)
+The console evaluates in this frame: a name, an expression, an assignment.	Konsol bu çerçevede değerlendirir: bir ad, bir ifade, bir atama.
+Storage and objects	Depolama ve nesneler
+Send	Gönder
+As if the game sent it: every handler of it runs	Sanki oyun göndermiş gibi: tüm işleyicileri çalışır
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Oyunun olaylarını elle göndermek için betikleri çalıştırın: varılan durak, bir kapı, yeni bir saat… Saat frame, minute ve hour olaylarını kendisi gönderir.
+Listening	Dinleyenler
+timers	zamanlayıcılar
+Sign with the key	Anahtarla imzala
+a secret key file of oopc keygen (optional)	oopc keygen gizli anahtar dosyası (isteğe bağlı)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	.oop oluştur, paylaşmak için haritanın betiklerinden tek bir dosya yapar (projenin dist klasöründe): derlenmiş, gizlenmiş, kodunun gerektirdiği izinlerle. Oyun betik klasörünü olduğu gibi çalıştırır; .oop betikleri kaynakları olmadan vermek içindir.
+Search functions and events	Fonksiyon ve olay ara
+since	eklendiği sürüm
+for an .oop	.oop için
+Double-click puts it into the script at the cursor.	Çift tıklama onu betikte imlecin olduğu yere ekler.
+A stop on this path	Bu yoldaki bir durak
+branch	sapak
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	openOMSI troleybüslerinin altında gittiği havai hat (haritanın yanındaki trolley.txt; OMSI 2 onu yok sayar). O olmadan oyun haritanın tel spline'larını okur.
+Start a wire for this map	Bu harita için bir hat başlat
+Lay	Döşe
+Sections	Bölümler
+Spans	Hat parçaları
+Switches	Makaslar
+Pick in the view	Görünümde seç
+A click in the view picks a span or a switch (yellow dot)	Görünümde bir tıklama bir hat parçasını ya da makası (sarı nokta) seçer
+The wires over the road surface	Yol yüzeyinin üstündeki teller
+the kerb lane each way	her yönde kaldırım tarafındaki şerit
+the way the road runs	yolun yönünde
+against the road's way	yolun yönüne karşı
+Section	Bölüm
+Kit	Set
+ (every map)	 (tüm haritalar)
+none: the wire for the game only	yok: hat yalnızca oyun için
+A new kit	Yeni bir set
+My wire	Benim hattım
+Change this kit	Bu seti değiştir
+its wire spline	tel spline'ı
+its masts, every	direkleri, her
+The kit names no mast	Sette direk belirtilmemiş
+Frogs and section insulators are put where the wire has them, as the kit names them.	Ayrımlar ve bölüm izolatörleri, hatta bulundukları yerlere setin belirttiği şekilde konur.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Haritaya hiçbir şey döşenmez, hat yalnızca oyun içindir. Bir set (+) tel, direk, ayrım ve izolatör için kendi modellerinizi belirtir.
+Over the selected roads	Seçili yolların üzerinde
+Select roads in the view first (double-click: a whole road)	Önce görünümde yolları seçin (çift tık: bütün bir yol)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Seçili nesnenin şeritleri (bir kavşak): telin üzerinden geçtiklerini işaretleyin. Buluşan üç hat parçası bir ayrım oluşturur.
+It has no street lanes.	Taşıt şeridi yok.
+lane	şerit
+Over the ticked lanes	İşaretli şeritlerin üzerinde
+Select one junction to lay the wire over its lanes.	Teli şeritlerinin üzerine döşemek için bir kavşak seçin.
+Draw a span by hand	Elle hat parçası çiz
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Noktalarına görünümde tıklayın; bir hat parçasının ucunda başlar ya da biterse ona bağlanır, ortasında ise oradan ayrılır (bir ayrım)
+points: click the next in the view	nokta: sonrakine görünümde tıklayın
+Finish	Bitir
+Read the map's wire splines	Haritanın tel spline'larını oku
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Bir çift tel olarak çizilmiş spline'lar (OMSI 2 için yapılmış troleybüs haritaları): oyunun okuduğu gibi her birinin boyunca bir hat parçası
+Network	Şebeke
+Voltage	Gerilim
+Wire spacing	Tel aralığı
+How uneven the contact wire is: worn or icy wire 0.003 and more	Temas telinin ne kadar düzensiz olduğu: aşınmış ya da buzlu tel 0.003 ve üzeri
+Delete the whole wire	Bütün hattı sil
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt bir sonraki kayıtta silinir; oyun yine haritanın tel spline'larını okur
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Tek bir trafo merkezinden beslenen kesimler. İkisinin buluştuğu yerde ölü bir kesim (bir izolatör) vardır.
+name	ad
+live	enerjili
+The feeder's resistance: the voltage drops with the current	Besleyicinin direnci: gerilim akımla düşer
+Power the feeder takes back from a braking bus	Besleyicinin fren yapan bir otobüsten geri aldığı güç
+spans	hat parçası
+Add a section	Bölüm ekle
+Insulators (where sections meet)	İzolatörler (bölümlerin buluştuğu yerler)
+ m dead	 m ölü
+Span	Hat parçası
+points	nokta
+Spacing	Aralık
+its own	kendine ait
+Drag: the whole span up or down	Sürükle: bütün hat parçasını yukarı ya da aşağı
+The span the other way: the positive wire is on the right of its way	Hat parçası ters yönde: artı tel gidiş yönünün sağındadır
+Pick a span in the view, or in the list.	Görünümde ya da listede bir hat parçası seçin.
+section	bölüm
+A switch where three spans meet (yellow in the view). Every frog gets one.	Üç hat parçasının buluştuğu yerde bir makas (görünümde sarı). Her ayrımın bir makası olur.
+No frogs yet: lay three spans meeting in one point (a branch).	Henüz ayrım yok: tek noktada buluşan üç hat parçası döşeyin (bir sapak).
+Spans laid:	Döşenen hat parçası:
+Wire kit	Havai hat seti
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Teli haritada gösteren kendi modelleriniz (Blender'da ya da başka bir yerde yapılmış, içerik klasörüne konmuş): tel spline'ı ve direk, ayrım ve izolatör nesneleri. Set, bunları belirten bir .cfg dosyasıdır; burada, metin olarak ya da herhangi bir metin düzenleyicide değiştirin.
+As text	Metin olarak
+The name is the kit's file: make a copy to rename it	Ad, setin dosyasıdır: yeniden adlandırmak için bir kopyasını yapın
+For	Kapsam
+this map	bu harita
+every map	tüm haritalar
+Take the one selected on the map	Haritada seçili olanı al
+Select a spline of it on the map first	Önce haritada böyle bir spline seçin
+Select such an object on the map first	Önce haritada böyle bir nesne seçin
+Choose the file	Dosyayı seç
+The file must lie in the content folder or in OMSI 2's	Dosya içerik klasöründe ya da OMSI 2'ninkinde olmalı
+Not there	Bulunamadı
+Wire spline	Tel spline'ı
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Profili telleri yolun üzerindeki yüksekliklerine koyan bir .sli; her hat parçası boyunca döşenir
+Mast	Direk
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Bir .sco: başlangıç noktası ayağında, kolu -y boyunca tele uzanır
+Frog	Ayrım
+A .sco hung where the wire branches: its origin on the wire, y along it	Telin ayrıldığı yere asılan bir .sco: başlangıç noktası tel üzerinde, y onun boyunca
+Insulator	İzolatör
+A .sco hung where two sections meet: its origin on the wire, y along it	İki bölümün buluştuğu yere asılan bir .sco: başlangıç noktası tel üzerinde, y onun boyunca
+Masts	Direkler
+every	her
+From a mast's foot to its wire, across the road	Direğin ayağından teline, yolun karşısına
+from the wire	telden
+Mast turned	Direk dönüşü
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Kolu -y boyunca uzanmayan bir model için: -x boyunca uzanıyorsa 90, +x boyunca -90, +y boyunca 180
+arm	kol
+The wire spline's wires	Tel spline'ının telleri
+high	yükseklik
+across its line	ekseninden
+Save and renew the map's wire	Kaydet ve haritanın hattını yenile
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Bu setten döşenen tel spline'ları ve direkler dosyalarını şimdiki halleriyle alır; ayrımlar ve izolatörler yeniden konur
+A new kit from this one (to rename it, or change it apart)	Bundan yeni bir set (yeniden adlandırmak ya da ayrıca değiştirmek için)
+Show the file	Dosyayı göster
+Changed to the kit's files:	Setin dosyalarıyla değiştirildi:
+a display shows the switch of its name	bir ekran bu adlı makası gösterir
+Set by	Kumanda
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Oyun hattı okuduğunda bulunduğu konum (rastgele: her çalıştırmada bir kez seçilir; çevrimiçi oyunda düz)
+Contact plate	Temas plakası
+ m before the frog	 m ayrımdan önce
+Power on from	Akımı veren
+Invert	Ters çevir
+the other way round	tersine
+Channel	Kanal
+any	herhangi
+Range	Menzil
+Route codes	Güzergâh kodları
+A route code	Bir güzergâh kodu
+Flip	Çevir
+Left to right	Soldan sağa
+Top to bottom	Yukarıdan aşağıya
+Dark theme	Koyu tema
+Light theme	Açık tema
+Lit	Işık
