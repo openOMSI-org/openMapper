@@ -2,7 +2,7 @@
 //! following, tangent at the joint) or its middle pulled to bend it. The new shape is fitted
 //! with the same arcs and biarcs roads are drawn with.
 
-use glam::DVec2;
+use glam::{DVec2, DVec3};
 use omsi_geometry::SplineCurve;
 use omsi_map::MapSpline;
 
@@ -169,6 +169,66 @@ pub fn drag_end_at(doc: &Document, k: TileKey, id: i64, at_end: bool, p: DVec2, 
 /// (degrees, clockwise from north, the way the road itself runs). The end stays where it
 /// is; the road bends to the new direction. A spline linked at that end follows, tangent
 /// at the joint, its far end kept.
+/// The splines linked on after `id`, in order, not including it. A piece joined end to end
+/// (its own end meets this one) is followed out through its other end.
+pub fn chain_after(doc: &Document, id: i64) -> Vec<(TileKey, i64)> {
+    let Some((_, s)) = doc.find_spline(id) else { return Vec::new() };
+    let mut from = id;
+    let mut cur = s.next_id;
+    let mut out = Vec::new();
+    for _ in 0..4096 {
+        if cur == 0 || cur == id || out.iter().any(|(_, i)| *i == cur) {
+            break;
+        }
+        let Some((k, s)) = doc.find_spline(cur) else { break };
+        out.push((k, cur));
+        let next = if s.prev_id == from { s.next_id } else if s.next_id == from { s.prev_id } else { 0 };
+        from = cur;
+        cur = next;
+    }
+    out
+}
+
+/// Move every spline after `id` so the joint that was `from`, leaving at heading `from_h`,
+/// is now `to`, leaving at `to_h`. Their length, radius and gradients stay; only where they
+/// stand, and the way they point, change.
+pub fn shift_chain(doc: &mut Document, id: i64, from: DVec3, from_h: f64, to: DVec3, to_h: f64) {
+    let dh = roads::signed_deg(to_h - from_h);
+    if (to - from).length() < 1e-9 && dh.abs() < 1e-9 {
+        return;
+    }
+    let dz = to.z - from.z;
+    for (k, sid) in chain_after(doc, id) {
+        let org = tile_origin(k);
+        let Some(t) = doc.tiles.get_mut(&k) else { continue };
+        let Some(sp) = t.tile.splines.iter_mut().find(|s| s.id == sid && !s.deleted) else { continue };
+        let p = DVec2::new(org.x + sp.pos[0], org.y + sp.pos[1]);
+        let np = to.truncate() + roads::turn_cw(p - from.truncate(), dh);
+        sp.pos[0] = np.x - org.x;
+        sp.pos[1] = np.y - org.y;
+        sp.pos[2] += dz;
+        sp.heading = roads::norm_deg(sp.heading + dh);
+        t.touch_content();
+    }
+}
+
+/// Turn one end so the road runs `heading` there, and leave the spline it is joined to
+/// alone: the caller moves that one, and whatever follows it, without refitting them.
+pub fn turn_this(doc: &Document, k: TileKey, id: i64, at_end: bool, heading: f64) -> Result<Plan, &'static str> {
+    let s = doc.spline(k, id).ok_or("gone")?;
+    let e = ends_of(s, k);
+    let (p, z, now, arrive) = if at_end { (e.b.truncate(), e.b.z, e.hb, roads::norm_deg(heading)) } else { (e.a.truncate(), e.a.z, e.ha, roads::norm_deg(heading + 180.0)) };
+    if angle_off(now, heading) < 0.05 {
+        return Ok(Plan::default());
+    }
+    let (f, hf, gf) = if at_end { (e.a, e.ha, e.ga) } else { (e.b, roads::norm_deg(e.hb + 180.0), -e.gb) };
+    let too_sharp = crate::i18n::tr("That bend is too sharp", "Слишком крутой поворот");
+    let segs = fit(End { pos: f.truncate(), heading: Some(hf) }, End { pos: p, heading: Some(arrive) }).ok_or(too_sharp)?;
+    let gp = (z - f.z) / roads::total_length(&segs).max(0.1) * 100.0;
+    let mine = Piece { key: k, id, segs, z0: f.z, z1: z, g0: Some(gf), g1: Some(gp) };
+    Ok(Plan { pieces: vec![if at_end { mine } else { mine.reversed() }] })
+}
+
 pub fn turn_end(doc: &Document, k: TileKey, id: i64, at_end: bool, heading: f64, locked: &dyn Fn(DVec2) -> bool) -> Result<Plan, &'static str> {
     let s = doc.spline(k, id).ok_or("gone")?;
     let e = ends_of(s, k);

@@ -322,6 +322,9 @@ pub struct RotGrab {
     /// What it was last asked to turn: a frame that asks the same again has nothing to do.
     asked: f64,
     links: Option<selection::SplineWhere>,
+    /// The splines linked on after a single selected spline, where they stood when the turn
+    /// began. They swing with it and are not themselves selected.
+    tail: Vec<Origin>,
 }
 
 impl RotGrab {
@@ -2969,6 +2972,7 @@ impl Editor {
                 let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
                 let Some(pivot) = pivot else { return };
                 let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
+                let tail = spline_tail(doc, &sels);
                 // (one thing alone, with angle snapping on, comes to a whole step)
                 let deg = match (&from[..], self.snap_angle) {
                     ([one], true) => snap_deg(one.heading + deg, self.angle_step) - one.heading,
@@ -2976,9 +2980,23 @@ impl Editor {
                 };
                 self.history.begin(if sels.len() > 1 { tr("Rotate selection", "Поворот выделенного") } else { tr("Rotate", "Поворот") });
                 let now = selection::transform(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO);
-                selection::unlink_outside(doc, &mut self.history, &now);
+                if !tail.is_empty() {
+                    selection::transform(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO);
+                }
+                let mut keep = now.clone();
+                keep.extend(tail.iter().map(|o| o.sel));
+                let joint = start_joint(doc, &sels);
+                selection::unlink_outside(doc, &mut self.history, &keep);
+                if let Some((pk, pid, k, id, at_end)) = joint {
+                    relink_start(doc, &mut self.history, pk, pid, k, id, at_end);
+                }
                 self.set_selection_unique(now);
                 self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+                if let Some((_, _, k, id, _)) = joint {
+                    if deg.abs() > 1e-6 {
+                        self.miter_start(k, id);
+                    }
+                }
                 self.ground_to_selection();
                 self.finish_step();
             }
@@ -3011,7 +3029,8 @@ impl Editor {
         }
         self.history.begin(tr("Rotate", "Поворот"));
         let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
-        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links });
+        let tail = self.doc.as_ref().map(|d| spline_tail(d, &sels)).unwrap_or_default();
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail });
         self.xform_value = 0.0;
         true
     }
@@ -3102,9 +3121,13 @@ impl Editor {
     /// Keep the turn where it stands.
     pub fn rot_confirm(&mut self) -> bool {
         let Some(g) = self.rot.take() else { return false };
-        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).collect();
+        let joint = self.doc.as_ref().and_then(|d| start_joint(d, &g.from.iter().map(|o| o.sel).collect::<Vec<_>>()));
+        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).chain(g.tail.iter().map(|o| o.sel)).collect();
         if let Some(doc) = self.doc.as_mut() {
             selection::unlink_outside(doc, &mut self.history, &sels);
+            if let Some((pk, pid, k, id, at_end)) = joint {
+                relink_start(doc, &mut self.history, pk, pid, k, id, at_end);
+            }
         }
         self.ground_to_selection();
         self.finish_step();
@@ -3131,10 +3154,15 @@ impl Editor {
             let Some(g) = self.rot.as_mut() else { return };
             let Some(doc) = self.doc.as_mut() else { return };
             let from = std::mem::take(&mut g.from);
+            let tail = std::mem::take(&mut g.tail);
             let now = selection::transform_known(doc, &mut self.history, &from, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            if !tail.is_empty() {
+                selection::transform_known(doc, &mut self.history, &tail, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            }
             self.set_selection_unique(now);
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
+                g.tail = tail;
                 g.done = 0.0;
             }
             self.xform_value = 0.0;
@@ -3143,21 +3171,28 @@ impl Editor {
         let Some(g) = self.rot.as_mut() else { return };
         let pivot = g.pivot;
         let mut from = std::mem::take(&mut g.from);
+        let mut tail = std::mem::take(&mut g.tail);
         let mut arms = std::mem::take(&mut g.arms);
         let links = g.links.as_ref();
         let Some(doc) = self.doc.as_mut() else {
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
+                g.tail = tail;
                 g.arms = arms;
             }
             return;
         };
         let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        if !tail.is_empty() {
+            selection::transform_known(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO, links);
+        }
         self.set_selection_unique(now);
         self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+        self.miter_if_one_spline();
         self.xform_value = deg;
         if let Some(g) = self.rot.as_mut() {
             g.from = std::mem::take(&mut from);
+            g.tail = std::mem::take(&mut tail);
             g.arms = std::mem::take(&mut arms);
             g.done = deg;
         }
@@ -9994,33 +10029,27 @@ impl Editor {
         reshape::set_end(doc, k, id, at_end, z, g);
     }
 
-    /// A road's length and radius by numbers: its start stays, the road joined at its end
-    /// follows, tangent, its far end kept.
-    fn set_spline_shape(&mut self, assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
+    /// A road's length and radius by numbers: its start stays. Whatever is linked on after it
+    /// moves with the end, turned by however much the end's direction changed, and keeps its
+    /// own length, radius and gradients.
+    fn set_spline_shape(&mut self, _assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
         self.heading_drag = None;
         self.heading_shown = None;
-        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
-        let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
         let Some(doc) = self.doc.as_ref() else { return };
         let Some(s) = doc.spline(k, id).cloned() else { return };
+        if (s.length - length).abs() < 1e-9 && (s.radius - radius).abs() < 1e-9 {
+            return;
+        }
         let org = tile_origin(k);
         let old = omsi_geometry::SplineCurve::from_map(&s, org);
-        let mut new = s.clone();
-        new.length = length;
-        new.radius = radius;
-        let c = omsi_geometry::SplineCurve::from_map(&new, org);
-        let p = c.end_point();
-        let mut plan = None;
-        if let Some((nk, n)) = doc.find_spline(s.next_id) {
-            let at_end = if n.prev_id == id { false } else if n.next_id == id { true } else { return };
-            match reshape::carry_end(doc, nk, n.id, at_end, p.truncate(), crate::roads::norm_deg(c.heading_at(length) + 180.0), p.z - old.end_point().z, &locked) {
-                Ok(pl) => plan = Some(pl),
-                Err(e) => {
-                    self.toast(e);
-                    return;
-                }
-            }
-        }
+        let old_end = old.end_point();
+        let old_h = old.heading_at(s.length);
+        let mut built = s.clone();
+        built.length = length;
+        built.radius = radius;
+        let c = omsi_geometry::SplineCurve::from_map(&built, org);
+        let new_end = c.end_point();
+        let new_h = c.heading_at(length);
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         let Some(doc) = self.doc.as_mut() else { return };
         selection::touch_spline(&mut self.history, doc, k, id);
@@ -10031,8 +10060,67 @@ impl Editor {
             }
             t.touch_content();
         }
-        if let Some(plan) = plan {
-            self.apply_plan(&plan);
+        self.relay(id, old_end, old_h, new_end, new_h);
+    }
+
+    /// Move the splines linked on after `id` from the joint `from` (leaving at `from_h`) to `to`.
+    fn relay(&mut self, id: i64, from: DVec3, from_h: f64, to: DVec3, to_h: f64) {
+        let Some(doc) = self.doc.as_mut() else { return };
+        for (k, sid) in reshape::chain_after(doc, id) {
+            selection::touch_spline(&mut self.history, doc, k, sid);
+        }
+        reshape::shift_chain(doc, id, from, from_h, to, to_h);
+    }
+
+    /// Where one end of a spline is, and the heading the road runs there.
+    fn end_pose(&self, k: TileKey, id: i64, at_end: bool) -> Option<(DVec3, f64)> {
+        let s = self.doc.as_ref()?.spline(k, id)?;
+        let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+        Some(if at_end { (c.end_point(), c.heading_at(s.length)) } else { (c.point_at(0.0), c.heading_at(0.0)) })
+    }
+
+    /// The cut where a spline meets the one before it, as OMSI sets it when that spline is
+    /// turned: the previous piece's end and this piece's start.
+    fn miter_if_one_spline(&mut self) {
+        let sels = self.selection();
+        let [Sel::Spline(k, id)] = sels[..] else { return };
+        self.miter_start(k, id);
+    }
+
+    fn miter_start(&mut self, k: TileKey, id: i64) {
+        let Some(doc) = self.doc.as_ref() else { return };
+        let Some(s) = doc.spline(k, id) else { return };
+        let prev_id = s.prev_id;
+        if prev_id == 0 {
+            return;
+        }
+        let this_h = s.heading;
+        let Some((pk, prev)) = doc.find_spline(prev_id) else { return };
+        let arrive = {
+            let c = omsi_geometry::SplineCurve::from_map(prev, tile_origin(pk));
+            if prev.next_id == id {
+                c.heading_at(prev.length)
+            } else if prev.prev_id == id {
+                roads::norm_deg(c.heading_at(0.0) + 180.0)
+            } else {
+                return;
+            }
+        };
+        let (skew_end, skew_start) = roads::joint_skew(this_h - arrive);
+        let Some(doc) = self.doc.as_mut() else { return };
+        selection::touch_spline(&mut self.history, doc, pk, prev_id);
+        selection::touch_spline(&mut self.history, doc, k, id);
+        if let Some(t) = doc.tiles.get_mut(&pk) {
+            if let Some(p) = t.tile.splines.iter_mut().find(|s| s.id == prev_id && !s.deleted) {
+                p.skew_end = skew_end;
+            }
+            t.touch_content();
+        }
+        if let Some(t) = doc.tiles.get_mut(&k) {
+            if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == id && !s.deleted) {
+                s.skew_start = skew_start;
+            }
+            t.touch_content();
         }
     }
 
@@ -10053,19 +10141,19 @@ impl Editor {
     }
 
     /// Turn one end of a road so it runs at `heading` (degrees, clockwise from north). The end
-    /// stays where it is and the road bends to it; the road joined there follows. Each move of
-    /// the number is fitted from the road as the drag began.
-    fn set_spline_heading(&mut self, assets: &mut Assets, k: TileKey, id: i64, at_end: bool, heading: f64) {
+    /// stays where it is and the road bends to it. The pieces linked on after that end turn
+    /// with it and keep their own length and radius. Each move of the number is fitted from
+    /// the road as the drag began.
+    fn set_spline_heading(&mut self, _assets: &mut Assets, k: TileKey, id: i64, at_end: bool, heading: f64) {
         let continuing = self.panel_step && self.history.is_open() && self.heading_drag.as_ref().is_some_and(|d| d.key == k && d.id == id && d.at_end == at_end);
         if continuing {
             self.restore_heading_drag();
         } else {
             self.heading_drag = None;
         }
-        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
-        let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
+        let before = at_end.then(|| self.end_pose(k, id, true)).flatten();
         let Some(doc) = self.doc.as_ref() else { return };
-        let turned = reshape::turn_end(doc, k, id, at_end, heading, &locked);
+        let turned = reshape::turn_this(doc, k, id, at_end, heading);
         let plan = match turned {
             Ok(p) => p,
             Err(e) => {
@@ -10082,13 +10170,23 @@ impl Editor {
         }
         let link = doc.spline(k, id).map(|s| if at_end { s.next_id } else { s.prev_id }).unwrap_or(0);
         if self.heading_drag.is_none() {
-            let tiles = reshape::tiles_of(doc, &plan);
+            let mut tiles = reshape::tiles_of(doc, &plan);
+            if at_end {
+                for (tk, _) in reshape::chain_after(doc, id) {
+                    tiles.push(tk);
+                }
+            }
+            tiles.sort();
+            tiles.dedup();
             let saved: Vec<(TileKey, Vec<omsi_map::MapSpline>)> = tiles.iter().filter_map(|t| doc.tiles.get(t).map(|tile| (*t, tile.tile.splines.clone()))).collect();
             self.heading_drag = Some(HeadingDrag { key: k, id, at_end, tiles: saved, end_id: id, last: plan.clone() });
         }
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         self.apply_plan(&plan);
         let end_id = self.heading_piece(k, id, at_end, link);
+        if let (true, Some((from, from_h)), Some((to, to_h))) = (at_end, before, self.end_pose(k, end_id, true)) {
+            self.relay(end_id, from, from_h, to, to_h);
+        }
         if let Some(d) = &mut self.heading_drag {
             d.end_id = end_id;
             d.last = plan;
@@ -11773,6 +11871,45 @@ fn road_points_near(doc: &Document, assets: &mut Assets, c: DVec2, within: f64) 
 fn road_start(doc: &Document, sels: &[Sel]) -> Option<DVec3> {
     let [Sel::Spline(k, id)] = sels else { return None };
     doc.spline(*k, *id).map(|s| omsi_geometry::SplineCurve::from_map(s, tile_origin(*k)).point_at(0.0))
+}
+
+/// The piece before the one spline in `sels`, when the turn is about that spline's start:
+/// `(previous tile, previous id, this tile, this id, the previous piece meets this one at its end)`.
+fn start_joint(doc: &Document, sels: &[Sel]) -> Option<(TileKey, i64, TileKey, i64, bool)> {
+    let [Sel::Spline(k, id)] = sels else { return None };
+    let s = doc.spline(*k, *id)?;
+    let (pk, prev) = doc.find_spline(s.prev_id)?;
+    let at_its_end = prev.next_id == *id;
+    if !at_its_end && prev.prev_id != *id {
+        return None;
+    }
+    Some((pk, s.prev_id, *k, *id, at_its_end))
+}
+
+/// Put back the link between a spline and the piece it starts from. Turning about the start
+/// leaves that joint where it was, so the two stay joined; a turn still drops a link to
+/// anything that was not carried round with it.
+fn relink_start(doc: &mut Document, hist: &mut crate::history::History, pk: TileKey, pid: i64, k: TileKey, id: i64, at_its_end: bool) {
+    selection::touch_spline(hist, doc, pk, pid);
+    selection::touch_spline(hist, doc, k, id);
+    if let Some(t) = doc.tiles.get_mut(&k) {
+        if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == id && !s.deleted) {
+            s.prev_id = pid;
+        }
+        t.touch_content();
+    }
+    if let Some(t) = doc.tiles.get_mut(&pk) {
+        if let Some(p) = t.tile.splines.iter_mut().find(|s| s.id == pid && !s.deleted) {
+            if at_its_end { p.next_id = id } else { p.prev_id = id };
+        }
+        t.touch_content();
+    }
+}
+
+/// The splines linked on after the one spline in `sels`, where they stand now.
+fn spline_tail(doc: &Document, sels: &[Sel]) -> Vec<Origin> {
+    let Sel::Spline(_, id) = (if sels.len() == 1 { sels[0] } else { return Vec::new() }) else { return Vec::new() };
+    reshape::chain_after(doc, id).into_iter().filter_map(|(k, sid)| selection::origin_of(doc, Sel::Spline(k, sid))).collect()
 }
 
 /// The highest the ground sample at `p` may lie without its triangles showing through a
@@ -14919,13 +15056,14 @@ mod tests {
         assert!((ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap().radius - 0.3).abs() < 1e-9);
     }
 
-    /// A road made longer by numbers: the road joined at its end starts where it now ends,
-    /// tangent, and still ends where it did.
+    /// A road made longer by numbers: the pieces linked on after it move with the new end
+    /// and keep their own length.
     #[test]
     fn a_length_typed_carries_the_next_road() {
         let mut doc = flat_map(1);
         add_spline(&mut doc, (0, 0), 1, 50.0, 50.0, 0.0, 30.0, 0, 2);
-        add_spline(&mut doc, (0, 0), 2, 50.0, 80.0, 0.0, 60.0, 1, 0);
+        add_spline(&mut doc, (0, 0), 2, 50.0, 80.0, 0.0, 60.0, 1, 3);
+        add_spline(&mut doc, (0, 0), 3, 50.0, 140.0, 0.0, 20.0, 2, 0);
         let mut ed = Editor::default();
         ed.open(doc);
         let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
@@ -14934,11 +15072,66 @@ mod tests {
         let doc = ed.doc.as_ref().unwrap();
         assert_eq!(doc.spline((0, 0), 1).unwrap().length, 40.0);
         let c = omsi_geometry::SplineCurve::from_map(doc.spline((0, 0), 2).unwrap(), DVec2::ZERO);
+        assert_eq!(doc.spline((0, 0), 2).unwrap().length, 60.0, "the next piece keeps its length");
         assert!((c.point_at(0.0).truncate() - DVec2::new(50.0, 90.0)).length() < 1e-6, "{:?}", c.point_at(0.0));
-        assert!((c.end_point().truncate() - DVec2::new(50.0, 140.0)).length() < 1e-3, "{:?}", c.end_point());
+        assert!((c.end_point().truncate() - DVec2::new(50.0, 150.0)).length() < 1e-3, "{:?}", c.end_point());
+        let d = omsi_geometry::SplineCurve::from_map(doc.spline((0, 0), 3).unwrap(), DVec2::ZERO);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().length, 20.0);
+        assert!((d.point_at(0.0).truncate() - DVec2::new(50.0, 150.0)).length() < 1e-3, "{:?}", d.point_at(0.0));
         // and back with one undo
         ed.undo();
         assert_eq!(ed.doc.as_ref().unwrap().spline((0, 0), 1).unwrap().length, 30.0);
+        assert!((omsi_geometry::SplineCurve::from_map(ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap(), DVec2::ZERO).point_at(0.0).truncate() - DVec2::new(50.0, 80.0)).length() < 1e-6);
+    }
+
+    /// Turning the end's heading swings the pieces after it; their length stays.
+    #[test]
+    fn turning_an_end_swings_the_pieces_after_it() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 100.0, 140.0, 0.0, 40.0, 1, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.heading_request = Some(((0, 0), 1, true, 20.0));
+        ed.tick(&mut assets, 0.016, false);
+        let doc = ed.doc.as_ref().unwrap();
+        let n = doc.spline((0, 0), 2).unwrap();
+        assert!((n.length - 40.0).abs() < 1e-6, "the next piece keeps its length");
+        assert!(roads::signed_deg(n.heading - 20.0).abs() < 1.0, "it turns with the end: {}", n.heading);
+        let c = omsi_geometry::SplineCurve::from_map(n, DVec2::ZERO);
+        assert!((c.point_at(0.0).truncate() - DVec2::new(100.0, 140.0)).length() < 0.5, "it stays on the joint: {:?}", c.point_at(0.0));
+        assert!((c.end_point().truncate() - DVec2::new(100.0, 180.0)).length() > 5.0, "it swung instead of being rebuilt to its old end: {:?}", c.end_point());
+    }
+
+    /// R on one spline turns the pieces after it about its start, and mitres the joint with
+    /// the piece before it the way OMSI does (a left turn of 90°: end 1, start -1).
+    #[test]
+    fn rotating_a_spline_swings_what_follows_and_mitres_the_joint() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 0.0, 0.0, 0.0, 10.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 0.0, 10.0, 0.0, 10.0, 1, 3);
+        add_spline(&mut doc, (0, 0), 3, 0.0, 20.0, 0.0, 10.0, 2, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_selection(vec![Sel::Spline((0, 0), 2)]);
+        ed.rotate(-90.0);
+        let doc = ed.doc.as_ref().unwrap();
+        let turned = doc.spline((0, 0), 2).unwrap();
+        assert!((turned.heading - 270.0).abs() < 1e-6, "it turned about its start: {}", turned.heading);
+        assert!((turned.length - 10.0).abs() < 1e-9);
+        let c = omsi_geometry::SplineCurve::from_map(turned, DVec2::ZERO);
+        assert!((c.point_at(0.0).truncate() - DVec2::new(0.0, 10.0)).length() < 1e-6, "the start stays on the piece before it");
+        assert!((c.end_point().truncate() - DVec2::new(-10.0, 10.0)).length() < 1e-3, "{:?}", c.end_point());
+        let after = doc.spline((0, 0), 3).unwrap();
+        assert!((after.length - 10.0).abs() < 1e-9, "what follows keeps its length");
+        assert!((after.heading - 270.0).abs() < 1e-6, "{}", after.heading);
+        let ac = omsi_geometry::SplineCurve::from_map(after, DVec2::ZERO);
+        assert!((ac.point_at(0.0).truncate() - c.end_point().truncate()).length() < 1e-3, "it stays joined: {:?}", ac.point_at(0.0));
+        assert!(doc.spline((0, 0), 2).unwrap().next_id == 3 && doc.spline((0, 0), 3).unwrap().prev_id == 2, "the link is kept");
+        let prev = doc.spline((0, 0), 1).unwrap();
+        assert!((prev.skew_end - 1.0).abs() < 1e-6 && (turned.skew_start + 1.0).abs() < 1e-6, "a left corner mitres 1 and -1: {} {}", prev.skew_end, turned.skew_start);
+        assert!((prev.heading).abs() < 1e-9, "the piece before it is not turned");
     }
 
     #[test]
