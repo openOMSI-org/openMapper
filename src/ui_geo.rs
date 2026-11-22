@@ -338,8 +338,8 @@ pub struct GeoUi {
     known: BTreeSet<TileKey>,
     // the overlay on the ground
     epoch: u64,
-    /// What each tile's texture shows (its file and the file's time).
-    shown: HashMap<TileKey, (PathBuf, Option<std::time::SystemTime>)>,
+    /// What each tile's texture shows (its file, the file's time and the texture's edge).
+    shown: HashMap<TileKey, (PathBuf, Option<std::time::SystemTime>, u32)>,
     load_tx: Sender<(PathBuf, TileKey, PathBuf, u32)>,
     loaded_rx: Receiver<(PathBuf, TileKey, Option<Mips>)>,
     loading: BTreeSet<TileKey>,
@@ -381,8 +381,9 @@ pub struct GeoUi {
     mini_pending: Vec<(TileKey, egui::ColorImage)>,
     /// Unloaded tiles beside loaded heights (their shared edge steps).
     edges: Vec<TileKey>,
-    /// The edge the pictures on the GPU were put up at (0: none up yet).
-    shown_side: u32,
+    /// The edge each held picture goes up at on the GPU, with the place and count it was
+    /// worked out for.
+    sides: Option<(HashMap<TileKey, u32>, DVec2, usize)>,
     /// OMSI's own aerial photos for this map: the folder found beside it and how many tiles
     /// it has photos for (None: the map has none).
     aerial: Option<(PathBuf, usize)>,
@@ -450,7 +451,7 @@ impl Default for GeoUi {
             mini: HashMap::new(),
             mini_pending: Vec::new(),
             edges: Vec::new(),
-            shown_side: 0,
+            sides: None,
             aerial: None,
             aerial_job: None,
             near: None,
@@ -462,6 +463,44 @@ impl Default for GeoUi {
 
 fn ts() -> f64 {
     tile_size()
+}
+
+/// Edge of the textures on the GPU: the more of them are held at once, the smaller. What
+/// counts is what is up on the card now, not how many tiles the map has: a map's own aerial
+/// photos are 1024 or 2048 a side, and 485 of those kept at their own size would be 43 GB,
+/// while a window of sixteen round the camera is a quarter of a gigabyte.
+fn gpu_side(held: usize) -> u32 {
+    match held {
+        0..=4 => 4096,
+        5..=16 => 2048,
+        17..=64 => 1024,
+        _ => 512,
+    }
+}
+
+/// The edge of each held tile's texture: what their number allows (`gpu_side`), and more for
+/// the tiles nearest `at`, where one looks - the one under it 4096, the eight round it 2048, the
+/// sixteen round those 1024. Without that a map with more than 64 tiles of pictures showed
+/// every one at 512 (60 cm a pixel on a 300 m tile), even the one being worked on; this way it
+/// costs at most some 350 MB more on the card, whatever the map's size.
+fn gpu_sides(held: &[TileKey], at: DVec2, tile: f64) -> HashMap<TileKey, u32> {
+    let base = gpu_side(held.len());
+    let half = DVec2::splat(tile * 0.5);
+    let mut by: Vec<(f64, TileKey)> = held.iter().map(|k| ((DVec2::new(k.0 as f64, k.1 as f64) * tile + half - at).length_squared(), *k)).collect();
+    // (the key breaks a tie, so tiles as far as each other keep their edge from frame to frame)
+    by.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+    by.iter()
+        .enumerate()
+        .map(|(i, (_, k))| {
+            let near = match i {
+                0 => 4096,
+                1..=8 => 2048,
+                9..=24 => 1024,
+                _ => 0,
+            };
+            (*k, base.max(near))
+        })
+        .collect()
 }
 
 impl GeoUi {
@@ -1088,7 +1127,7 @@ impl GeoUi {
         let keys: Vec<TileKey> = pic.tiles().filter(|k| self.file.tile(*k).own.as_deref() == Some(id)).collect();
         let (tx, rx) = channel();
         let t = ts();
-        let max = self.gpu_side(keys.len());
+        let max = gpu_side(keys.len());
         std::thread::spawn(move || {
             let n = if full { pic.piece_size(t, img.width()) } else { 384 };
             for k in keys {
@@ -1142,17 +1181,18 @@ impl GeoUi {
 
     // -------------------------------------------------------------- the overlay
 
-    /// Edge of the textures on the GPU: the more of them are held at once, the smaller. What
-    /// counts is what is up on the card now, not how many tiles the map has: a map's own aerial
-    /// photos are 1024 or 2048 a side, and 485 of those kept at their own size would be 43 GB,
-    /// while a window of sixteen round the camera is a quarter of a gigabyte.
-    fn gpu_side(&self, held: usize) -> u32 {
-        match held {
-            0..=4 => 4096,
-            5..=16 => 2048,
-            17..=64 => 1024,
-            _ => 512,
+    /// The edge of each held tile's texture, worked out again only when the camera has moved
+    /// half a tile's width or another number of tiles is held, so a still view (or one moving
+    /// inside a tile) puts nothing up again.
+    fn sides_for(&mut self, held: &[TileKey], at: DVec2) -> HashMap<TileKey, u32> {
+        if let Some((sides, from, was)) = &self.sides {
+            if *was == held.len() && (*from - at).length() < ts() * 0.5 && held.iter().all(|k| sides.contains_key(k)) {
+                return sides.clone();
+            }
         }
+        let sides = gpu_sides(held, at, ts());
+        self.sides = Some((sides.clone(), at, held.len()));
+        sides
     }
 
     /// The tiles whose photos are kept: the `photos_near` ones nearest `at`, or None for every
@@ -1218,15 +1258,21 @@ impl GeoUi {
         // (the photos of the tiles round the camera, when the map asks for a window of them)
         let near = self.near_set(doc, at);
         // (the edge of the textures: what is held at once, not what the map has - a window of a
-        // few tiles can keep its photos near their own size, the whole map cannot)
-        let held = near.as_ref().map(|s| s.len()).unwrap_or_else(|| self.file.tiles.values().filter(|t| t.imagery.is_some() || t.own.is_some()).count());
-        let max = self.gpu_side(held);
-        // (a different edge from the one the pictures went up at: they go up again)
-        if self.shown_side != max {
-            self.shown_side = max;
-            self.shown.clear();
-        }
+        // few tiles can keep its photos near their own size, the whole map cannot - and larger
+        // round the camera; a tile whose edge changes goes up again)
+        let held: Vec<TileKey> = doc
+            .tiles
+            .keys()
+            .copied()
+            .filter(|k| near.as_ref().map(|s| s.contains(k)).unwrap_or(true))
+            .filter(|k| {
+                let t = self.file.tile(*k);
+                t.imagery.is_some() || t.own.is_some()
+            })
+            .collect();
+        let sides = self.sides_for(&held, at);
         for k in doc.tiles.keys() {
+            let max = sides.get(k).copied().unwrap_or_else(|| gpu_side(held.len()));
             let t = self.file.tile(*k);
             if let Some(set) = &near {
                 if !set.contains(k) {
@@ -1242,7 +1288,7 @@ impl GeoUi {
             let want = self.picture_cached(&dir, *k);
             if let (Some(m), true) = (self.memory.get(k), t.own.is_none()) {
                 // (held in memory only: put up once)
-                let now = (PathBuf::new(), None);
+                let now = (PathBuf::new(), None, max);
                 if self.shown.get(k) != Some(&now) {
                     self.shown.insert(*k, now);
                     let mips = Mips::of((**m).clone(), max);
@@ -1252,7 +1298,7 @@ impl GeoUi {
             } else {
                 match want {
                     Some((p, time)) => {
-                        let now = (p, time);
+                        let now = (p, time, max);
                         if self.shown.get(k) != Some(&now) && !self.loading.contains(k) {
                             let p = now.0.clone();
                             self.shown.insert(*k, now);
@@ -1942,5 +1988,39 @@ fn mini_of(m: &Mips) -> egui::ColorImage {
 impl Drop for GeoUi {
     fn drop(&mut self) {
         self.flush();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tiles_round_the_camera_stay_sharp_on_a_big_map() {
+        // 9 × 9 tiles of pictures, the camera in the middle of tile (4, 4)
+        let held: Vec<TileKey> = (0..9).flat_map(|x| (0..9).map(move |y| (x, y))).collect();
+        let s = gpu_sides(&held, DVec2::new(4.5, 4.5) * 300.0, 300.0);
+        assert_eq!(s.len(), 81);
+        assert_eq!(s[&(4, 4)], 4096);
+        for k in [(3, 3), (4, 3), (5, 5), (3, 5)] {
+            assert_eq!(s[&k], 2048, "{k:?}");
+        }
+        for k in [(2, 2), (6, 4), (4, 6), (2, 5)] {
+            assert_eq!(s[&k], 1024, "{k:?}");
+        }
+        // (the far ones: what 81 tiles allow)
+        assert_eq!(s[&(0, 0)], 512);
+        assert_eq!(s[&(8, 8)], 512);
+        assert_eq!(s.values().filter(|e| **e > 512).count(), 25);
+    }
+
+    #[test]
+    fn few_tiles_all_keep_their_size() {
+        let held = [(0, 0), (1, 0), (0, 1), (1, 1)];
+        let s = gpu_sides(&held, DVec2::new(-5000.0, 0.0), 300.0);
+        assert!(s.values().all(|e| *e == 4096));
+        let held: Vec<TileKey> = (0..4).flat_map(|x| (0..4).map(move |y| (x, y))).collect();
+        let s = gpu_sides(&held, DVec2::ZERO, 300.0);
+        assert!(s.values().all(|e| *e >= 2048));
     }
 }

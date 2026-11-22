@@ -33,7 +33,8 @@ impl TimetableUi {
         if doc.timetable.by_hand(name) {
             return saved_lanes(net, doc, name).unwrap_or_default();
         }
-        self.shown.as_ref().filter(|s| s.0.eq_ignore_ascii_case(name) && s.3.ok()).map(|s| s.3.lanes.clone()).unwrap_or_default()
+        // (a way found only part of the way: picking goes on from where it stops)
+        self.shown.as_ref().filter(|s| s.0.eq_ignore_ascii_case(name)).map(|s| s.3.lanes.clone()).unwrap_or_default()
     }
 
     /// The trip's way set to `lanes`, picked by hand from now on.
@@ -106,7 +107,7 @@ impl TimetableUi {
         }
         let mut remove: Option<Vec<usize>> = None;
         let shown = self.shown.as_ref().filter(|s| s.0 == name).map(|s| s.3.clone());
-        egui::CollapsingHeader::new(icons::labelled(Icon::Route, &format!("{} ({})", tr("Paths of the way", "Пути маршрута"), lanes.len()))).id_salt(("tt way paths", lower(name))).default_open(false).show(ui, |ui| {
+        egui::CollapsingHeader::new(icons::labelled(Icon::Route, &format!("{} ({})", tr("Paths of the way", "Пути маршрута"), lanes.len()))).id_salt(("tt way paths", lower(name), self.way_edit)).default_open(self.way_edit).show(ui, |ui| {
             // (where the stops are, to trim the way before the first and after the last)
             let stop_at: Vec<usize> = shown.as_ref().filter(|r| r.lanes == lanes).map(|r| r.stops.iter().map(|s| s.0).collect()).unwrap_or_default();
             ui.horizontal(|ui| {
@@ -119,7 +120,7 @@ impl TimetableUi {
                     }
                 }
             });
-            egui::ScrollArea::vertical().id_salt(("tt way list", lower(name))).max_height(260.0).show(ui, |ui| {
+            egui::ScrollArea::vertical().id_salt(("tt way list", lower(name))).max_height(480.0).show(ui, |ui| {
                 for (k, &l) in lanes.iter().enumerate() {
                     let lane = &net.lanes[l];
                     ui.horizontal(|ui| {

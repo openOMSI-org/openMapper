@@ -4,6 +4,14 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## Unreleased
+
+### Fixed
+- **Lines: picking a trip's paths by hand no longer loops back to the start of the line** (#135, #130): a path clicked past the end of the way was put in as a way round between the line's first paths wherever it led back to them round the block. It now goes where it adds the least driving; a way round must replace part of the way or mend a gap. A trip whose way is found only part of the way keeps that part, so picking by hand goes on from where it stops instead of from nothing. The list of the way's paths opens while picking and shows more of them.
+- **Aerial imagery stays sharp on maps with more than 64 tiles of pictures** (#134): every tile went up at 512 pixels. The tile under the camera now goes up at 4096, the eight round it at 2048 and the sixteen round those at 1024.
+- **An object marked Solid (collides) stops the bus** (#128): its `.sco` lacked `[fixed]`, without which OMSI 2 gives vehicles no collision.
+- **Objects put on a road drawn on from another road's end show** (#131): the new road's chain distance started at 0, so the game and the editor dropped objects within the old road's length of its start.
+
 ## 0.2.1 - 2026-11-20
 
 ### Changed
