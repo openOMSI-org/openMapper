@@ -441,13 +441,22 @@ fn find_on(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Wa
         }
         if row.iter().all(|x| x.is_none()) {
             r.problems.push(Problem::NoWay(i - 1));
+            // (the way as far as it was found, to pick the rest of it by hand from there)
+            back(net, &mut r, &cands, &best, &ways);
             return r;
         }
         best.push(row);
         ways.push(leg_ways);
     }
+    back(net, &mut r, &cands, &best, &ways);
+    r
+}
+
+/// The way through the stops found so far (`best` and `ways` as far as they reach), back
+/// from the cheapest last of them, put into `r`.
+fn back(net: &Network, r: &mut Route, cands: &[Vec<(StopOn, f64)>], best: &[Vec<Option<(f64, usize, f64)>>], ways: &[HashMap<(usize, usize), Vec<usize>>]) {
     // back from the cheapest last stop
-    let last = cands.len() - 1;
+    let last = best.len() - 1;
     let mut c = (0..best[last].len()).filter(|&c| best[last][c].is_some()).min_by(|&a, &b| best[last][a].unwrap().0.total_cmp(&best[last][b].unwrap().0)).unwrap();
     let mut picks = vec![c; cands.len()];
     let mut legs = vec![0.0; last];
@@ -470,5 +479,4 @@ fn find_on(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Wa
         }
     }
     r.legs = legs;
-    r
 }

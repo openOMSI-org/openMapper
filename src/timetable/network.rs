@@ -302,9 +302,10 @@ impl Network {
         // a lane reached over a piece shorter than a link spans (a junction's connector) is
         // not linked straight on as well: the way drives the piece, it does not jump over it
         // to the path after it (#122). (Two branches that start a little apart stay linked
-        // both, as OMSI 2's own station links have them.)
+        // both, as OMSI 2's own station links have them; and a piece driven against its
+        // path's direction is no way on, the link over it stays.)
         let skips: Vec<Vec<usize>> = (0..self.lanes.len())
-            .map(|i| next[i].iter().copied().filter(|&b| next[i].iter().any(|&s| s != b && self.lanes[s].length() <= LINK * 2.0 && next[s].contains(&b))).collect())
+            .map(|i| next[i].iter().copied().filter(|&b| next[i].iter().any(|&s| s != b && !self.lanes[s].against && self.lanes[s].length() <= LINK * 2.0 && next[s].contains(&b))).collect())
             .collect();
         for (n, skip) in next.iter_mut().zip(skips) {
             n.retain(|b| !skip.contains(b));

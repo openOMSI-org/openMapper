@@ -256,9 +256,9 @@ fn path_to(found: &HashMap<usize, (f64, usize)>, a: usize, b: usize) -> Option<V
 }
 
 /// The way with lane `l` (a path clicked) in it, the lanes to it filled in: in place of the
-/// lanes it is a way round (another branch at a junction), else after the end or before the
-/// start. A lane of the way clicked is taken out (at the ends the way is shorter; in between
-/// it leaves a gap to mend).
+/// lanes it is a way round (another branch at a junction, or a path that mends a gap), else
+/// after the end or before the start, whichever adds the least driving. A lane of the way
+/// clicked is taken out (at the ends the way is shorter; in between it leaves a gap to mend).
 pub fn with_lane(net: &Network, lanes: &[usize], l: usize) -> Vec<usize> {
     if let Some(i) = lanes.iter().position(|x| *x == l) {
         let mut out = lanes.to_vec();
@@ -268,46 +268,67 @@ pub fn with_lane(net: &Network, lanes: &[usize], l: usize) -> Vec<usize> {
     let Some(&last) = lanes.last() else { return vec![l] };
     let from_l = search_from(net, l);
     let to_l = search_to(net, l);
-    // a way round: from a lane of the way to `l` and on to a later one, as little of the way
-    // left out as can be (and not more than a detour would be: a click far along a ring road
-    // adds to the end)
-    let mut best: Option<(usize, usize)> = None;
-    let mut reach_before: Option<usize> = None;
-    for j in 0..lanes.len() {
-        if let Some(i) = reach_before {
-            if from_l.contains_key(&lanes[j]) && best.map(|b| j - i < b.1 - b.0).unwrap_or(true) {
-                best = Some((i, j));
+    let len_l = net.lanes[l].length();
+    // (what each choice adds to the way, in metres driven)
+    let mut best: Option<(f64, Vec<usize>)> = None;
+    let mut offer = |extra: f64, way: Option<Vec<usize>>| {
+        if let Some(w) = way {
+            if best.as_ref().map(|b| extra < b.0).unwrap_or(true) {
+                best = Some((extra, w));
             }
         }
-        if to_l.contains_key(&lanes[j]) {
-            reach_before = Some(j);
-        }
-    }
-    if let Some((i, j)) = best {
-        let left_out: f64 = lanes[i + 1..j].iter().map(|x| net.lanes[*x].length()).sum();
-        let detour = to_l[&lanes[i]].0 + net.lanes[l].length() + from_l[&lanes[j]].0;
-        if let (true, Some(before), Some(after)) = (left_out <= detour * 2.0 + 300.0, path_to(&to_l, lanes[i], l), path_from(&from_l, l, lanes[j])) {
-            let mut out = lanes[..=i].to_vec();
-            out.extend(before);
-            out.push(l);
-            out.extend(after);
-            out.extend_from_slice(&lanes[j..]);
-            return out;
-        }
-    }
+    };
     // after the end
-    if let Some(w) = path_to(&to_l, last, l) {
-        let mut out = lanes.to_vec();
-        out.extend(w);
-        out.push(l);
-        return out;
+    if let Some(c) = to_l.get(&last) {
+        offer(c.0 + len_l, path_to(&to_l, last, l).map(|w| {
+            let mut out = lanes.to_vec();
+            out.extend(w);
+            out.push(l);
+            out
+        }));
     }
     // before the start
-    if let Some(w) = path_from(&from_l, l, lanes[0]) {
-        let mut out = vec![l];
-        out.extend(w);
-        out.extend_from_slice(lanes);
-        return out;
+    if let Some(c) = from_l.get(&lanes[0]) {
+        offer(c.0 + len_l, path_from(&from_l, l, lanes[0]).map(|w| {
+            let mut out = vec![l];
+            out.extend(w);
+            out.extend_from_slice(lanes);
+            out
+        }));
+    }
+    // a way round: from a lane of the way to `l` and on to a later one, in place of the lanes
+    // between. Something must be left out, or a gap mended: a way from one lane to the next
+    // that joins it already is only a loop (round the block, or back to the start of the
+    // line from a path clicked past its end).
+    let mut left_out = vec![0.0; lanes.len() + 1];
+    for (k, x) in lanes.iter().enumerate() {
+        left_out[k + 1] = left_out[k] + net.lanes[*x].length();
+    }
+    for i in 0..lanes.len() {
+        let Some(&(ci, _)) = to_l.get(&lanes[i]) else { continue };
+        for j in i + 1..lanes.len() {
+            let Some(&(cj, _)) = from_l.get(&lanes[j]) else { continue };
+            if j == i + 1 && gap(net, lanes[i], lanes[j]) == 0.0 {
+                continue;
+            }
+            let out = left_out[j] - left_out[i + 1];
+            let detour = ci + len_l + cj;
+            // (not a way round far longer, or far shorter, than what it takes the place of)
+            if detour > out * 2.0 + 300.0 || out > detour * 2.0 + 300.0 {
+                continue;
+            }
+            offer(detour - out, path_to(&to_l, lanes[i], l).zip(path_from(&from_l, l, lanes[j])).map(|(before, after)| {
+                let mut w = lanes[..=i].to_vec();
+                w.extend(before);
+                w.push(l);
+                w.extend(after);
+                w.extend_from_slice(&lanes[j..]);
+                w
+            }));
+        }
+    }
+    if let Some((_, w)) = best {
+        return w;
     }
     // nowhere joined: at the end, a gap before it
     let mut out = lanes.to_vec();

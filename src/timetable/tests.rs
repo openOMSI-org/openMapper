@@ -641,6 +641,60 @@ fn a_way_picked_by_hand() {
     assert_eq!(r.problems, vec![route::Problem::OffWay(1)]);
 }
 
+/// A path clicked past the end of the way is added after the end, even where it leads round
+/// the block back into the way: the way does not turn back to the start of the line (#135).
+#[test]
+fn a_path_past_the_end_does_not_loop_back_to_the_start() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let p = |pts: &[(f64, f64)]| pts.iter().map(|q| DVec3::new(q.0, q.1, 0.0)).collect::<Vec<_>>();
+    let mut add = |id: i64, pts: Vec<DVec3>| {
+        let len: f64 = pts.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+        net.add(PathKey { tile, id, path: 0 }, pts, len, id as usize, 0, (true, false));
+    };
+    add(1, p(&[(0.0, 0.0), (0.0, 100.0)]));
+    add(2, p(&[(0.0, 100.0), (0.0, 200.0)]));
+    add(3, p(&[(0.0, 200.0), (0.0, 300.0)]));
+    // round the block from the end of 3 back into the start of 2
+    add(4, p(&[(0.0, 300.0), (0.0, 320.0), (-20.0, 340.0), (-60.0, 340.0), (-80.0, 320.0), (-80.0, 80.0), (-60.0, 60.0), (-20.0, 60.0), (0.0, 80.0), (0.0, 100.0)]));
+    net.link();
+    let id: std::collections::HashMap<i64, usize> = (1..=4).map(|i| (i, net.by_key[&PathKey { tile, id: i, path: 0 }][0])).collect();
+    assert!(net.lanes[id[&4]].next.contains(&id[&2]), "the block leads back into the way");
+    let ids = |lanes: &[usize]| lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>();
+    let w = way::with_lane(&net, &[id[&1], id[&2]], id[&3]);
+    assert_eq!(ids(&w), vec![1, 2, 3]);
+    // and the path after it too
+    let w = way::with_lane(&net, &w, id[&4]);
+    assert_eq!(ids(&w), vec![1, 2, 3, 4]);
+    // a gap in the way is mended by a path clicked in it
+    let w = way::with_lane(&net, &[id[&1], id[&3]], id[&2]);
+    assert_eq!(ids(&w), vec![1, 2, 3]);
+}
+
+/// A way not found all the way keeps the part found, up to the stop it could not go on
+/// from: the rest is picked by hand from there (#135).
+#[test]
+fn a_way_found_part_of_the_way_keeps_that_part() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let p = |pts: &[(f64, f64)]| pts.iter().map(|q| DVec3::new(q.0, q.1, 0.0)).collect::<Vec<_>>();
+    let mut add = |id: i64, pts: Vec<DVec3>| {
+        let len: f64 = pts.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+        net.add(PathKey { tile, id, path: 0 }, pts, len, id as usize, 0, (true, false));
+    };
+    add(1, p(&[(0.0, 0.0), (0.0, 100.0)]));
+    add(2, p(&[(0.0, 100.0), (0.0, 200.0)]));
+    // (10 m on from the end of 2: not joined)
+    add(3, p(&[(0.0, 210.0), (0.0, 300.0)]));
+    net.link();
+    let at = |pts: &[(f64, f64)]| pts.iter().map(|p| Some(DVec3::new(p.0, p.1, 0.0))).collect::<Vec<_>>();
+    let r = route::find(&net, &at(&[(2.5, 20.0), (2.5, 150.0), (2.5, 250.0)]), false, None);
+    assert_eq!(r.problems, vec![route::Problem::NoWay(1)]);
+    assert!(!r.ok());
+    assert_eq!(r.lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>(), vec![1, 2]);
+    assert_eq!(r.stops.len(), 2);
+}
+
 /// A trip's paths picked by hand are kept as they are when saved and read again: its track
 /// says so in a line the game passes over, and it reads back the same.
 #[test]
