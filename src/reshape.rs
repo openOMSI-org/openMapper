@@ -165,10 +165,6 @@ pub fn drag_end_at(doc: &Document, k: TileKey, id: i64, at_end: bool, p: DVec2, 
     end_to(doc, k, id, at_end, p, None, zp, locked)
 }
 
-/// Turn a spline's end (`at_end`, else its start) so the road runs heading `heading` there
-/// (degrees, clockwise from north, the way the road itself runs). The end stays where it
-/// is; the road bends to the new direction. A spline linked at that end follows, tangent
-/// at the joint, its far end kept.
 /// The splines linked on after `id`, in order, not including it. A piece joined end to end
 /// (its own end meets this one) is followed out through its other end.
 pub fn chain_after(doc: &Document, id: i64) -> Vec<(TileKey, i64)> {
@@ -177,7 +173,8 @@ pub fn chain_after(doc: &Document, id: i64) -> Vec<(TileKey, i64)> {
     let mut cur = s.next_id;
     let mut out = Vec::new();
     for _ in 0..4096 {
-        if cur == 0 || cur == id || out.iter().any(|(_, i)| *i == cur) {
+        // (round a ring: up to the piece this one starts from, which stays)
+        if cur == 0 || cur == id || cur == s.prev_id || out.iter().any(|(_, i)| *i == cur) {
             break;
         }
         let Some((k, s)) = doc.find_spline(cur) else { break };
@@ -229,6 +226,10 @@ pub fn turn_this(doc: &Document, k: TileKey, id: i64, at_end: bool, heading: f64
     Ok(Plan { pieces: vec![if at_end { mine } else { mine.reversed() }] })
 }
 
+/// Turn a spline's end (`at_end`, else its start) so the road runs heading `heading` there
+/// (degrees, clockwise from north, the way the road itself runs). The end stays where it
+/// is; the road bends to the new direction. A spline linked at that end follows, tangent
+/// at the joint, its far end kept.
 pub fn turn_end(doc: &Document, k: TileKey, id: i64, at_end: bool, heading: f64, locked: &dyn Fn(DVec2) -> bool) -> Result<Plan, &'static str> {
     let s = doc.spline(k, id).ok_or("gone")?;
     let e = ends_of(s, k);
