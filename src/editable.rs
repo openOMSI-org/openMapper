@@ -288,6 +288,11 @@ pub fn save_on(roots: &Roots, rel: &str, src: &Source, ground: Option<&dyn Fn(gl
         let (x, _) = openmapper_mesh::export::to_x(&collision, &src.model.materials);
         std::fs::write(dir.join("model").join(&file), x)?;
         let _ = write!(sco, "[collision_mesh]\n{file}\n\n");
+        // (Omsi.exe gives the collision mesh to the vehicles of a `[fixed]` object only: any
+        // other is a loose body the bus drives through; one kept from its object stays as it is)
+        if !src.extra.lines().any(|l| l.trim().eq_ignore_ascii_case("[fixed]")) {
+            sco.push_str("[fixed]\n\n");
+        }
     }
     if let Some(sig) = &src.signal {
         write_signal_script(&dir, sig)?;
@@ -721,6 +726,34 @@ mod tests {
         let t = back.model.parts[0].mesh.triangles(30.0);
         let vol: f32 = t.indices.chunks(3).map(|c| t.positions[c[0] as usize].dot(t.positions[c[1] as usize].cross(t.positions[c[2] as usize]))).sum::<f32>() / 6.0;
         assert!((vol - 6.0).abs() < 1e-3, "{vol}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_solid_object_is_fixed_and_its_collision_mesh_reads_back() {
+        let (dir, roots) = roots("solid");
+        let mut src = primitive_source(openmapper_mesh::primitives::Primitive::Cube { size: Vec3::new(2.0, 1.0, 3.0) });
+        src.collision = true;
+        let rel = new_rel(&roots, "My Map", "untitled");
+        save(&roots, &rel, &src).unwrap();
+        let path = omsi_cfg::resolve_path(&roots.content, &rel);
+        let sco = omsi_scenery::sco::SceneryObject::load(&path).unwrap();
+        // Omsi.exe makes a collision shape for a [fixed] object only (#128)
+        assert!(sco.fixed);
+        let file = sco.collision_mesh.as_deref().unwrap();
+        let m = omsi_o3d::load_mesh(&path.parent().unwrap().join("model").join(file)).unwrap();
+        assert_eq!(m.triangles.len(), 12);
+        // a [fixed] kept from the object it was made from is not written twice
+        src.extra = "[fixed]\n".into();
+        save(&roots, &rel, &src).unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(text.matches("[fixed]").count(), 1, "{text}");
+        // and one that does not collide is not fixed
+        src.extra.clear();
+        src.collision = false;
+        save(&roots, &rel, &src).unwrap();
+        let sco = omsi_scenery::sco::SceneryObject::load(&path).unwrap();
+        assert!(!sco.fixed && sco.collision_mesh.is_none());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
