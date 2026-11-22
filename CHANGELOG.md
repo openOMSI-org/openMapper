@@ -4,7 +4,10 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
-## Unreleased
+## 0.2.2 - 2026-11-22
+
+### Changed
+- **A road's length, radius or end heading can be changed with roads joined on after it** (#136): those pieces move and turn with the new end and keep their own length, radius and gradients, where the edit was refused before or the next piece was bent to keep its far end. R on one spline turns the chain after it with it, still joined, and mitres the joint with the piece before it as OMSI does.
 
 ### Fixed
 - **Lines: picking a trip's paths by hand no longer loops back to the start of the line** (#135, #130): a path clicked past the end of the way was put in as a way round between the line's first paths wherever it led back to them round the block. It now goes where it adds the least driving; a way round must replace part of the way or mend a gap. A trip whose way is found only part of the way keeps that part, so picking by hand goes on from where it stops instead of from nothing. The list of the way's paths opens while picking and shows more of them.
