@@ -4742,16 +4742,24 @@ impl Editor {
             }
             linked
         };
-        if let Some((k, id, _)) = start.spline {
+        if let Some((k, id, at_end)) = start.spline {
             let first = made[0];
+            // (drawn on from a road, the new road's chain goes on from that road's, as the game
+            // walks it along the links: counted from 0, a row near its start lay before its
+            // spline and was drawn neither by the game nor here, #131)
+            let from = doc.spline(k, id).map(|s| if at_end { crate::place::chain_offset_of(doc, s) + s.length } else { s.length }).unwrap_or(0.0);
             if link(doc, start.spline, first.1) {
                 if let Some(t) = doc.tiles.get_mut(&first.0) {
                     if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == first.1) {
                         s.prev_id = id;
                     }
                 }
+                for &(mk, mid) in &made {
+                    if let Some(s) = doc.tiles.get_mut(&mk).and_then(|t| t.tile.splines.iter_mut().find(|s| s.id == mid)) {
+                        s.map_chain_offset = s.map_chain_offset.map(|o| o + from);
+                    }
+                }
             }
-            let _ = k;
         }
         if let Some(e) = end {
             if let Some((_, id, _)) = e.spline {
@@ -15980,6 +15988,31 @@ mod tests {
         assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
         assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, id);
         assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
+    /// A road drawn on from a free end counts its chain on from that road's (as the game walks
+    /// it along the links), so an object put on it near its start is drawn: counted from 0 it
+    /// lay before its spline and was not drawn, as the game draws it not (#131).
+    #[test]
+    fn an_object_put_on_a_road_drawn_on_from_an_end_is_drawn() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // (on from spline 3's free end at (50, 80), 30 m along its chain)
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        // (a post 2 m right of the new road, 5 m along it)
+        add_object(ed.doc.as_mut().unwrap(), (0, 0), 50, 52.0, 85.0);
+        ed.attach_object_onto(&crate::library::Library::default(), (0, 0), 50, Some(made[0])).unwrap();
+        let doc = ed.doc.as_ref().unwrap();
+        let t = &doc.tiles[&(0, 0)].tile;
+        let a = t.spline_attachments.iter().find(|a| a.id == 50).unwrap();
+        let objs = crate::place::row_objects(a, &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc));
+        assert_eq!(objs.len(), 1, "drawn: {:?}", a.offset);
+        assert!((objs[0].pose.pos.truncate() - DVec2::new(52.0, 85.0)).length() < 1e-3, "where it stood: {:?}", objs[0].pose.pos);
+        assert_eq!(doc.spline(made[0].0, made[0].1).unwrap().map_chain_offset, Some(30.0));
     }
 
     /// An end that already continues into another piece is left as it is: the new road
