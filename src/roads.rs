@@ -26,6 +26,29 @@ pub fn norm_deg(h: f64) -> f64 {
     h.rem_euclid(360.0)
 }
 
+/// `h` brought into -180°..180°.
+pub fn signed_deg(h: f64) -> f64 {
+    let h = norm_deg(h);
+    if h > 180.0 { h - 360.0 } else { h }
+}
+
+/// A point turned clockwise by `deg` (the map's headings turn that way).
+pub fn turn_cw(v: DVec2, deg: f64) -> DVec2 {
+    let r = deg.to_radians();
+    let (s, c) = (r.sin(), r.cos());
+    DVec2::new(v.x * c + v.y * s, -v.x * s + v.y * c)
+}
+
+/// The mitre OMSI cuts where two splines meet. `delta` is how far the next piece's heading
+/// is clockwise of the previous piece's end heading. A fence turning 90° to the left
+/// (delta -90) ends at skew 1 and the next starts at -1: the same side of each profile
+/// meets on the bisector, and 1 is a cut of 45°.
+pub fn joint_skew(delta: f64) -> (f64, f64) {
+    let t = (signed_deg(delta).to_radians() * 0.5).tan();
+    let t = if t.is_finite() { t.clamp(-4.0, 4.0) } else { 0.0 };
+    (-t, t)
+}
+
 /// One arc or straight in the plane.
 #[derive(Debug, Clone, Copy)]
 pub struct Seg {
@@ -245,6 +268,16 @@ pub const HELPER_REACH: f64 = 200.0;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_left_corner_mitres_at_one_and_minus_one() {
+        let (end, start) = joint_skew(-90.0);
+        assert!((end - 1.0).abs() < 1e-9 && (start + 1.0).abs() < 1e-9, "{end} {start}");
+        let (end, start) = joint_skew(90.0);
+        assert!((end + 1.0).abs() < 1e-9 && (start - 1.0).abs() < 1e-9, "{end} {start}");
+        let (end, start) = joint_skew(0.0);
+        assert!(end.abs() < 1e-9 && start.abs() < 1e-9);
+    }
 
     #[test]
     fn an_arc_ends_where_asked() {
