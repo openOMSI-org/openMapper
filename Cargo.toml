@@ -1,6 +1,6 @@
 [package]
 name = "openmapper"
-version = "0.1.24"
+version = "0.2.3"
 edition = "2024"
 rust-version = "1.93"
 license = "AGPL-3.0-only"
@@ -11,22 +11,26 @@ default-run = "openmapper"
 
 [dependencies]
 zeroize = "1"
-omsi-pack = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
+omsi-pack = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
 # openOMSI's own readers and geometry: the editor reads and builds exactly what the game does
-omsi-cfg = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-map = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-scenery = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-model = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-o3d = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-geometry = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-texture = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-timetable = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-content = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
-omsi-script = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
+omsi-cfg = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-map = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-scenery = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-model = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-o3d = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-geometry = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-texture = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-timetable = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-content = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+omsi-script = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
+# where the game lays the objects of spline rows (its map index and placement)
+omsi-world = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
 
 wgpu = { version = "29", default-features = false, features = ["std", "parking_lot", "metal", "vulkan", "dx12", "gles", "wgsl"] }
 winit = "0.30"
-egui = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04" }
+egui = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", features = ["persistence"] }
+# (the windows' places and the panels kept between runs, as egui writes them)
+ron = "0.12"
 egui-wgpu = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false }
 egui-winit = { git = "https://github.com/openOMSI-org/egui-openomsi", rev = "0119a7a0a8de46a931640912685605223f28da04", default-features = false, features = ["clipboard", "links", "wayland", "x11"] }
 
@@ -35,13 +39,13 @@ glam = "0.30"
 openmapper-mesh = { path = "crates/mesh" }
 # editing one map together (src/collab): the connection, and openOMSI's own Cloudflare tunnel
 openmapper-collab = { path = "crates/collab" }
-omsi-net = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
+omsi-net = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
 bytemuck = { version = "1", features = ["derive"] }
 pollster = "1.0"
 anyhow = "1"
 log = "0.4"
 env_logger = "0.11"
-rfd = "0.17"
+rfd = "0.18"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11"
@@ -57,6 +61,11 @@ ab_glyph = "0.2"
 ureq = { version = "3.4", default-features = false, features = ["rustls"] }
 # the Lua syntax check of the map scripts (src/scripting.rs), Lua 5.4 as openOMSI runs
 full_moon = { version = "3.0.0", default-features = false, features = ["lua54"] }
+# the map's scripts run in the editor to test and debug them: Lua 5.4 as openOMSI runs it
+mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
+# compiled map scripts (.oop, Lua or Rust): the compiler of the openOMSI Development Tools
+oopc = { git = "https://github.com/openOMSI-org/openOMSI-Development-Tools", rev = "433930ba365833b70724c3f648c92fb24f3f1875" }
+oop-format = { git = "https://github.com/openOMSI-org/openOMSI-Development-Tools", rev = "433930ba365833b70724c3f648c92fb24f3f1875" }
 
 [build-dependencies]
 embed-resource = "3"
@@ -87,6 +96,6 @@ wgpu-naga-bridge = { git = "https://github.com/openOMSI-Project/wgpu-openomsi", 
 naga = { git = "https://github.com/openOMSI-Project/wgpu-openomsi", rev = "4eb06e5bf8062be2978d93e95556a4dd83f1d3b8" }
 
 [dev-dependencies]
-omsi-scene = { git = "https://github.com/Italian-seasoning/openOMSI", rev = "18567a01a17e24de9a2566c13801557ac7fc72a3" }
+omsi-scene = { git = "https://github.com/openOMSI-org/openOMSI", rev = "5d876e33071bb6367815456197c4c21dc4753b09" }
 ring = "0.17"
 base64 = "0.23"

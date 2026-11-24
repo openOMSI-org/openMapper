@@ -2788,3 +2788,445 @@ no track within 15 m	у 15 м няма рэек
 the tracks are not joined, or run the other way (see View > AI lanes)	рэйкі не злучаны або ідуць у іншы бок (Выгляд > Паласы ШІ)
 no track beside	няма рэек ля
 Drives on	Ездзіць па
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Выбрана зыходная вяршыня. Пстрыкніце мэтавую вяршыню для прывязкі (Shift: толькі па гарызанталі, Esc: адмена)
+Aim at a vertex of the selected object	Нацэліцеся на вяршыню абранага аб'екта
+Snapped to vertex! (Ctrl+Z to undo)	Прышпілены да вяршыні! (Ctrl+Z, каб адмяніць)
+Aim at a target vertex or spline endpoint	Нацэліцеся на мэтавую вяршыню або канцавую кропку сплайна
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Выбраны край крыніцы. Пстрыкніце мэтавы край або дарогу, каб выраўнаваць (Shift: толькі па гарызанталі, Esc: адмена)
+Aim at an edge of the selected object	Нацэліцеся на край абранага аб'екта
+Aligned edge to edge! (Ctrl+Z to undo)	Выраўнаваны ад краю да краю! (Ctrl+Z, каб адмяніць)
+Aim at a target edge or road	Цэліцца ў мэтавы край або дарогу
+Target cancelled. Pick a source vertex again	Мэта адменена. Зноў абярыце зыходную вяршыню
+Vertex snap cancelled	Прывязка да вяршыні адменена
+Target cancelled. Pick a source edge again	Мэта адменена. Зноў абярыце зыходны край
+Edge snap cancelled	Прывязка краёў адменена
+Select an object first to snap its vertex	Спачатку абярыце аб'ект, каб зафіксаваць яго вяршыню
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Прывязка да вяршыні: пстрыкніце зыходную вяршыню на выбраным аб'екце (Esc для адмены)
+Snap vertex to vertex	Прывязаць вяршыню да вяршыні
+Select an object first to align its edge	Спачатку абярыце аб'ект, каб выраўнаваць яго край
+Edge snap: click a source edge on the selected object (Esc to cancel)	Прывязка краю: пстрыкніце зыходны край на выбраным аб'екце (Esc для адмены)
+Snap edge to edge	Прышпіліць край да краю
+Snap vertex to vertex (V)	Прывязаць вяршыню да вяршыні (V)
+Snap edge to edge (L)	Прывязаць край да краю (L)
+Snap vertex (V)	Вершыня прывязкі (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Прывязаць вяршыню гэтага аб'екта да іншай вяршыні (Ярлык: V)
+Snap edge (L)	Край фіксацыі (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Прывязаць край гэтага аб'екта да іншага краю або дарогі (Ярлык: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Прывязаць вяршыню выбранага аб'екта да вяршыні іншага аб'екта (V)\nShift: толькі па гарызанталі, Esc/пстрычка правай кнопкай мышы: адмена
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Выраўнаваць край абранага аб'екта па краі або дарозе (L)\nПаварочвае і замацоўвае коллінеарна\nЗрух: толькі па гарызанталі, Esc/пстрычка правай кнопкай мышы: адмена
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Точка 1 выраўнавана! Клікніце другую кропку на аб'екце для павароту або Esc для завяршэння
+Reference angle set. Click a target point or spline to align (Esc: finish)	Апорны кут зададзены. Клікніце мэтавую кропку або дарогу для выраўноўвання (Esc: завяршыць)
+Pick a different vertex on the object	Выберыце іншую вяршыню на аб'екце
+Click a 2nd reference point on the object, or Esc to finish	Клікніце 2-ю апорную кропку на аб'екце або націсніце Esc для завяршэння
+Aligned angle! (Ctrl+Z to undo)	Кут выраўнаваны! (Ctrl+Z для адмены)
+Vertex snap complete	Прывязка вяршыні завершана
+Align vertex angle	Выраўнаваць кут вяршыні
+Complete to	Дабудаваць да
+Complete to: a new piece between the free ends of the selected splines	Дабудаваць да: новы кавалак паміж свабоднымі канцамі выбраных сплайнаў
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Новы кавалак тыпу першага выбранага сплайна паміж двума свабоднымі канцамі выбраных сплайнаў, што супадае з абодвума па месцы, кірунку і вышыні; самі яны не мяняюцца. Яшчэ раз: злучаюцца два канцы, што засталіся, кальцо замыкаецца.
+The two ends already meet	Гэтыя два канцы ўжо сыходзяцца
+Select the splines whose free ends are to be joined	Выберыце сплайны, свабодныя канцы якіх трэба злучыць
+No piece of spline can join these two ends	Ніякі кавалак сплайна не злучыць гэтыя два канцы
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Адкрыта копія гэтай карты openMapper у тэчцы змесціва (карта ў тэчцы OMSI 2 не змяняецца)
+Read in again, changed on disk by another program:	Загружана нанова, зменена на дыску іншай праграмай:
+Could not bring the changes over	Не ўдалося перанесці змены
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Файлы карты зменены пасля гэтага аўтазахавання (іншай праграмай, напрыклад рэдактарам OMSI 2). Аднаўленне пакладзе старыя тайлы з аўтазахавання па-над гэтымі зменамі.
+tile(s)	тайл(аў)
+the global settings	агульныя налады
+the timetable	расклад
+the traffic	рух
+the descriptions	апісанні
+Reload from disk	Загрузіць з дыска
+The map changed on disk	Карта змянілася на дыску
+Another program changed the map's files where it has changes here not saved yet:	Іншая праграма змяніла файлы карты там, дзе тут ёсць незахаваныя змены:
+The other changes made on disk were read in already.	Астатнія змены з дыска ўжо загружаны.
+Keep mine	Пакінуць мае
+The map changed in OMSI 2's folder	Карта змянілася ў тэчцы OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Копія гэтай карты ва ўсталёўцы OMSI 2 зменена пасля захавання копіі openMapper у тэчцы змесціва, напрыклад рэдактарам OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Перанос заменіць гэтыя файлы ў копіі openMapper; замененыя файлы захоўваюцца ў рэзервовай копіі (Файл > Ранейшыя версіі).
+Bring the changes over	Перанесці змены
+Keep openMapper's copy	Пакінуць копію openMapper
+its way has a gap after path	у яго шляху разрыў пасля шляху
+its way does not pass	яго шлях не праходзіць ля
+On demand	Па патрабаванні
+Not served (checkpoint)	Не абслугоўваецца (кантрольны пункт)
+Wait for departure time	Чакаць часу адпраўлення
+Always + wait for departure time	Заўсёды + чакаць часу адпраўлення
+The bus stops only when somebody waits or wants to get off (the game's default)	Аўтобус спыняецца, толькі калі хтосьці чакае або хоча выйсці (так па змаўчанні ў гульні)
+The bus always stops here	Аўтобус заўсёды тут спыняецца
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Аўтобус праязджае, не спыняючыся: прыпынак толькі пазначае шлях (кантрольны пункт)
+The bus stops only when it is early, and waits there for its departure time	Аўтобус спыняецца, толькі калі ідзе раней часу, і чакае там часу адпраўлення
+The bus always stops here, and when it is early it waits for its departure time	Аўтобус заўсёды тут спыняецца, а калі ідзе раней часу, чакае часу адпраўлення
+All trips	Усе рэйсы
+Every trip of the map, those no tour drives too	Усе рэйсы карты, і тыя, па якіх не ездзіць ніводзін абарот
+The line number the trip shows; the line of this number lists it among its trips	Нумар лініі, які паказвае рэйс; лінія з гэтым нумарам паказвае яго сярод сваіх рэйсаў
+Way picked by hand:	Шлях абраны ўручную:
+the paths picked do not pass this stop	абраныя шляхі не праходзяць ля гэтага прыпынку
+Other trips	Іншыя рэйсы
+The time profile this departure runs to	Профіль часу гэтага адпраўлення
+Time profile	Профіль часу
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	У рэйса можа быць некалькі профіляў (час пік, ноч…): кожнае адпраўленне абарота паказвае, па якім яно ідзе
+The profile's name	Імя профілю
+A new profile, a copy of this one	Новы профіль, копія гэтага
+Delete this profile (its departures run to the first)	Выдаліць гэты профіль (яго адпраўленні пойдуць па першым)
+Times from stop to stop	Час ад прыпынку да прыпынку
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	У кожнага прыпынку можна задаць час ад папярэдняга: наступныя часы зрушваюцца, а з імі і час рэйса. Незададзеныя часы ідуць за адлегласцю паміж замацаванымі; на замацаваным прыпынку аўтобус, які прыйшоў раней, чакае.
+From the stop before	Ад папярэдняга
+After departure	Пасля адпраўлення
+Minutes from the stop before to this one	Хвіліны ад папярэдняга прыпынку да гэтага
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Як у рэдактары OMSI 2. Навядзіце на варыянт, каб убачыць, што робіць аўтобус.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Усе рэйсы карты, якая б лінія іх ні паказвала і які б абарот ні ездзіў. Рэйс, па якім не ездзіць ніводзін абарот, захоўваецца: яго можна правіць, даць абароту або выдаліць тут.
+trips	рэйсаў
+driven by no tour	без абаротаў
+no tour	няма абаротаў
+departures	адпр.
+No path there: click a lane of a road (View > AI lanes shows them)	Тут няма шляху: пстрыкніце па паласе дарогі (Выгляд > Паласы ШІ паказвае іх)
+Done picking paths	Гатова
+Pick the paths on the map	Абраць шляхі на карце
+Choose the way yourself, path by path, as in OMSI 2's editor	Абярыце шлях самі, шлях за шляхам, як у рэдактары OMSI 2
+Find the way automatically	Знайсці шлях аўтаматычна
+Forget the paths picked: the way is found along the roads again	Забыць абраныя шляхі: шлях зноў знойдзецца па дарогах
+The paths were picked by hand: they are kept when the stops change.	Шляхі абраны ўручную: яны захоўваюцца пры змене прыпынкаў.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Пстрыкайце шляхі на карце. Шлях пасля канца або перад пачаткам дадаецца разам са шляхамі да яго; шлях збоку замяняе ўчастак, які ён аб'язджае (іншая галіна на скрыжаванні); шлях з маршруту прыбіраецца. Шлях можа ісці і да першага прыпынку, і пасля апошняга.
+The way breaks after path	Шлях перарываецца пасля шляху
+the paths do not join, the bus's GPS loses its way here in the game	шляхі не злучаны, GPS аўтобуса ў гульні тут губляе маршрут
+Paths of the way	Шляхі маршруту
+Cut before the first stop	Прыбраць да першага прыпынку
+Cut after the last stop	Прыбраць пасля апошняга прыпынку
+path	шлях
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Уласнае кіраванне openMapper: камера як выбрана ў «Камера», клавішы як у «Выгляд > Кіраванне»
+The keys as in View > Controls	Клавішы як у «Выгляд > Кіраванне»
+A copy of its own was made for the script: the original type is unchanged	Для скрыпта створана ўласная копія: зыходны тып не зменены
+Trolleybus wire the game cannot use	Кантактная сетка, якую гульня не зразумее
+Rows the game does not show	Рады, якія гульня не паказвае
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Рад аб'ектаў уздоўж дарогі (ліхтары, слупкі, месцы паркоўкі) пачынаецца раней за дарогу, на якой ляжыць: яго адлегласць лічыцца ад пачатку ланцужка дарогі, а тут яна меншая за даўжыню ланцужка да гэтай дарогі. OMSI 2 і openOMSI яго зусім не паказваюць, рэдактар таксама. Пакладзіце рад нанова або павялічце яго пачатак ва ўласцівасцях.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI робіць стрэлку толькі там, дзе сыходзяцца роўна тры пралёты кантактнай сеткі, а стрэлку там, дзе яны больш не сыходзяцца, прапускае; пралёт у секцыі, якой няма ў сетцы, застаецца без падстанцыі. Адкрыйце Карта > Кантактная сетка тралейбуса, каб выправіць.
+Trolleybus wire	Кантактная сетка
+Select the next road piece (joined at its end; Shift: add it)	Вылучыць наступны кавалак дарогі (злучаны з яго канцом; Shift: дадаць)
+Select the previous road piece (joined at its start; Shift: add it)	Вылучыць папярэдні кавалак дарогі (злучаны з яго пачаткам; Shift: дадаць)
+the up arrow	стрэлка ўверх
+the down arrow	стрэлка ўніз
+the left arrow	стрэлка ўлева
+the right arrow	стрэлка ўправа
+Select three objects or more (the two farthest apart stay)	Вылучыце тры аб'екты або больш (два самыя далёкія застануцца на месцы)
+Line up	Выставіць у лінію
+Space evenly	Расставіць раўнамерна
+Splines laid	Сплайны пракладзены
+The spline reaches past the map: add tiles there first	Сплайн выходзіць за карту: спачатку дадайце там тайлы
+Ground painted over areas	Зямля зафарбавана па плошчах
+Track beds	Палатно шляхоў
+Ground under surfaces	Зямля пад пакрыццямі
+Form the ground	Рэльеф па пакрыццях
+Select a road piece first	Спачатку вылучыце кавалак дарогі
+Nothing is joined at its end	Да яго канца нічога не далучана
+Nothing is joined at its start	Да яго пачатку нічога не далучана
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Перамяшчэнне: цягніце стрэлку ўздоўж X, Y або Z, квадрат — у яго плоскасці, круг — па зямлі
+Rotate: drag a ring to turn about X, Y or Z	Паварот: цягніце кольца, каб круціць вакол X, Y або Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Маштаб: цягніце стрэлку для маштабу па восі, квадрат — па дзвюх, круг — па ўсіх трох
+Junctions where the roads meet	Скрыжаванні там, дзе дарогі сустракаюцца
+Streets from the street model	Вуліцы па мадэлі вуліц
+perimeter	перыметр
+needs	патрэбны дазвол
+built	сабрана
+signed by	падпісана
+not signed: the game loads it with a warning that its author is not known	без подпісу: гульня загрузіць яго з папярэджаннем, што аўтар невядомы
+openOMSI has no such function (the API of version	у openOMSI няма такой функцыі (API версіі
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` ёсць толькі ў скрыптоў карты; у скрыпта аб'ектаў толькі функцыі omsi
+no such module in the project (modules/…)	такога модуля ў праекце няма (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	гульня не пасылае такой падзеі (хіба што скрыпт пашле яе праз omsi.emit)
+a name is needed	патрэбна імя
+a file of that name is there already	файл з такім імем ужо ёсць
+Empty module	Пусты модуль
+Test run of	Тэставы запуск
+does nothing in the test run (no game): it gives false	у тэставым запуску нічога не робіць (гульні няма): вяртае false
+has nothing to read in the test run (no game): it gives nil	у тэставым запуску няма чаго чытаць (гульні няма): вяртае nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	аб'ект усталёўкі OMSI 2 не змяняецца: спачатку зрабіце яго сваім
+Dark	Цёмная
+As the system	Як у сістэме
+power (current on: branch)	па току (з токам: адгалінаванне)
+indicator	па паказальніку павароту
+radio	па радыё
+to the branch	на адгалінаванне
+at random	выпадкова
+spans meet in one point: the game makes no switch there (a frog is three)	пралётаў сыходзяцца ў адной кропцы: гульня не зробіць тут стрэлку (стрэлка — гэта тры)
+Switch	Стрэлка
+no three spans meet there any more	тут больш не сыходзяцца тры пралёты
+A span is in section	Пралёт у секцыі
+that the network does not have	якой няма ў сетцы
+the wire spline	сплайн провада
+the mast	мачта
+the frog	развілка
+the insulator	ізалятар
+is not there	не знойдзены
+no wire spline: nothing of the wire is shown on the map	няма сплайна провада: самога провада на карце не відаць
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	профіль сплайна провада — не пара тонкіх правадоў вышэй за 3 м: ён кладзецца як ёсць, і openOMSI без trolley.txt не прыме яго за провад
+a kit of that name is there already	камплект з такім імем ужо ёсць
+Renew the wire from its kit	Абнавіць провад па камплекце
+Theme	Тэма
+Back to the 3D view	Вярнуцца ў 3D
+The plan view from above, north up	Выгляд зверху, поўнач уверсе
+Put the windows back in their first places	Вярнуць вокны на першапачатковыя месцы
+Trolleybus wire…	Кантактная сетка тралейбуса…
+: there are unsaved changes	: ёсць незахаваныя змены
+Assets: every object and road type, with pictures	Асеты: усе аб'екты і тыпы дарог з малюнкамі
+Close the openOMSI session started from here	Закрыць сесію openOMSI, запушчаную адсюль
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Выбраць месца старту, транспарт, час і надвор'е і праехаць карту ў openOMSI
+Search commands	Пошук каманд
+Every command of the menus by its name	Любая каманда меню па яе назве
+Right-click the view for what can be done there; Search commands finds the rest	Правая пстрычка па выглядзе: што там можна зрабіць; «Пошук каманд» знойдзе астатняе
+Right-click the view: its menu	Правая пстрычка па выглядзе: яго меню
+Snap vertex	Прывязаць вяршыню
+Snap edge	Прывязаць рабро
+Out of the mix	Прыбраць з сумесі
+more as OMSI 2 is read…	яшчэ будуць, пакуль чытаецца OMSI 2…
+Reading the content of OMSI 2…	Чытанне кантэнту OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Нічога не знойдзена: паспрабуйце менш літар або «Усё» ў «Паказваць»
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Нічога такога няма: выберыце «Усё» ў «Паказваць» або імпартуйце асеты (Файл > Імпарт асетаў)
+a table of functions	табліца функцый
+a module	модуль
+Next (Enter)	Наступнае (Enter)
+Previous (Shift+Enter)	Папярэдняе (Shift+Enter)
+Match case	З улікам рэгістра
+Replace	Замяніць
+Replace…	Замяніць…
+Click: a breakpoint (F9 on the cursor's line)	Пстрычка: кропка спынення (F9 на радку курсора)
+permission	дазвол
+The light before	Папярэдні святлафор
+The next light	Наступны святлафор
+The phase before	Папярэдняя фаза
+The next phase	Наступная фаза
+to 	да 
+Select the piece joined at its start (,)	Вылучыць кавалак, злучаны з яго пачаткам (,)
+Select the piece joined at its end (.)	Вылучыць кавалак, злучаны з яго канцом (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Пстрычка па дзвюх кропках: адлегласць і ўхіл паміж імі (U) · Shift + пстрычкі: вуглы плошчы (яе памер і перыметр) · правая пстрычка: выключыць
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Прывязаць вяршыню вылучанага аб'екта да вяршыні іншага аб'екта\nShift: толькі па гарызанталі, Esc/правая пстрычка: адмена
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Выраўнаваць рабро вылучанага аб'екта па рабры або дарозе\nПаварочвае і прывязвае на адну лінію\nShift: толькі па гарызанталі, Esc/правая пстрычка: адмена
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	На прамой паміж двума самымі далёкімі, з роўным крокам (слупы, ліхтары, рад дрэў)
+Equal steps between the two farthest apart, each keeping its distance to the side	Роўны крок паміж двума самымі далёкімі, кожны захоўвае свой адступ убок
+height, m	вышыня, м
+gradient, %	ухіл, %
+cant, %	віраж, %
+Rotate, °	Паварот, °
+Name, file, IDCode, stop, x, y or tile x y	Назва, файл, IDCode, прыпынак, x, y або тайл x y
+listed, no file	у спісе, без файла
+The camera over the tile's middle	Камера над сярэдзінай тайла
+its folder	яго тэчка
+Line up the selected objects	Выставіць вылучаныя аб'екты ў лінію
+Space the selected objects evenly	Расставіць вылучаныя аб'екты раўнамерна
+Next road piece	Наступны кавалак дарогі
+Previous road piece	Папярэдні кавалак дарогі
+The run ended	Запуск скончаны
+installed as	усталявана як
+failed	не атрымалася
+Run	Запусціць
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Запусціць скрыпты тут, у рэдактары, з функцыямі гульні (F5 у кодзе)
+Step in	Увайсці
+Run and stop at the first line (F11)	Запусціць і спыніцца на першым радку (F11)
+Continue	Працягнуць
+Pause	Паўза
+Stop the clock; a script running stops at its next line	Спыніць гадзіннік; скрыпт, які працуе, спыніцца на наступным радку
+Over	Крок
+Step over (F10)	Крок з абыходам (F10)
+Into	Унутр
+Step into (F11)	Крок унутр (F11)
+Out	Вонкі
+Step out (Shift+F11)	Крок вонкі (Shift+F11)
+Restart	Нанова
+The map's scripts	Скрыпты карты
+The game's clock in the run	Гадзіннік гульні ў запуску
+Set the game's clock of the run (sends minute)	Пераставіць гадзіннік гульні ў запуску (пасылае minute)
+starts 	старт 
+The hour the run starts at	Гадзіна, з якой пачынаецца запуск
+Save all	Захаваць усё
+Build .oop	Сабраць .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Адзін файл са скрыптамі карты, каб дзяліцца: скампіляваны і заблытаны, з патрэбнымі дазволамі (кампілятар Development Tools)
+API	API
+The game's functions and events	Функцыі і падзеі гульні
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	У гэтай карты пакуль няма скрыптоў. Яе скрыпты выконваюцца ў openOMSI, пакуль на ёй гуляюць: рэагуюць на падзеі (прыпынак, гадзіна, рэйс), паказваюць паведамленні, мяняюць рух і надвор'е.
+Start the map's scripts	Пачаць скрыпты карты
+Object scripts (Lua)	Скрыпты аб'ектаў (Lua)
+No object on the map has a Lua script.	Ні ў аднаго аб'екта на карце няма Lua-скрыпта.
+Refresh	Абнавіць
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Скрыпты, названыя ў [lua_script] сцэнарнага аб'екта: адзін працуе для ўсіх аб'ектаў яго тыпу побач з камерай (толькі openOMSI)
+Selected object	Вылучаны аб'ект
+Select one object on the map to see its scripts.	Вылучыце на карце адзін аб'ект, каб убачыць яго скрыпты.
+No OMSI 2 script (.osc).	Няма скрыпта OMSI 2 (.osc).
+Lua script (openOMSI)	Lua-скрыпт (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Скрыпт для ўсіх аб'ектаў гэтага тыпу, побач з яго .sco і ўказаны ў ім ([lua_script]); OMSI 2 яго прапускае. Аб'ект усталёўкі спачатку становіцца ўласнай копіяй карты.
+OMSI 2 script (.osc)	Скрыпт OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Уласны скрыпт аб'екта са спісам зменных, яго выконваюць OMSI 2 і openOMSI; лямпы і часткі [visible] ідуць за зменнымі, якія ён задае
+Rust plugin	Плагін на Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Плагін карты, напісаны на Rust і скампіляваны ў WebAssembly ў .oop. Для зборкі патрэбны Rust (rustup) з мэтай wasm32-unknown-unknown.
+Make the Rust plugin	Стварыць плагін на Rust
+Build and install	Сабраць і ўсталяваць
+cargo builds it, the .oop goes into the content folder's plugins	cargo збірае яго, .oop кладзецца ў plugins тэчкі кантэнту
+Starts with the map	Запускаецца з картай
+Rename…	Перайменаваць…
+Earlier in the order	Раней па парадку
+Later in the order	Пазней па парадку
+Delete (into openMapper's bin)	Выдаліць (у кошык openMapper)
+New script	Новы скрыпт
+New module	Новы модуль
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Кожны запускаецца, калі на карце гуляюць, у гэтым парадку (правая пстрычка, каб перамясціць); калі адзін падае, астатнія працуюць далей. Выкарыстоўвайце map.on, map.every, map.after: яны дзейнічаюць толькі на гэтай карце.
+Modules	Модулі
+Code the scripts share: local util = require("modules.util")	Код, агульны для скрыптоў: local util = require("modules.util")
+Data	Даныя
+Files the scripts read (data/), pictures and sounds	Файлы, якія чытаюць скрыпты (data/), малюнкі і гукі
+Made by openMapper	Зроблена openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Адкрыйце скрыпт злева або стварыце новы.\n\nF5 запускае скрыпты тут, у рэдактары, F9 ставіць кропку спынення, F10 / F11 — крок,\nCtrl+Space дапаўняе, Ctrl+F шукае, Ctrl+G пераходзіць да радка, Ctrl+/ каментуе.
+Read only: a file of the installation or made by openMapper	Толькі чытанне: файл усталёўкі або зроблены openMapper
+Problems	Праблемы
+Console	Кансоль
+Debugger	Адладчык
+Events	Падзеі
+error	памылка
+warning	папярэджанне
+No problems in the open files.	У адкрытых файлах праблем няма.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Тут з'яўляецца тое, што скрыпты друкуюць і паказваюць на экране, а таксама іх памылкі, калі яны запушчаны (Запусціць, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua для выканання ў скрыптах (у кадры спынення, калі спынена); стрэлкі ўверх і ўніз: гісторыя
+Start a run first (Run, F5)	Спачатку запусціце (Запусціць, F5)
+(empty)	(пуста)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Працуе. Кропка спынення (пстрычка злева ад нумара радка або F9) спыніць там скрыпты; «Паўза» спыніць іх на наступным радку.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Не запушчана. Запусціце (F5) скрыпты; кропка спынення іх спыніць, а тут будуць стэк выклікаў, зменныя кожнай функцыі і значэнні для назірання.
+Stopped	Спынена
+Call stack	Стэк выклікаў
+Locals	Лакальныя
+Upvalues	Знешнія (upvalues)
+The console evaluates in this frame: a name, an expression, an assignment.	Кансоль вылічвае ў гэтым кадры: імя, выраз, прысвойванне.
+Storage and objects	Сховішча і аб'екты
+Send	Паслаць
+As if the game sent it: every handler of it runs	Нібы гульня яго паслала: выконваюцца ўсе яго апрацоўшчыкі
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Запусціце скрыпты, каб пасылаць ім падзеі гульні ўручную: дасягнуты прыпынак, дзверы, новая гадзіна… Гадзіннік сам пасылае frame, minute і hour.
+Listening	Слухаюць
+timers	таймеры
+Sign with the key	Падпісаць ключом
+a secret key file of oopc keygen (optional)	файл сакрэтнага ключа oopc keygen (неабавязкова)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	«Сабраць .oop» робіць адзін файл са скрыптамі карты, каб дзяліцца (у тэчцы dist праекта): скампіляваны, заблытаны, з дазволамі, патрэбнымі яго коду. Гульня выконвае тэчку скрыптоў як ёсць; .oop патрэбны, каб аддаць іх без зыходнікаў.
+Search functions and events	Пошук функцый і падзей
+since	з версіі
+for an .oop	для .oop
+Double-click puts it into the script at the cursor.	Двайны пстрык устаўляе ў скрыпт ля курсора.
+A stop on this path	Прыпынак на гэтым шляху
+branch	адгалінаванне
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Кантактная сетка, пад якой ездзяць тралейбусы openOMSI (trolley.txt побач з картай; OMSI 2 яго не чытае). Без яго гульня бярэ правады са сплайнаў провада карты.
+Start a wire for this map	Пачаць кантактную сетку для гэтай карты
+Lay	Пракладка
+Sections	Секцыі
+Spans	Пралёты
+Switches	Стрэлкі
+Pick in the view	Выбар у акне выгляду
+A click in the view picks a span or a switch (yellow dot)	Пстрычка ў акне выгляду выбірае пралёт або стрэлку (жоўтая кропка)
+The wires over the road surface	Правады над пакрыццём дарогі
+the kerb lane each way	крайняя паласа ў абодва бакі
+the way the road runs	па кірунку дарогі
+against the road's way	супраць кірунку дарогі
+Section	Секцыя
+Kit	Камплект
+ (every map)	 (усе карты)
+none: the wire for the game only	няма: провад толькі для гульні
+A new kit	Новы камплект
+My wire	Мой провад
+Change this kit	Змяніць гэты камплект
+its wire spline	яго сплайн провада
+its masts, every	яго мачты, кожныя
+The kit names no mast	У камплекце не ўказана мачта
+Frogs and section insulators are put where the wire has them, as the kit names them.	Развілкі і секцыйныя ізалятары ставяцца там, дзе яны ёсць у сетцы, — тыя, што ўказаны ў камплекце.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	На карту нічога не кладзецца, провад толькі для гульні. Камплект (+) указвае вашы ўласныя мадэлі провада, мачтаў, развілак і ізалятараў.
+Over the selected roads	Над вылучанымі дарогамі
+Select roads in the view first (double-click: a whole road)	Спачатку вылучыце дарогі ў акне выгляду (двайны пстрык: уся дарога)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Паласы вылучанага аб'екта (скрыжавання): адзначце тыя, над якімі пройдзе провад. Тры пралёты, што сыходзяцца, утвараюць развілку.
+It has no street lanes.	У яго няма палос для машын.
+lane	паласа
+Over the ticked lanes	Над адзначанымі паласамі
+Select one junction to lay the wire over its lanes.	Вылучыце адно скрыжаванне, каб пракласці провад над яго паласамі.
+Draw a span by hand	Намаляваць пралёт уручную
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Пстрыкайце яго кропкі ў акне выгляду; пачаты ці скончаны на канцы пралёта, ён далучаецца да яго, на сярэдзіне пралёта — адгалінаваецца там (развілка)
+points: click the next in the view	кропак: пстрыкніце наступную ў акне выгляду
+Finish	Гатова
+Read the map's wire splines	Узяць правады са сплайнаў провада карты
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Сплайны ў выглядзе пары правадоў (тралейбусныя карты для OMSI 2): пралёт уздоўж кожнага, як іх чытае гульня
+Network	Сетка
+Voltage	Напружанне
+Wire spacing	Адлегласць паміж правадамі
+How uneven the contact wire is: worn or icy wire 0.003 and more	Няроўнасць кантактнага провада: зношаны або абледзянелы провад — 0.003 і больш
+Delete the whole wire	Выдаліць усю кантактную сетку
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt будзе выдалены пры наступным захаванні; гульня зноў будзе браць правады са сплайнаў провада карты
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Участкі, якія сілкуюцца ад адной падстанцыі. Там, дзе два сустракаюцца, ёсць мёртвы ўчастак (ізалятар).
+name	назва
+live	пад токам
+The feeder's resistance: the voltage drops with the current	Супраціўленне фідара: напружанне падае з токам
+Power the feeder takes back from a braking bus	Магутнасць, якую фідар прымае ад тралейбуса, што тармозіць
+spans	пралётаў
+Add a section	Дадаць секцыю
+Insulators (where sections meet)	Ізалятары (стыкі секцый)
+ m dead	 м без току
+Span	Пралёт
+points	кропак
+Spacing	Паміж правадамі
+its own	сваё
+Drag: the whole span up or down	Цягніце: увесь пралёт уверх або ўніз
+The span the other way: the positive wire is on the right of its way	Пралёт у другі бок: плюсавы провад справа па яго ходзе
+Pick a span in the view, or in the list.	Выберыце пралёт у акне выгляду або ў спісе.
+section	секцыя
+A switch where three spans meet (yellow in the view). Every frog gets one.	Стрэлка там, дзе сыходзяцца тры пралёты (жоўтая кропка ў акне выгляду). Яна ёсць у кожнай развілкі.
+No frogs yet: lay three spans meeting in one point (a branch).	Развілак пакуль няма: пракладзіце тры пралёты, што сыходзяцца ў адной кропцы (адгалінаванне).
+Spans laid:	Пралётаў пракладзена:
+Wire kit	Камплект кантактнай сеткі
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Вашы ўласныя мадэлі (зробленыя ў Blender ці дзе заўгодна і пакладзеныя ў тэчку кантэнту), якімі сетка паказваецца на карце: сплайн провада і аб'екты мачты, развілкі і ізалятара. Камплект — гэта файл .cfg, дзе яны ўказаны; змяняйце яго тут, як тэкст, або ў любым тэкставым рэдактары.
+As text	Як тэкст
+The name is the kit's file: make a copy to rename it	Назва — гэта файл камплекта: каб перайменаваць, зрабіце копію
+For	Для
+this map	гэтай карты
+every map	усіх карт
+Take the one selected on the map	Узяць вылучаны на карце
+Select a spline of it on the map first	Спачатку вылучыце такі сплайн на карце
+Select such an object on the map first	Спачатку вылучыце такі аб'ект на карце
+Choose the file	Выбраць файл
+The file must lie in the content folder or in OMSI 2's	Файл павінен ляжаць у тэчцы кантэнту або ў тэчцы OMSI 2
+Not there	Не знойдзены
+Wire spline	Сплайн провада
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	.sli, профіль якога ставіць правады на іх вышыню над дарогай; кладзецца ўздоўж кожнага пралёта
+Mast	Мачта
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: пачатак каардынат ля асновы, кранштэйн цягнецца ўздоўж яе -y да провада
+Frog	Развілка
+A .sco hung where the wire branches: its origin on the wire, y along it	.sco, які вісіць там, дзе провад разгаліноўваецца: пачатак каардынат на провадзе, y уздоўж яго
+Insulator	Ізалятар
+A .sco hung where two sections meet: its origin on the wire, y along it	.sco, які вісіць на стыку дзвюх секцый: пачатак каардынат на провадзе, y уздоўж яго
+Masts	Мачты
+every	кожныя
+From a mast's foot to its wire, across the road	Ад асновы мачты да яе провада, упоперак дарогі
+from the wire	ад провада
+Mast turned	Паварот мачты
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Для мадэлі, у якой кранштэйн цягнецца не ўздоўж -y: 90, калі ўздоўж -x, -90 — уздоўж +x, 180 — уздоўж +y
+arm	кранштэйн
+The wire spline's wires	Правады сплайна провада
+high	вышыня
+across its line	ад яго восі
+Save and renew the map's wire	Захаваць і абнавіць провад карты
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Сплайны провада і мачты, пракладзеныя па гэтым камплекце, атрымліваюць яго файлы такімі, якія яны цяпер; развілкі і ізалятары ставяцца нанова
+A new kit from this one (to rename it, or change it apart)	Новы камплект з гэтага (каб перайменаваць або змяняць асобна)
+Show the file	Паказаць файл
+Changed to the kit's files:	Заменена на файлы камплекта:
+a display shows the switch of its name	табло паказвае стрэлку з гэтай назвай
+Set by	Кіраванне
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Становішча, калі гульня чытае сетку (выпадкова: выбіраецца раз за запуск; у сеткавай гульні — проста)
+Contact plate	Кантакт
+ m before the frog	 м да развілкі
+Power on from	Ток ад
+Invert	Наадварот
+the other way round	наадварот
+Channel	Канал
+any	любы
+Range	Далёкасць
+Route codes	Коды маршрутаў
+A route code	Код маршруту
+Flip	Адбіць
+Left to right	Злева направа
+Top to bottom	Зверху ўніз
+Dark theme	Цёмная тэма
+Light theme	Светлая тэма
+Lit	Святло
+Right footway texture	Тэкстура правага тратуара
+Left footway texture	Тэкстура левага тратуара
+like the left one	як у левага
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	Шляхі палос ідуць так, як на карце з левабаковым рухам (аднабаковая дарога застаецца як ёсць)

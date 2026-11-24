@@ -225,10 +225,15 @@ fn plan_with_rights(doc: &Document, roots: &Roots, rights: bool) -> Plan {
     // the map's own folder, all of it
     c.pack_dir(&doc.dir);
     crate::geo::export_filter(&doc.dir, &mut c.plan.files);
-    // its Lua script for openOMSI, if it has one
+    // its scripts for openOMSI, if it has them: the project, and its Rust plugin built
     if let Some(folder) = doc.dir.file_name() {
-        if let Some(dir) = crate::scripting::lua_path(&roots.content, &folder.to_string_lossy()).parent().filter(|d| d.is_dir()) {
-            c.pack_dir(dir);
+        let p = crate::script::project::Project::of(&roots.content, &folder.to_string_lossy());
+        if p.dir.is_dir() {
+            c.pack_dir(&p.dir);
+        }
+        let rust = p.rust_dir().with_extension("oop");
+        if let Some(r) = rel_of(&rust, &roots.content).filter(|_| rust.is_file()) {
+            c.pack(&rust, &r);
         }
     }
     for t in doc.tiles.values() {

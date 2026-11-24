@@ -420,9 +420,84 @@ struct Mesh {
     verts: Vec<([f64; 3], [f64; 3], [f64; 2])>,
     tris: Vec<([usize; 3], usize)>,
     textures: Vec<Option<PathBuf>>,
+    /// The roadway's own triangles (the fan round the middle, in the vertices' frame): where
+    /// the paint goes, and at what height.
+    roadway: Vec<[DVec3; 3]>,
 }
 
 impl Mesh {
+    /// The roadway's height at `p` (the vertices' frame), None off it.
+    fn roadway_z(&self, p: DVec2) -> Option<f64> {
+        self.roadway.iter().find_map(|t| {
+            let (a, b, c) = (t[0].truncate(), t[1].truncate(), t[2].truncate());
+            let den = (b - a).perp_dot(c - a);
+            if den.abs() < 1e-12 {
+                return None;
+            }
+            let wb = (p - a).perp_dot(c - a) / den;
+            let wc = (b - a).perp_dot(p - a) / den;
+            let wa = 1.0 - wb - wc;
+            (wa >= -1e-6 && wb >= -1e-6 && wc >= -1e-6).then(|| t[0].z * wa + t[1].z * wb + t[2].z * wc)
+        })
+    }
+
+    /// A strip of paint `width` wide along `a` to `b` (the vertices' frame) laid on the roadway
+    /// as a decal: cut into the pieces each roadway triangle holds, each piece on that
+    /// triangle's own plane `MARK_LIFT` over it. It follows every fold of a plate whose arms
+    /// lie at different heights, and what falls off the roadway is left out.
+    fn paint_strip(&mut self, a: DVec2, b: DVec2, width: f64, mat: usize) {
+        let len = (b - a).length();
+        if len < 1e-3 {
+            return;
+        }
+        let along = (b - a) / len;
+        let across = DVec2::new(-along.y, along.x) * (width * 0.5);
+        let rect = [a - across, b - across, b + across, a + across];
+        let mut pieces = Vec::new();
+        for t in &self.roadway {
+            let (p0, p1, p2) = (t[0].truncate(), t[1].truncate(), t[2].truncate());
+            let den = (p1 - p0).perp_dot(p2 - p0);
+            if den.abs() < 1e-9 {
+                continue;
+            }
+            // (the rectangle cut by each side of the triangle in turn, keeping the inside)
+            let mut poly: Vec<DVec2> = rect.to_vec();
+            for (e0, e1) in [(p0, p1), (p1, p2), (p2, p0)] {
+                let inside = |p: DVec2| (e1 - e0).perp_dot(p - e0) * den.signum() >= 0.0;
+                let mut next = Vec::with_capacity(poly.len() + 1);
+                for k in 0..poly.len() {
+                    let (c, d) = (poly[k], poly[(k + 1) % poly.len()]);
+                    let (ci, di) = (inside(c), inside(d));
+                    if ci {
+                        next.push(c);
+                    }
+                    if ci != di {
+                        let (fc, fd) = ((e1 - e0).perp_dot(c - e0), (e1 - e0).perp_dot(d - e0));
+                        next.push(c + (d - c) * (fc / (fc - fd)));
+                    }
+                }
+                poly = next;
+                if poly.len() < 3 {
+                    break;
+                }
+            }
+            if poly.len() < 3 {
+                continue;
+            }
+            let z = |p: DVec2| {
+                let wb = (p - p0).perp_dot(p2 - p0) / den;
+                let wc = (p1 - p0).perp_dot(p - p0) / den;
+                t[0].z * (1.0 - wb - wc) + t[1].z * wb + t[2].z * wc + MARK_LIFT
+            };
+            pieces.push(poly.iter().map(|p| DVec3::new(p.x, p.y, z(*p))).collect::<Vec<_>>());
+        }
+        for poly in pieces {
+            for k in 1..poly.len() - 1 {
+                self.tri([poly[0], poly[k], poly[k + 1]], [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], DVec3::Z, mat);
+            }
+        }
+    }
+
     fn material(&mut self, tex: Option<PathBuf>) -> usize {
         match self.textures.iter().position(|t| *t == tex) {
             Some(i) => i,
@@ -459,7 +534,10 @@ fn junction_mesh(arms: &[ArmGeo], centre: DVec3, core_tex: Option<PathBuf>, peri
     let rel = |p: DVec3| p - centre;
     // the arms round the junction, counter-clockwise
     let mut order: Vec<usize> = (0..arms.len()).collect();
-    let ang = |i: usize| { let d = roads::dir(arms[i].out); d.y.atan2(d.x) };
+    // (by the way each runs out, and then by where it ends: two arms running out side by side,
+    // a merge's main road and slip road, come round in the order they lie)
+    let far = arms.iter().map(|a| (a.end - centre).truncate().length()).fold(0.0, f64::max) * 2.0 + 1.0;
+    let ang = |i: usize| { let d = roads::dir(arms[i].out) * far + (arms[i].end - centre).truncate(); d.y.atan2(d.x) };
     order.sort_by(|a, b| ang(*a).total_cmp(&ang(*b)));
     let mut outline: Vec<DVec3> = Vec::new();
     for k in 0..order.len() {
@@ -477,21 +555,25 @@ fn junction_mesh(arms: &[ArmGeo], centre: DVec3, core_tex: Option<PathBuf>, peri
         if total < 0.05 {
             continue;
         }
-        let n = (total / 0.75).ceil().max(4.0) as usize;
-        // stations along the kerb: (point, heading, distance)
+        // stations along the kerb: (point, heading, distance); every 0.75 m round a curve, a
+        // few along a straight (its sides are straight whatever the stations)
         let mut st: Vec<(DVec2, f64, f64)> = Vec::new();
-        for i in 0..=n {
-            let mut d = total * i as f64 / n as f64;
-            let mut seg = &segs[0];
-            for sgm in &segs {
-                seg = sgm;
-                if d <= sgm.length + 1e-9 {
-                    break;
+        let mut run = 0.0;
+        for (si, sgm) in segs.iter().enumerate() {
+            let step = if sgm.radius == 0.0 { 6.0 } else { 0.75 };
+            let k = (sgm.length / step).ceil().max(1.0) as usize;
+            for i in 0..=k {
+                if i == 0 && si > 0 {
+                    continue;
                 }
-                d -= sgm.length;
+                let d = sgm.length * i as f64 / k as f64;
+                st.push((sgm.point(d), sgm.heading_at(d), run + d));
             }
-            let d = d.min(seg.length);
-            st.push((seg.point(d), seg.heading_at(d), total * i as f64 / n as f64));
+            run += sgm.length;
+        }
+        let n = st.len() - 1;
+        if n < 1 {
+            continue;
         }
         for p in st.iter().skip(1).take(n.saturating_sub(1)) {
             let t = p.2 / total;
@@ -505,7 +587,11 @@ fn junction_mesh(arms: &[ArmGeo], centre: DVec3, core_tex: Option<PathBuf>, peri
         // (the strip as it is at the arm it starts from and at the one it ends at: between two
         // roads of different width it grows from the one's footway to the other's)
         let (from_arm, to_arm) = (&a.left, &b.right);
-        let blend = arms.len() == 2 && !from_arm.is_empty() && from_arm.len() == to_arm.len();
+        // (every corner grows from the one arm's footway to the other's, so each meets its road
+        // at the road's own width: taken whole from the wider one, a narrower road's footway
+        // would end in a step at its mouth)
+        let blend = !from_arm.is_empty() && from_arm.len() == to_arm.len();
+        let joint = arms.len() == 2 && blend;
         let strips: Vec<(&SideProfile, &Vec<(f64, f64, f64, f64)>, &Vec<(f64, f64, f64, f64)>)> = if blend {
             from_arm.iter().zip(to_arm.iter()).map(|(f, t)| (if back { t } else { f }, &f.points, &t.points)).collect()
         } else {
@@ -529,7 +615,7 @@ fn junction_mesh(arms: &[ArmGeo], centre: DVec3, core_tex: Option<PathBuf>, peri
                 // (between two roads the strip's cross-sections are turned from the one's
                 // across to the other's, so they meet the roads' ends square, with no wedge
                 // of ground between)
-                let turn = |h: f64, s: f64| if blend { let from = roads::norm_deg(a.out + 180.0); from + signed_turn(from, b.out) * (s / total) } else { h };
+                let turn = |h: f64, s: f64| if joint { let from = roads::norm_deg(a.out + 180.0); from + signed_turn(from, b.out) * (s / total) } else { h };
                 let (h0, h1) = (turn(h0, s0), turn(h1, s1));
                 let (w0, w1) = (at(s0 / total), at(s1 / total));
                 for i in 0..n.saturating_sub(1) {
@@ -577,6 +663,7 @@ fn junction_mesh(arms: &[ArmGeo], centre: DVec3, core_tex: Option<PathBuf>, peri
         let p0 = rel(outline[i]) + DVec3::Z * road_z;
         let p1 = rel(outline[(i + 1) % outline.len()]) + DVec3::Z * road_z;
         mesh.tri([mid, p0, p1], [uv(mid), uv(p0), uv(p1)], DVec3::Z, core);
+        mesh.roadway.push([mid, p0, p1]);
     }
     mesh
 }
@@ -591,6 +678,30 @@ fn kerb_round(a: DVec2, out_a: f64, b: DVec2, out_b: f64) -> Vec<Seg> {
     // (the outside of a bend: the kerb lines part instead of meeting, and a smooth curve
     // carries the old edge round - a straight cut there left the ground showing)
     let smooth = || roads::biarc(a, roads::norm_deg(out_a + 180.0), b, out_b).unwrap_or_else(straight);
+    // two arms leaving side by side (the nose of an island between them): each kerb runs back
+    // along its own line to where the nearer arm ends, and a turn joins them there; one
+    // curve from end to end crossed itself when one arm reached further out than the other
+    if da.dot(db) > 0.7 {
+        let m = (da + db).normalize_or_zero();
+        let (pa, pb) = (a.dot(m), b.dot(m));
+        let s0 = pa.min(pb);
+        let a2 = a - da * ((pa - s0) / da.dot(m).max(0.2));
+        let b2 = b - db * ((pb - s0) / db.dot(m).max(0.2));
+        let mut segs = Vec::new();
+        if (a2 - a).length() > 0.02 {
+            segs.extend(roads::straight(a, a2));
+        }
+        match roads::biarc(a2, roads::norm_deg(out_a + 180.0), b2, out_b) {
+            Some(t) => segs.extend(t),
+            None => segs.extend(roads::straight(a2, b2)),
+        }
+        if (b - b2).length() > 0.02 {
+            segs.extend(roads::straight(b2, b));
+        }
+        if !segs.is_empty() {
+            return segs;
+        }
+    }
     let denom = da.perp_dot(db);
     if denom.abs() < 0.05 {
         // in one line (the straight side of a T): straight across; side by side: round
@@ -624,25 +735,487 @@ fn kerb_round(a: DVec2, out_a: f64, b: DVec2, out_b: f64) -> Vec<Seg> {
     if segs.is_empty() { straight() } else { segs }
 }
 
+/// A line painted along a road, as its texture shows it across the road.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct PaintLine {
+    /// Its middle across the spline (the spline's own x, unmirrored; m) and its width.
+    x: f64,
+    width: f64,
+    /// Unbroken (else dashed).
+    solid: bool,
+    /// On the roadway (else on the strip just beside it, which the plate's kerb sweep
+    /// carries round the corner as it is).
+    inner: bool,
+}
+
+/// The lines a road type has painted on it, and the paint's colour. None at all: a road with
+/// no markings (a yard drive), whose plate gets none either.
+#[derive(Debug, Clone, Default, PartialEq)]
+struct RoadPaint {
+    lines: Vec<PaintLine>,
+    rgb: [u8; 3],
+}
+
+/// The paint on a road type, read from its own texture: across the roadway (and a little
+/// beside it) every 2 cm, the texture's column there is looked down for pixels much brighter
+/// than the asphalt. A stripe of such columns, 6 to 45 cm wide, bright all the way down
+/// (a solid line) or in a few long runs (dashes), is a line; noise, grain, cobbles and wide
+/// pale strips (concrete, gravel) are not.
+fn scan_paint(model: &SplineModel) -> RoadPaint {
+    let g = arm_geo_of(model, false, false, DVec3::ZERO, 0.0, 0.0);
+    let (xl, xr, rz) = (-g.left_w, g.right_w, g.road_z);
+    if !(xr - xl > 0.5) {
+        return RoadPaint::default();
+    }
+    let (lo, hi) = (xl - 0.6, xr + 0.6);
+    // the flat pieces of the profiles at the roadway's height: (x0, x1, u0, u1, material)
+    let mut pieces: Vec<(f64, f64, f64, f64, usize)> = Vec::new();
+    for p in &model.def.profiles {
+        for w in p.points.windows(2) {
+            let (a, b) = (&w[0], &w[1]);
+            let (x0, x1, z0, z1) = (a.x as f64, b.x as f64, a.z as f64, b.z as f64);
+            let flat = (x1 - x0).abs() > 1e-3 && ((z1 - z0) / (x1 - x0)).abs() < 0.15;
+            if !flat || (z0 - rz).abs() > 0.06 || (z1 - rz).abs() > 0.06 || x0.max(x1) < lo || x0.min(x1) > hi {
+                continue;
+            }
+            pieces.push((x0, x1, a.u as f64, b.u as f64, p.texture));
+        }
+    }
+    // their pictures (and whether their alpha cuts them), by material
+    let mut pics: std::collections::HashMap<usize, Option<(omsi_texture::Image, bool)>> = std::collections::HashMap::new();
+    for pc in &pieces {
+        pics.entry(pc.4).or_insert_with(|| {
+            let m = model.materials.get(pc.4)?;
+            let img = omsi_texture::decode_file(m.texture.as_ref()?).ok()?;
+            if img.width == 0 || img.height == 0 || img.rgba.len() < (img.width * img.height * 4) as usize {
+                return None;
+            }
+            let cut = img.has_alpha && m.alpha != crate::assets::Alpha::Opaque;
+            Some((img, cut))
+        });
+    }
+    const STEP: f64 = 0.02;
+    const ROWS: usize = 128;
+    let n = ((hi - lo) / STEP).ceil() as usize;
+    let xs: Vec<f64> = (0..n).map(|i| lo + (i as f64 + 0.5) * STEP).collect();
+    // down each column: the ground's brightness (the first piece that shows there) and the
+    // brightest of the pieces that show there, with its colour
+    let mut cols: Vec<Option<Vec<(f32, f32, [u8; 3])>>> = Vec::with_capacity(n);
+    for &x in &xs {
+        let mut col: Option<Vec<(f32, f32, [u8; 3])>> = None;
+        for pc in pieces.iter().filter(|pc| (pc.0 - x) * (pc.1 - x) <= 0.0) {
+            let Some(Some((img, cut))) = pics.get(&pc.4) else { continue };
+            let (w, h) = (img.width as usize, img.height as usize);
+            let u = pc.2 + (pc.3 - pc.2) * (x - pc.0) / (pc.1 - pc.0);
+            let sx = ((u.rem_euclid(1.0) * w as f64) as usize).min(w - 1);
+            let c = col.get_or_insert_with(|| vec![(-1.0, -1.0, [0, 0, 0]); ROWS]);
+            for (r, s) in c.iter_mut().enumerate() {
+                let sy = (((r as f64 + 0.5) / ROWS as f64 * h as f64) as usize).min(h - 1);
+                let px = &img.rgba[(sy * w + sx) * 4..][..4];
+                if *cut && px[3] < 128 {
+                    continue;
+                }
+                let lum = (px[0] as f32 + px[1] as f32 + px[2] as f32) / 765.0;
+                if s.0 < 0.0 {
+                    s.0 = lum;
+                }
+                if lum > s.1 {
+                    *s = (s.0, lum, [px[0], px[1], px[2]]);
+                }
+            }
+        }
+        cols.push(col);
+    }
+    // the asphalt: the middle brightness of the roadway's ground
+    let mut ground: Vec<f32> = xs.iter().zip(&cols).filter(|(x, _)| **x >= xl && **x <= xr).flat_map(|(_, c)| c.iter().flatten().map(|s| s.0).filter(|v| *v >= 0.0)).collect();
+    if ground.is_empty() {
+        return RoadPaint::default();
+    }
+    ground.sort_by(f32::total_cmp);
+    let base = ground[ground.len() / 2];
+    let paint = |s: &(f32, f32, [u8; 3])| s.1 > base + 0.18 && s.1 > 0.5;
+    // each column: how much of it is paint, and in how many runs down it (short gaps closed)
+    let stats: Vec<(f64, usize)> = cols.iter().map(|c| c.as_ref().map(|c| paint_down(&c.iter().map(paint).collect::<Vec<_>>())).unwrap_or((0.0, usize::MAX))).collect();
+    let mut ok: Vec<bool> = stats.iter().map(|(cover, runs)| is_paint(*cover, *runs)).collect();
+    for i in 1..n.saturating_sub(1) {
+        if !ok[i] && ok[i - 1] && ok[i + 1] {
+            ok[i] = true;
+        }
+    }
+    let mut lines = Vec::new();
+    let mut colour = [0.0f64; 3];
+    let mut colour_n = 0usize;
+    let mut i = 0;
+    while i < n {
+        if !ok[i] {
+            i += 1;
+            continue;
+        }
+        let mut j = i;
+        while j + 1 < n && ok[j + 1] {
+            j += 1;
+        }
+        let width = (j - i + 1) as f64 * STEP;
+        let x = (xs[i] + xs[j]) * 0.5;
+        let mut covers: Vec<f64> = stats[i..=j].iter().map(|s| s.0).collect();
+        covers.sort_by(f64::total_cmp);
+        let solid = covers[covers.len() / 2] >= 0.8;
+        let inner = x >= xl + 0.02 && x <= xr - 0.02;
+        // (beside the roadway only a narrow line along its edge: a pale strip further out is
+        // a gutter or a verge)
+        let edge = (x - xl).abs().min((x - xr).abs());
+        if (0.06..=0.45).contains(&width) && (inner || (width <= 0.25 && edge <= 0.35)) {
+            lines.push(PaintLine { x, width, solid, inner });
+            // (the paint's colour from the line's middle, clear of its soft edges)
+            let third = (j - i + 1) / 3;
+            for c in cols[i + third..=j - third].iter().flatten() {
+                for s in c.iter().filter(|s| paint(s)) {
+                    for k in 0..3 {
+                        colour[k] += s.2[k] as f64;
+                    }
+                    colour_n += 1;
+                }
+            }
+        }
+        i = j + 1;
+    }
+    let rgb = if colour_n > 0 { colour.map(|c| (((c / colour_n as f64) / 8.0).round() * 8.0).clamp(0.0, 255.0) as u8) } else { [232, 232, 224] };
+    RoadPaint { lines, rgb }
+}
+
+/// Down one column of a texture, which pixels are paint: how much of it is (0..1), and in how
+/// many runs (gaps of a pixel or two closed; it wraps round, as the texture repeats).
+fn paint_down(b: &[bool]) -> (f64, usize) {
+    let n = b.len();
+    if n == 0 {
+        return (0.0, 0);
+    }
+    let cover = b.iter().filter(|v| **v).count() as f64 / n as f64;
+    let closed: Vec<bool> = (0..n).map(|r| b[r] || ((1..=2).any(|k| b[(r + n - k % n) % n]) && (1..=2).any(|k| b[(r + k) % n]))).collect();
+    let runs = (0..n).filter(|r| closed[*r] && !closed[(r + n - 1) % n]).count();
+    (cover, runs)
+}
+
+/// A column with that much paint in that many runs is a painted line: bright all the way
+/// down (solid), or in a few long dashes; scattered bright grain is not.
+fn is_paint(cover: f64, runs: usize) -> bool {
+    cover >= 0.85 || (cover >= 0.2 && runs <= 3)
+}
+
+/// The paint of a road type, read from its texture once for as long as the type stays loaded.
+fn road_paint(model: &std::sync::Arc<SplineModel>) -> std::sync::Arc<RoadPaint> {
+    use std::sync::{Arc, Mutex, OnceLock, Weak};
+    static SEEN: OnceLock<Mutex<Vec<(Weak<SplineModel>, Arc<RoadPaint>)>>> = OnceLock::new();
+    let seen = SEEN.get_or_init(Default::default);
+    let known = |s: &Vec<(Weak<SplineModel>, Arc<RoadPaint>)>| s.iter().find(|(w, _)| w.strong_count() > 0 && std::ptr::eq(w.as_ptr(), Arc::as_ptr(model))).map(|(_, p)| p.clone());
+    if let Some(p) = seen.lock().ok().and_then(|s| known(&s)) {
+        return p;
+    }
+    let p = Arc::new(scan_paint(model));
+    if let Ok(mut s) = seen.lock() {
+        s.retain(|(w, _)| w.strong_count() > 0);
+        s.push((Arc::downgrade(model), p.clone()));
+    }
+    p
+}
+
+/// An arm's painted lines as the plate sees them: (lateral place right of the way out, width,
+/// on the roadway). None: its road has no paint.
+struct ArmPaint {
+    lines: Vec<(f64, f64, bool)>,
+    rgb: [u8; 3],
+}
+
+fn arm_paint(p: &RoadPaint, vdir: f64) -> Option<ArmPaint> {
+    // (`vdir` says both which end of the spline is at the junction and whether it is
+    // mirrored: the spline's x is right of the way out times -vdir)
+    (!p.lines.is_empty()).then(|| ArmPaint { lines: p.lines.iter().map(|l| (-vdir * l.x, l.width, l.inner)).collect(), rgb: p.rgb })
+}
+
+/// How high the paint lies over the asphalt (m): enough that OMSI's depth buffer keeps it on
+/// top from afar, too little to see.
+const MARK_LIFT: f64 = 0.01;
+/// How far the roads' lines run on into the plate (m), and how wide a stop line is.
+const LINE_RUN: f64 = 4.0;
+const STOP_W: f64 = 0.4;
+
+/// A strip of paint on the plate: along its middle from `a` to `b` (the arms' frame), `width`
+/// across; on arm `arm`, a stop line or a line carried on.
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(not(test), allow(dead_code))]
+struct Mark {
+    arm: usize,
+    stop: bool,
+    a: DVec2,
+    b: DVec2,
+    width: f64,
+    rgb: [u8; 3],
+}
+
+/// Whether arm `b` carries arm `a`'s road straight on through the junction.
+fn straight_on(a: &ArmGeo, b: &ArmGeo) -> bool {
+    (roads::norm_deg(b.out - a.out) - 180.0).abs() < 30.0
+}
+
+/// The arms of the road that runs on through the junction and keeps its way (no stop line
+/// on them, the side roads give way to it): the pair carried straight on through each
+/// other, where there is one; of two such pairs, the wider road, none where both are as wide
+/// (a crossroads of equals stops every way).
+fn main_through(arms: &[ArmGeo]) -> Vec<bool> {
+    let width = |g: &ArmGeo| g.left_w + g.right_w;
+    let mut pairs: Vec<(usize, usize, f64)> = Vec::new();
+    for i in 0..arms.len() {
+        for j in i + 1..arms.len() {
+            if straight_on(&arms[i], &arms[j]) && !pairs.iter().any(|p| p.0 == i || p.1 == i || p.0 == j || p.1 == j) {
+                pairs.push((i, j, width(&arms[i]).min(width(&arms[j]))));
+            }
+        }
+    }
+    pairs.sort_by(|a, b| b.2.total_cmp(&a.2));
+    let mut out = vec![false; arms.len()];
+    match pairs.as_slice() {
+        [] => {}
+        [p] if arms.len() > 2 => {
+            out[p.0] = true;
+            out[p.1] = true;
+        }
+        [p, q, ..] if p.2 > q.2 + 0.5 => {
+            out[p.0] = true;
+            out[p.1] = true;
+        }
+        _ => {}
+    }
+    out
+}
+
+/// Whether `p` lies in arm `b`'s band: `span` across (right of its way out), from `from` to
+/// `to` metres along its way out from its end.
+fn in_band(b: &ArmGeo, p: DVec2, span: (f64, f64), from: f64, to: f64) -> bool {
+    let q = p - b.end.truncate();
+    let (along, side) = (q.dot(roads::dir(b.out)), q.dot(roads::right(b.out)));
+    along >= from && along <= to && side >= span.0 && side <= span.1
+}
+
+/// How far from the junction each road ending there (cut at its middle, before it is cut
+/// back) is to be cut back (m, along it): `r`, the room its corners ask for, or further where
+/// that leaves its roadway on another road's: until it is clear of each other road's roadway
+/// (and half a metre beside it) carried on across the junction, the road carried straight on
+/// through aside. A road meeting a wide one whose roadway reaches far to one side of its line
+/// (a one-way road drawn along its edge) stops at that road's kerb, not in its lanes, however
+/// tight a corner style asks for; narrower roads keep the style's `r`. None (or a road not
+/// loaded): `r`.
+pub fn cut_back(doc: &Document, assets: &mut Assets, ends: &[Option<(TileKey, i64, bool)>], r: f64) -> Vec<f64> {
+    let geo: Vec<Option<(ArmGeo, f64)>> = ends
+        .iter()
+        .map(|e| {
+            let (key, id, at_end) = (*e)?;
+            let hw = assets.spline(&doc.spline(key, id)?.file)?.half_width as f64;
+            Some((arm_geometry(doc, assets, &Arm { key, id, at_end })?, hw))
+        })
+        .collect();
+    let arms: Vec<(usize, &ArmGeo)> = geo.iter().enumerate().filter_map(|(i, g)| g.as_ref().map(|g| (i, &g.0))).collect();
+    let widest = arms.iter().map(|(_, g)| g.left_w.max(g.right_w)).fold(0.0, f64::max);
+    // (as far as a sharp corner may ask for)
+    let most = (radius(&geo.iter().flatten().map(|g| g.1).collect::<Vec<_>>()) * 3.0).max(r);
+    geo.iter()
+        .enumerate()
+        .map(|(i, g)| {
+            let Some((a, _)) = g else { return r };
+            let others: Vec<&ArmGeo> = arms.iter().filter(|(j, b)| *j != i && !straight_on(a, b)).map(|(_, b)| *b).collect();
+            let (d, rt, e) = (roads::dir(a.out), roads::right(a.out), a.end.truncate());
+            let n = ((a.left_w + a.right_w) / 0.5).ceil().max(1.0) as usize;
+            let across: Vec<f64> = (0..=n).map(|k| -a.left_w + (a.left_w + a.right_w) * k as f64 / n as f64).collect();
+            let blocked = |t: f64| across.iter().any(|s| others.iter().any(|b| in_band(b, e + d * t + rt * *s, (-b.left_w - 0.5, b.right_w + 0.5), -(widest + 1.0), f64::INFINITY)));
+            let mut t = 0.0;
+            while t < most && blocked(t) {
+                t += 0.05;
+            }
+            r.max(t.min(most))
+        })
+        .collect()
+}
+
+/// How far into the plate an arm's roadway runs clear of the other arms' (m, at most `most`):
+/// each other arm's `band` (its lateral span, right of its way out) carried on in to the
+/// middle and past it by the widest road, except the arm that carries this road straight on
+/// through.
+fn room(arms: &[ArmGeo], i: usize, centre: DVec2, most: f64, band: &dyn Fn(usize) -> (f64, f64)) -> f64 {
+    let a = &arms[i];
+    let (d, r, e) = (roads::dir(a.out), roads::right(a.out), a.end.truncate());
+    let widest = arms.iter().map(|g| g.left_w.max(g.right_w)).fold(0.0, f64::max);
+    let n = ((a.left_w + a.right_w) / 0.5).ceil().max(1.0) as usize;
+    let across: Vec<f64> = (0..=n).map(|k| -a.left_w + (a.left_w + a.right_w) * k as f64 / n as f64).collect();
+    let others: Vec<(usize, (f64, f64))> = (0..arms.len()).filter(|j| *j != i && !straight_on(a, &arms[*j])).map(|j| (j, band(j))).collect();
+    let blocked = |p: DVec2| {
+        others.iter().any(|(j, span)| {
+            let b = &arms[*j];
+            let reach = (b.end.truncate() - centre).length() + widest + 1.0;
+            in_band(b, p, *span, -reach, 0.0)
+        })
+    };
+    let mut t = 0.0;
+    while t < most {
+        if across.iter().any(|s| blocked(e - d * t + r * *s)) {
+            return t;
+        }
+        t += 0.05;
+    }
+    most
+}
+
+/// The paint on a plate, arm by arm (each with paint on its road, and not `skip`ped): its
+/// lines on the roadway run on in from the arm's mouth up to `LINE_RUN` (less where the other
+/// roads come close: none where they come within a metre and a half), and, with
+/// `stop_lines`, a stop line lies across the lanes coming in where those lines end (at the
+/// mouth when they do not run on; none where all its lanes leave, nor where it would lie on
+/// the other roads' lanes). All of it kept on the roadway.
+fn plate_marks(mesh: &Mesh, arms: &[ArmGeo], lanes: &[LaneEnd], paint: &[Option<ArmPaint>], skip: &[bool], stop_lines: bool, centre: DVec3) -> Vec<Mark> {
+    let c2 = centre.truncate();
+    let on = |p: DVec2| mesh.roadway_z(p - c2).is_some();
+    // (each arm's roadway with a margin; and where its lanes run)
+    let roadway = |j: usize| (-arms[j].left_w - 0.5, arms[j].right_w + 0.5);
+    let traffic = |j: usize| {
+        let v: Vec<(f64, f64)> = lanes.iter().filter(|l| l.arm == j && l.kind == 0).map(|l| (-l.side - l.width * 0.5, -l.side + l.width * 0.5)).collect();
+        if v.is_empty() { (-arms[j].left_w, arms[j].right_w) } else { (v.iter().map(|s| s.0).fold(f64::MAX, f64::min), v.iter().map(|s| s.1).fold(f64::MIN, f64::max)) }
+    };
+    let through = main_through(arms);
+    let mut out = Vec::new();
+    for (i, g) in arms.iter().enumerate() {
+        let Some(p) = paint.get(i).and_then(|p| p.as_ref()) else { continue };
+        if skip.get(i).copied().unwrap_or(false) {
+            continue;
+        }
+        let (d, r, e) = (roads::dir(g.out), roads::right(g.out), g.end.truncate());
+        let at = |t: f64, s: f64| e - d * t + r * s;
+        let clear = room(arms, i, c2, LINE_RUN + 3.0, &roadway);
+        let run = if clear - 1.5 >= 1.0 { (clear - 1.5).min(LINE_RUN) } else { 0.0 };
+        // the lines carried on in (as far as both their edges stay on the roadway)
+        for &(off, w, inner) in &p.lines {
+            if !inner || run <= 0.0 {
+                continue;
+            }
+            let mut end = 0.0;
+            let mut t: f64 = 0.25;
+            loop {
+                let t1 = t.min(run);
+                if !(on(at(t1, off - w * 0.5)) && on(at(t1, off + w * 0.5))) {
+                    break;
+                }
+                end = t1;
+                if t1 >= run {
+                    break;
+                }
+                t += 0.25;
+            }
+            if end >= 0.5 {
+                out.push(Mark { arm: i, stop: false, a: at(0.0, off), b: at(end, off), width: w, rgb: p.rgb });
+            }
+        }
+        let t0 = run.max(0.05);
+        let t1 = t0 + STOP_W;
+        if !stop_lines || through[i] || room(arms, i, c2, t1 + 0.1, &traffic) < t1 {
+            continue;
+        }
+        // the stop line: across the lanes coming in, from the line between them and the lanes
+        // going out (or the middle between them) to the edge line beside them (or the kerb)
+        let span = |incoming: bool| -> Option<(f64, f64)> {
+            let v: Vec<(f64, f64)> = lanes.iter().filter(|l| l.arm == i && l.kind == 0 && l.incoming == incoming).map(|l| (-l.side, l.width)).collect();
+            if v.is_empty() {
+                return None;
+            }
+            Some((v.iter().map(|(o, w)| o - w * 0.5).fold(f64::MAX, f64::min), v.iter().map(|(o, w)| o + w * 0.5).fold(f64::MIN, f64::max)))
+        };
+        let Some((in_lo, in_hi)) = span(true) else { continue };
+        let low_edge = p.lines.iter().map(|l| l.0 - l.1 * 0.5).filter(|x| *x >= in_lo - 1.5 && *x <= in_lo + 0.5).reduce(f64::min).unwrap_or(-g.left_w + 0.1).max(-g.left_w);
+        let high_edge = p.lines.iter().map(|l| l.0 + l.1 * 0.5).filter(|x| *x >= in_hi - 0.5 && *x <= in_hi + 1.5).reduce(f64::max).unwrap_or(g.right_w - 0.1).min(g.right_w);
+        let near = |b: f64| p.lines.iter().filter(move |l| (l.0 - b).abs() <= 0.75);
+        let (mut s0, mut s1) = match span(false) {
+            None => (low_edge, high_edge),
+            Some((out_lo, _)) if out_lo >= in_hi - 0.3 => {
+                let b = (in_hi + out_lo) * 0.5;
+                (low_edge, near(b).map(|l| l.0 - l.1 * 0.5).reduce(f64::min).unwrap_or(b))
+            }
+            Some((_, out_hi)) if out_hi <= in_lo + 0.3 => {
+                let b = (out_hi + in_lo) * 0.5;
+                (near(b).map(|l| l.0 + l.1 * 0.5).reduce(f64::max).unwrap_or(b), high_edge)
+            }
+            // (lanes both ways over the same width: no side to stop on)
+            _ => continue,
+        };
+        let fits = |s: f64| on(at(t0, s)) && on(at(t1, s));
+        while s0 < s1 && !fits(s0) {
+            s0 += 0.05;
+        }
+        while s1 > s0 && !fits(s1) {
+            s1 -= 0.05;
+        }
+        if s1 - s0 >= 1.0 {
+            let tm = (t0 + t1) * 0.5;
+            out.push(Mark { arm: i, stop: true, a: at(tm, s0), b: at(tm, s1), width: STOP_W, rgb: p.rgb });
+        }
+    }
+    out
+}
+
+/// A plain picture of the paint's colour in `dir` (made once): the markings' texture.
+fn marking_texture(dir: &Path, rgb: [u8; 3]) -> Option<PathBuf> {
+    let p = dir.join(format!("om_marking_{:02x}{:02x}{:02x}.png", rgb[0], rgb[1], rgb[2]));
+    if !std::fs::metadata(&p).map(|m| m.is_file() && m.len() > 0).unwrap_or(false) {
+        image::RgbaImage::from_pixel(8, 8, image::Rgba([rgb[0], rgb[1], rgb[2], 255])).save(&p).ok()?;
+    }
+    Some(p)
+}
+
+/// The marks laid on the roadway as decals (see `Mesh::paint_strip`), with their paint's
+/// picture.
+fn add_marks(mesh: &mut Mesh, marks: &[Mark], tex_dir: &Path, centre: DVec3) {
+    let c2 = centre.truncate();
+    for m in marks {
+        let Some(tex) = marking_texture(tex_dir, m.rgb) else { continue };
+        let mat = mesh.material(Some(tex));
+        mesh.paint_strip(m.a - c2, m.b - c2, m.width, mat);
+    }
+}
+
 /// The mesh as a DirectX `.x` text file in OMSI's frame (x right, y up, z forward).
 /// (Seen from the side a triangle faces, OMSI's front faces turn clockwise.) Every triangle
 /// is there twice, the second one facing the other way: a game that culls back faces by a
 /// rule of its own (the winding the version reads, the normals it trusts) shows the plate
 /// from above either way, as OMSI's own crossings are modelled.
 fn mesh_x(m: &Mesh, names: &[String]) -> String {
+    // (one vertex for each place, normal and texture point however many triangles share it:
+    // a city's plates are written several times smaller than with three of their own each)
+    let q = |v: f64, s: f64| (v * s).round() as i64;
+    let mut index: std::collections::HashMap<[i64; 8], usize> = std::collections::HashMap::new();
+    let mut verts: Vec<([f64; 3], [f64; 3], [f64; 2])> = Vec::new();
+    let tris: Vec<([usize; 3], usize)> = m
+        .tris
+        .iter()
+        .map(|(f, mat)| {
+            let f = f.map(|i| {
+                let (p, n, t) = m.verts[i];
+                let key = [q(p[0], 1000.0), q(p[1], 1000.0), q(p[2], 1000.0), q(n[0], 1000.0), q(n[1], 1000.0), q(n[2], 1000.0), q(t[0], 100000.0), q(t[1], 100000.0)];
+                *index.entry(key).or_insert_with(|| {
+                    verts.push((p, n, t));
+                    verts.len() - 1
+                })
+            });
+            (f, *mat)
+        })
+        .collect();
     let mut x = String::from("xof 0302txt 0032\n\nMesh {\n");
-    let nv = m.verts.len();
-    let nf = m.tris.len();
+    let nv = verts.len();
+    let nf = tris.len();
     let _ = writeln!(x, " {};", nv * 2);
     for pass in 0..2 {
-        for (i, (p, _, _)) in m.verts.iter().enumerate() {
-            let _ = writeln!(x, " {:.4};{:.4};{:.4};{}", p[0], p[2], p[1], if pass == 1 && i + 1 == nv { ";" } else { "," });
+        for (i, (p, _, _)) in verts.iter().enumerate() {
+            let _ = writeln!(x, " {:.3};{:.3};{:.3};{}", p[0], p[2], p[1], if pass == 1 && i + 1 == nv { ";" } else { "," });
         }
     }
     let _ = writeln!(x, " {};", nf * 2);
     // (front: the order turned for the swapped axes; back: the order as it stands, on its own vertices)
     let faces = |x: &mut String, last: bool| {
-        for (i, (f, _)) in m.tris.iter().enumerate() {
+        for (i, (f, _)) in tris.iter().enumerate() {
             let _ = writeln!(x, " 3;{},{},{};,", f[0], f[2], f[1]);
             let _ = writeln!(x, " 3;{},{},{};{}", nv + f[0], nv + f[1], nv + f[2], if last && i + 1 == nf { ";" } else { "," });
         }
@@ -651,8 +1224,8 @@ fn mesh_x(m: &Mesh, names: &[String]) -> String {
     let _ = writeln!(x, " MeshNormals {{\n  {};", nv * 2);
     for pass in 0..2 {
         let sign = if pass == 0 { 1.0 } else { -1.0 };
-        for (i, (_, n, _)) in m.verts.iter().enumerate() {
-            let _ = writeln!(x, "  {:.4};{:.4};{:.4};{}", n[0] * sign, n[2] * sign, n[1] * sign, if pass == 1 && i + 1 == nv { ";" } else { "," });
+        for (i, (_, n, _)) in verts.iter().enumerate() {
+            let _ = writeln!(x, "  {:.3};{:.3};{:.3};{}", n[0] * sign, n[2] * sign, n[1] * sign, if pass == 1 && i + 1 == nv { ";" } else { "," });
         }
     }
     let _ = writeln!(x, "  {};", nf * 2);
@@ -660,13 +1233,13 @@ fn mesh_x(m: &Mesh, names: &[String]) -> String {
     x.push_str(" }\n");
     let _ = writeln!(x, " MeshTextureCoords {{\n  {};", nv * 2);
     for pass in 0..2 {
-        for (i, (_, _, t)) in m.verts.iter().enumerate() {
+        for (i, (_, _, t)) in verts.iter().enumerate() {
             let _ = writeln!(x, "  {:.5};{:.5};{}", t[0], t[1], if pass == 1 && i + 1 == nv { ";" } else { "," });
         }
     }
     x.push_str(" }\n");
     let _ = writeln!(x, " MeshMaterialList {{\n  {};\n  {};", names.len().max(1), nf * 2);
-    for (i, (_, mat)) in m.tris.iter().enumerate() {
+    for (i, (_, mat)) in tris.iter().enumerate() {
         let _ = writeln!(x, "  {mat},\n  {mat}{}", if i + 1 == nf { ";" } else { "," });
     }
     for n in names {
@@ -738,13 +1311,15 @@ pub fn copy_texture(tex: &Path, to_dir: &Path) {
     }
 }
 
-/// The plain asphalt made from `tex` as `<stem>_junction.<same extension>` in `to_dir`, with
+/// The plain asphalt made from `tex` as `<stem>_junction2.<same extension>` in `to_dir`, with
 /// the same made from each of its companions (its winter pictures, in their formats) and the
 /// others (.cfg, .surf) copied under the new name. Gives the main picture's path.
 fn plain_like(tex: &Path, u: f64, u_per_m: f64, period: f64, lane_m: f64, to_dir: &Path) -> Option<PathBuf> {
     let stem = tex.file_stem()?.to_string_lossy().to_string();
     let ext = tex.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_else(|| "png".into());
-    let new_stem = format!("{stem}_junction");
+    // (2: made with every painted line, dashed ones too, kept out; a `_junction` picture made
+    // before may hold a dashed line, and a name already there is not made again)
+    let new_stem = format!("{stem}_junction2");
     let out = to_dir.join(format!("{new_stem}.{ext}"));
     // (one cut short, a full disk say, is made again)
     if out.exists() && omsi_texture::decode_file(&out).is_err() {
@@ -769,22 +1344,88 @@ fn plain_like(tex: &Path, u: f64, u_per_m: f64, period: f64, lane_m: f64, to_dir
     Some(out)
 }
 
+/// Where in a road's texture the plain asphalt is taken from: (the middle u of the band, its
+/// width in metres and in u, mirrored to and fro). Every column across the lane round `u` is
+/// looked down for paint as the road's lines are read (`scan_paint`): bright for long runs
+/// down it (a solid line, or dashes however far apart) or brighter on the whole than the
+/// rest. None: the whole lane, repeated, so slabs keep their grid. Paint: the widest stretch
+/// of the lane clear of it by 10 cm (round the lane's middle when it is there), up to half a
+/// lane, mirrored, so no line, solid or dashed, comes into the plate.
+fn clean_band(img: &omsi_texture::Image, u: f64, u_per_m: f64, lane_m: f64) -> (f64, f64, f64, bool) {
+    let (w, h) = (img.width as usize, img.height as usize);
+    let u_per_m = u_per_m.max(1e-6);
+    let whole = lane_m.clamp(1.0, 5.0);
+    let plain = (u, whole, (whole * u_per_m).max(0.002), false);
+    let half_lane = (lane_m * 0.5).clamp(0.8, 2.0);
+    let fallback = (u, half_lane, (half_lane * u_per_m).max(0.002), true);
+    if w == 0 || h == 0 || img.rgba.len() < w * h * 4 {
+        return plain;
+    }
+    // the columns across the lane (k counts on past the texture's edge: it repeats)
+    let span = (whole.max(lane_m) * u_per_m).min(1.0);
+    let k0 = ((u - span * 0.5) * w as f64).floor() as i64;
+    let k1 = (((u + span * 0.5) * w as f64).ceil() as i64).min(k0 + w as i64 - 1);
+    let rows = h.min(128);
+    let lum = |k: i64, r: usize| {
+        let sx = k.rem_euclid(w as i64) as usize;
+        let sy = (((r as f64 + 0.5) / rows as f64 * h as f64) as usize).min(h - 1);
+        let p = &img.rgba[(sy * w + sx) * 4..][..3];
+        (p[0] as f32 + p[1] as f32 + p[2] as f32) / 765.0
+    };
+    let cols: Vec<Vec<f32>> = (k0..=k1).map(|k| (0..rows).map(|r| lum(k, r)).collect()).collect();
+    let median = |mut v: Vec<f32>| {
+        v.sort_by(f32::total_cmp);
+        v[v.len() / 2]
+    };
+    let base = median(cols.iter().flatten().copied().collect());
+    let means: Vec<f32> = cols.iter().map(|c| c.iter().sum::<f32>() / rows as f32).collect();
+    let mean_base = median(means.clone());
+    let painted: Vec<bool> = cols
+        .iter()
+        .zip(&means)
+        .map(|(c, m)| {
+            let (cover, runs) = paint_down(&c.iter().map(|v| *v > base + 0.18 && *v > 0.5).collect::<Vec<_>>());
+            is_paint(cover, runs) || *m > mean_base + 0.1
+        })
+        .collect();
+    if !painted.iter().any(|p| *p) {
+        return plain;
+    }
+    // (kept clear of the lines' soft edges)
+    let n = painted.len();
+    let margin = (0.1 * u_per_m * w as f64).ceil().max(2.0) as usize;
+    let clear: Vec<bool> = (0..n).map(|i| !painted[i.saturating_sub(margin)..=(i + margin).min(n - 1)].iter().any(|p| *p)).collect();
+    let mut runs: Vec<(usize, usize)> = Vec::new();
+    let mut i = 0;
+    while i < n {
+        if clear[i] {
+            let j = (i..n).take_while(|j| clear[*j]).last().unwrap_or(i);
+            runs.push((i, j));
+            i = j + 1;
+        } else {
+            i += 1;
+        }
+    }
+    // (in columns from k0: the lane's middle, and the least a band may be)
+    let ku = u * w as f64 - k0 as f64;
+    let least = (0.3 * u_per_m * w as f64).max(3.0);
+    let len = |r: &(usize, usize)| (r.1 - r.0 + 1) as f64;
+    let at_middle = runs.iter().find(|r| r.0 as f64 <= ku && ku < r.1 as f64 + 1.0 && len(r) >= least);
+    let Some(run) = at_middle.or_else(|| runs.iter().max_by(|a, b| len(a).total_cmp(&len(b)))).copied() else { return fallback };
+    if len(&run) < 2.0 {
+        return fallback;
+    }
+    let band = (len(&run) - 0.02).min(half_lane * u_per_m * w as f64);
+    let (lo, hi) = (run.0 as f64 + band * 0.5, run.1 as f64 + 1.0 - band * 0.5);
+    let c = if at_middle.is_some() { ku.clamp(lo, hi.max(lo)) } else { (lo + hi) * 0.5 };
+    let band_u = band / w as f64;
+    ((k0 as f64 + c) / w as f64, band_u / u_per_m, band_u, true)
+}
+
 fn clean_asphalt_image(tex: &Path, u: f64, u_per_m: f64, period: f64, lane_m: f64) -> Option<image::RgbaImage> {
     let img = omsi_texture::decode_file(tex).ok()?;
     let (w, h) = (img.width as usize, img.height as usize);
-    let col = |uu: f64| -> f64 {
-        let sx = ((uu.rem_euclid(1.0) * w as f64) as usize).min(w - 1);
-        (0..h).step_by((h / 64).max(1)).map(|y| { let p = &img.rgba[(y * w + sx) * 4..][..3]; (p[0] as f64 + p[1] as f64 + p[2] as f64) / 765.0 }).sum::<f64>() / (h as f64 / (h / 64).max(1) as f64)
-    };
-    // painted lines at the lane's edges (brighter than its middle) stay out: a band of its
-    // middle, mirrored to and fro; joints or nothing there: the whole lane, repeated, so
-    // slabs keep their grid
-    let half_u = lane_m * 0.5 * u_per_m;
-    let mid = col(u);
-    let edge = (0..=6).map(|i| col(u - half_u + half_u * 0.08 * i as f64)).chain((0..=6).map(|i| col(u + half_u - half_u * 0.08 * i as f64))).fold(0.0, f64::max);
-    let painted = edge > mid + 0.12;
-    let (band_m, mirror) = if painted { ((lane_m * 0.5).clamp(0.8, 2.0), true) } else { (lane_m.clamp(1.0, 5.0), false) };
-    let band_u = (band_m * u_per_m).max(0.002);
+    let (centre_u, band_m, band_u, mirror) = clean_band(&img, u, u_per_m, lane_m);
     let size = 512usize;
     let mut buf = image::RgbaImage::new(size as u32, size as u32);
     // (each band side by side taken from another stretch of the road, so its patches and
@@ -803,13 +1444,42 @@ fn clean_asphalt_image(tex: &Path, u: f64, u_per_m: f64, period: f64, lane_m: f6
             } else {
                 (m / band_m).rem_euclid(1.0)
             };
-            let uu = (u - band_u * 0.5 + band_u * t).rem_euclid(1.0);
+            let uu = (centre_u - band_u * 0.5 + band_u * t).rem_euclid(1.0);
             let sx = ((uu * w as f64) as usize).min(w - 1);
             let p = &img.rgba[(sy * w + sx) * 4..][..4];
             buf.put_pixel(x as u32, y as u32, image::Rgba([p[0], p[1], p[2], 255]));
         }
     }
+    flatten_columns(&mut buf);
     Some(buf)
+}
+
+/// Each column brought to the picture's mean brightness: the wheel tracks and the worn
+/// stripes a lane's middle carries along the road (which, spread over a whole plate, read as
+/// ribs) go, the asphalt's grain and patches stay.
+fn flatten_columns(buf: &mut image::RgbaImage) {
+    let (w, h) = (buf.width() as usize, buf.height() as usize);
+    if w == 0 || h == 0 {
+        return;
+    }
+    let lum = |p: &image::Rgba<u8>| (p[0] as f64 + p[1] as f64 + p[2] as f64) / 3.0;
+    let cols: Vec<f64> = (0..w).map(|x| (0..h).map(|y| lum(buf.get_pixel(x as u32, y as u32))).sum::<f64>() / h as f64).collect();
+    // (the columns' means smoothed a little across, so a single dark crack keeps its line)
+    let smooth: Vec<f64> = (0..w).map(|x| {
+        let r = 1usize;
+        let (a, b) = (x.saturating_sub(r), (x + r).min(w - 1));
+        cols[a..=b].iter().sum::<f64>() / (b - a + 1) as f64
+    }).collect();
+    let mean = cols.iter().sum::<f64>() / w as f64;
+    for x in 0..w {
+        let k = if smooth[x] > 1.0 { mean / smooth[x] } else { 1.0 };
+        for y in 0..h {
+            let p = buf.get_pixel_mut(x as u32, y as u32);
+            for c in 0..3 {
+                p[c] = (p[c] as f64 * k).round().clamp(0.0, 255.0) as u8;
+            }
+        }
+    }
 }
 
 fn num(v: f64) -> String {
@@ -926,7 +1596,7 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
         }
     }
     let id = doc.new_id();
-    let folder: String = doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()).chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let folder = folder_name(doc);
     let sco_root = std::fs::read_dir(content)?.flatten().map(|e| e.path()).find(|p| p.is_dir() && p.file_name().map(|f| f.to_string_lossy().eq_ignore_ascii_case("sceneryobjects")).unwrap_or(false)).unwrap_or_else(|| content.join("Sceneryobjects"));
     let dir = sco_root.join("openMapper").join(&folder);
     let tex_dir = dir.join("texture");
@@ -948,23 +1618,31 @@ pub fn make_with(doc: &mut Document, assets: &mut Assets, content: &Path, asphal
     };
     let along = widest.map(|g| g.out).unwrap_or(0.0);
     let mut mesh = junction_mesh(&plate.arms, DVec3::ZERO, core_tex, period, along);
+    // the roads' markings carried on to it: their lines, and stop lines (not across an arm
+    // with a zebra crossing, which is where its traffic stops)
+    let paint: Vec<Option<ArmPaint>> = plate
+        .order
+        .iter()
+        .zip(&plate.arms)
+        .map(|(i, g)| assets.spline(&files[*i]).and_then(|m| arm_paint(&road_paint(&m), g.vdir)))
+        .collect();
+    let zebra_arm: Vec<bool> = plate.arms.iter().map(|g| opts.crossing_at(g.out)).collect();
+    let marks = plate_marks(&mesh, &plate.arms, &plate.lanes, &paint, &zebra_arm, true, DVec3::ZERO);
+    add_marks(&mut mesh, &marks, &tex_dir, DVec3::ZERO);
     if !zebras.is_empty() {
         let white = tex_dir.join("om_zebra_white.png");
         if !white.exists() {
             let _ = image::RgbaImage::from_pixel(8, 8, image::Rgba([235, 235, 230, 255])).save(&white);
         }
         let mat = mesh.material(Some(white));
-        let z = plate.arms.iter().map(|g| g.end.z).sum::<f64>() / plate.arms.len().max(1) as f64 + 0.03;
         for (mid, out, lw, rw) in &zebras {
             let (d, r) = (roads::dir(*out), roads::right(*out));
-            // stripes 0.5 m wide, a metre apart, 3 m along the road
+            // stripes 0.5 m wide, a metre apart, 3 m along the road (laid on the roadway's
+            // surface, which lies over the roads' lines by their profile)
             let mut x = -lw + 0.25;
             while x < rw - 0.25 {
                 let c = *mid + r * x;
-                let q = [c - r * 0.25 - d * 1.5, c + r * 0.25 - d * 1.5, c + r * 0.25 + d * 1.5, c - r * 0.25 + d * 1.5].map(|p| DVec3::new(p.x, p.y, z));
-                let uv = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
-                mesh.tri([q[0], q[1], q[2]], uv, DVec3::Z, mat);
-                mesh.tri([q[0], q[2], q[3]], [[0.0, 0.0], [1.0, 1.0], [0.0, 1.0]], DVec3::Z, mat);
+                mesh.paint_strip(c - d * 1.5, c + d * 1.5, 0.5, mat);
                 x += 1.0;
             }
         }
@@ -1067,7 +1745,7 @@ pub fn object_dir(content: &Path, folder: &str) -> std::io::Result<PathBuf> {
 
 /// The name of a map's folder as its junction objects' folder is named.
 pub fn folder_name(doc: &Document) -> String {
-    doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()).chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect()
+    crate::editable::safe_name(&doc.dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "map".into()))
 }
 
 /// A road coming into a drawn junction: its road type, where it ends (in the drawing's frame)
@@ -1092,6 +1770,9 @@ pub struct Plate {
     /// The same lanes as lines (drawing's frame): the way along it, the path's kind and its
     /// direction (0 along the line, 1 against, 2 both).
     pub lanes: Vec<(Seg, i32, i32)>,
+    /// The paint on it (drawing's frame).
+    #[allow(dead_code)]
+    marks: Vec<Mark>,
 }
 
 /// The plate between `arms` (the roads end at their points, which the plate meets). `tex_dir`
@@ -1101,7 +1782,7 @@ pub fn layout_plate(assets: &mut Assets, arms: &[PlateArm], tex_dir: Option<&Pat
     if arms.len() < 2 {
         return None;
     }
-    let (mut geo, mut lanes) = (Vec::new(), Vec::new());
+    let (mut geo, mut lanes, mut models) = (Vec::new(), Vec::new(), Vec::new());
     for (i, a) in arms.iter().enumerate() {
         let model = assets.spline(&a.file)?;
         let end = DVec3::new(a.pos.x, a.pos.y, 0.0);
@@ -1110,6 +1791,7 @@ pub fn layout_plate(assets: &mut Assets, arms: &[PlateArm], tex_dir: Option<&Pat
         let r = roads::right(along);
         geo.push(arm_geo_of(&model, false, a.at_end, end, a.out, 0.0));
         lanes.extend(lanes_at(&model, 1.0, i, a.at_end, |x, z| end + DVec3::new(r.x * x, r.y * x, z), along));
+        models.push(model);
     }
     // (made round the junction's own middle, then moved to the drawing's frame)
     let mid = arms.iter().map(|a| a.pos).sum::<DVec2>() / arms.len() as f64;
@@ -1126,6 +1808,17 @@ pub fn layout_plate(assets: &mut Assets, arms: &[PlateArm], tex_dir: Option<&Pat
     };
     let along = widest.map(|g| g.out).unwrap_or(0.0);
     let mut mesh = junction_mesh(&geo, centre, core_tex, period.max(1.0), along);
+    // the roads' markings carried on to it (where its textures are written); stop lines where
+    // three roads or more meet, not on a joint between two
+    let marks = match tex_dir {
+        Some(dir) => {
+            let paint: Vec<Option<ArmPaint>> = models.iter().zip(&geo).map(|(m, g)| arm_paint(&road_paint(m), g.vdir)).collect();
+            let marks = plate_marks(&mesh, &geo, &lanes, &paint, &[], arms.len() >= 3, centre);
+            add_marks(&mut mesh, &marks, dir, centre);
+            marks
+        }
+        None => Vec::new(),
+    };
     for v in &mut mesh.verts {
         v.0[0] += mid.x;
         v.0[1] += mid.y;
@@ -1138,7 +1831,7 @@ pub fn layout_plate(assets: &mut Assets, arms: &[PlateArm], tex_dir: Option<&Pat
         let _ = write!(paths, "[path]\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n", num(start.x), num(start.y), num(p.z0), num(s.heading), num(s.radius), num(s.length), num(grad), num(grad), p.kind, num(p.width), p.direction, p.blinker);
     }
     let lanes = recs.iter().map(|p| (Seg { start: p.seg.start + mid, ..p.seg }, p.kind, p.direction)).collect();
-    Some(Plate { mesh, paths, lanes })
+    Some(Plate { mesh, paths, lanes, marks })
 }
 
 impl Plate {
@@ -1428,6 +2121,268 @@ mod tests {
             assert!(inner.iter().all(|e| e.linked), "{centre:?} {inner:?}");
         }
         let _ = std::fs::remove_dir_all(&content);
+    }
+
+    /// A road 8 m wide (lanes 3 m each way at ±2 m, or both forward when `one_way`) whose
+    /// texture runs once across it: grey asphalt, with (when `painted`) a dashed white line
+    /// down its middle and a solid one 32 cm in from each edge. The texture is written in `dir`.
+    fn painted_road(dir: &Path, painted: bool, one_way: bool) -> SplineModel {
+        let (w, h) = (256u32, 64u32);
+        let mut img = image::RgbaImage::from_pixel(w, h, image::Rgba([92, 92, 90, 255]));
+        if painted {
+            for x in 0..w {
+                let u = (x as f64 + 0.5) / w as f64;
+                for y in 0..h {
+                    let edge = (0.03..0.05).contains(&u) || (0.95..0.97).contains(&u);
+                    let dash = (0.49..0.51).contains(&u) && y < h / 2;
+                    if edge || dash {
+                        img.put_pixel(x, y, image::Rgba([228, 228, 220, 255]));
+                    }
+                }
+            }
+        }
+        let tex = dir.join(if painted { "painted.png" } else { "plain.png" });
+        img.save(&tex).unwrap();
+        let mut m = test_road();
+        m.def.profiles[0].points[0].u = 0.0;
+        m.def.profiles[0].points[1].u = 1.0;
+        m.materials = vec![crate::assets::Material { texture: Some(tex), color: [1.0; 4], alpha: crate::assets::Alpha::Opaque, glow: None }];
+        if one_way {
+            for p in &mut m.def.paths {
+                p.direction = 0;
+            }
+        }
+        m
+    }
+
+    fn test_dir(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("om-junction-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn a_roads_lines_are_read_from_its_texture() {
+        let dir = test_dir("scan");
+        let p = scan_paint(&painted_road(&dir, true, false));
+        assert_eq!(p.lines.len(), 3, "{p:?}");
+        let (l, c, r) = (p.lines[0], p.lines[1], p.lines[2]);
+        // (the texture's u runs 0..1 over x -4..4: the lines' middles at -3.68, 0 and 3.68)
+        assert!((l.x + 3.68).abs() < 0.05 && (c.x).abs() < 0.05 && (r.x - 3.68).abs() < 0.05, "{p:?}");
+        assert!(l.solid && !c.solid && r.solid, "{p:?}");
+        assert!(p.lines.iter().all(|l| l.inner && (0.1..0.25).contains(&l.width)), "{p:?}");
+        assert!(p.rgb.iter().all(|c| *c >= 200), "{p:?}");
+        // a road with no paint has no lines
+        assert!(scan_paint(&painted_road(&dir, false, false)).lines.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The plate where roads of the type meet, coming in along `outs` (each road's spline starting at
+    /// the plate, or ending there with `at_end`).
+    fn plate_of(model: SplineModel, dir: &Path, outs: &[(f64, bool)]) -> Plate {
+        plate_at(model, dir, outs, 12.0)
+    }
+
+    /// The same with the roads' ends `reach` metres out of the middle.
+    fn plate_at(model: SplineModel, dir: &Path, outs: &[(f64, bool)], reach: f64) -> Plate {
+        let roots = crate::doc::tests::scratch(&format!("plate-{}", dir.file_name().unwrap().to_string_lossy()));
+        let mut assets = Assets::new(roots.omsi.clone(), roots.content.clone());
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let arms: Vec<PlateArm> = outs.iter().map(|(out, at_end)| PlateArm { file: "Splines\\road.sli".into(), pos: DVec2::new(50.0, 50.0) + roads::dir(*out) * reach, out: *out, at_end: *at_end }).collect();
+        let plate = layout_plate(&mut assets, &arms, Some(dir), None).unwrap();
+        let _ = std::fs::remove_dir_all(&roots.content);
+        plate
+    }
+
+    /// Where a mark lies on arm `out` (its mouth 12 m out of (50, 50)): how far in from the
+    /// mouth, and its span across (right of the way out).
+    fn mark_place(m: &Mark, out: f64) -> (f64, f64, f64) {
+        mark_place_at(m, out, 12.0)
+    }
+
+    fn mark_place_at(m: &Mark, out: f64, reach: f64) -> (f64, f64, f64) {
+        let mouth = DVec2::new(50.0, 50.0) + roads::dir(out) * reach;
+        let (d, r) = (roads::dir(out), roads::right(out));
+        let (a, b) = (m.a - mouth, m.b - mouth);
+        (-(a + b).dot(d) * 0.5, a.dot(r).min(b.dot(r)), a.dot(r).max(b.dot(r)))
+    }
+
+    #[test]
+    fn three_and_four_arm_plates_carry_stop_lines_on_their_incoming_arms() {
+        for outs in [vec![0.0, 90.0, 270.0], vec![0.0, 90.0, 180.0, 270.0]] {
+            let dir = test_dir(&format!("stop{}", outs.len()));
+            let arms: Vec<(f64, bool)> = outs.iter().map(|o| (*o, false)).collect();
+            let plate = plate_of(painted_road(&dir, true, false), &dir, &arms);
+            for (i, out) in outs.iter().enumerate() {
+                let stops: Vec<&Mark> = plate.marks.iter().filter(|m| m.arm == i && m.stop).collect();
+                // (a T: the road running on through, east-west, keeps its way and has none)
+                if outs.len() == 3 && i > 0 {
+                    assert!(stops.is_empty(), "arm {i}: {:?}", plate.marks);
+                    continue;
+                }
+                assert_eq!(stops.len(), 1, "arm {i}: {:?}", plate.marks);
+                // across the lane coming in (left of the way out: -3.5..-0.5), from the edge line
+                // to the middle line, a few metres in from the mouth, short of the crossing road
+                let (t, s0, s1) = mark_place(stops[0], *out);
+                assert!((s0 + 3.76).abs() < 0.1 && (s1 + 0.08).abs() < 0.1, "arm {i}: {s0} {s1}");
+                assert!(t > 2.0 && t < 7.5, "arm {i}: {t}");
+                // the road's three lines run on in up to it
+                let lines: Vec<&Mark> = plate.marks.iter().filter(|m| m.arm == i && !m.stop).collect();
+                assert_eq!(lines.len(), 3, "arm {i}: {lines:?}");
+                for l in &lines {
+                    let (tl, _, _) = mark_place(l, *out);
+                    assert!(tl > 1.0 && tl * 2.0 <= t - STOP_W * 0.5 + 0.05, "arm {i}: {tl} {t}");
+                }
+            }
+            // drawn as quads with the paint's own picture, over the roadway
+            let mat = plate.mesh.textures.iter().position(|t| t.as_ref().is_some_and(|p| p.file_name().unwrap().to_string_lossy().starts_with("om_marking_"))).expect("a marking texture");
+            assert!(plate.mesh.textures[mat].as_ref().unwrap().is_file());
+            let tris: Vec<_> = plate.mesh.tris.iter().filter(|(_, m)| *m == mat).collect();
+            assert!(tris.len() >= outs.len() * 4 * 2, "{}", tris.len());
+            for (f, _) in tris {
+                for v in f {
+                    let p = plate.mesh.verts[*v].0;
+                    assert!((p[2] - MARK_LIFT).abs() < 1e-6, "{p:?}");
+                }
+            }
+            let _ = std::fs::remove_dir_all(&dir);
+        }
+    }
+
+    /// A lane's texture: grey grain (deterministic), with a thin dashed line (3 px of 256,
+    /// half the length) near its right edge at px 109..=111 when `dashed`.
+    fn lane_texture(dashed: bool) -> omsi_texture::Image {
+        let (w, h) = (256usize, 128usize);
+        let mut seed = 12345u32;
+        let mut rgba = Vec::with_capacity(w * h * 4);
+        for y in 0..h {
+            for x in 0..w {
+                seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                let g = if dashed && (109..=111).contains(&x) && y < h / 2 { 225 } else { 84 + ((seed >> 24) % 16) as u8 };
+                rgba.extend_from_slice(&[g, g, g, 255]);
+            }
+        }
+        omsi_texture::Image { width: w as u32, height: h as u32, rgba, has_alpha: false }
+    }
+
+    /// The plate's asphalt is cut from a lane of the road's texture; a dashed line in it, however
+    /// thin (one the old test, looking at seven columns at each edge of the lane, stepped
+    /// over), is left out, so the plate shows no stripes of dashes.
+    #[test]
+    fn plain_asphalt_leaves_out_a_thin_dashed_line() {
+        let dir = test_dir("asphalt");
+        // (the texture runs once over 8 m; the lane's middle at u 0.25, a lane 3 m of path)
+        let (u, u_per_m, lane_m) = (0.25, 0.125, 3.0 / 0.9);
+        let img = lane_texture(true);
+        let (c, band_m, band_u, mirror) = clean_band(&img, u, u_per_m, lane_m);
+        assert!(mirror && band_m >= 0.8, "{c} {band_m} {band_u}");
+        let (a, b) = ((c - band_u * 0.5) * 256.0, (c + band_u * 0.5) * 256.0);
+        assert!(b < 109.0 - 2.0 || a > 112.0 + 2.0, "the band {a}..{b} takes in the line");
+        // and the picture made from it has no stripe brighter or darker than the grain
+        let tex = dir.join("lane.png");
+        image::RgbaImage::from_raw(256, 128, img.rgba.clone()).unwrap().save(&tex).unwrap();
+        let out = clean_asphalt_image(&tex, u, u_per_m, 8.0, lane_m).unwrap();
+        let lum = |p: &image::Rgba<u8>| (p[0] as f32 + p[1] as f32 + p[2] as f32) / 765.0;
+        let mut all: Vec<f32> = out.pixels().map(lum).collect();
+        all.sort_by(f32::total_cmp);
+        let base = all[all.len() / 2];
+        assert!(out.pixels().all(|p| (lum(p) - base).abs() < 0.1), "{base} {:?} {:?}", all.first(), all.last());
+        // with no paint in the lane, the whole lane is taken, repeated (slabs keep their grid)
+        let (c, band_m, _, mirror) = clean_band(&lane_texture(false), u, u_per_m, lane_m);
+        assert!(!mirror && (c - u).abs() < 1e-9 && (band_m - lane_m).abs() < 1e-9);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Where the arms come in at different heights the roadway folds along its fan; the paint
+    /// lies on it all the same, every piece just over the triangle it is on.
+    #[test]
+    fn paint_lies_on_a_plate_whose_arms_are_at_different_heights() {
+        let dir = test_dir("fold");
+        let model = painted_road(&dir, true, false);
+        let paint = scan_paint(&model);
+        let (mut geo, mut lanes) = (Vec::new(), Vec::new());
+        for (i, (out, h)) in [0.0, 90.0, 180.0, 270.0].into_iter().zip([0.0, 0.3, -0.2, 0.1]).enumerate() {
+            let end = DVec3::new(0.0, 0.0, h) + (roads::dir(out) * 7.0).extend(0.0);
+            let r = roads::right(out);
+            geo.push(arm_geo_of(&model, false, false, end, out, 0.0));
+            lanes.extend(lanes_at(&model, 1.0, i, false, |x, z| end + DVec3::new(r.x * x, r.y * x, z), out));
+        }
+        let mut mesh = junction_mesh(&geo, DVec3::ZERO, None, 8.0, 0.0);
+        let arm_paints: Vec<Option<ArmPaint>> = geo.iter().map(|g| arm_paint(&paint, g.vdir)).collect();
+        let marks = plate_marks(&mesh, &geo, &lanes, &arm_paints, &[], true, DVec3::ZERO);
+        assert_eq!(marks.iter().filter(|m| m.stop).count(), 4, "{marks:?}");
+        let before = mesh.tris.len();
+        add_marks(&mut mesh, &marks, &dir, DVec3::ZERO);
+        assert!(mesh.tris.len() > before + 8);
+        for (f, _) in &mesh.tris[before..] {
+            let c = f.iter().map(|v| DVec3::from(mesh.verts[*v].0)).sum::<DVec3>() / 3.0;
+            let z = mesh.roadway_z(c.truncate()).expect("paint on the roadway");
+            assert!((c.z - z - MARK_LIFT).abs() < 1e-6, "{c:?} over {z}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Roads cut back only just clear of each other (tight corners): no room for the lines to
+    /// run on, but each arm still stops at its mouth, short of the crossing road's lanes.
+    #[test]
+    fn a_tight_plate_has_its_stop_lines_at_the_mouths() {
+        let dir = test_dir("tight");
+        let outs = [0.0, 90.0, 180.0, 270.0];
+        let arms: Vec<(f64, bool)> = outs.iter().map(|o| (*o, false)).collect();
+        let plate = plate_at(painted_road(&dir, true, false), &dir, &arms, 4.3);
+        assert!(plate.marks.iter().all(|m| m.stop), "{:?}", plate.marks);
+        for (i, out) in outs.iter().enumerate() {
+            let stop = plate.marks.iter().find(|m| m.arm == i).unwrap_or_else(|| panic!("arm {i}: {:?}", plate.marks));
+            let (t, s0, s1) = mark_place_at(stop, *out, 4.3);
+            assert!(t > 0.0 && t + STOP_W * 0.5 <= 4.3 - 3.5, "arm {i}: {t}");
+            assert!(s0 < -3.0 && s1 > -0.5 && s1 < 0.0, "arm {i}: {s0} {s1}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_one_way_road_leaving_has_no_stop_line_and_unpainted_roads_have_no_marks() {
+        let dir = test_dir("oneway");
+        // a one-way road running in from the east and on out to the north and the south...
+        let plate = plate_of(painted_road(&dir, true, true), &dir, &[(90.0, true), (0.0, false), (180.0, false), (270.0, true)]);
+        let stops: Vec<usize> = plate.marks.iter().filter(|m| m.stop).map(|m| m.arm).collect();
+        assert_eq!(stops, vec![0, 3], "{:?}", plate.marks);
+        // ...stops right across its whole roadway, edge line to edge line
+        let (_, s0, s1) = mark_place(plate.marks.iter().find(|m| m.stop).unwrap(), 90.0);
+        assert!((s0 + 3.76).abs() < 0.1 && (s1 - 3.76).abs() < 0.1, "{s0} {s1}");
+        // a yard drive's plate: nothing painted, no paint's picture
+        let plain = plate_of(painted_road(&dir, false, false), &dir, &[(0.0, false), (90.0, false), (270.0, false)]);
+        assert!(plain.marks.is_empty());
+        assert!(!plain.mesh.textures.iter().flatten().any(|p| p.to_string_lossy().contains("om_marking_")));
+        // two roads joined: lines, no stop line
+        let joint = plate_of(painted_road(&dir, true, false), &dir, &[(0.0, false), (150.0, false)]);
+        assert!(!joint.marks.is_empty() && joint.marks.iter().all(|m| !m.stop), "{:?}", joint.marks);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// An automatic junction's object carries the paint, and the plate made without it is
+    /// another object (named by what is in it).
+    #[test]
+    fn a_junction_object_carries_its_roads_markings() {
+        let roots = crate::doc::tests::scratch("junction-paint");
+        let content = roots.content.clone();
+        std::fs::create_dir_all(content.join("Sceneryobjects")).unwrap();
+        let mut doc = crate::selection::tests::flat_map(1);
+        doc.dir = content.join("maps").join("paint");
+        let mut assets = Assets::new(roots.omsi.clone(), content.clone());
+        let tex = test_dir("object");
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(painted_road(&tex, true, false))));
+        let a = t_junction(&mut doc, &mut assets, &content, DVec2::new(100.0, 100.0), 0.0, [1, 2, 3], [20.0, 20.0, 20.0]);
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(painted_road(&tex, false, false))));
+        let b = t_junction(&mut doc, &mut assets, &content, DVec2::new(200.0, 200.0), 0.0, [4, 5, 6], [20.0, 20.0, 20.0]);
+        assert_ne!(a.file, b.file);
+        let sco = omsi_cfg::resolve_path(&content, &a.file);
+        let x = std::fs::read_to_string(sco.parent().unwrap().join("model").join(format!("{}.x", sco.file_stem().unwrap().to_string_lossy()))).unwrap();
+        let name = x.lines().find(|l| l.contains("om_marking_")).expect("the paint's texture in the model").trim().trim_matches(|c| c == '"' || c == ';').to_string();
+        assert!(sco.parent().unwrap().join("texture").join(&name).is_file(), "{name}");
+        let _ = std::fs::remove_dir_all(&content);
+        let _ = std::fs::remove_dir_all(&tex);
     }
 
     #[test]

@@ -3,6 +3,7 @@
 
 pub mod autosave;
 pub mod safe;
+pub mod sync;
 mod transaction;
 pub(crate) mod save;
 #[cfg(test)]
@@ -39,6 +40,11 @@ pub fn tile_of(p: DVec2) -> TileKey {
 }
 
 static REVISION: AtomicU64 = AtomicU64::new(1);
+
+thread_local! {
+    /// The map and the next IDCode `Document::new_id` last left it at (counted on from there).
+    static ISSUED: std::cell::Cell<(usize, i64)> = const { std::cell::Cell::new((0, 0)) };
+}
 
 /// A fresh revision number: whatever shows a tile rebuilds it when its number changes.
 pub fn next_rev() -> u64 {
@@ -214,6 +220,9 @@ pub struct Document {
     pub descriptions: crate::descriptions::Descriptions,
     /// Things kept together (openMapper's own: `openMapper/groups.json` beside the map).
     pub groups: Vec<crate::mapgroups::MapGroup>,
+    /// The blocks of global.cfg the editor does not write itself, kept as they were read and
+    /// written back in their places.
+    pub global_extra: Vec<save::ForeignBlock>,
 }
 
 impl Document {
@@ -251,6 +260,7 @@ impl Document {
             traffic: crate::traffic::Traffic::load(&template),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
             source: Some(template),
             global_dirty: true,
             fresh: true,
@@ -275,8 +285,13 @@ impl Document {
         let publisher_mounts = Arc::new(omsi_cfg::publisher::validate_map(cfg.parent().unwrap_or(Path::new(".")))
             .map_err(|e| anyhow::anyhow!("publisher dependencies: {e}"))?);
         let publisher_protected_source = omsi_cfg::vfs::is_sealed(cfg);
-        let global = GlobalCfg::load(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        let file = omsi_cfg::CfgFile::read(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
+        let mut global = GlobalCfg::parse(&file);
+        let global_extra = save::foreign_blocks(&file.lines);
         omsi_map::configure_grid(&global);
+        // (a map from OMSI 1 lists no [entrypoints]: Omsi.exe takes its tiles' entry point
+        // objects as they are, and so do openOMSI and the view; written when the settings are)
+        let found = if global.entry_points.is_empty() { global.add_object_entry_points() } else { 0 };
         let src_dir = cfg.parent().unwrap_or(Path::new(".")).to_path_buf();
         let folder = src_dir.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| "Map".into());
         let in_content = src_dir.starts_with(&roots.content);
@@ -340,7 +355,7 @@ impl Document {
         let descriptions = crate::descriptions::Descriptions::load(&src_dir);
         progress(1.0);
         crate::render::profile::log_time(&format!("read {} tiles", tiles.len()), started);
-        Ok(Document {
+        let mut doc = Document {
             global,
             _publisher_mounts: publisher_mounts,
             _publisher_protected_source: publisher_protected_source,
@@ -355,7 +370,28 @@ impl Document {
             traffic,
             descriptions,
             groups: Vec::new(),
-        })
+            global_extra,
+        };
+        // (a tile from OMSI 1 writes no chain distances: the game walks them along the links
+        // each time; taken once here, a row counts from the same place after the tile is
+        // saved as version 14, which keeps them - see `save::as_version_14`)
+        let ix = crate::place::row_index(&doc);
+        let walked: Vec<(TileKey, usize, f64)> = doc
+            .tiles
+            .iter()
+            .filter(|(_, t)| t.tile.version > 0 && t.tile.version < 11)
+            .flat_map(|(k, t)| t.tile.splines.iter().enumerate().filter(|(_, s)| s.map_chain_offset.is_none()).map(|(i, s)| (*k, i, crate::place::walked_chain_offset(&ix, s))).collect::<Vec<_>>())
+            .collect();
+        for (k, i, offset) in walked {
+            doc.tiles.get_mut(&k).unwrap().tile.splines[i].map_chain_offset = Some(offset);
+        }
+        if found > 0 {
+            log::info!("{found} start points from the tiles' entry point objects (global.cfg lists none)");
+            // (their places from the objects, as every other's)
+            crate::editor::sync_entry_points(&mut doc);
+            doc.global_dirty = !in_content;
+        }
+        Ok(doc)
     }
 
     /// The folder its chrono scenarios are in (the saved copy's, else the one it was read from).
@@ -413,6 +449,7 @@ impl Document {
             traffic: self.traffic.clone(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: self.global_extra.clone(),
         }
     }
 
@@ -432,18 +469,38 @@ impl Document {
     /// IDCode that is already in use: a new spline would then be the same one as a road
     /// that is already there, drawn on top of it, and deleting it would take that road.
     pub fn new_id(&mut self) -> i64 {
-        let highest = self.highest_id();
-        if self.global.next_id_code <= highest {
-            self.global.next_id_code = highest + 1;
+        // (the map is looked through for its highest IDCode only when the next one is not the
+        // one this map was last left at here: one after another, as a build lays a city's
+        // roads, they are counted on without reading every object again each time)
+        let me = self as *const Document as usize;
+        if ISSUED.with(|c| c.get()) != (me, self.global.next_id_code) {
+            let highest = self.highest_id();
+            if self.global.next_id_code <= highest {
+                self.global.next_id_code = highest + 1;
+            }
         }
         let id = self.global.next_id_code.max(1);
         self.global.next_id_code = id + 1;
         self.global_dirty = true;
+        ISSUED.with(|c| c.set((me, self.global.next_id_code)));
         id
     }
 
+    /// The next IDCode is this editor's own to count on, as handed out by a shared session (a
+    /// block of its own): `new_id` does not raise it past the map's highest, which may lie in
+    /// another editor's block - it jumped there, and the two gave out the same IDCodes.
+    pub fn own_next_id(&self) {
+        ISSUED.with(|c| c.set((self as *const Document as usize, self.global.next_id_code)));
+    }
+
+    /// Where the map lies (world): its tiles' lowest corner and highest one.
+    pub fn extent(&self) -> (DVec2, DVec2) {
+        let ts = DVec2::splat(tile_size());
+        self.tiles.keys().fold((DVec2::splat(f64::MAX), DVec2::splat(f64::MIN)), |(lo, hi), k| (lo.min(tile_origin(*k)), hi.max(tile_origin(*k) + ts)))
+    }
+
     /// The greatest IDCode any object or spline on the map already has.
-    fn highest_id(&self) -> i64 {
+    pub(crate) fn highest_id(&self) -> i64 {
         let mut m = 0i64;
         for t in self.tiles.values() {
             for o in t.tile.objects.iter().chain(&t.tile.attach_objects) {
@@ -629,6 +686,13 @@ impl Document {
 
     /// Remove a spline, unlink its neighbours and drop the attachment rows that ran on it.
     pub fn delete_spline(&mut self, k: TileKey, id: i64) {
+        self.delete_spline_known(k, id, &|_| None);
+    }
+
+    /// `delete_spline`, with the tile each linked spline is on known (`tile_of`): its link is
+    /// taken away there instead of looked for across the whole map (a delete of thousands
+    /// looked the map through twice for each).
+    pub fn delete_spline_known(&mut self, k: TileKey, id: i64, tile_of: &dyn Fn(i64) -> Option<TileKey>) {
         let Some(t) = self.tiles.get_mut(&k) else { return };
         let Some(idx) = t.tile.splines.iter().position(|s| s.id == id) else { return };
         let s = t.tile.splines.remove(idx);
@@ -652,7 +716,8 @@ impl Document {
             if other == 0 {
                 continue;
             }
-            for t in self.tiles.values_mut() {
+            let known = tile_of(other);
+            for (_, t) in self.tiles.iter_mut().filter(|(tk, _)| known.is_none_or(|nk| **tk == nk)) {
                 let mut hit = false;
                 for o in t.tile.splines.iter_mut().filter(|o| o.id == other) {
                     if o.prev_id == id {
@@ -787,7 +852,7 @@ impl Document {
         }
         // the second's rows measured along the joined spline (and the objects hanging on them stay)
         let ia = t.tile.splines.iter().position(|s| s.id == a.id).ok_or("")?;
-        let shift = a.map_chain_offset.unwrap_or(0.0) + a.length - b.map_chain_offset.unwrap_or(0.0);
+        let shift = crate::place::chain_offset_of(self, &a) + a.length - crate::place::chain_offset_of(self, &b);
         let after = b.next_id;
         let t = self.tiles.get_mut(&k).unwrap();
         for r in t.tile.spline_attachments.iter_mut().filter(|r| r.spline_index == ib as i32) {
@@ -911,15 +976,41 @@ fn chrono_patches(chrono_dirs: &[PathBuf], file: &str) -> Vec<Tile> {
         .iter()
         .filter_map(|c| {
             let p = omsi_cfg::resolve_path(c, file);
-            omsi_cfg::vfs::is_file(&p).then(|| Tile::load(&p).ok()).flatten()
+            omsi_cfg::vfs::is_file(&p).then(|| read_tile_file(&p).ok()).flatten()
         })
         .collect()
+}
+
+/// A tile file as the game reads it: the linked splines of a tile from OMSI 1 put where they
+/// go on (see [`chain_linked_splines`]).
+pub fn read_tile_file(path: &Path) -> Result<Tile, omsi_cfg::CfgError> {
+    let mut tile = Tile::load(path)?;
+    chain_linked_splines(&mut tile);
+    Ok(tile)
+}
+
+/// Where the linked splines of a tile older than version 11 lie (openOMSI's `read_tile`, after
+/// Omsi.exe's loader): such a tile links a spline to the one written before it and writes its
+/// place as 0 - it goes on from the end of that one, at its height and in its direction.
+/// Read as written they all lay in the south-west corner of the tile heading north (most
+/// roads of Great Grundorf 2). Saved, the tile keeps their places as every newer one does.
+pub fn chain_linked_splines(tile: &mut Tile) {
+    for i in 1..tile.splines.len() {
+        if !tile.splines[i].linked {
+            continue;
+        }
+        let c = omsi_geometry::SplineCurve::from_map(&tile.splines[i - 1], DVec2::ZERO);
+        let end = c.end_point();
+        let s = &mut tile.splines[i];
+        s.pos = [end.x, end.y, end.z];
+        s.heading = c.heading_at(c.length).rem_euclid(360.0);
+    }
 }
 
 /// One tile of the map with its ground, painting and chrono patches (None: no file).
 pub(crate) fn load_tile(src_dir: &Path, global: &GlobalCfg, chrono_dirs: &[PathBuf], t: &omsi_map::MapTileRef) -> Option<TileDoc> {
     let path = src_dir.join(&t.file);
-    let mut tile = match Tile::load(&path) {
+    let mut tile = match read_tile_file(&path) {
         Ok(t) => t,
         Err(e) => {
             // (maps list tiles they do not ship: Berlin-Spandau 369, 329 of them there)
@@ -991,6 +1082,9 @@ pub fn unfit_from_world_grid(t: &mut Tile, ty: i32) {
         s.pos[1] /= ky;
         s.length /= k;
         s.radius /= k;
+        if let Some(o) = s.map_chain_offset.as_mut() {
+            *o /= k;
+        }
     }
     for a in t.spline_attachments.iter_mut() {
         a.offset[2] /= k;

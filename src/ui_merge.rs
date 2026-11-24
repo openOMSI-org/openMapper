@@ -13,7 +13,7 @@ use crate::icons::{self, Icon};
 use crate::install::MapEntry;
 use crate::library::Library;
 use crate::merge::Source;
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 #[derive(Default)]
 pub struct MergeWindow {
@@ -68,9 +68,9 @@ impl MergeWindow {
             return;
         }
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Tiles, tr("Tiles from another map", "Тайлы из другой карты"))).id(egui::Id::new("merge tiles")).open(&mut open).default_pos([340.0, 110.0]).resizable(false).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Merge, tr("Tiles from another map", "Тайлы из другой карты"))).id(egui::Id::new("merge tiles")).open(&mut open).default_pos([340.0, 110.0]).resizable(false).show(ctx, |ui| {
             ui.set_width(380.0);
-            ui.label(RichText::new(tr("Its ground, painting, water, objects and roads, put beside or into this map. Lines, timetable and AI lists stay with the other map.", "Её земля, покраска, вода, объекты и дороги — рядом с этой картой или в неё. Линии, расписание и списки ИИ остаются в той карте.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Its ground, painting, water, objects and roads, put beside or into this map. Lines, timetable and AI lists stay with the other map.", "Её земля, покраска, вода, объекты и дороги — рядом с этой картой или в неё. Линии, расписание и списки ИИ остаются в той карте.")).small().color(pal().text_dim));
             ui.add_space(4.0);
             let here = ed.doc.as_ref().map(|d| d.dir.clone()).unwrap_or_default();
             let name = self.source.as_ref().map(|s| s.name.clone()).unwrap_or_else(|| tr("Choose a map…", "Выберите карту…").to_string());
@@ -91,7 +91,7 @@ impl MergeWindow {
                 self.pick(p, ed);
             }
             if let Some(e) = &self.error {
-                ui.colored_label(Color32::from_rgb(235, 110, 90), e);
+                ui.colored_label(pal().error, e);
             }
             let Some(src) = &self.source else { return };
             let Some(doc) = ed.doc.as_ref() else { return };
@@ -102,13 +102,13 @@ impl MergeWindow {
             let (w, h) = ((hi.0 - lo.0 + 1) as f32, (hi.1 - lo.1 + 1) as f32);
             let (rect, resp) = ui.allocate_exact_size(Vec2::new(380.0, 260.0), Sense::click());
             let p = ui.painter_at(rect);
-            p.rect_filled(rect, 2.0, crate::ui::BG_FIELD);
+            p.rect_filled(rect, 2.0, pal().field);
             let cell = ((rect.width() - 8.0) / w).min((rect.height() - 8.0) / h).min(28.0);
             let o = rect.center() - Vec2::new(w * cell, h * cell) * 0.5;
             // (north up)
             let sq = |k: TileKey| Rect::from_min_size(Pos2::new(o.x + (k.0 - lo.0) as f32 * cell, o.y + (hi.1 - k.1) as f32 * cell), Vec2::splat(cell)).shrink(0.5);
             for k in doc.tiles.keys() {
-                p.rect_filled(sq(*k), 0.0, Color32::from_gray(80));
+                p.rect_filled(sq(*k), 0.0, pal().ink_dim);
             }
             let mut toggle = None;
             for k in &src.keys {
@@ -118,8 +118,8 @@ impl MergeWindow {
                 let clash = doc.tiles.contains_key(&at);
                 let (fill, stroke) = match (on, clash) {
                     (true, true) => (Color32::from_rgba_unmultiplied(220, 70, 60, 150), Color32::from_rgb(235, 90, 80)),
-                    (true, false) => (Color32::from_rgba_unmultiplied(232, 122, 50, 170), crate::ui::ACCENT),
-                    _ => (Color32::TRANSPARENT, Color32::from_gray(150)),
+                    (true, false) => (Color32::from_rgba_unmultiplied(232, 122, 50, 170), pal().accent),
+                    _ => (Color32::TRANSPARENT, pal().text_dim),
                 };
                 p.rect_filled(r, 0.0, fill);
                 p.rect_stroke(r, 0.0, Stroke::new(1.0, stroke), egui::StrokeKind::Inside);
@@ -136,7 +136,7 @@ impl MergeWindow {
                 }
             }
             let fits: Vec<TileKey> = self.chosen.iter().copied().filter(|k| !doc.tiles.contains_key(&to(*k, self.offset))).collect();
-            ui.label(RichText::new(tr("Grey: this map · orange: the tiles to add (click to take one or leave it) · red: on a tile of this map, left out", "Серые: эта карта · оранжевые: тайлы для добавления (клик: взять или оставить) · красные: на тайле этой карты, не берутся")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Grey: this map · orange: the tiles to add (click to take one or leave it) · red: on a tile of this map, left out", "Серые: эта карта · оранжевые: тайлы для добавления (клик: взять или оставить) · красные: на тайле этой карты, не берутся")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 if ui.small_button(tr("All", "Все")).clicked() {
                     self.chosen = src.keys.clone();

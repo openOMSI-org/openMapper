@@ -56,18 +56,6 @@ impl Tool {
             Tool::Tiles => Icon::Tiles,
         }
     }
-
-    pub fn key(self) -> &'static str {
-        match self {
-            Tool::Select => "1",
-            Tool::Roads => "2",
-            Tool::Objects => "3",
-            Tool::Logic => "4",
-            Tool::Terrain => "5",
-            Tool::Paint => "6",
-            Tool::Tiles => "7",
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -121,8 +109,8 @@ impl TerrainMode {
             TerrainMode::Smooth => Icon::Smooth,
             TerrainMode::Flatten => Icon::Flatten,
             TerrainMode::Roughen => Icon::Terrain,
-            TerrainMode::Ramp => Icon::Route,
-            TerrainMode::Water => Icon::Lower,
+            TerrainMode::Ramp => Icon::Slope,
+            TerrainMode::Water => Icon::Water,
             TerrainMode::AlongSpline => Icon::Road,
         }
     }
@@ -224,9 +212,19 @@ impl Xform {
     pub fn label(self) -> &'static str {
         match self {
             Xform::Select => tr("Select", "Выбор"),
-            Xform::Move => tr("Move (V): drag an arrow along X, Y or Z, a square in its plane, the circle over the ground", "Перемещение (V): тяните стрелку вдоль X, Y или Z, квадрат — в его плоскости, круг — по земле"),
-            Xform::Rotate => tr("Rotate (C): drag a ring to turn about X, Y or Z", "Поворот (C): тяните кольцо, чтобы вращать вокруг X, Y или Z"),
-            Xform::Scale => tr("Scale (X): drag an arrow to scale along that axis, a square for two, the circle for all three", "Масштаб (X): тяните стрелку для масштаба по оси, квадрат — по двум, круг — по всем трём"),
+            Xform::Move => tr("Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground", "Перемещение: тяните стрелку вдоль X, Y или Z, квадрат — в его плоскости, круг — по земле"),
+            Xform::Rotate => tr("Rotate: drag a ring to turn about X, Y or Z", "Поворот: тяните кольцо, чтобы вращать вокруг X, Y или Z"),
+            Xform::Scale => tr("Scale: drag an arrow to scale along that axis, a square for two, the circle for all three", "Масштаб: тяните стрелку для масштаба по оси, квадрат — по двум, круг — по всем трём"),
+        }
+    }
+
+    /// The command whose key picks it.
+    pub fn cmd(self) -> Option<crate::controls::Cmd> {
+        match self {
+            Xform::Select => None,
+            Xform::Move => Some(crate::controls::Cmd::XformMove),
+            Xform::Rotate => Some(crate::controls::Cmd::XformRotate),
+            Xform::Scale => Some(crate::controls::Cmd::XformScale),
         }
     }
 }
@@ -324,6 +322,9 @@ pub struct RotGrab {
     /// What it was last asked to turn: a frame that asks the same again has nothing to do.
     asked: f64,
     links: Option<selection::SplineWhere>,
+    /// The splines linked on after a single selected spline, where they stood when the turn
+    /// began. They swing with it and are not themselves selected.
+    tail: Vec<Origin>,
 }
 
 impl RotGrab {
@@ -357,10 +358,52 @@ pub(crate) fn attach_hint(n: usize) -> &'static str {
     }
 }
 
+/// What stage of vertex-to-vertex snapping is active.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum VertexSnapStage {
+    /// Select a reference vertex on the selected object.
+    PickSource,
+    /// Select a target vertex on another object or road end to snap to.
+    PickTarget { source: DVec3 },
+    /// Select a second reference vertex on the selected object to align rotation.
+    PickSource2 { anchor: DVec3 },
+    /// Select a second target vertex or direction to align rotation.
+    PickTarget2 { anchor: DVec3, source2: DVec3 },
+}
+
+/// The state of the vertex-to-vertex snapping tool.
+#[derive(Clone, PartialEq, Debug)]
+pub struct VertexSnap {
+    pub objects: Vec<(TileKey, i64)>,
+    pub stage: VertexSnapStage,
+    pub hover: Option<DVec3>,
+}
+
+/// What stage of edge-to-edge snapping is active.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum EdgeSnapStage {
+    /// Select a reference edge on the selected object.
+    PickSource,
+    /// Select a target edge or road segment to align to.
+    PickTarget { source: [DVec3; 2] },
+}
+
+/// The state of the edge-to-edge snapping tool.
+#[derive(Clone, PartialEq, Debug)]
+pub struct EdgeSnap {
+    pub objects: Vec<(TileKey, i64)>,
+    pub stage: EdgeSnapStage,
+    pub hover: Option<([DVec3; 2], DVec3)>,
+}
+
 pub struct Editor {
     pub doc: Option<Document>,
     pub history: History,
     pub tool: Tool,
+    /// Vertex-to-vertex snapping mode for aligning scenery objects.
+    pub vertex_snap: Option<VertexSnap>,
+    /// Edge-to-edge snapping mode for aligning scenery objects along edges or lines.
+    pub edge_snap: Option<EdgeSnap>,
     /// The selection: the one shown in the properties (None: nothing selected, whatever
     /// `also` holds) and the others selected with it.
     pub selected: Option<Sel>,
@@ -370,6 +413,9 @@ pub struct Editor {
     hover_stack: Vec<Sel>,
     /// The grip of the selected spline under the cursor.
     pub hover_handle: Option<Handle>,
+    /// The camera is still moving: the cursor follows the ground, and the full pick waits
+    /// until the view settles. A city-sized map cannot be searched under the cursor every frame.
+    pub hover_ground_only: bool,
     /// The box being dragged out on the screen (window points: where it began, where it is).
     pub select_box: Option<[(f32, f32); 2]>,
     /// What was copied.
@@ -448,6 +494,8 @@ pub struct Editor {
     heading_drag: Option<HeadingDrag>,
     /// GPS tracks shown to trace over (world metres; Map > GPS tracks to trace).
     pub trace_lines: Vec<Vec<DVec2>>,
+    /// The trolleybus wire in the view, and clicks picking in it (the Trolleybus wire window).
+    pub wire: crate::trolley::WireView,
     /// The camera asked to go over this point (a window's "go there").
     pub look_request: Option<DVec2>,
     /// The ground under the selected objects is to be levelled at the next tick.
@@ -527,6 +575,8 @@ pub struct Editor {
     pub keep_height: bool,
     /// The ruler, when on: its first point and, once clicked, its second.
     pub ruler: Option<(Option<DVec3>, Option<DVec3>)>,
+    /// The corners of an outline the ruler measures (Shift + clicks; see `ruler_area`).
+    pub ruler_area: Vec<DVec3>,
     /// The knife (K): a click on a road cuts it there, until right-click or Esc.
     pub cutting: bool,
     // snapping
@@ -590,6 +640,9 @@ pub struct Editor {
     pub auto_terrain: bool,
     /// Where a new road meets or crosses another one, cut both and put a junction there.
     pub auto_junctions: bool,
+    /// While Auto-Junction is run over the map's own roads: places (a grid of 16 m cells) where
+    /// the map's author made a junction of their own (AI paths laid through it), left as they are.
+    pub(crate) aj_keep: Option<std::collections::HashSet<(i64, i64)>>,
     /// Roads of different width are joined by a taper (Auto-Adapt).
     pub auto_adapt: bool,
     /// Where a track branches off another, put a switch there (off: the tracks just meet).
@@ -636,6 +689,9 @@ pub struct Editor {
     pub plant_mix: Vec<String>,
     /// How the ground is painted along the selected roads (their properties).
     pub paint_along: crate::roadpaint::Along,
+    /// Roads from OpenStreetMap built even where they run along roads the map has (an
+    /// interchange's carriageways and ramps lie close side by side).
+    pub osm_keep_overlaps: bool,
     /// Where a ramp of the Terrain tool starts (its first click).
     pub ramp_start: Option<DVec3>,
     /// The plant brush fills (or clears) an outline clicked round instead of painting.
@@ -724,6 +780,7 @@ impl Default for Editor {
             hover: None,
             hover_stack: Vec::new(),
             hover_handle: None,
+            hover_ground_only: false,
             select_box: None,
             clip: None,
             crossing_draft: None,
@@ -756,6 +813,7 @@ impl Default for Editor {
             heading_shown: None,
             heading_drag: None,
             trace_lines: Vec::new(),
+            wire: Default::default(),
             look_request: None,
             level_request: false,
             last_click: None,
@@ -772,6 +830,7 @@ impl Default for Editor {
             session_first_id: i64::MAX,
             row_params: Default::default(),
             ruler: None,
+            ruler_area: Vec::new(),
             cutting: false,
             typed_text: Default::default(),
             straight_lock: false,
@@ -829,6 +888,7 @@ impl Default for Editor {
             follow_ground: true,
             keep_ground_under_roads: true,
             auto_junctions: true,
+            aj_keep: None,
             auto_adapt: true,
             auto_terrain: true,
             auto_switches: true,
@@ -852,6 +912,7 @@ impl Default for Editor {
             plant_spacing: 6.0,
             plant_mix: Vec::new(),
             paint_along: Default::default(),
+            osm_keep_overlaps: false,
             ramp_start: None,
             plant_area: false,
             plant_outline: Vec::new(),
@@ -893,6 +954,8 @@ impl Default for Editor {
             reveal: None,
             aim: None,
             path_numbers: None,
+            vertex_snap: None,
+            edge_snap: None,
         }
     }
 }
@@ -1224,6 +1287,29 @@ fn ray_near_piece(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64)> 
     Some((lat, cross))
 }
 
+fn ray_near_edge(o: DVec3, d: DVec3, a: DVec3, b: DVec3) -> Option<(f64, f64, DVec3)> {
+    let u = b - a;
+    let au = u.length_squared();
+    let w = a - o;
+    let (bu, du, eu) = (u.dot(d), u.dot(w), d.dot(w));
+    let mut s = 0.0;
+    if au > 1e-12 {
+        let den = bu * bu - au;
+        if den.abs() > 1e-12 {
+            let t = (bu * du - eu * au) / den;
+            s = ((bu * t - du) / au).clamp(0.0, 1.0);
+        }
+    }
+    let p = a + u * s;
+    let rel = p - o;
+    let along = rel.dot(d);
+    if along <= 0.1 {
+        return None;
+    }
+    let lat = (rel - d * along).length();
+    Some((lat, along, p))
+}
+
 /// One drag of an end's heading: the roads as they were, and the last bend that fitted.
 struct HeadingDrag {
     key: TileKey,
@@ -1419,6 +1505,8 @@ impl Editor {
         self.sample_browser = false;
         self.path_connect = None;
         self.cutting = false;
+        self.vertex_snap = None;
+        self.edge_snap = None;
         if let Some(doc) = &mut self.doc {
             self.history.commit();
             let _ = doc;
@@ -1627,7 +1715,14 @@ impl Editor {
         let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
         let mut best: Option<(f64, DVec3)> = None;
         for (k, t) in doc.tiles.iter() {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, limit) {
+                continue;
+            }
+            let org = tile_origin(*k);
             for ob in &t.tile.objects {
+                if Self::object_off_ray(doc, o, dv, org, ob) {
+                    continue;
+                }
                 let Some(model) = assets.object(&ob.file) else { continue };
                 if model.parts.is_empty() || model.technical && !extras.show_technical || crate::render::hidden_layer(&model, &extras) {
                     continue;
@@ -1672,9 +1767,15 @@ impl Editor {
         let dv = d.as_vec3();
         let mut best: Option<(f64, DVec3)> = None;
         for (k, t) in doc.tiles.iter() {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, limit) {
+                continue;
+            }
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 if skip.contains(&(*k, s.id)) {
+                    continue;
+                }
+                if Self::spline_off_ray(o, dv, org, s) {
                     continue;
                 }
                 let Some(model) = assets.spline(&s.file) else { continue };
@@ -1752,6 +1853,82 @@ impl Editor {
         self.pick_into(assets, o, d, ground, &mut stack)
     }
 
+    /// How far an object's model is taken to reach from where it stands, for passing by the
+    /// objects a ray cannot meet before their models are read.
+    const OBJECT_REACH: f64 = 400.0;
+
+    /// The ray, out to `tmax`, meets this tile, widened by `pad` (`tile_overhang`) for what
+    /// stands on it and reaches past its edge.
+    fn ray_meets_tile(k: TileKey, pad: f64, o: DVec3, d: DVec3, tmax: f64) -> bool {
+        let org = tile_origin(k);
+        let ts = tile_size();
+        let lo = [org.x - pad, org.y - pad];
+        let hi = [org.x + ts + pad, org.y + ts + pad];
+        let mut t0 = 0.0f64;
+        let mut t1 = tmax.max(0.0);
+        for i in 0..2 {
+            if d[i].abs() < 1e-9 {
+                if o[i] < lo[i] || o[i] > hi[i] {
+                    return false;
+                }
+            } else {
+                let (mut a, mut b) = ((lo[i] - o[i]) / d[i], (hi[i] - o[i]) / d[i]);
+                if a > b {
+                    std::mem::swap(&mut a, &mut b);
+                }
+                t0 = t0.max(a);
+                t1 = t1.min(b);
+                if t0 > t1 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    /// How far past its own square anything on a tile can be met: an object's model
+    /// (`OBJECT_REACH` from where it stands), a spline that runs on past the tile it starts in
+    /// (a long straight one goes hundreds of metres). From positions and lengths only.
+    fn tile_overhang(t: &crate::doc::TileDoc) -> f64 {
+        let ts = tile_size();
+        let out = |p: [f64; 3]| (-p[0]).max(p[0] - ts).max(-p[1]).max(p[1] - ts).max(0.0);
+        let objects = t.tile.objects.iter().map(|ob| out(ob.pos) + Self::OBJECT_REACH).fold(0.0, f64::max);
+        t.tile.splines.iter().filter(|s| !s.deleted).map(|s| out(s.pos) + s.length + Self::spline_climb(s) + Self::SPLINE_MARGIN).fold(objects, f64::max)
+    }
+
+    /// What a spline's surface takes beyond its line: the road's width, a wall's height, a cant.
+    const SPLINE_MARGIN: f64 = 80.0;
+
+    /// The most a spline's height moves away from its start's: its height runs as a cubic
+    /// between its gradients (or a parabola), ending `delta_h` higher.
+    fn spline_climb(s: &MapSpline) -> f64 {
+        s.delta_h.unwrap_or(0.0).abs() + s.length * s.grad_start.abs().max(s.grad_end.abs()) / 100.0
+    }
+
+    /// The ray cannot meet this spline. Decided from its start, heading and length, before a
+    /// curve is built or its model is read: a city has tens of thousands of splines, and the
+    /// view looks at all of them whenever the camera moves.
+    fn spline_off_ray(o: DVec3, d: glam::Vec3, org: DVec2, s: &MapSpline) -> bool {
+        let start = DVec3::new(org.x + s.pos[0], org.y + s.pos[1], s.pos[2]);
+        let climb = Self::spline_climb(s);
+        let (centre, reach) = if s.radius.abs() < 1.0 {
+            (start + roads::dir(s.heading).extend(0.0) * (s.length * 0.5), s.length * 0.5 + climb + Self::SPLINE_MARGIN)
+        } else {
+            // (an arc stays within its own length of where it starts)
+            (start, s.length + climb + Self::SPLINE_MARGIN)
+        };
+        !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, d, (centre - o).as_vec3(), reach.max(1.0) as f32)
+    }
+
+    /// The ray cannot meet this object, from where it stands, before its model is read. Its
+    /// height is the ground's plus its own, unless the model stands at an absolute height,
+    /// which only the model says: both are looked at.
+    fn object_off_ray(doc: &Document, o: DVec3, d: glam::Vec3, org: DVec2, ob: &MapObject) -> bool {
+        let p = DVec2::new(org.x + ob.pos[0], org.y + ob.pos[1]);
+        let off = |z: f64| !omsi_geometry::ray_near_sphere(glam::Vec3::ZERO, d, (DVec3::new(p.x, p.y, z) - o).as_vec3(), Self::OBJECT_REACH as f32);
+        off(ob.pos[2]) && off(doc.ground(p) + ob.pos[2])
+    }
+
     /// The object or spline under a ray. `stack` receives everything the ray meets, nearest first.
     fn pick_into(&self, assets: &mut Assets, o: DVec3, d: DVec3, ground: Option<DVec3>, stack: &mut Vec<Sel>) -> Option<Sel> {
         let doc = self.doc.as_ref()?;
@@ -1766,11 +1943,24 @@ impl Editor {
         let dv = d.as_vec3();
         let gdist = ground.map(|g| (g - o).length()).unwrap_or(f64::MAX);
         let paths_only = self.editing_paths();
+        let t_pick = Instant::now();
+        let mut n_obj = 0usize;
+        let mut n_swept = 0usize;
         // (what is not drawn is not picked)
         let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
         let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
         for (k, t) in doc.tiles.iter().filter(|_| !paths_only) {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, gdist + 2.0) {
+                continue;
+            }
+            let org = tile_origin(*k);
             for ob in &t.tile.objects {
+                // (the model is not read for an object the ray cannot reach: a city has tens of
+                // thousands, and looking each one up on every move of the view took seconds)
+                if Self::object_off_ray(doc, o, dv, org, ob) {
+                    continue;
+                }
+                n_obj += 1;
                 let Some(model) = assets.object(&ob.file) else { continue };
                 if unseen(&model) {
                     continue;
@@ -1811,11 +2001,14 @@ impl Editor {
         }
         // what hangs on objects and rows (signs on posts, lamps on masts), placed as they are drawn
         // (only near where the ray meets the ground: rows are worked out along their roads)
+        let t_obj = t_pick.elapsed().as_secs_f64() * 1000.0;
         let near = |k: &TileKey| ground.map(|g| (tile_origin(*k) + DVec2::splat(tile_size() * 0.5) - g.truncate()).length() < tile_size() * 1.5).unwrap_or(false);
+        let mut rows: Option<std::sync::Arc<omsi_world::map_index::MapIndex>> = None;
         for (k, t) in doc.tiles.iter().filter(|_| !paths_only) {
             if t.tile.attach_objects.is_empty() || !near(k) {
                 continue;
             }
+            let rows = rows.get_or_insert_with(|| crate::place::row_index(doc));
             let mut parents: std::collections::HashMap<i64, (crate::place::Pose, std::sync::Arc<crate::assets::ObjectModel>)> = std::collections::HashMap::new();
             for ob in &t.tile.objects {
                 let Some(model) = assets.object(&ob.file) else { continue };
@@ -1823,7 +2016,7 @@ impl Editor {
             }
             for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
                 let Some(model) = assets.object(&a.file) else { continue };
-                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k));
+                let objs = crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), rows);
                 if let Some(first) = objs.iter().min_by_key(|o| o.index) {
                     parents.entry(a.id).or_insert((first.pose, model));
                 }
@@ -1858,6 +2051,7 @@ impl Editor {
                 }
             }
         }
+        let t_att1 = t_pick.elapsed().as_secs_f64() * 1000.0;
         // the lamps, posts and bays that stand along a spline (`[splineAtt]` rows): each record
         // is a thing of its own (its copies are one object), so a click on one of its copies
         // picks that record and its properties.
@@ -1866,9 +2060,10 @@ impl Editor {
                 if t.tile.spline_attachments.is_empty() || !near(k) {
                     continue;
                 }
+                let rows = rows.get_or_insert_with(|| crate::place::row_index(doc));
                 for a in &t.tile.spline_attachments {
                     let Some(model) = assets.object(&a.file) else { continue };
-                    for ro in crate::selection::attachment_copies(doc, *k, a.id) {
+                    for ro in crate::place::row_objects(a, &t.tile.splines, tile_origin(*k), rows) {
                         let m = ro.pose.matrix_from(o);
                         let c = m.transform_point3(model.centre());
                         if !omsi_geometry::ray_near_sphere(ov, dv, c, model.radius().max(0.5)) {
@@ -1905,9 +2100,16 @@ impl Editor {
         // ground is behind the hillside, not under the cursor.
         let limit = gdist + 2.0;
         let mut sbest: Option<(f64, f64, f64, Sel)> = None;
+        let t_att = t_pick.elapsed().as_secs_f64() * 1000.0;
         for (k, t) in doc.tiles.iter().filter(|_| !self.hide[2] || paths_only) {
+            if !Self::ray_meets_tile(*k, Self::tile_overhang(t), o, d, gdist + 2.0) {
+                continue;
+            }
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                if Self::spline_off_ray(o, dv, org, s) {
+                    continue;
+                }
                 let model = assets.spline(&s.file);
                 let ai = model.as_ref().map(|m| m.is_ai_path()).unwrap_or(false);
                 if paths_only && !ai {
@@ -1931,6 +2133,7 @@ impl Editor {
                 if !omsi_geometry::ray_near_sphere(ov, dv, centre, reach) {
                     continue;
                 }
+                n_swept += 1;
                 let n = (s.length / 1.0).ceil().max(2.0) as usize;
                 // (the road's own surface is where the ray meets *its height there*, not where
                 // the ray first comes within the road's width. A ray at a slant comes within a
@@ -1993,6 +2196,10 @@ impl Editor {
             }
         }
         all.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let total = t_pick.elapsed().as_secs_f64() * 1000.0;
+        if total > 150.0 {
+            log::warn!("pick {total:.0} ms: objects {t_obj:.0} (near {n_obj}), rows/attached {:.0}, copies {:.0}, splines {:.0} (swept {n_swept}), ground {gdist:.0} m", t_att1 - t_obj, t_att - t_att1, total - t_att);
+        }
         stack.clear();
         for (_, s) in all {
             if !stack.contains(&s) {
@@ -2024,7 +2231,10 @@ impl Editor {
         self.aim = Some((o, d));
         // (the face of an object, or the edge of a road, under the cursor: where a spline's end
         // goes if it is laid on it. Only the roads tool draws it, but any tool snaps to it.)
-        self.surface = if self.snap_surface { self.surface_hit(assets, o, d, g) } else { None };
+        self.surface = if self.snap_surface && !self.hover_ground_only { self.surface_hit(assets, o, d, g) } else { None };
+        if self.hover_ground_only {
+            return;
+        }
         self.hover = None;
         self.hover_stack.clear();
         self.hover_tile = None;
@@ -2032,6 +2242,38 @@ impl Editor {
         // there - no object, no spline, and not the crossing's own object either - so the map
         // does not even answer the pointer while its paths are being edited)
         if self.crossing_hold {
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
+        if self.vertex_snap.is_some() {
+            let target = match self.vertex_snap.as_ref().unwrap().stage {
+                VertexSnapStage::PickSource => None,
+                VertexSnapStage::PickTarget { source } => Some(source),
+                VertexSnapStage::PickSource2 { anchor } => Some(anchor),
+                VertexSnapStage::PickTarget2 { source2, .. } => Some(source2),
+            };
+            let hover = self.vertex_at_ray(assets, o, d, g, target);
+            if let Some(snap) = &mut self.vertex_snap {
+                snap.hover = hover;
+            }
+            self.hover = None;
+            self.hover_handle = None;
+            self.hover_handle_of = None;
+            self.hover_stack.clear();
+            return;
+        }
+        if self.edge_snap.is_some() {
+            let target_mode = match self.edge_snap.as_ref().unwrap().stage {
+                EdgeSnapStage::PickSource => false,
+                EdgeSnapStage::PickTarget { .. } => true,
+            };
+            let hover = self.edge_at_ray(assets, o, d, g, target_mode);
+            if let Some(snap) = &mut self.edge_snap {
+                snap.hover = hover;
+            }
+            self.hover = None;
             self.hover_handle = None;
             self.hover_handle_of = None;
             self.hover_stack.clear();
@@ -2261,6 +2503,114 @@ impl Editor {
         if self.doc.is_none() {
             return;
         }
+        if let Some(snap) = &self.vertex_snap {
+            let stage = snap.stage;
+            let hover = snap.hover.or_else(|| {
+                let (o, d) = self.aim?;
+                let g = self.ground_hit(o, d);
+                match stage {
+                    VertexSnapStage::PickSource => self.vertex_at_ray(assets, o, d, g, None),
+                    VertexSnapStage::PickTarget { source } => self.vertex_at_ray(assets, o, d, g, Some(source)),
+                    VertexSnapStage::PickSource2 { anchor } => self.vertex_at_ray(assets, o, d, g, Some(anchor)),
+                    VertexSnapStage::PickTarget2 { source2, .. } => self.vertex_at_ray(assets, o, d, g, Some(source2)),
+                }
+            });
+            match (stage, hover) {
+                (VertexSnapStage::PickSource, Some(source)) => {
+                    if let Some(s) = &mut self.vertex_snap {
+                        s.stage = VertexSnapStage::PickTarget { source };
+                        s.hover = None;
+                    }
+                    self.toast(tr("Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)", "Исходная точка выбрана. Щёлкните целевую вершину для привязки (Shift: только по горизонтали, Esc: отмена)"));
+                }
+                (VertexSnapStage::PickSource, None) => {
+                    self.toast(tr("Aim at a vertex of the selected object", "Наведите на вершину выбранного объекта"));
+                }
+                (VertexSnapStage::PickTarget { source }, Some(target)) => {
+                    let mut delta = target - source;
+                    if shift {
+                        delta.z = 0.0;
+                    }
+                    self.apply_vertex_snap(assets, delta);
+                    let anchor = source + delta;
+                    if let Some(s) = &mut self.vertex_snap {
+                        s.stage = VertexSnapStage::PickSource2 { anchor };
+                        s.hover = None;
+                    }
+                    self.toast(tr("Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish", "Точка 1 совмещена! Кликните вторую точку на объекте для поворота или Esc для завершения"));
+                }
+                (VertexSnapStage::PickTarget { .. }, None) => {
+                    self.toast(tr("Aim at a target vertex or spline endpoint", "Наведите на целевую вершину или конец дороги"));
+                }
+                (VertexSnapStage::PickSource2 { anchor }, Some(source2)) => {
+                    if (source2 - anchor).length() > 0.02 {
+                        if let Some(s) = &mut self.vertex_snap {
+                            s.stage = VertexSnapStage::PickTarget2 { anchor, source2 };
+                            s.hover = None;
+                        }
+                        self.toast(tr("Reference angle set. Click a target point or spline to align (Esc: finish)", "Опорный угол задан. Кликните целевую точку или дорогу для выравнивания (Esc: завершить)"));
+                    } else {
+                        self.toast(tr("Pick a different vertex on the object", "Выберите другую вершину на объекте"));
+                    }
+                }
+                (VertexSnapStage::PickSource2 { .. }, None) => {
+                    self.toast(tr("Click a 2nd reference point on the object, or Esc to finish", "Кликните 2-ю опорную точку на объекте или нажмите Esc для завершения"));
+                }
+                (VertexSnapStage::PickTarget2 { anchor, source2 }, Some(target2)) => {
+                    let v_src = (source2 - anchor).truncate();
+                    let v_tgt = (target2 - anchor).truncate();
+                    if v_src.length_squared() > 1e-6 && v_tgt.length_squared() > 1e-6 {
+                        let h_src = roads::heading_of(v_src);
+                        let h_tgt = roads::heading_of(v_tgt);
+                        let deg = (h_tgt - h_src + 540.0).rem_euclid(360.0) - 180.0;
+                        self.apply_vertex_snap_rotation(assets, anchor.truncate(), deg);
+                        self.toast(tr("Aligned angle! (Ctrl+Z to undo)", "Угол выровнен! (Ctrl+Z для отмены)"));
+                    }
+                    self.vertex_snap = None;
+                }
+                (VertexSnapStage::PickTarget2 { .. }, None) => {
+                    self.toast(tr("Aim at a target vertex or spline endpoint", "Наведите на целевую вершину или конец дороги"));
+                }
+            }
+            return;
+        }
+        if let Some(snap) = &self.edge_snap {
+            let stage = snap.stage;
+            let hover = snap.hover.or_else(|| {
+                let (o, d) = self.aim?;
+                let g = self.ground_hit(o, d);
+                match stage {
+                    EdgeSnapStage::PickSource => self.edge_at_ray(assets, o, d, g, false),
+                    EdgeSnapStage::PickTarget { .. } => self.edge_at_ray(assets, o, d, g, true),
+                }
+            });
+            match (stage, hover) {
+                (EdgeSnapStage::PickSource, Some((edge, hit))) => {
+                    let source = if (hit - edge[0]).length_squared() <= (hit - edge[1]).length_squared() {
+                        edge
+                    } else {
+                        [edge[1], edge[0]]
+                    };
+                    if let Some(s) = &mut self.edge_snap {
+                        s.stage = EdgeSnapStage::PickTarget { source };
+                        s.hover = None;
+                    }
+                    self.toast(tr("Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)", "Исходное ребро выбрано. Щёлкните целевое ребро или дорогу для выравнивания (Shift: только по горизонтали, Esc: отмена)"));
+                }
+                (EdgeSnapStage::PickSource, None) => {
+                    self.toast(tr("Aim at an edge of the selected object", "Наведите на ребро выбранного объекта"));
+                }
+                (EdgeSnapStage::PickTarget { source }, Some((target, target_hit))) => {
+                    self.edge_snap = None;
+                    self.apply_edge_snap(assets, source, target, target_hit, shift);
+                    self.toast(tr("Aligned edge to edge! (Ctrl+Z to undo)", "Ребро выровнено по ребру! (Ctrl+Z для отмены)"));
+                }
+                (EdgeSnapStage::PickTarget { .. }, None) => {
+                    self.toast(tr("Aim at a target edge or road", "Наведите на целевое ребро или дорогу"));
+                }
+            }
+            return;
+        }
         // "Connect to": the next click is the other end of the path, not a new selection
         if self.path_connect.is_some() && self.editing_paths() {
             match (self.hover_handle, self.hover_handle_of) {
@@ -2297,8 +2647,17 @@ impl Editor {
             }
             return;
         }
+        // (the Trolleybus wire window picks a span or a switch with a click)
+        if self.wire.picking || self.wire.drawing.is_some() {
+            self.wire.click = self.cursor;
+            return;
+        }
         // the ruler takes the clicks while it is on: from one point to the next
-        if let (Some(r), Some(c)) = (&mut self.ruler, self.cursor) {
+        if let (true, Some(c)) = (self.ruler.is_some(), self.cursor) {
+            if self.ruler_area_click(c, shift) {
+                return;
+            }
+            let r = self.ruler.as_mut().unwrap();
             *r = match *r {
                 (Some(a), None) => (Some(a), Some(c)),
                 _ => (Some(c), None),
@@ -2490,6 +2849,44 @@ impl Editor {
     /// A right click without a drag: what the tool was doing is called off; true when the
     /// view's menu is to open instead.
     pub fn right_click(&mut self) -> bool {
+        if let Some(snap) = &mut self.vertex_snap {
+            match snap.stage {
+                VertexSnapStage::PickTarget { .. } => {
+                    snap.stage = VertexSnapStage::PickSource;
+                    snap.hover = None;
+                    self.toast(tr("Target cancelled. Pick a source vertex again", "Выбор цели отменен. Выберите исходную вершину снова"));
+                    return false;
+                }
+                VertexSnapStage::PickSource2 { .. } => {
+                    self.vertex_snap = None;
+                    self.toast(tr("Vertex snap complete", "Привязка вершины завершена"));
+                    return false;
+                }
+                VertexSnapStage::PickTarget2 { anchor, .. } => {
+                    snap.stage = VertexSnapStage::PickSource2 { anchor };
+                    snap.hover = None;
+                    self.toast(tr("Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish", "Точка 1 совмещена! Кликните вторую точку на объекте для поворота или Esc для завершения"));
+                    return false;
+                }
+                VertexSnapStage::PickSource => {
+                    self.vertex_snap = None;
+                    self.toast(tr("Vertex snap cancelled", "Привязка вершины отменена"));
+                    return false;
+                }
+            }
+        }
+        if let Some(snap) = &mut self.edge_snap {
+            if let EdgeSnapStage::PickTarget { .. } = snap.stage {
+                snap.stage = EdgeSnapStage::PickSource;
+                snap.hover = None;
+                self.toast(tr("Target cancelled. Pick a source edge again", "Выбор цели отменен. Выберите исходное ребро снова"));
+                return false;
+            } else {
+                self.edge_snap = None;
+                self.toast(tr("Edge snap cancelled", "Привязка ребра отменена"));
+                return false;
+            }
+        }
         if let Some(m) = self.mesh.as_mut().filter(|m| m.modal_active()) {
             m.cancel();
             return false;
@@ -2575,6 +2972,7 @@ impl Editor {
                 let pivot = road_start(doc, &sels).map(|p| p.truncate()).or_else(|| selection::centre(doc, &sels));
                 let Some(pivot) = pivot else { return };
                 let from: Vec<Origin> = sels.iter().filter_map(|s| selection::origin_of(doc, *s)).collect();
+                let tail = spline_tail(doc, &sels);
                 // (one thing alone, with angle snapping on, comes to a whole step)
                 let deg = match (&from[..], self.snap_angle) {
                     ([one], true) => snap_deg(one.heading + deg, self.angle_step) - one.heading,
@@ -2582,9 +2980,23 @@ impl Editor {
                 };
                 self.history.begin(if sels.len() > 1 { tr("Rotate selection", "Поворот выделенного") } else { tr("Rotate", "Поворот") });
                 let now = selection::transform(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO);
-                selection::unlink_outside(doc, &mut self.history, &now);
+                if !tail.is_empty() {
+                    selection::transform(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO);
+                }
+                let mut keep = now.clone();
+                keep.extend(tail.iter().map(|o| o.sel));
+                let joint = start_joint(doc, &sels);
+                selection::unlink_outside(doc, &mut self.history, &keep);
+                if let Some((pk, pid, k, id, at_end)) = joint {
+                    relink_start(doc, &mut self.history, pk, pid, k, id, at_end);
+                }
                 self.set_selection_unique(now);
                 self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+                if let Some((_, _, k, id, _)) = joint {
+                    if deg.abs() > 1e-6 {
+                        self.miter_start(k, id);
+                    }
+                }
                 self.ground_to_selection();
                 self.finish_step();
             }
@@ -2617,7 +3029,8 @@ impl Editor {
         }
         self.history.begin(tr("Rotate", "Поворот"));
         let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
-        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links });
+        let tail = self.doc.as_ref().map(|d| spline_tail(d, &sels)).unwrap_or_default();
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail });
         self.xform_value = 0.0;
         true
     }
@@ -2708,9 +3121,13 @@ impl Editor {
     /// Keep the turn where it stands.
     pub fn rot_confirm(&mut self) -> bool {
         let Some(g) = self.rot.take() else { return false };
-        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).collect();
+        let joint = self.doc.as_ref().and_then(|d| start_joint(d, &g.from.iter().map(|o| o.sel).collect::<Vec<_>>()));
+        let sels: Vec<Sel> = g.from.iter().map(|o| o.sel).chain(g.tail.iter().map(|o| o.sel)).collect();
         if let Some(doc) = self.doc.as_mut() {
             selection::unlink_outside(doc, &mut self.history, &sels);
+            if let Some((pk, pid, k, id, at_end)) = joint {
+                relink_start(doc, &mut self.history, pk, pid, k, id, at_end);
+            }
         }
         self.ground_to_selection();
         self.finish_step();
@@ -2737,10 +3154,15 @@ impl Editor {
             let Some(g) = self.rot.as_mut() else { return };
             let Some(doc) = self.doc.as_mut() else { return };
             let from = std::mem::take(&mut g.from);
+            let tail = std::mem::take(&mut g.tail);
             let now = selection::transform_known(doc, &mut self.history, &from, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            if !tail.is_empty() {
+                selection::transform_known(doc, &mut self.history, &tail, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
+            }
             self.set_selection_unique(now);
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
+                g.tail = tail;
                 g.done = 0.0;
             }
             self.xform_value = 0.0;
@@ -2749,21 +3171,28 @@ impl Editor {
         let Some(g) = self.rot.as_mut() else { return };
         let pivot = g.pivot;
         let mut from = std::mem::take(&mut g.from);
+        let mut tail = std::mem::take(&mut g.tail);
         let mut arms = std::mem::take(&mut g.arms);
         let links = g.links.as_ref();
         let Some(doc) = self.doc.as_mut() else {
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
+                g.tail = tail;
                 g.arms = arms;
             }
             return;
         };
         let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        if !tail.is_empty() {
+            selection::transform_known(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO, links);
+        }
         self.set_selection_unique(now);
         self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
+        self.miter_if_one_spline();
         self.xform_value = deg;
         if let Some(g) = self.rot.as_mut() {
             g.from = std::mem::take(&mut from);
+            g.tail = std::mem::take(&mut tail);
             g.arms = std::mem::take(&mut arms);
             g.done = deg;
         }
@@ -3535,29 +3964,39 @@ impl Editor {
     fn snap_end_point(&self, assets: &mut Assets, p: DVec2, within: f64) -> Option<(Anchor, Option<String>)> {
         let doc = self.doc.as_ref()?;
         let mut best: Option<(f64, Anchor, String)> = None;
+        // (the end of a spline without AI paths is caught where it is drawn: `end_snap`)
+        let new_mid = self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| crate::end_snap::profile_middle(&m, false)).unwrap_or(0.0);
+        let starting = self.road_start.is_none();
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-                if !roads::can_reach(start, s.length, p, within) {
+                // (a kerb is seen up to some metres beside its line)
+                if !roads::can_reach(start, s.length, p, within + 10.0) {
                     continue;
                 }
-                if assets.spline(&s.file).map(|m| m.def.only_editor).unwrap_or(false) {
+                let m = assets.spline(&s.file);
+                if m.as_ref().map(|m| m.def.only_editor).unwrap_or(false) {
                     continue;
                 }
-                let link = assets.spline(&s.file).map(|m| !m.joinable()).unwrap_or(false);
+                let end_mid = m.as_ref().map(|m| crate::end_snap::profile_middle(m, s.mirror)).unwrap_or(0.0);
+                let link = m.as_ref().map(|m| !m.joinable()).unwrap_or(false);
+                let same = self.road_type.as_deref().is_some_and(|r| r.eq_ignore_ascii_case(&s.file));
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                for (free, at_end, q, heading) in [
-                    (s.prev_id == 0, false, c.point_at(0.0), roads::norm_deg(s.heading + 180.0)),
-                    (s.next_id == 0, true, c.end_point(), roads::norm_deg(c.heading_at(s.length))),
+                for (free, at_end, q, heading, along) in [
+                    (s.prev_id == 0, false, c.point_at(0.0), roads::norm_deg(s.heading + 180.0), s.heading),
+                    (s.next_id == 0, true, c.end_point(), roads::norm_deg(c.heading_at(s.length)), c.heading_at(s.length)),
                 ] {
                     if !free {
                         continue;
                     }
-                    let d = (q.truncate() - p).length();
+                    let (seen, pos) = crate::end_snap::catch(q, along, heading, end_mid, new_mid, starting, same);
+                    let d = (seen.truncate() - p).length();
                     if d < within && best.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        let spline = link.then_some((*k, s.id, at_end));
-                        best = Some((d, Anchor { pos: q, heading, spline, ..Default::default() }, s.file.clone()));
+                        // (linked only where the two lines meet: another kerb put beside the
+                        // line keeps the end's way, not its link)
+                        let spline = (link && (pos - q).length() < 0.01).then_some((*k, s.id, at_end));
+                        best = Some((d, Anchor { pos, heading, spline, ..Default::default() }, s.file.clone()));
                     }
                 }
             }
@@ -3686,22 +4125,28 @@ impl Editor {
         // nothing a road joins: the ends of the other splines one sees (a kerb, a wall, a
         // footpath) are still places to start from, the point only, nothing joined to it
         let mut end: Option<(f64, Anchor, String)> = None;
+        // (a kerb's end is caught where it is drawn, the middle of its profile: `end_snap`)
+        let new_mid = self.road_type.as_deref().and_then(|r| assets.spline(r)).map(|m| crate::end_snap::profile_middle(&m, false)).unwrap_or(0.0);
+        let starting = self.road_start.is_none();
         for (k, t) in &doc.tiles {
             let org = tile_origin(*k);
             for s in t.tile.splines.iter().filter(|s| !s.deleted) {
                 let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
-                if (start - p).length() > s.length + within {
+                // (a kerb is seen up to some metres beside its line)
+                if (start - p).length() > s.length + within + 10.0 {
                     continue;
                 }
                 let Some(m) = assets.spline(&s.file) else { continue };
+                let end_mid = crate::end_snap::profile_middle(&m, s.mirror);
                 if m.joinable() || m.def.only_editor || m.is_track() != track {
                     continue;
                 }
                 let c = omsi_geometry::SplineCurve::from_map(s, org);
-                for (q, heading) in [(c.point_at(0.0), roads::norm_deg(s.heading + 180.0)), (c.end_point(), roads::norm_deg(c.heading_at(s.length)))] {
-                    let d = (q.truncate() - p).length();
+                for (q, heading, along) in [(c.point_at(0.0), roads::norm_deg(s.heading + 180.0), s.heading), (c.end_point(), roads::norm_deg(c.heading_at(s.length)), c.heading_at(s.length))] {
+                    let (seen, pos) = crate::end_snap::catch(q, along, heading, end_mid, new_mid, starting, false);
+                    let d = (seen.truncate() - p).length();
                     if d < within && end.as_ref().map(|b| d < b.0).unwrap_or(true) {
-                        end = Some((d, Anchor { pos: q, heading, spline: None, mid: None }, s.file.clone()));
+                        end = Some((d, Anchor { pos, heading, spline: None, mid: None }, s.file.clone()));
                     }
                 }
             }
@@ -3757,7 +4202,7 @@ impl Editor {
         let shape = crate::switches::Shape::of(&model)?;
         let (mut pos, out) = shape.world(shape.branch, toe, heading);
         pos.z = self.doc.as_ref().map(|d| d.ground(pos.truncate())).unwrap_or(toe.z);
-        let plan = crate::switches::Plan { rel, toe, heading, length: shape.length(), origin: shape.origin(toe, heading) };
+        let plan = crate::switches::Plan { rel, toe, heading, length: shape.length(), origin: shape.origin(toe, heading), turned: shape.turned };
         Some((plan, (pos, out)))
     }
 
@@ -3930,7 +4375,9 @@ impl Editor {
         // (not joined into the road: the end is the place the new one is drawn to. One of its
         // own kind keeps that end's direction and is linked; a road's end does not, so the new
         // one is not bent round onto the road and does not take the road's link)
-        let laid_on = snap.filter(|_| !joins && !self.drawing_paths() && snap.is_some_and(|a| a.spline.is_none()));
+        // (a kerb's end that is not linked, the new one put beside its line, keeps its way)
+        let onto_road = self.road_snap_file.as_deref().and_then(|f| assets.spline(f)).map(|m| m.joinable()).unwrap_or(true);
+        let laid_on = snap.filter(|_| !joins && !self.drawing_paths() && onto_road && snap.is_some_and(|a| a.spline.is_none()));
         let mut target = if let Some(a) = laid_on {
             a.pos.truncate()
         } else {
@@ -4223,12 +4670,30 @@ impl Editor {
     /// The splines of a road, cut into pieces (`roads::split`), put into the map, linked to
     /// what its ends meet; inside an open step that keeps every tile.
     fn lay_road(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64) -> Option<Vec<(TileKey, i64)>> {
+        self.lay_road_with(assets, rel, pieces, z0, z1, start, end, half, None)
+    }
+
+    /// As `lay_road`, with the heights and grades at the joints given (a designed profile: the
+    /// ground is then not brought to the road, the road keeps its own heights).
+    #[allow(clippy::too_many_arguments)]
+    fn lay_road_with(&mut self, assets: &mut Assets, rel: &str, pieces: &[Seg], z0: f64, z1: f64, start: Anchor, end: Option<Anchor>, half: f64, given: Option<Vec<(f64, f64)>>) -> Option<Vec<(TileKey, i64)>> {
         let pieces = pieces.to_vec();
+        let designed = given.is_some();
         // (the heights before the map is borrowed to be written: with Surface on, the whole
         // road takes the surface under it, not only its two ends)
-        let profile = {
-            let doc = self.doc.as_ref()?;
-            self.road_heights(assets, doc, &pieces, z0, z1)
+        let profile = match given {
+            Some(p) if p.len() == pieces.len() + 1 => p,
+            _ => {
+                let doc = self.doc.as_ref()?;
+                self.road_heights(assets, doc, &pieces, z0, z1)
+            }
+        };
+        // (on a left-hand map a road whose lanes keep right is laid mirrored, which turns its
+        // lanes round; drawn on from a road of the same type it goes on as that one is)
+        let keeps_left_map = self.doc.as_ref().map(|d| d.global.left_hand_traffic).unwrap_or(false);
+        let mirror = {
+            let from_start = start.spline.and_then(|(k, id, _)| self.doc.as_ref()?.spline(k, id)).filter(|s| s.file.eq_ignore_ascii_case(rel)).map(|s| s.mirror);
+            from_start.unwrap_or_else(|| keeps_left_map && assets.spline(rel).map(|m| keeps_right(&m) && symmetric(&m)).unwrap_or(false))
         };
         let doc = self.doc.as_mut()?;
         let mut made: Vec<(TileKey, i64)> = Vec::new();
@@ -4236,7 +4701,16 @@ impl Editor {
         let mut curves = Vec::new();
         let mut chain = 0.0;
         for (i, p) in pieces.iter().enumerate() {
-            let k = tile_of(p.start);
+            // (a piece cut at the map's north or east edge starts on the line between a tile
+            // and the one beyond it, which the map may not have: the tile it runs into then)
+            let mut k = tile_of(p.start);
+            if !doc.tiles.contains_key(&k) {
+                let (s, c) = p.heading.to_radians().sin_cos();
+                k = tile_of(p.start + DVec2::new(s, c) * (p.length * 0.5).min(0.5));
+            }
+            if !doc.tiles.contains_key(&k) {
+                continue;
+            }
             let org = tile_origin(k);
             let sp = piece_spline(rel, p, &profile, i, org);
             let sp = MapSpline {
@@ -4246,11 +4720,12 @@ impl Editor {
                 // (textures run on across the joints)
                 tex_offset: chain,
                 map_chain_offset: Some(chain),
+                mirror,
                 ..sp
             };
             chain += p.length;
             curves.push(omsi_geometry::SplineCurve::from_map(&sp, org));
-            let t = doc.tiles.get_mut(&k).unwrap();
+            let Some(t) = doc.tiles.get_mut(&k) else { continue };
             t.tile.splines.push(sp);
             t.touch_content();
             made.push((k, ids[i]));
@@ -4275,16 +4750,24 @@ impl Editor {
             }
             linked
         };
-        if let Some((k, id, _)) = start.spline {
+        if let Some((k, id, at_end)) = start.spline {
             let first = made[0];
+            // (drawn on from a road, the new road's chain goes on from that road's, as the game
+            // walks it along the links: counted from 0, a row near its start lay before its
+            // spline and was drawn neither by the game nor here, #131)
+            let from = doc.spline(k, id).map(|s| if at_end { crate::place::chain_offset_of(doc, s) + s.length } else { s.length }).unwrap_or(0.0);
             if link(doc, start.spline, first.1) {
                 if let Some(t) = doc.tiles.get_mut(&first.0) {
                     if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == first.1) {
                         s.prev_id = id;
                     }
                 }
+                for &(mk, mid) in &made {
+                    if let Some(s) = doc.tiles.get_mut(&mk).and_then(|t| t.tile.splines.iter_mut().find(|s| s.id == mid)) {
+                        s.map_chain_offset = s.map_chain_offset.map(|o| o + from);
+                    }
+                }
             }
-            let _ = k;
         }
         if let Some(e) = end {
             if let Some((_, id, _)) = e.spline {
@@ -4299,7 +4782,7 @@ impl Editor {
             }
         }
         // (a road laid on a surface keeps that surface: the ground under it is not raised up to it)
-        if self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
+        if !designed && self.follow_ground && self.auto_terrain && !self.keep_height && !self.snap_surface && !(self.tool == Tool::Logic) {
             conform_ground(doc, &curves, half);
         }
         // (the step stays open: the caller may cut the road it joined, in the same step)
@@ -4395,7 +4878,7 @@ impl Editor {
                 (0..=n).map(move |i| c.point_at(s.length * i as f64 / n as f64).truncate())
             }).collect();
             // (a tram's track lies on its street: only roads are checked so)
-            if !track && samples.iter().filter(|p| near_old(**p)).count() * 2 > samples.len() {
+            if !track && !self.osm_keep_overlaps && samples.iter().filter(|p| near_old(**p)).count() * 2 > samples.len() {
                 continue;
             }
             self.road_type = Some(rel.clone());
@@ -4638,7 +5121,9 @@ impl Editor {
                 }
                 continue;
             }
-            let arms: Vec<crate::junction::Arm> = c.iter().filter_map(|&i| doc.trim(all[i].0, all[i].1, all[i].2, r)).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+            // (each cut back as far as its corners ask, and clear of the other roads' roadways)
+            let back = crate::junction::cut_back(doc, assets, &c.iter().map(|&i| Some((all[i].0, all[i].1, all[i].2))).collect::<Vec<_>>(), r);
+            let arms: Vec<crate::junction::Arm> = c.iter().zip(&back).filter_map(|(&i, b)| doc.trim(all[i].0, all[i].1, all[i].2, *b)).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
             if arms.len() < 3 {
                 continue;
             }
@@ -4648,7 +5133,7 @@ impl Editor {
                     made += 1;
                     if follow {
                         let e = arm_ends_world(doc, &arms);
-                        let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                        let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                         conform_disc(doc, centre, reach, &e);
                     }
                 }
@@ -4662,6 +5147,12 @@ impl Editor {
     /// Cut the roads where a newly built road `made` crosses one or meets one's middle, and
     /// fill each meeting point with a junction object.
     fn make_junctions(&mut self, assets: &mut Assets, made: &[(TileKey, i64)], half: f64, start_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, end_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>) -> usize {
+        self.make_junctions_with(assets, made, half, start_mid, end_mid, true)
+    }
+
+    /// As `make_junctions`; `orphans`: the junctions that lost an arm are made again here (a
+    /// run over many roads does that once, at its end).
+    fn make_junctions_with(&mut self, assets: &mut Assets, made: &[(TileKey, i64)], half: f64, start_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, end_mid: Option<(((i32, i32), i64, f64, f64), DVec3)>, orphans: bool) -> usize {
         let (Some(content), asphalt) = (self.content_dir.clone(), self.asphalt.clone()) else { return 0 };
         let follow = self.follow_ground;
         let adapt = self.auto_adapt;
@@ -4694,8 +5185,11 @@ impl Editor {
                 count += 1;
                 continue;
             }
-            let arms = [p.and_then(|p| doc.trim(p.0, p.1, p.2, r)), q.and_then(|q| doc.trim(q.0, q.1, q.2, r)), doc.trim(nk, nid, at_end, r)];
-            log::debug!("T junction at {at:.1} on {id} (r {r:.1}): arms {:?}", arms);
+            // (each cut back as far as its corners ask, and clear of the other roads' roadways:
+            // the road run in stops at the kerb of a wide one whatever the corner style)
+            let back = crate::junction::cut_back(doc, assets, &[p, q, Some((nk, nid, at_end))], r);
+            let arms = [p.and_then(|p| doc.trim(p.0, p.1, p.2, back[0])), q.and_then(|q| doc.trim(q.0, q.1, q.2, back[1])), doc.trim(nk, nid, at_end, back[2])];
+            log::debug!("T junction at {at:.1} on {id} (r {r:.1}, cut back {back:.1?}): arms {:?}", arms);
             for x in arms.iter().flatten() {
                 if let Some(sp) = doc.spline(x.0, x.1) {
                     let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(x.0));
@@ -4714,7 +5208,7 @@ impl Editor {
                         count += 1;
                         if follow {
                             let ends = arm_ends_world(doc, &arms);
-                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                             conform_disc(doc, centre, reach, &ends);
                         }
                     }
@@ -4733,6 +5227,10 @@ impl Editor {
                 let c1 = omsi_geometry::SplineCurve::from_map(s1, tile_origin(*k1));
                 let p1 = crate::junction::polyline(&c1);
                 for (k2, t) in &doc.tiles {
+                    // (only the tiles this piece can reach)
+                    if !roads::tile_near(tile_origin(*k2), tile_size(), c1.start.truncate(), s1.length + 60.0) {
+                        continue;
+                    }
                     for s2 in t.tile.splines.iter().filter(|s| !s.deleted && !ours.iter().any(|o| o.1.id == s.id)) {
                         if skip.contains(&(s1.id, s2.id)) {
                             continue;
@@ -4764,6 +5262,16 @@ impl Editor {
                             if linked && joints.iter().any(|j| (*j - pt).length() < 1.5) {
                                 continue;
                             }
+                            // (over the map's own roads: an author's junction is left, and so is a
+                            // crossing at under 30°, where one road runs into the other alongside)
+                            if let Some(keep) = &self.aj_keep {
+                                let cut = (roads::norm_deg(c1.heading_at(a1) - c2.heading_at(a2) + 180.0) - 180.0).abs();
+                                let cut = cut.min(180.0 - cut);
+                                if aj_kept(keep, pt) || cut < 30.0 {
+                                    skip.push((s1.id, s2.id));
+                                    continue;
+                                }
+                            }
                             found = Some((*k1, s1.id, a1, *k2, s2.id, a2, DVec3::new(pt.x, pt.y, z2), m.half_width as f64));
                             break 'search;
                         }
@@ -4794,7 +5302,9 @@ impl Editor {
                 count += 1;
                 continue;
             }
-            let arms = [p1.and_then(|x| doc.trim(x.0, x.1, x.2, r)), q1.and_then(|x| doc.trim(x.0, x.1, x.2, r)), p2.and_then(|x| doc.trim(x.0, x.1, x.2, r)), q2.and_then(|x| doc.trim(x.0, x.1, x.2, r))];
+            // (each cut back as far as its corners ask, and clear of the other road's roadway)
+            let back = crate::junction::cut_back(doc, assets, &[p1, q1, p2, q2], r);
+            let arms = [p1.and_then(|x| doc.trim(x.0, x.1, x.2, back[0])), q1.and_then(|x| doc.trim(x.0, x.1, x.2, back[1])), p2.and_then(|x| doc.trim(x.0, x.1, x.2, back[2])), q2.and_then(|x| doc.trim(x.0, x.1, x.2, back[3]))];
             for a in arms.iter().take(2).flatten() {
                 mine.push(a.1);
             }
@@ -4807,7 +5317,7 @@ impl Editor {
                         count += 1;
                         if follow {
                             let ends = arm_ends_world(doc, &arms);
-                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(r * 1.1);
+                            let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
                             conform_disc(doc, centre, reach, &ends);
                         }
                     }
@@ -4820,11 +5330,214 @@ impl Editor {
         }
         // a junction made before whose arm road this one trimmed away (a short road between
         // the two): made again for the roads it still holds, or a joint of two
+        if !orphans {
+            return count;
+        }
         for id in self.orphaned_junctions(assets) {
             log::debug!("junction {id} lost an arm: made again");
             self.rebuild_junction(assets, id);
         }
         count
+    }
+
+    /// Auto-junction over the roads already on the map, as if each had just been drawn with
+    /// the Roads tool and Auto-Junction on: an end of it run into another road's middle is a T
+    /// junction, a place where it crosses another road an X junction (a road 2.5 m above or
+    /// below is a bridge, left as it is; an end at a junction object's connector is joined
+    /// already). In a circle, or the whole map. One undo step. (roads gone over, junctions made)
+    pub fn auto_junctions_on_map(&mut self, assets: &mut Assets, area: Option<(DVec2, f64)>) -> (usize, usize) {
+        let Some(doc) = self.doc.as_ref() else { return (0, 0) };
+        self.history.begin(tr("Junctions where the roads meet", "Перекрёстки, где дороги встречаются"));
+        let keys: Vec<TileKey> = doc.tiles.keys().copied().collect();
+        for k in &keys {
+            self.history.touch_tile(doc, *k);
+        }
+        let inside = |p: DVec2| area.map(|(c, r)| (p - c).length() <= r).unwrap_or(true);
+        // the author's own junctions: where AI paths (splines with lanes and nothing drawn) run,
+        // the place is made already; every 16 m cell within 12 m of one is left as it is
+        let mut keep: std::collections::HashSet<(i64, i64)> = Default::default();
+        for (k, t) in &doc.tiles {
+            let org = tile_origin(*k);
+            for sp in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 0.1) {
+                if !assets.spline(&sp.file).map(|m| m.is_ai_path()).unwrap_or(false) {
+                    continue;
+                }
+                let c = omsi_geometry::SplineCurve::from_map(sp, org);
+                let n = (sp.length / 4.0).ceil().max(1.0) as usize;
+                for i in 0..=n {
+                    let q = c.point_at(sp.length * i as f64 / n as f64).truncate();
+                    for dx in -12..=12 {
+                        for dy in -12..=12 {
+                            if dx * dx + dy * dy > 144 || dx % 4 != 0 || dy % 4 != 0 {
+                                continue;
+                            }
+                            let r = q + DVec2::new(dx as f64, dy as f64);
+                            keep.insert(((r.x / 16.0).floor() as i64, (r.y / 16.0).floor() as i64));
+                        }
+                    }
+                }
+            }
+        }
+        // the roads: chains of linked road splines, each by one of its pieces (the pieces are
+        // cut and renamed as the junctions are made: a chain is found again from any piece left)
+        let mut seeds: Vec<Vec<(TileKey, i64)>> = Vec::new();
+        {
+            let mut links: std::collections::HashMap<i64, (i64, i64, TileKey)> = Default::default();
+            let mut road: Vec<i64> = Vec::new();
+            for (k, t) in &doc.tiles {
+                let org = tile_origin(*k);
+                for s in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 0.1) {
+                    let Some(m) = assets.spline(&s.file) else { continue };
+                    if !m.joinable() || m.is_track() || !inside(DVec2::new(org.x + s.pos[0], org.y + s.pos[1])) {
+                        continue;
+                    }
+                    links.insert(s.id, (s.prev_id, s.next_id, *k));
+                    road.push(s.id);
+                }
+            }
+            let mut seen: std::collections::HashSet<i64> = Default::default();
+            for id in road {
+                if !seen.insert(id) {
+                    continue;
+                }
+                let mut chain = vec![(links[&id].2, id)];
+                for dir in [0, 1] {
+                    let mut cur = id;
+                    for _ in 0..2000 {
+                        let Some(&(p, n, _)) = links.get(&cur) else { break };
+                        let next = if dir == 0 { p } else { n };
+                        if next == 0 || !links.contains_key(&next) || !seen.insert(next) {
+                            break;
+                        }
+                        chain.push((links[&next].2, next));
+                        cur = next;
+                    }
+                }
+                seeds.push(chain);
+            }
+        }
+        let (mut roads_done, mut made) = (0, 0);
+        let was = self.road_type.clone();
+        self.aj_keep = Some(keep);
+        for seed in seeds {
+            let Some(doc) = self.doc.as_ref() else { break };
+            // (a piece of it still there, and its whole chain from there, in order)
+            let Some((k0, s0)) = seed.iter().find_map(|(k, id)| find_near(doc, Some(*k), *id, false)) else { continue };
+            let mut chain: Vec<(TileKey, i64)> = vec![(k0, s0.id)];
+            let (mut back_k, mut back) = (k0, s0.clone());
+            for _ in 0..2000 {
+                if back.prev_id == 0 {
+                    break;
+                }
+                let Some((k, p)) = find_near(doc, Some(back_k), back.prev_id, true) else { break };
+                if chain.iter().any(|c| c.1 == p.id) {
+                    break;
+                }
+                chain.insert(0, (k, p.id));
+                (back_k, back) = (k, p.clone());
+            }
+            let (mut fwd_k, mut fwd) = (k0, s0.clone());
+            for _ in 0..2000 {
+                if fwd.next_id == 0 {
+                    break;
+                }
+                let Some((k, n)) = find_near(doc, Some(fwd_k), fwd.next_id, true) else { break };
+                if chain.iter().any(|c| c.1 == n.id) {
+                    break;
+                }
+                chain.push((k, n.id));
+                (fwd_k, fwd) = (k, n.clone());
+            }
+            let file = s0.file.clone();
+            let Some(model) = assets.spline(&file) else { continue };
+            let half = model.half_width as f64;
+            // its free ends that run into another road's middle
+            let (first, last) = (chain[0], *chain.last().unwrap());
+            let ids: Vec<i64> = chain.iter().map(|c| c.1).collect();
+            let start_mid = if back.prev_id == 0 { self.road_middle_at(assets, first, false, &ids) } else { None };
+            let end_mid = if fwd.next_id == 0 { self.road_middle_at(assets, last, true, &ids) } else { None };
+            self.road_type = Some(file);
+            made += self.make_junctions_with(assets, &chain, half, start_mid, end_mid, false);
+            roads_done += 1;
+        }
+        self.road_type = was;
+        self.aj_keep = None;
+        for id in self.orphaned_junctions(assets) {
+            self.rebuild_junction(assets, id);
+        }
+        self.history.commit();
+        (roads_done, made)
+    }
+
+    /// Where a road's free end (`at_end` of spline `e`) runs into another road's middle: that
+    /// road's spline, how far along it, its half width, and the point on its line. None when the
+    /// end is at a junction object's connector, near the other road's own end, or 2.5 m above
+    /// or below it.
+    fn road_middle_at(&self, assets: &mut Assets, e: (TileKey, i64), at_end: bool, own: &[i64]) -> Option<(((i32, i32), i64, f64, f64), DVec3)> {
+        let doc = self.doc.as_ref()?;
+        let sp = doc.spline(e.0, e.1)?;
+        let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(e.0));
+        let p3 = if at_end { c.end_point() } else { c.point_at(0.0) };
+        let p = p3.truncate();
+        if self.aj_keep.as_ref().map(|k| aj_kept(k, p)).unwrap_or(false) {
+            return None;
+        }
+        let out = if at_end { c.heading_at(sp.length) } else { roads::norm_deg(c.heading_at(0.0) + 180.0) };
+        // (an end at a junction object's connector is an arm of it already)
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let k = (e.0 .0 + dx, e.0 .1 + dy);
+                let Some(t) = doc.tiles.get(&k) else { continue };
+                for o in &t.tile.objects {
+                    let Some(model) = assets.object(&o.file) else { continue };
+                    if model.helpers.is_empty() {
+                        continue;
+                    }
+                    let world = doc.object_world(k, o, model.abs_height);
+                    let m = object_matrix(DVec3::ZERO, o.rot);
+                    if model.helpers.iter().any(|(h, _)| ((world + m.transform_point3(Vec3::new(h[0], h[1], h[2])).as_dvec3()).truncate() - p).length() < 2.0) {
+                        return None;
+                    }
+                }
+            }
+        }
+        let mut best: Option<(f64, ((i32, i32), i64, f64, f64), DVec3)> = None;
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let k = (e.0 .0 + dx, e.0 .1 + dy);
+                let Some(t) = doc.tiles.get(&k) else { continue };
+                let org = tile_origin(k);
+                for s in t.tile.splines.iter().filter(|s| !s.deleted && s.length > 2.0 && !own.contains(&s.id)) {
+                    if s.prev_id == e.1 || s.next_id == e.1 || sp.prev_id == s.id || sp.next_id == s.id {
+                        continue;
+                    }
+                    let Some(m) = assets.spline(&s.file) else { continue };
+                    if !m.joinable() || m.is_track() {
+                        continue;
+                    }
+                    let hw = m.half_width as f64;
+                    let Some((along, _)) = selection::on_spline(s, org, p) else { continue };
+                    if along < 1.0 || along > s.length - 1.0 {
+                        continue;
+                    }
+                    let oc = omsi_geometry::SplineCurve::from_map(s, org);
+                    let q = oc.point_at(along);
+                    let d = (q.truncate() - p).length();
+                    if d > hw + 1.0 || (q.z - p3.z).abs() > 2.5 {
+                        continue;
+                    }
+                    // (run in alongside, at under 30°: a slip road meeting the road, not a T)
+                    let cut = (roads::norm_deg(out - oc.heading_at(along) + 180.0) - 180.0).abs();
+                    if cut.min(180.0 - cut) < 30.0 {
+                        continue;
+                    }
+                    if best.as_ref().map(|b| d < b.0).unwrap_or(true) {
+                        best = Some((d, (k, s.id, along, hw), q));
+                    }
+                }
+            }
+        }
+        best.map(|b| (b.1, b.2))
     }
 
     /// openMapper's junctions with an arm no road ends at any more.
@@ -5453,13 +6166,14 @@ impl Editor {
         // (the dots that mark places on the ground are small: they are there to be seen, not to cover)
         let dw = w * 0.4;
         x.show_technical = self.show_technical || self.tool == Tool::Logic;
+        x.lanes_drawn = self.tool == Tool::Logic || self.show_lanes;
         x.hide = self.hide;
         // (the crossing being edited draws its own paths below, not the file's)
-        let draft = self.crossing_draft.as_ref().filter(|d| !d.2.is_empty()).map(|d| (d.0, d.1));
+        let draft = self.crossing_draft.as_ref().map(|d| (d.0, d.1));
         // the AI's lanes: arrows the way traffic goes, ends green where joined, red where not
         // (thin and small: a lane is a line on the road, not a road of its own)
         if self.tool == Tool::Logic || self.show_lanes {
-            let r = (cam.distance * 1.3).clamp(40.0, 500.0);
+            let r = (cam.distance * 2.5).clamp(100.0, 3500.0);
             let (lanes, ends) = crate::lanes::near(doc, assets, cam.target.truncate(), r);
             let lw = (cam.distance * 0.00048).clamp(0.012, 0.42) as f32;
             for l in lanes.iter().filter(|l| !(draft.is_some() && l.object == draft)) {
@@ -5482,7 +6196,7 @@ impl Editor {
             }
         }
         // the crossing being edited: its paths as the window has them, on the map itself
-        if let (Some((k, id)), Some((_, _, paths))) = (draft, self.crossing_draft.as_ref()) {
+        if let Some((k, id, paths)) = self.crossing_draft.as_ref().map(|(k, id, p)| (*k, *id, p)) {
             if let Some(o) = doc.object(k, id) {
                 let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
                 let world = doc.object_world(k, o, abs);
@@ -5519,12 +6233,12 @@ impl Editor {
             // own paths are what stand out)
             if !(self.tool == Tool::Logic || self.show_lanes) {
                 if let Some(o) = doc.object(k, id) {
-                    let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
-                    let centre = doc.object_world(k, o, abs).truncate();
-                    let radius = crate::lanes::neighbour_reach(cam.distance);
+                    let _abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(true);
+                    let centre = cam.target.truncate();
+                    let radius = crate::lanes::neighbour_reach(cam.distance).max(500.0);
                     // (thin and pale: they are the crossing's surroundings, not what is edited)
-                    let lw = (cam.distance * 0.00020).clamp(0.005, 0.13) as f32;
-                    let lift = DVec3::Z * 0.1;
+                    let lw = (cam.distance * 0.00045).clamp(0.02, 0.35) as f32;
+                    let lift = DVec3::Z * 0.25;
                     let (lanes, _) = crate::lanes::near(doc, assets, centre, radius);
                     // (nearest first: a long spline used to fill the buffer before the roads
                     // that actually meet the crossing were drawn)
@@ -5544,11 +6258,11 @@ impl Editor {
                         let Some((lo, hi, _)) = crate::lanes::visible_span(&l.pts, centre, radius) else { continue };
                         shown += 1;
                         let color = match (l.kind, l.spline.is_some()) {
-                            (1, _) => [0.35, 0.85, 1.0, 0.8],
-                            (2, _) => [0.85, 0.55, 1.0, 0.8],
+                            (1, _) => [0.35, 0.85, 1.0, 0.9],
+                            (2, _) => [0.85, 0.55, 1.0, 0.9],
                             // (a road's lane is a little paler than another object's)
-                            (_, true) => [0.45, 0.85, 0.5, 0.55],
-                            _ => [0.45, 0.95, 0.55, 0.8],
+                            (_, true) => [0.38, 0.90, 0.48, 0.85],
+                            _ => [0.38, 0.98, 0.48, 0.95],
                         };
                         // (only the part inside the reach, and not every sample: a kilometre
                         // of road sampled every 3 m used up the buffer on its own)
@@ -5721,6 +6435,9 @@ impl Editor {
             }
             disc(&mut x.overlay, cam, a + lift, dw * 3.0, ORANGE);
         }
+        if let (true, Some(wire)) = (self.wire.show, doc.traffic.trolley.as_ref()) {
+            crate::trolley::draw(&mut x, cam, wire, &self.wire, w, dw);
+        }
         // GPS tracks to trace, in magenta on the ground
         for t in &self.trace_lines {
             let on = |p: DVec2| DVec3::new(p.x, p.y, doc.ground(p) + 0.4);
@@ -5849,16 +6566,19 @@ impl Editor {
                             continue;
                         }
                         let c = omsi_geometry::SplineCurve::from_map(s, org);
+                        // (a kerb's end is marked where it is drawn, where the tool catches it)
+                        let mid = assets.spline(&s.file).map(|m| crate::end_snap::profile_middle(&m, s.mirror)).unwrap_or(0.0);
+                        let seen = |q: DVec3, along: f64| crate::end_snap::catch(q, along, along, mid, 0.0, true, true).0;
                         if s.prev_id == 0 {
                             let a = c.point_at(0.0);
                             if (a.truncate() - focus).length() <= reach && free(a) {
-                                disc(&mut x.overlay, cam, a, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                                disc(&mut x.overlay, cam, seen(a, s.heading), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
                             }
                         }
                         if s.next_id == 0 {
                             let b = c.end_point();
                             if (b.truncate() - focus).length() <= reach && free(b) {
-                                disc(&mut x.overlay, cam, b, dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
+                                disc(&mut x.overlay, cam, seen(b, c.heading_at(s.length)), dw * 2.0, [1.0, 1.0, 1.0, 0.6]);
                             }
                         }
                     }
@@ -5976,6 +6696,100 @@ impl Editor {
             line(&mut x.overlay, cam, a + lift, b + lift, w, [1.0, 0.85, 0.2, 1.0]);
             for p in [a, b] {
                 disc(&mut x.overlay, cam, p + lift, w * 2.5, [1.0, 0.85, 0.2, 1.0]);
+            }
+        }
+        crate::ruler_area::draw(&mut x, cam, self, w);
+        if let Some(snap) = &self.vertex_snap {
+            let ball_r = (cam.distance * 0.007).clamp(0.06, 1.2);
+            let disc_r = (ball_r * 1.6) as f32;
+            let line_w = (cam.distance * 0.0012).clamp(0.02, 0.2) as f32;
+            match snap.stage {
+                VertexSnapStage::PickSource => {
+                    for &(k, id) in &snap.objects {
+                        let verts = Self::object_vertices_for_snap(doc, assets, k, id);
+                        let dot_r = (cam.distance * 0.003).clamp(0.03, 0.35);
+                        for p in verts {
+                            ball(&mut x.overlay, p, dot_r, [1.0, 0.45, 0.45, 0.7]);
+                        }
+                    }
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [1.0, 0.2, 0.2, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [1.0, 0.85, 0.2, 0.6]);
+                    }
+                }
+                VertexSnapStage::PickTarget { source } => {
+                    ball(&mut x.overlay, source, ball_r, [1.0, 0.2, 0.2, 1.0]);
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [0.2, 0.95, 0.35, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [0.2, 0.95, 0.35, 0.6]);
+                        line(&mut x.overlay, cam, source, hover, line_w, [1.0, 0.85, 0.2, 0.95]);
+                    }
+                }
+                VertexSnapStage::PickSource2 { anchor } => {
+                    // Anchor marker (distinct blue/cyan ball)
+                    ball(&mut x.overlay, anchor, ball_r * 1.2, [0.1, 0.65, 1.0, 1.0]);
+                    disc(&mut x.overlay, cam, anchor, disc_r * 1.2, [0.1, 0.65, 1.0, 0.5]);
+
+                    for &(k, id) in &snap.objects {
+                        let verts = Self::object_vertices_for_snap(doc, assets, k, id);
+                        let dot_r = (cam.distance * 0.003).clamp(0.03, 0.35);
+                        for p in verts {
+                            if (p - anchor).length() > 0.02 {
+                                ball(&mut x.overlay, p, dot_r, [1.0, 0.6, 0.2, 0.7]);
+                            }
+                        }
+                    }
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [1.0, 0.4, 0.1, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [1.0, 0.8, 0.2, 0.6]);
+                        line(&mut x.overlay, cam, anchor, hover, line_w * 1.2, [1.0, 0.7, 0.1, 0.9]);
+                    }
+                }
+                VertexSnapStage::PickTarget2 { anchor, source2 } => {
+                    // Baseline (anchor to source2)
+                    ball(&mut x.overlay, anchor, ball_r * 1.2, [0.1, 0.65, 1.0, 1.0]);
+                    ball(&mut x.overlay, source2, ball_r, [1.0, 0.4, 0.1, 1.0]);
+                    line(&mut x.overlay, cam, anchor, source2, line_w * 1.2, [1.0, 0.6, 0.1, 0.85]);
+
+                    if let Some(hover) = snap.hover {
+                        ball(&mut x.overlay, hover, ball_r, [0.2, 0.95, 0.35, 1.0]);
+                        disc(&mut x.overlay, cam, hover, disc_r, [0.2, 0.95, 0.35, 0.6]);
+                        line(&mut x.overlay, cam, anchor, hover, line_w * 1.4, [0.2, 0.95, 0.35, 0.95]);
+                    }
+                }
+            }
+        }
+        if let Some(snap) = &self.edge_snap {
+            let line_w = (cam.distance * 0.002).clamp(0.04, 0.4) as f32;
+            let dot_r = (cam.distance * 0.005).clamp(0.05, 0.8);
+            match snap.stage {
+                EdgeSnapStage::PickSource => {
+                    for &(k, id) in &snap.objects {
+                        let edges = Self::object_edges_for_snap(doc, assets, k, id);
+                        for e in edges {
+                            line(&mut x.overlay, cam, e[0], e[1], (line_w * 0.4).max(0.02), [1.0, 0.65, 0.2, 0.4]);
+                        }
+                    }
+                    if let Some((e, hit)) = snap.hover {
+                        line(&mut x.overlay, cam, e[0], e[1], line_w * 1.8, [1.0, 0.5, 0.1, 1.0]);
+                        ball(&mut x.overlay, e[0], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                        ball(&mut x.overlay, e[1], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                        disc(&mut x.overlay, cam, hit, (dot_r * 1.5) as f32, [1.0, 1.0, 0.3, 0.8]);
+                    }
+                }
+                EdgeSnapStage::PickTarget { source } => {
+                    line(&mut x.overlay, cam, source[0], source[1], line_w * 1.5, [1.0, 0.5, 0.1, 1.0]);
+                    ball(&mut x.overlay, source[0], dot_r, [1.0, 0.8, 0.2, 1.0]);
+                    ball(&mut x.overlay, source[1], dot_r, [1.0, 0.8, 0.2, 1.0]);
+
+                    if let Some((e, hit)) = snap.hover {
+                        line(&mut x.overlay, cam, e[0], e[1], line_w * 1.8, [0.2, 0.95, 0.35, 1.0]);
+                        ball(&mut x.overlay, e[0], dot_r, [0.2, 0.95, 0.35, 0.8]);
+                        ball(&mut x.overlay, e[1], dot_r, [0.2, 0.95, 0.35, 0.8]);
+                        ball(&mut x.overlay, hit, dot_r * 1.2, [0.2, 1.0, 0.5, 1.0]);
+                        line(&mut x.overlay, cam, source[0], hit, line_w * 0.8, [1.0, 0.85, 0.2, 0.9]);
+                    }
+                }
             }
         }
         x
@@ -6329,10 +7143,11 @@ impl Editor {
                         self.history.touch_tile(doc, t);
                     }
                     let after = sb.next_id;
-                    doc.delete_spline(b.0, b.1);
+                    // (kept before the delete unlinks it, or undo would leave it unlinked)
                     if let Some((nk, _)) = doc.find_spline(after) {
                         self.history.touch_tile(doc, nk);
                     }
+                    doc.delete_spline(b.0, b.1);
                     if let Some(t) = doc.tiles.get_mut(&a.0) {
                         if let Some(x) = t.tile.splines.iter_mut().find(|x| x.id == a.1) {
                             x.next_id = after;
@@ -6856,14 +7671,22 @@ impl Editor {
 
     pub fn select_chain(&mut self, k: TileKey, id: i64) {
         let Some(doc) = self.doc.as_ref() else { return };
+        // (every spline's tile and links read once: each link looked up across the whole map
+        // made a double click on a long road of a city take seconds)
+        let mut links: std::collections::HashMap<i64, (TileKey, i64, i64)> = std::collections::HashMap::new();
+        for (tk, t) in &doc.tiles {
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                links.entry(s.id).or_insert((*tk, s.prev_id, s.next_id));
+            }
+        }
         let mut v = vec![Sel::Spline(k, id)];
         let mut seen = std::collections::HashSet::from([id]);
         let mut todo = vec![id];
         while let Some(cur) = todo.pop() {
-            let Some((_, s)) = doc.find_spline(cur) else { continue };
-            for n in [s.prev_id, s.next_id] {
+            let Some(&(_, prev, next)) = links.get(&cur) else { continue };
+            for n in [prev, next] {
                 if n != 0 && seen.len() < 5000 && seen.insert(n) {
-                    if let Some((nk, _)) = doc.find_spline(n) {
+                    if let Some(&(nk, _, _)) = links.get(&n) {
                         v.push(Sel::Spline(nk, n));
                         todo.push(n);
                     }
@@ -8135,6 +8958,7 @@ impl Editor {
     /// Put the free object `id` onto the road nearest it (`which` is None), or onto the spline
     /// that was clicked, as a `[splineAttachement]` record: from then on it stands on that road
     /// and follows it, keeping its IDCode. `Err` says why not.
+    #[cfg(test)]
     pub fn attach_object_onto(&mut self, lib: &Library, k: TileKey, id: i64, which: Option<(TileKey, i64)>) -> Result<(), &'static str> {
         self.attach_objects_onto(lib, &[(k, id)], which)
     }
@@ -8156,15 +8980,18 @@ impl Editor {
         }
         let Some(doc) = self.doc.as_mut() else { return Err("") };
         self.history.begin(tr("Put on a road", "Поставить на дорогу"));
+        // (taking the free object away takes its start points with it: undo brings them back)
+        self.history.touch_global(doc);
         let mut placed = Vec::new();
         for (from, onto, sid, u, rec) in planned {
             self.history.touch_tile(doc, from);
             self.history.touch_tile(doc, onto);
-            let Some(t) = doc.tiles.get_mut(&onto) else { continue };
-            let Some(idx) = t.tile.splines.iter().position(|s| s.id == sid && !s.deleted) else { continue };
+            let Some(idx) = doc.tiles.get(&onto).and_then(|t| t.tile.splines.iter().position(|s| s.id == sid && !s.deleted)) else { continue };
+            let chain = crate::place::chain_offset_of(doc, &doc.tiles[&onto].tile.splines[idx]);
+            let t = doc.tiles.get_mut(&onto).unwrap();
             let mut rec = rec;
             rec.spline_index = idx as i32;
-            rec.offset[2] = t.tile.splines[idx].map_chain_offset.unwrap_or(0.0) + u;
+            rec.offset[2] = chain + u;
             let id = rec.id;
             t.tile.spline_attachments.push(rec);
             t.touch_content();
@@ -8258,6 +9085,730 @@ impl Editor {
         self.sample_browser = false;
         self.attach_to = ids;
         self.toast(attach_hint(n));
+    }
+
+    /// Start vertex-to-vertex snapping for the selected objects.
+    pub fn start_vertex_snap(&mut self) {
+        let objs: Vec<(TileKey, i64)> = self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => Some((k, id)),
+            _ => None,
+        }).collect();
+        if objs.is_empty() {
+            self.toast(tr("Select an object first to snap its vertex", "Сначала выберите объект для привязки вершины"));
+            return;
+        }
+        self.cancel_edge_snap();
+        self.vertex_snap = Some(VertexSnap {
+            objects: objs,
+            stage: VertexSnapStage::PickSource,
+            hover: None,
+        });
+        self.toast(tr("Vertex snap: click a source vertex on the selected object (Esc to cancel)", "Привязка вершины: выберите исходную вершину на объекте (Esc для отмены)"));
+    }
+
+    /// Cancel the active vertex-to-vertex snapping.
+    pub fn cancel_vertex_snap(&mut self) {
+        if let Some(snap) = self.vertex_snap.take() {
+            match snap.stage {
+                VertexSnapStage::PickSource2 { .. } | VertexSnapStage::PickTarget2 { .. } => {
+                    self.toast(tr("Vertex snap complete", "Привязка вершины завершена"));
+                }
+                _ => {
+                    self.toast(tr("Vertex snap cancelled", "Привязка вершины отменена"));
+                }
+            }
+        }
+    }
+
+    /// Find the nearest vertex to ray (o, d) on candidate objects or road splines.
+    pub fn vertex_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, g: Option<DVec3>, target_mode: Option<DVec3>) -> Option<DVec3> {
+        let doc = self.doc.as_ref()?;
+        let dir = d.normalize_or_zero();
+        if dir == DVec3::ZERO {
+            return None;
+        }
+
+        let max_dist = 500.0;
+        let mut best_score = f64::MAX;
+        let mut best_pt: Option<DVec3> = None;
+
+        let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
+        let ground_dist = g.map(|hit| (hit - o).length());
+
+        let is_occluded = |p: DVec3, along: f64| -> bool {
+            if let Some(gd) = ground_dist {
+                if along > gd + 3.0 && p.z < g.unwrap().z - 0.5 {
+                    return true;
+                }
+            }
+            false
+        };
+
+        if target_mode.is_none() {
+            // PickSource: only evaluate vertices of the selected objects
+            for &(k, id) in snap_objects {
+                let verts = Self::object_vertices_for_snap(doc, assets, k, id);
+                for v in verts {
+                    let to_v = v - o;
+                    let t = to_v.dot(dir);
+                    if t <= 0.1 || t > max_dist {
+                        continue;
+                    }
+                    if is_occluded(v, t) {
+                        continue;
+                    }
+                    let dist = (to_v - dir * t).length();
+                    let ang = dist / t;
+                    if ang < 0.045 {
+                        let score = ang + (t / 100.0) * 0.015;
+                        if score < best_score {
+                            best_score = score;
+                            best_pt = Some(v);
+                        }
+                    }
+                }
+            }
+        } else {
+            let anchor = target_mode.unwrap();
+            let is_source2 = matches!(self.vertex_snap.as_ref().map(|s| s.stage), Some(VertexSnapStage::PickSource2 { .. }));
+
+            if is_source2 {
+                // PickSource2: evaluate vertices of selected objects, excluding points near anchor
+                for &(k, id) in snap_objects {
+                    let verts = Self::object_vertices_for_snap(doc, assets, k, id);
+                    for v in verts {
+                        if (v - anchor).length() < 0.02 {
+                            continue;
+                        }
+                        let to_v = v - o;
+                        let t = to_v.dot(dir);
+                        if t <= 0.1 || t > max_dist {
+                            continue;
+                        }
+                        if is_occluded(v, t) {
+                            continue;
+                        }
+                        let dist = (to_v - dir * t).length();
+                        let ang = dist / t;
+                        if ang < 0.045 {
+                            let score = ang + (t / 100.0) * 0.015;
+                            if score < best_score {
+                                best_score = score;
+                                best_pt = Some(v);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // PickTarget / PickTarget2: evaluate candidate object vertices across all tiles
+                let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
+                let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
+
+                for (k, t) in doc.tiles.iter() {
+                    for ob in t.tile.objects.iter().chain(&t.tile.attach_objects) {
+                        if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
+                            continue;
+                        }
+                        let Some(model) = assets.object(&ob.file) else { continue };
+                        if unseen(&model) {
+                            continue;
+                        }
+                        let world = doc.object_world(*k, ob, model.abs_height);
+                        if (world - o).length() > max_dist + 100.0 {
+                            continue;
+                        }
+
+                        let verts = Self::object_vertices_for_snap(doc, assets, *k, ob.id);
+                        for v in verts {
+                            let to_v = v - o;
+                            let t = to_v.dot(dir);
+                            if t <= 0.1 || t > max_dist {
+                                continue;
+                            }
+                            if is_occluded(v, t) {
+                                continue;
+                            }
+                            let dist = (to_v - dir * t).length();
+                            let ang = dist / t;
+                            if ang < 0.045 {
+                                let score = ang + (t / 100.0) * 0.015;
+                                if score < best_score {
+                                    best_score = score;
+                                    best_pt = Some(v);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Spline endpoints and road vertices
+                for (k, t) in doc.tiles.iter() {
+                    for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+                        let curve = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
+                        for pt in [curve.point_at(0.0), curve.end_point()] {
+                            let to_v = pt - o;
+                            let t = to_v.dot(dir);
+                            if t <= 0.1 || t > max_dist {
+                                continue;
+                            }
+                            if is_occluded(pt, t) {
+                                continue;
+                            }
+                            let dist = (to_v - dir * t).length();
+                            let ang = dist / t;
+                            if ang < 0.045 {
+                                let score = ang + (t / 100.0) * 0.015;
+                                if score < best_score {
+                                    best_score = score;
+                                    best_pt = Some(pt);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        best_pt
+    }
+
+    /// Apply the vertex snap translation to the selected objects.
+    pub fn apply_vertex_snap(&mut self, assets: &mut Assets, delta: DVec3) {
+        let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.clone()).unwrap_or_default();
+        let mut sels = self.selection();
+        if sels.is_empty() && !snap_objects.is_empty() {
+            sels = snap_objects.iter().map(|&(k, id)| Sel::Object(k, id)).collect();
+        }
+        if sels.is_empty() || delta.length_squared() < 1e-12 {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let from: Vec<crate::selection::Origin> = sels.iter().filter_map(|s| crate::selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return;
+        }
+
+        self.history.begin(tr("Snap vertex to vertex", "Привязка вершины к вершине"));
+        let moved = crate::selection::transform(doc, &mut self.history, &from, glam::DVec2::ZERO, 0.0, glam::DVec2::new(delta.x, delta.y));
+
+        for s in &moved {
+            if let Sel::Object(k, id) = *s {
+                self.history.touch_tile(doc, k);
+                let (abs, pos_xy) = match doc.tiles.get(&k).and_then(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id)) {
+                    Some(o) => (
+                        assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false),
+                        [o.pos[0], o.pos[1]],
+                    ),
+                    None => continue,
+                };
+                let z_adj = if abs {
+                    delta.z
+                } else {
+                    let p_new = glam::DVec2::new(tile_origin(k).x + pos_xy[0], tile_origin(k).y + pos_xy[1]);
+                    let p_old = p_new - glam::DVec2::new(delta.x, delta.y);
+                    let ground_old = doc.ground(p_old);
+                    let ground_new = doc.ground(p_new);
+                    delta.z + (ground_old - ground_new)
+                };
+                if let Some(o) = doc.object_mut(k, id) {
+                    o.parent_id = None;
+                    o.pos[2] += z_adj;
+                } else if let Some(t) = doc.tiles.get_mut(&k) {
+                    if let Some(o) = t.tile.attach_objects.iter_mut().find(|o| o.id == id) {
+                        o.parent_id = None;
+                        o.pos[2] += z_adj;
+                    }
+                }
+                if let Some(t) = doc.tiles.get_mut(&k) {
+                    t.touch_content();
+                }
+            }
+        }
+
+        self.selected = moved.first().copied();
+        self.also = moved.into_iter().skip(1).collect();
+        self.history.commit();
+    }
+
+    /// Apply rotation around a pivot point (in 2D world coords) to the selected objects.
+    pub fn apply_vertex_snap_rotation(&mut self, assets: &mut Assets, pivot: DVec2, deg: f64) {
+        if deg.abs() < 1e-4 {
+            return;
+        }
+        let snap_objects = self.vertex_snap.as_ref().map(|s| s.objects.clone()).unwrap_or_default();
+        let mut sels = self.selection();
+        if sels.is_empty() && !snap_objects.is_empty() {
+            sels = snap_objects.iter().map(|&(k, id)| Sel::Object(k, id)).collect();
+        }
+        if sels.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let from: Vec<crate::selection::Origin> = sels.iter().filter_map(|s| crate::selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return;
+        }
+
+        self.history.begin(tr("Align vertex angle", "Выровнять угол вершины"));
+        let moved = crate::selection::transform(doc, &mut self.history, &from, pivot, deg, glam::DVec2::ZERO);
+
+        for s in &moved {
+            if let Sel::Object(k, id) = *s {
+                self.history.touch_tile(doc, k);
+                let (abs, pos_xy) = match doc.tiles.get(&k).and_then(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id)) {
+                    Some(o) => (
+                        assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false),
+                        [o.pos[0], o.pos[1]],
+                    ),
+                    None => continue,
+                };
+                let z_adj = if abs {
+                    0.0
+                } else {
+                    let p_new = glam::DVec2::new(tile_origin(k).x + pos_xy[0], tile_origin(k).y + pos_xy[1]);
+                    let p_old = from.iter().find(|o| o.sel == Sel::Object(k, id)).map(|o| o.pos).unwrap_or(p_new);
+                    let ground_old = doc.ground(p_old);
+                    let ground_new = doc.ground(p_new);
+                    ground_old - ground_new
+                };
+                if let Some(o) = doc.object_mut(k, id) {
+                    o.pos[2] += z_adj;
+                } else if let Some(t) = doc.tiles.get_mut(&k) {
+                    if let Some(o) = t.tile.attach_objects.iter_mut().find(|o| o.id == id) {
+                        o.pos[2] += z_adj;
+                    }
+                }
+                if let Some(t) = doc.tiles.get_mut(&k) {
+                    t.touch_content();
+                }
+            }
+        }
+
+        self.selected = moved.first().copied();
+        self.also = moved.into_iter().skip(1).collect();
+        self.history.commit();
+    }
+
+    /// Candidate snap vertices for an object: origin, mesh vertices, helpers, and bounding box corners if no mesh.
+    pub fn object_vertices_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id: i64) -> Vec<DVec3> {
+        let Some(o) = doc.tiles.get(&k).and_then(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id)) else { return Vec::new() };
+        let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
+        let world = doc.object_world(k, o, abs);
+        let pose = crate::place::Pose::of_object(world, o.rot);
+        let mut out = Vec::new();
+        out.push(world);
+
+        if let Some(model) = assets.object(&o.file) {
+            let mut seen = std::collections::HashSet::new();
+            for part in &model.parts {
+                for &p in &part.mesh.positions {
+                    let key = (
+                        (p.x * 200.0).round() as i64,
+                        (p.y * 200.0).round() as i64,
+                        (p.z * 200.0).round() as i64,
+                    );
+                    if seen.insert(key) {
+                        out.push(world + pose.rot.transform_vector3(p).as_dvec3());
+                    }
+                }
+            }
+            for (h, _) in &model.helpers {
+                let hp = glam::Vec3::new(h[0], h[1], h[2]);
+                out.push(world + pose.rot.transform_vector3(hp).as_dvec3());
+            }
+
+            // Only fall back to bounding box corners if no mesh vertices exist
+            if seen.is_empty() {
+                let (lo, hi) = (model.lo, model.hi);
+                for x in [lo.x, hi.x] {
+                    for y in [lo.y, hi.y] {
+                        for z in [lo.z, hi.z] {
+                            out.push(world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3());
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// Start edge-to-edge snapping for the selected objects.
+    pub fn start_edge_snap(&mut self) {
+        let objs: Vec<(TileKey, i64)> = self.selection().into_iter().filter_map(|s| match s {
+            Sel::Object(k, id) => Some((k, id)),
+            _ => None,
+        }).collect();
+        if objs.is_empty() {
+            self.toast(tr("Select an object first to align its edge", "Сначала выберите объект для выравнивания ребра"));
+            return;
+        }
+        self.cancel_vertex_snap();
+        self.edge_snap = Some(EdgeSnap {
+            objects: objs,
+            stage: EdgeSnapStage::PickSource,
+            hover: None,
+        });
+        self.toast(tr("Edge snap: click a source edge on the selected object (Esc to cancel)", "Привязка ребра: выберите исходное ребро на объекте (Esc для отмены)"));
+    }
+
+    /// Cancel the active edge-to-edge snapping.
+    pub fn cancel_edge_snap(&mut self) {
+        if self.edge_snap.take().is_some() {
+            self.toast(tr("Edge snap cancelled", "Привязка ребра отменена"));
+        }
+    }
+
+    /// Find the nearest edge to ray (o, d) on candidate objects or road splines.
+    pub fn edge_at_ray(&self, assets: &mut Assets, o: DVec3, d: DVec3, g: Option<DVec3>, target_mode: bool) -> Option<([DVec3; 2], DVec3)> {
+        let doc = self.doc.as_ref()?;
+        let dir = d.normalize_or_zero();
+        if dir == DVec3::ZERO {
+            return None;
+        }
+
+        let max_dist = 500.0;
+        let mut best_score = f64::MAX;
+        let mut best_edge: Option<([DVec3; 2], DVec3)> = None;
+
+        let snap_objects = self.edge_snap.as_ref().map(|s| s.objects.as_slice()).unwrap_or(&[]);
+        let ground_dist = g.map(|hit| (hit - o).length());
+
+        if !target_mode {
+            // PickSource: evaluate edges of selected objects
+            for &(k, id) in snap_objects {
+                let edges = Self::object_edges_for_snap(doc, assets, k, id);
+                for e in edges {
+                    if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
+                        if along <= 0.1 || along > max_dist {
+                            continue;
+                        }
+                        let ang = lat / along;
+                        if ang > 0.045 {
+                            continue;
+                        }
+                        let score = ang + (along / 100.0) * 0.015;
+                        if score < best_score {
+                            best_score = score;
+                            best_edge = Some((e, p));
+                        }
+                    }
+                }
+            }
+        } else {
+            // PickTarget: evaluate other visible objects and road splines
+            let extras = FrameExtras { show_technical: self.show_technical || self.tool == Tool::Logic, hide: self.hide, ..Default::default() };
+            let unseen = |m: &crate::assets::ObjectModel| m.technical && !extras.show_technical || crate::render::hidden_layer(m, &extras);
+
+            // 1. Evaluate candidate objects across all tiles
+            for (k, t) in doc.tiles.iter() {
+                for ob in t.tile.objects.iter().chain(&t.tile.attach_objects) {
+                    if snap_objects.iter().any(|(sk, sid)| sk == k && *sid == ob.id) {
+                        continue;
+                    }
+                    let Some(model) = assets.object(&ob.file) else { continue };
+                    if unseen(&model) {
+                        continue;
+                    }
+                    let world = doc.object_world(*k, ob, model.abs_height);
+                    if (world - o).length() > max_dist + 100.0 {
+                        continue;
+                    }
+
+                    let edges = Self::object_edges_for_snap(doc, assets, *k, ob.id);
+                    for e in edges {
+                        if let Some((lat, along, p)) = ray_near_edge(o, dir, e[0], e[1]) {
+                            if along <= 0.1 || along > max_dist {
+                                continue;
+                            }
+                            if let Some(gd) = ground_dist {
+                                if along > gd + 3.0 && p.z < g.unwrap().z - 0.5 {
+                                    continue;
+                                }
+                            }
+                            let ang = lat / along;
+                            if ang > 0.045 {
+                                continue;
+                            }
+                            let score = ang + (along / 100.0) * 0.015;
+                            if score < best_score {
+                                best_score = score;
+                                best_edge = Some((e, p));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Road splines (centerline and curb edges)
+            for (k, t) in doc.tiles.iter() {
+                for sp in t.tile.splines.iter().filter(|s| !s.deleted) {
+                    let curve = omsi_geometry::SplineCurve::from_map(sp, tile_origin(*k));
+                    let step = 8.0f64;
+                    let n = (sp.length / step).ceil().max(1.0) as usize;
+                    let (sx0, sx1) = assets.spline(&sp.file).map(|m| {
+                        let (x0, x1, _, _) = m.surface_span();
+                        if sp.mirror { (-(x1 as f64), -(x0 as f64)) } else { (x0 as f64, x1 as f64) }
+                    }).unwrap_or((0.0, 0.0));
+                    let has_width = (sx1 - sx0).abs() > 0.05;
+
+                    for i in 0..n {
+                        let s0 = sp.length * i as f64 / n as f64;
+                        let s1 = sp.length * (i + 1) as f64 / n as f64;
+                        let p0 = curve.point_at(s0);
+                        let p1 = curve.point_at(s1);
+
+                        // Centerline segment
+                        if let Some((lat, along, p)) = ray_near_edge(o, dir, p0, p1) {
+                            if along > 0.1 && along <= max_dist {
+                                if let Some(gd) = ground_dist {
+                                    if along > gd + 3.0 && p.z < g.unwrap().z - 0.5 {
+                                        continue;
+                                    }
+                                }
+                                let ang = lat / along;
+                                if ang <= 0.045 {
+                                    let score = ang + (along / 100.0) * 0.015;
+                                    if score < best_score {
+                                        best_score = score;
+                                        best_edge = Some(([p0, p1], p));
+                                    }
+                                }
+                            }
+                        }
+
+                        if has_width {
+                            let h0 = curve.heading_at(s0).to_radians();
+                            let h1 = curve.heading_at(s1).to_radians();
+                            let r0 = DVec3::new(h0.cos(), -h0.sin(), 0.0);
+                            let r1 = DVec3::new(h1.cos(), -h1.sin(), 0.0);
+                            let left_0 = p0 + r0 * sx0;
+                            let left_1 = p1 + r1 * sx0;
+                            let right_0 = p0 + r0 * sx1;
+                            let right_1 = p1 + r1 * sx1;
+
+                            if let Some((lat, along, p)) = ray_near_edge(o, dir, left_0, left_1) {
+                                if along > 0.1 && along <= max_dist {
+                                    if let Some(gd) = ground_dist {
+                                        if along > gd + 3.0 && p.z < g.unwrap().z - 0.5 {
+                                            continue;
+                                        }
+                                    }
+                                    let ang = lat / along;
+                                    if ang <= 0.045 {
+                                        let score = ang + (along / 100.0) * 0.015;
+                                        if score < best_score {
+                                            best_score = score;
+                                            best_edge = Some(([left_0, left_1], p));
+                                        }
+                                    }
+                                }
+                            }
+                            if let Some((lat, along, p)) = ray_near_edge(o, dir, right_0, right_1) {
+                                if along > 0.1 && along <= max_dist {
+                                    if let Some(gd) = ground_dist {
+                                        if along > gd + 3.0 && p.z < g.unwrap().z - 0.5 {
+                                            continue;
+                                        }
+                                    }
+                                    let ang = lat / along;
+                                    if ang <= 0.045 {
+                                        let score = ang + (along / 100.0) * 0.015;
+                                        if score < best_score {
+                                            best_score = score;
+                                            best_edge = Some(([right_0, right_1], p));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        best_edge
+    }
+
+    /// Apply edge-to-edge alignment (rotation and translation) to the selected objects.
+    pub fn apply_edge_snap(
+        &mut self,
+        assets: &mut Assets,
+        source: [DVec3; 2],
+        target: [DVec3; 2],
+        target_hit: DVec3,
+        shift: bool,
+    ) {
+        let snap_objects = self.edge_snap.as_ref().map(|s| s.objects.clone()).unwrap_or_default();
+        let mut sels = self.selection();
+        if sels.is_empty() && !snap_objects.is_empty() {
+            sels = snap_objects.iter().map(|&(k, id)| Sel::Object(k, id)).collect();
+        }
+        if sels.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let from: Vec<crate::selection::Origin> = sels.iter().filter_map(|s| crate::selection::origin_of(doc, *s)).collect();
+        if from.is_empty() {
+            return;
+        }
+
+        let d0 = (target_hit - target[0]).length();
+        let d1 = (target_hit - target[1]).length();
+        let snap_p = if d0 < 1.0 {
+            target[0]
+        } else if d1 < 1.0 {
+            target[1]
+        } else {
+            target_hit
+        };
+
+        let u_a = (source[1] - source[0]).truncate();
+        let u_b = (target[1] - target[0]).truncate();
+
+        let deg = if u_a.length_squared() < 1e-6 || u_b.length_squared() < 1e-6 {
+            0.0
+        } else {
+            let h_a = roads::heading_of(u_a);
+            let h_b = roads::heading_of(u_b);
+            let diff1 = (h_b - h_a + 540.0).rem_euclid(360.0) - 180.0;
+            let diff2 = (h_b + 180.0 - h_a + 540.0).rem_euclid(360.0) - 180.0;
+            if diff1.abs() <= diff2.abs() {
+                diff1
+            } else {
+                diff2
+            }
+        };
+
+        let pivot = source[0].truncate();
+        let delta_xy = (snap_p - source[0]).truncate();
+        let delta_z = if shift { 0.0 } else { snap_p.z - source[0].z };
+
+        self.history.begin(tr("Snap edge to edge", "Привязка ребра к ребру"));
+        let moved = crate::selection::transform(doc, &mut self.history, &from, pivot, deg, delta_xy);
+
+        for s in &moved {
+            if let Sel::Object(k, id) = *s {
+                self.history.touch_tile(doc, k);
+                let (abs, pos_xy) = match doc.tiles.get(&k).and_then(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id)) {
+                    Some(o) => (
+                        assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false),
+                        [o.pos[0], o.pos[1]],
+                    ),
+                    None => continue,
+                };
+                let z_adj = if abs {
+                    delta_z
+                } else {
+                    let p_new = glam::DVec2::new(tile_origin(k).x + pos_xy[0], tile_origin(k).y + pos_xy[1]);
+                    let p_old = from.iter().find(|o| o.sel == Sel::Object(k, id)).map(|o| o.pos).unwrap_or(p_new - delta_xy);
+                    let ground_old = doc.ground(p_old);
+                    let ground_new = doc.ground(p_new);
+                    delta_z + (ground_old - ground_new)
+                };
+                if let Some(o) = doc.object_mut(k, id) {
+                    o.parent_id = None;
+                    o.pos[2] += z_adj;
+                } else if let Some(t) = doc.tiles.get_mut(&k) {
+                    if let Some(o) = t.tile.attach_objects.iter_mut().find(|o| o.id == id) {
+                        o.parent_id = None;
+                        o.pos[2] += z_adj;
+                    }
+                }
+                if let Some(t) = doc.tiles.get_mut(&k) {
+                    t.touch_content();
+                }
+            }
+        }
+
+        self.selected = moved.first().copied();
+        self.also = moved.into_iter().skip(1).collect();
+        self.history.commit();
+    }
+
+    /// Candidate snap edges for an object: mesh edges, or 12 bounding box edges if no mesh exists.
+    pub fn object_edges_for_snap(doc: &Document, assets: &mut Assets, k: TileKey, id: i64) -> Vec<[DVec3; 2]> {
+        let Some(o) = doc.tiles.get(&k).and_then(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).find(|o| o.id == id)) else { return Vec::new() };
+        let abs = assets.object(&o.file).map(|m| m.abs_height).unwrap_or(false);
+        let world = doc.object_world(k, o, abs);
+        let pose = crate::place::Pose::of_object(world, o.rot);
+        let mut out = Vec::new();
+
+        if let Some(model) = assets.object(&o.file) {
+            // Add mesh edges from all parts
+            let mut mesh_edges = Vec::with_capacity(32768);
+            let mut seen_edges = std::collections::HashSet::with_capacity(32768);
+
+            for (part_idx, part) in model.parts.iter().enumerate() {
+                let pos = &part.mesh.positions;
+                let indices = &part.mesh.indices;
+                if indices.len() >= 3 {
+                    for tri in indices.chunks_exact(3) {
+                        let idxs = [tri[0] as usize, tri[1] as usize, tri[2] as usize];
+                        if idxs[0] < pos.len() && idxs[1] < pos.len() && idxs[2] < pos.len() {
+                            let pairs = [(idxs[0], idxs[1]), (idxs[1], idxs[2]), (idxs[2], idxs[0])];
+                            for (a, b) in pairs {
+                                let key = (part_idx, if a < b { (a, b) } else { (b, a) });
+                                if seen_edges.insert(key) {
+                                    let pa = world + pose.rot.transform_vector3(pos[a]).as_dvec3();
+                                    let pb = world + pose.rot.transform_vector3(pos[b]).as_dvec3();
+                                    if (pa - pb).length_squared() > 1e-4 {
+                                        mesh_edges.push([pa, pb]);
+                                    }
+                                }
+                                if mesh_edges.len() >= 200_000 {
+                                    break;
+                                }
+                            }
+                        }
+                        if mesh_edges.len() >= 200_000 {
+                            break;
+                        }
+                    }
+                }
+                if mesh_edges.len() >= 200_000 {
+                    break;
+                }
+            }
+
+            if !mesh_edges.is_empty() {
+                out.extend(mesh_edges);
+            } else {
+                // Fall back to the 12 bounding box edges ONLY if the model has no triangle mesh
+                let (lo, hi) = (model.lo, model.hi);
+                let corner = |x: f32, y: f32, z: f32| -> DVec3 {
+                    world + pose.rot.transform_vector3(glam::Vec3::new(x, y, z)).as_dvec3()
+                };
+
+                let c000 = corner(lo.x, lo.y, lo.z);
+                let c100 = corner(hi.x, lo.y, lo.z);
+                let c110 = corner(hi.x, hi.y, lo.z);
+                let c010 = corner(lo.x, hi.y, lo.z);
+
+                let c001 = corner(lo.x, lo.y, hi.z);
+                let c101 = corner(hi.x, lo.y, hi.z);
+                let c111 = corner(hi.x, hi.y, hi.z);
+                let c011 = corner(lo.x, hi.y, hi.z);
+
+                // 4 bottom edges
+                out.push([c000, c100]);
+                out.push([c100, c110]);
+                out.push([c110, c010]);
+                out.push([c010, c000]);
+
+                // 4 top edges
+                out.push([c001, c101]);
+                out.push([c101, c111]);
+                out.push([c111, c011]);
+                out.push([c011, c001]);
+
+                // 4 vertical pillar edges
+                out.push([c000, c001]);
+                out.push([c100, c101]);
+                out.push([c110, c111]);
+                out.push([c010, c011]);
+            }
+        }
+        out
     }
 
     /// Take a `[splineAttachement]` record off its road: it becomes a free object where its
@@ -8494,33 +10045,27 @@ impl Editor {
         reshape::set_end(doc, k, id, at_end, z, g);
     }
 
-    /// A road's length and radius by numbers: its start stays, the road joined at its end
-    /// follows, tangent, its far end kept.
-    fn set_spline_shape(&mut self, assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
+    /// A road's length and radius by numbers: its start stays. Whatever is linked on after it
+    /// moves with the end, turned by however much the end's direction changed, and keeps its
+    /// own length, radius and gradients.
+    fn set_spline_shape(&mut self, _assets: &mut Assets, k: TileKey, id: i64, length: f64, radius: f64) {
         self.heading_drag = None;
         self.heading_shown = None;
-        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
-        let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
         let Some(doc) = self.doc.as_ref() else { return };
         let Some(s) = doc.spline(k, id).cloned() else { return };
+        if (s.length - length).abs() < 1e-9 && (s.radius - radius).abs() < 1e-9 {
+            return;
+        }
         let org = tile_origin(k);
         let old = omsi_geometry::SplineCurve::from_map(&s, org);
-        let mut new = s.clone();
-        new.length = length;
-        new.radius = radius;
-        let c = omsi_geometry::SplineCurve::from_map(&new, org);
-        let p = c.end_point();
-        let mut plan = None;
-        if let Some((nk, n)) = doc.find_spline(s.next_id) {
-            let at_end = if n.prev_id == id { false } else if n.next_id == id { true } else { return };
-            match reshape::carry_end(doc, nk, n.id, at_end, p.truncate(), crate::roads::norm_deg(c.heading_at(length) + 180.0), p.z - old.end_point().z, &locked) {
-                Ok(pl) => plan = Some(pl),
-                Err(e) => {
-                    self.toast(e);
-                    return;
-                }
-            }
-        }
+        let old_end = old.end_point();
+        let old_h = old.heading_at(s.length);
+        let mut built = s.clone();
+        built.length = length;
+        built.radius = radius;
+        let c = omsi_geometry::SplineCurve::from_map(&built, org);
+        let new_end = c.end_point();
+        let new_h = c.heading_at(length);
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         let Some(doc) = self.doc.as_mut() else { return };
         selection::touch_spline(&mut self.history, doc, k, id);
@@ -8531,8 +10076,67 @@ impl Editor {
             }
             t.touch_content();
         }
-        if let Some(plan) = plan {
-            self.apply_plan(&plan);
+        self.relay(id, old_end, old_h, new_end, new_h);
+    }
+
+    /// Move the splines linked on after `id` from the joint `from` (leaving at `from_h`) to `to`.
+    fn relay(&mut self, id: i64, from: DVec3, from_h: f64, to: DVec3, to_h: f64) {
+        let Some(doc) = self.doc.as_mut() else { return };
+        for (k, sid) in reshape::chain_after(doc, id) {
+            selection::touch_spline(&mut self.history, doc, k, sid);
+        }
+        reshape::shift_chain(doc, id, from, from_h, to, to_h);
+    }
+
+    /// Where one end of a spline is, and the heading the road runs there.
+    fn end_pose(&self, k: TileKey, id: i64, at_end: bool) -> Option<(DVec3, f64)> {
+        let s = self.doc.as_ref()?.spline(k, id)?;
+        let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+        Some(if at_end { (c.end_point(), c.heading_at(s.length)) } else { (c.point_at(0.0), c.heading_at(0.0)) })
+    }
+
+    /// The cut where a spline meets the one before it, as OMSI sets it when that spline is
+    /// turned: the previous piece's end and this piece's start.
+    fn miter_if_one_spline(&mut self) {
+        let sels = self.selection();
+        let [Sel::Spline(k, id)] = sels[..] else { return };
+        self.miter_start(k, id);
+    }
+
+    fn miter_start(&mut self, k: TileKey, id: i64) {
+        let Some(doc) = self.doc.as_ref() else { return };
+        let Some(s) = doc.spline(k, id) else { return };
+        let prev_id = s.prev_id;
+        if prev_id == 0 {
+            return;
+        }
+        let this_h = s.heading;
+        let Some((pk, prev)) = doc.find_spline(prev_id) else { return };
+        let arrive = {
+            let c = omsi_geometry::SplineCurve::from_map(prev, tile_origin(pk));
+            if prev.next_id == id {
+                c.heading_at(prev.length)
+            } else if prev.prev_id == id {
+                roads::norm_deg(c.heading_at(0.0) + 180.0)
+            } else {
+                return;
+            }
+        };
+        let (skew_end, skew_start) = roads::joint_skew(this_h - arrive);
+        let Some(doc) = self.doc.as_mut() else { return };
+        selection::touch_spline(&mut self.history, doc, pk, prev_id);
+        selection::touch_spline(&mut self.history, doc, k, id);
+        if let Some(t) = doc.tiles.get_mut(&pk) {
+            if let Some(p) = t.tile.splines.iter_mut().find(|s| s.id == prev_id && !s.deleted) {
+                p.skew_end = skew_end;
+            }
+            t.touch_content();
+        }
+        if let Some(t) = doc.tiles.get_mut(&k) {
+            if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == id && !s.deleted) {
+                s.skew_start = skew_start;
+            }
+            t.touch_content();
         }
     }
 
@@ -8553,19 +10157,19 @@ impl Editor {
     }
 
     /// Turn one end of a road so it runs at `heading` (degrees, clockwise from north). The end
-    /// stays where it is and the road bends to it; the road joined there follows. Each move of
-    /// the number is fitted from the road as the drag began.
-    fn set_spline_heading(&mut self, assets: &mut Assets, k: TileKey, id: i64, at_end: bool, heading: f64) {
+    /// stays where it is and the road bends to it. The pieces linked on after that end turn
+    /// with it and keep their own length and radius. Each move of the number is fitted from
+    /// the road as the drag began.
+    fn set_spline_heading(&mut self, _assets: &mut Assets, k: TileKey, id: i64, at_end: bool, heading: f64) {
         let continuing = self.panel_step && self.history.is_open() && self.heading_drag.as_ref().is_some_and(|d| d.key == k && d.id == id && d.at_end == at_end);
         if continuing {
             self.restore_heading_drag();
         } else {
             self.heading_drag = None;
         }
-        let joined = self.helper_anchors(assets, DVec2::ZERO, f64::MAX);
-        let locked = |q: DVec2| joined.iter().any(|j| (j.truncate() - q).length() < 0.6);
+        let before = at_end.then(|| self.end_pose(k, id, true)).flatten();
         let Some(doc) = self.doc.as_ref() else { return };
-        let turned = reshape::turn_end(doc, k, id, at_end, heading, &locked);
+        let turned = reshape::turn_this(doc, k, id, at_end, heading);
         let plan = match turned {
             Ok(p) => p,
             Err(e) => {
@@ -8582,13 +10186,23 @@ impl Editor {
         }
         let link = doc.spline(k, id).map(|s| if at_end { s.next_id } else { s.prev_id }).unwrap_or(0);
         if self.heading_drag.is_none() {
-            let tiles = reshape::tiles_of(doc, &plan);
+            let mut tiles = reshape::tiles_of(doc, &plan);
+            if at_end {
+                for (tk, _) in reshape::chain_after(doc, id) {
+                    tiles.push(tk);
+                }
+            }
+            tiles.sort();
+            tiles.dedup();
             let saved: Vec<(TileKey, Vec<omsi_map::MapSpline>)> = tiles.iter().filter_map(|t| doc.tiles.get(t).map(|tile| (*t, tile.tile.splines.clone()))).collect();
             self.heading_drag = Some(HeadingDrag { key: k, id, at_end, tiles: saved, end_id: id, last: plan.clone() });
         }
         self.begin_panel_step(tr("Edit road", "Изменение дороги"));
         self.apply_plan(&plan);
         let end_id = self.heading_piece(k, id, at_end, link);
+        if let (true, Some((from, from_h)), Some((to, to_h))) = (at_end, before, self.end_pose(k, end_id, true)) {
+            self.relay(end_id, from, from_h, to, to_h);
+        }
         if let Some(d) = &mut self.heading_drag {
             d.end_id = end_id;
             d.last = plan;
@@ -8729,7 +10343,7 @@ impl Editor {
 
     /// The road ends the selected junctions hold (not those of roads selected with them,
     /// which move along).
-    fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
+    pub(crate) fn arms_for(&self, sels: &[Sel]) -> Vec<(Sel, Vec<selection::Arm>)> {
         let Some(doc) = self.doc.as_ref() else { return Vec::new() };
         let ids: Vec<i64> = sels.iter().filter_map(|s| if let Sel::Spline(_, id) = s { Some(*id) } else { None }).collect();
         let mut out = Vec::new();
@@ -8751,7 +10365,7 @@ impl Editor {
     /// The roads junctions hold follow them (turned by `deg` round `pivot`, shifted by
     /// `delta`, raised by `dz`), and the ground comes to the junctions' plates. Inside an open
     /// history step.
-    fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
+    pub(crate) fn carry(&mut self, groups: &[(Sel, Vec<selection::Arm>)], pivot: DVec2, deg: f64, delta: DVec2, dz: f64) {
         let mut failed = 0;
         for (_, arms) in groups {
             for a in arms {
@@ -8794,7 +10408,7 @@ impl Editor {
 
     /// Close the open step, unless junction plates are still to be made again in it (the
     /// next tick does that and closes it).
-    fn finish_step(&mut self) {
+    pub(crate) fn finish_step(&mut self) {
         if self.pending_rebuild.is_empty() {
             self.history.commit();
         }
@@ -8975,6 +10589,17 @@ impl Editor {
         for a in &arms {
             self.history.touch_tile(doc, a.key);
         }
+        // (and every tile round it: the new pieces, the signal poles and the ground brought
+        // level go on the tiles they stand on, not only where the plate and its arms start)
+        let reach = crate::junction::reach(doc, assets, centre, &arms) + 20.0;
+        let (lo, hi) = (tile_of(centre.truncate() - DVec2::splat(reach)), tile_of(centre.truncate() + DVec2::splat(reach)));
+        for x in lo.0..=hi.0 {
+            for y in lo.1..=hi.1 {
+                if doc.tiles.contains_key(&(x, y)) {
+                    self.history.touch_tile(doc, (x, y));
+                }
+            }
+        }
         self.history.touch_global(doc);
         // its signal heads go with it (new ones are put up for the new plate)
         for (k, c) in crate::junction::children(doc, id) {
@@ -9016,7 +10641,7 @@ impl Editor {
     }
 
     /// Keep every tile within `reach` of the points before the ground there changes.
-    fn touch_around(&mut self, pts: &[DVec2], reach: f64) {
+    pub(crate) fn touch_around(&mut self, pts: &[DVec2], reach: f64) {
         let Some(doc) = self.doc.as_ref() else { return };
         let mut keys: Vec<TileKey> = Vec::new();
         for p in pts {
@@ -9435,6 +11060,7 @@ impl Editor {
     /// The ruler on or off.
     pub fn toggle_ruler(&mut self) {
         self.ruler = if self.ruler.is_some() { None } else { Some((None, None)) };
+        self.ruler_area.clear();
     }
 
     /// What the ruler measures: from its first point to its second (or the cursor).
@@ -9570,6 +11196,43 @@ fn ball(out: &mut Vec<OverlayPoint>, c: DVec3, r: f64, color: [f32; 4]) {
 /// two (the others too short to keep): a smooth piece of the first one's road between them.
 /// A new junction's options from its roads' styles: lights if any road asks for them, a
 /// zebra on every arm if any road does.
+/// A spline end as recorded when it was laid: the same if its spline is still there, else the
+/// free end lying where it was (its spline was cut back at its other end and made anew).
+fn relocate_end(doc: &Document, e: (TileKey, i64, bool), at: Option<(DVec2, f64)>) -> Option<(TileKey, i64, bool)> {
+    if doc.spline(e.0, e.1).is_some() {
+        return Some(e);
+    }
+    // (several roads end at one node: the one running the same way there)
+    let (at, heading) = at?;
+    let same = |h: f64| (roads::norm_deg(h - heading + 180.0) - 180.0).abs() < 3.0;
+    for (k, t) in &doc.tiles {
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            let c = omsi_geometry::SplineCurve::from_map(s, tile_origin(*k));
+            // (an end is found as the same kind of end: a start stays a start)
+            if !e.2 && s.prev_id == 0 && (c.point_at(0.0).truncate() - at).length() < 0.05 && same(c.heading_at(0.0)) {
+                return Some((*k, s.id, false));
+            }
+            if e.2 && s.next_id == 0 && (c.end_point().truncate() - at).length() < 0.05 && same(c.heading_at(s.length)) {
+                return Some((*k, s.id, true));
+            }
+        }
+    }
+    None
+}
+
+/// What a plate made from given road ends is asked to have over the road styles' defaults.
+#[derive(Debug, Clone, Default)]
+pub struct PlateAsk {
+    /// Traffic lights.
+    pub lights: Option<bool>,
+    /// Zebra crossings on these arms (indices into the ends as given).
+    pub crossings: Option<Vec<usize>>,
+    /// How far every road is cut back (m; 0: the roads already end where the plate begins).
+    pub back: Option<f64>,
+    /// How far each road is cut back, one by one in the order of the ends (over `back`).
+    pub backs: Option<Vec<f64>>,
+}
+
 fn style_options(doc: &Document, styles: &crate::road_maker::Styles, arms: &[crate::junction::Arm], centre: DVec3) -> crate::junction::Options {
     let st: Vec<crate::road_maker::JunctionStyle> = arms.iter().filter_map(|a| doc.spline(a.key, a.id)).map(|s| styles.get(&s.file)).collect();
     let mut o = crate::junction::Options { lights: st.iter().any(|s| s.lights), ..Default::default() };
@@ -10122,6 +11785,22 @@ fn set_path_link(doc: &mut Document, k: TileKey, id: i64, next: Option<i64>, pre
     }
 }
 
+/// A road type whose car lanes keep right: the lanes that run with the road lie right of
+/// those that run against it.
+fn keeps_right(m: &crate::assets::SplineModel) -> bool {
+    let mean = |dir: i32| {
+        let xs: Vec<f64> = m.def.paths.iter().filter(|p| p.kind == 0 && p.direction == dir).map(|p| p.start[0] as f64).collect();
+        (!xs.is_empty()).then(|| xs.iter().sum::<f64>() / xs.len() as f64)
+    };
+    matches!((mean(0), mean(1)), (Some(with), Some(against)) if with > against)
+}
+
+/// What a road type draws lies as far left of its middle as right (so laying it mirrored
+/// changes nothing but its lanes' ways).
+fn symmetric(m: &crate::assets::SplineModel) -> bool {
+    crate::pocket::extent(m).map(|(lo, hi)| (lo + hi).abs() < 0.3).unwrap_or(true)
+}
+
 fn piece_spline(rel: &str, p: &Seg, profile: &[(f64, f64)], i: usize, org: DVec2) -> MapSpline {
     let (za, ga) = profile[i];
     let (zb, gb) = profile[i + 1];
@@ -10224,6 +11903,45 @@ fn road_points_near(doc: &Document, assets: &mut Assets, c: DVec2, within: f64) 
 fn road_start(doc: &Document, sels: &[Sel]) -> Option<DVec3> {
     let [Sel::Spline(k, id)] = sels else { return None };
     doc.spline(*k, *id).map(|s| omsi_geometry::SplineCurve::from_map(s, tile_origin(*k)).point_at(0.0))
+}
+
+/// The piece before the one spline in `sels`, when the turn is about that spline's start:
+/// `(previous tile, previous id, this tile, this id, the previous piece meets this one at its end)`.
+fn start_joint(doc: &Document, sels: &[Sel]) -> Option<(TileKey, i64, TileKey, i64, bool)> {
+    let [Sel::Spline(k, id)] = sels else { return None };
+    let s = doc.spline(*k, *id)?;
+    let (pk, prev) = doc.find_spline(s.prev_id)?;
+    let at_its_end = prev.next_id == *id;
+    if !at_its_end && prev.prev_id != *id {
+        return None;
+    }
+    Some((pk, s.prev_id, *k, *id, at_its_end))
+}
+
+/// Put back the link between a spline and the piece it starts from. Turning about the start
+/// leaves that joint where it was, so the two stay joined; a turn still drops a link to
+/// anything that was not carried round with it.
+fn relink_start(doc: &mut Document, hist: &mut crate::history::History, pk: TileKey, pid: i64, k: TileKey, id: i64, at_its_end: bool) {
+    selection::touch_spline(hist, doc, pk, pid);
+    selection::touch_spline(hist, doc, k, id);
+    if let Some(t) = doc.tiles.get_mut(&k) {
+        if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == id && !s.deleted) {
+            s.prev_id = pid;
+        }
+        t.touch_content();
+    }
+    if let Some(t) = doc.tiles.get_mut(&pk) {
+        if let Some(p) = t.tile.splines.iter_mut().find(|s| s.id == pid && !s.deleted) {
+            if at_its_end { p.next_id = id } else { p.prev_id = id };
+        }
+        t.touch_content();
+    }
+}
+
+/// The splines linked on after the one spline in `sels`, where they stand now.
+fn spline_tail(doc: &Document, sels: &[Sel]) -> Vec<Origin> {
+    let Sel::Spline(_, id) = (if sels.len() == 1 { sels[0] } else { return Vec::new() }) else { return Vec::new() };
+    reshape::chain_after(doc, id).into_iter().filter_map(|(k, sid)| selection::origin_of(doc, Sel::Spline(k, sid))).collect()
 }
 
 /// The highest the ground sample at `p` may lie without its triangles showing through a
@@ -10691,10 +12409,7 @@ fn path_ends_at(doc: &Document, assets: &mut Assets, held: &Origin, pos: DVec2, 
                 if c.length <= 0.05 {
                     return None;
                 }
-                let at = |s: f64| {
-                    let q = c.point_at(s);
-                    pose.pos + pose.rot.transform_vector3(Vec3::new(q.x as f32, q.y as f32, q.z as f32)).as_dvec3()
-                };
+                let at = |s: f64| crate::object_paths::world_point(&c, s, &pose, model.deform.as_deref());
                 let (a, b) = (at(0.0), at(c.length));
                 let step = (c.length * 0.05).clamp(0.05, 1.0);
                 let ha = roads::heading_of((at(step) - a).truncate());
@@ -11182,6 +12897,70 @@ mod tests {
         assert_eq!(got, Some(Sel::Spline((0, 0), 2)), "the flyover from below");
     }
 
+    /// The look past what the ray cannot meet takes an object at its height on the ground: on
+    /// a map whose ground stands hundreds of metres high, an object stood on it is picked.
+    #[test]
+    fn an_object_on_high_ground_is_picked() {
+        use glam::Vec3;
+        let mut doc = flat_map(1);
+        doc.tiles.insert((0, 0), crate::doc::TileDoc::new_flat(700.0));
+        add_object(&mut doc, (0, 0), 9, 150.0, 150.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = "Sceneryobjects\\wall.sco".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let wall = omsi_geometry::MeshData {
+            positions: vec![Vec3::new(0.0, -4.0, 0.0), Vec3::new(0.0, 4.0, 0.0), Vec3::new(0.0, 4.0, 4.0), Vec3::new(0.0, -4.0, 4.0)],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            ranges: Vec::new(),
+            indices: vec![0, 1, 2, 0, 2, 3],
+            one_sided: false,
+        };
+        let wall = crate::assets::ObjectModel {
+            parts: vec![crate::assets::Part { mesh: wall, materials: Vec::new(), texts: Vec::new(), freetex: Vec::new(), visible: None, faded: None }],
+            lo: Vec3::new(-0.1, -4.0, 0.0),
+            hi: Vec3::new(0.1, 4.0, 4.0),
+            ..Default::default()
+        };
+        assets.objects.insert("sceneryobjects\\wall.sco".into(), crate::assets::Slot::Ready(std::sync::Arc::new(wall)));
+        // (from the west, level, two metres above the ground the wall stands on)
+        let got = ed.pick(&mut assets, DVec3::new(100.0, 150.0, 702.0), DVec3::X, None);
+        assert_eq!(got, Some(Sel::Object((0, 0), 9)), "the wall on the ground 700 m up");
+    }
+
+    /// A long straight road is picked far past the tile it starts in: the tiles a ray is
+    /// looked for on reach as far as what stands on them does.
+    #[test]
+    fn a_long_spline_is_picked_far_past_its_own_tile() {
+        let mut doc = flat_map(3);
+        // (east from (100, 150), 700 m: it ends in the third tile)
+        add_spline(&mut doc, (0, 0), 1, 100.0, 150.0, 90.0, 700.0, 0, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Select);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let road = crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: -4.0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: 4.0, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: 4.0,
+        };
+        assets.splines.insert("splines\\road.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(road)));
+        // (straight down onto it 550 m from where it starts, two tiles on)
+        let got = ed.pick(&mut assets, DVec3::new(650.0, 150.0, 50.0), -DVec3::Z, None);
+        assert_eq!(got, Some(Sel::Spline((0, 0), 1)));
+    }
+
     /// A spline drawn in front of an object is the one a click gives, even though the two
     /// meet the ground within a metre and a half of each other. The object keeps the click
     /// when it is the thing in front, as a lamp standing on the road is.
@@ -11328,7 +13107,7 @@ mod tests {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
             let row = &t.spline_attachments[0];
-            crate::place::row_objects(row, &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(row, &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         assert!(spots.len() > 1, "the row has objects to click on: {}", spots.len());
         for ro in spots.iter().take(3) {
@@ -11385,7 +13164,7 @@ mod tests {
         let spots = {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
-            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         let p = spots[0].pose.pos;
         // (aimed at the middle of the crown, where only the cards are drawn)
@@ -11464,6 +13243,63 @@ mod tests {
         let linked = d.spline((0, 0), 2).unwrap().next_id;
         assert_ne!(linked, 0, "the two footpaths were not linked");
         assert_eq!(d.find_spline(linked).unwrap().1.next_id, 2);
+    }
+
+    /// A kerb without AI paths whose line lies beside it is caught where it is drawn, the middle
+    /// of its profile (#55): another kerb of its type goes on from its line and is linked, a fence
+    /// is drawn to the kerb itself, keeping its way.
+    #[test]
+    fn a_kerbs_end_is_caught_where_it_is_drawn() {
+        let mut doc = flat_map(1);
+        // (a kerb running north from (100, 100) to (100, 140), drawn 3 to 3.4 m east of its line)
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].file = "Splines\\kerb.sli".into();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        let model = |x0: f32, x1: f32| crate::assets::SplineModel {
+            def: omsi_scenery::Spline {
+                profiles: vec![omsi_scenery::SplineProfile {
+                    texture: 0,
+                    points: vec![
+                        omsi_scenery::SplineProfilePoint { x: x0, z: 0.0, ..Default::default() },
+                        omsi_scenery::SplineProfilePoint { x: x1, z: 0.0, ..Default::default() },
+                    ],
+                }],
+                ..Default::default()
+            },
+            materials: Vec::new(),
+            half_width: x0.abs().max(x1.abs()),
+        };
+        assert!(!model(3.0, 3.4).joinable());
+        assets.splines.insert("splines\\kerb.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model(3.0, 3.4))));
+        assets.splines.insert("splines\\fence.sli".into(), crate::assets::Slot::Ready(std::sync::Arc::new(model(-0.05, 0.05))));
+        let lib = crate::library::Library::default();
+        let seen = DVec2::new(103.2, 140.0);
+        // (the same kerb, started near what is drawn: from the line's end, linked)
+        ed.road_type = Some("Splines\\kerb.sli".into());
+        ed.hover_point(&mut assets, &lib, DVec3::new(104.5, 141.0, 0.0));
+        let snap = ed.road_snap.expect("the kerb's end was not caught where it is drawn");
+        assert!((snap.pos.truncate() - DVec2::new(100.0, 140.0)).length() < 1e-6, "{:?}", snap.pos);
+        assert_eq!(snap.spline, Some(((0, 0), 1, true)));
+        // (a fence drawn to it from the north: its line ends on the kerb's middle, arriving
+        // along the kerb's way)
+        ed.road_type = Some("Splines\\fence.sli".into());
+        ed.road_start = Some((Anchor { pos: DVec3::new(103.2, 180.0, 0.0), ..Default::default() }, false));
+        ed.hover_point(&mut assets, &lib, DVec3::new(105.5, 140.5, 0.0));
+        let snap = ed.road_snap.expect("the kerb's end was not caught");
+        assert!((snap.pos.truncate() - seen).length() < 1e-6, "{:?}", snap.pos);
+        assert!(snap.spline.is_none(), "beside the kerb's line it is not linked");
+        ed.left_press(&mut assets, &lib, false);
+        let d = ed.doc.as_ref().unwrap();
+        assert_eq!(d.spline((0, 0), 1).unwrap().next_id, 0, "the kerb stays as it was");
+        let made = d.tiles[&(0, 0)].tile.splines.iter().filter(|s| s.id != 1).collect::<Vec<_>>();
+        let last = made.iter().find(|s| s.next_id == 0).expect("the fence was not built");
+        let c = omsi_geometry::SplineCurve::from_map(last, tile_origin((0, 0)));
+        assert!((c.end_point().truncate() - seen).length() < 0.01, "{:?}", c.end_point());
+        let off = (roads::norm_deg(c.heading_at(last.length)) - 180.0).abs();
+        assert!(off < 0.5, "it arrives along the kerb's way: {}", c.heading_at(last.length));
     }
 
     /// A building is what it draws, not the box it was measured with: its box holds its
@@ -11668,7 +13504,7 @@ mod tests {
         let spots = {
             let d = ed.doc.as_ref().unwrap();
             let t = &d.tiles[&(0, 0)].tile;
-            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)))
+            crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(d))
         };
         let p = spots[0].pose.pos;
         // (the eye 25 m up and 25 m to the side, as a person looks at a bay across the road)
@@ -11733,7 +13569,7 @@ mod tests {
             let mut truth = f64::MAX;
             let mut named = f64::INFINITY;
             let aim = dir.as_vec3();
-            let mut dist = |assets: &mut Assets, mat: &glam::Mat4, m: &crate::assets::ObjectModel| -> Option<f64> {
+            let dist = |assets: &mut Assets, mat: &glam::Mat4, m: &crate::assets::ObjectModel| -> Option<f64> {
                 if let Some((dirs, tex, h, r)) = m.tree.clone() {
                     let mask = assets.tree_mask(&dirs, &tex);
                     let cards = ray_tree(glam::Vec3::ZERO, aim, mat, h, r, mask.as_deref());
@@ -12305,7 +14141,6 @@ mod tests {
             // its place with a hedge for part of its length is still clickable elsewhere)
             for frac in [0.5f64, 0.25, 0.75] {
                 let p = c.point_at(len * frac);
-                let g = ed.doc.as_ref().unwrap().ground(p.truncate());
                 for (ai, (el, az, _)) in angles.iter().enumerate() {
                     let from = p + off_of(*el, *az) * 4.0;
                     let dir = (p - from).normalize();
@@ -12605,6 +14440,24 @@ mod tests {
         assert!((o.pos[0] - 102.0).abs() < 1e-3 && (o.pos[1] - 120.0).abs() < 1e-3, "{:?}", o.pos);
         assert!(o.rot[0].abs() < 1e-6, "{:?}", o.rot);
         assert_eq!(ed.selected, Some(Sel::Object((0, 0), 2)));
+    }
+
+    /// Undoing "put on a road" brings back the start point the object was: taking the free
+    /// object away took it, with the global settings not kept for the undo.
+    #[test]
+    fn undoing_put_on_a_road_brings_its_start_point_back() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 200.0, 0, 0);
+        add_object(&mut doc, (0, 0), 2, 102.0, 120.0);
+        doc.global.entry_points.push(omsi_map::EntryPoint { object_id: 2, name: "Depot".into(), ..Default::default() });
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let lib = crate::library::Library::default();
+        ed.attach_object_onto(&lib, (0, 0), 2, None).unwrap();
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        assert!(d.object((0, 0), 2).is_some());
+        assert!(d.global.entry_points.iter().any(|e| e.object_id == 2), "the start point is back");
     }
 
     /// The button waits for a click, and the object goes on that spline even when another is nearer.
@@ -13235,13 +15088,14 @@ mod tests {
         assert!((ed.doc.as_ref().unwrap().spline((0, 0), 3).unwrap().radius - 0.3).abs() < 1e-9);
     }
 
-    /// A road made longer by numbers: the road joined at its end starts where it now ends,
-    /// tangent, and still ends where it did.
+    /// A road made longer by numbers: the pieces linked on after it move with the new end
+    /// and keep their own length.
     #[test]
     fn a_length_typed_carries_the_next_road() {
         let mut doc = flat_map(1);
         add_spline(&mut doc, (0, 0), 1, 50.0, 50.0, 0.0, 30.0, 0, 2);
-        add_spline(&mut doc, (0, 0), 2, 50.0, 80.0, 0.0, 60.0, 1, 0);
+        add_spline(&mut doc, (0, 0), 2, 50.0, 80.0, 0.0, 60.0, 1, 3);
+        add_spline(&mut doc, (0, 0), 3, 50.0, 140.0, 0.0, 20.0, 2, 0);
         let mut ed = Editor::default();
         ed.open(doc);
         let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
@@ -13250,11 +15104,66 @@ mod tests {
         let doc = ed.doc.as_ref().unwrap();
         assert_eq!(doc.spline((0, 0), 1).unwrap().length, 40.0);
         let c = omsi_geometry::SplineCurve::from_map(doc.spline((0, 0), 2).unwrap(), DVec2::ZERO);
+        assert_eq!(doc.spline((0, 0), 2).unwrap().length, 60.0, "the next piece keeps its length");
         assert!((c.point_at(0.0).truncate() - DVec2::new(50.0, 90.0)).length() < 1e-6, "{:?}", c.point_at(0.0));
-        assert!((c.end_point().truncate() - DVec2::new(50.0, 140.0)).length() < 1e-3, "{:?}", c.end_point());
+        assert!((c.end_point().truncate() - DVec2::new(50.0, 150.0)).length() < 1e-3, "{:?}", c.end_point());
+        let d = omsi_geometry::SplineCurve::from_map(doc.spline((0, 0), 3).unwrap(), DVec2::ZERO);
+        assert_eq!(doc.spline((0, 0), 3).unwrap().length, 20.0);
+        assert!((d.point_at(0.0).truncate() - DVec2::new(50.0, 150.0)).length() < 1e-3, "{:?}", d.point_at(0.0));
         // and back with one undo
         ed.undo();
         assert_eq!(ed.doc.as_ref().unwrap().spline((0, 0), 1).unwrap().length, 30.0);
+        assert!((omsi_geometry::SplineCurve::from_map(ed.doc.as_ref().unwrap().spline((0, 0), 2).unwrap(), DVec2::ZERO).point_at(0.0).truncate() - DVec2::new(50.0, 80.0)).length() < 1e-6);
+    }
+
+    /// Turning the end's heading swings the pieces after it; their length stays.
+    #[test]
+    fn turning_an_end_swings_the_pieces_after_it() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 40.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 100.0, 140.0, 0.0, 40.0, 1, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        ed.heading_request = Some(((0, 0), 1, true, 20.0));
+        ed.tick(&mut assets, 0.016, false);
+        let doc = ed.doc.as_ref().unwrap();
+        let n = doc.spline((0, 0), 2).unwrap();
+        assert!((n.length - 40.0).abs() < 1e-6, "the next piece keeps its length");
+        assert!(roads::signed_deg(n.heading - 20.0).abs() < 1.0, "it turns with the end: {}", n.heading);
+        let c = omsi_geometry::SplineCurve::from_map(n, DVec2::ZERO);
+        assert!((c.point_at(0.0).truncate() - DVec2::new(100.0, 140.0)).length() < 0.5, "it stays on the joint: {:?}", c.point_at(0.0));
+        assert!((c.end_point().truncate() - DVec2::new(100.0, 180.0)).length() > 5.0, "it swung instead of being rebuilt to its old end: {:?}", c.end_point());
+    }
+
+    /// R on one spline turns the pieces after it about its start, and mitres the joint with
+    /// the piece before it the way OMSI does (a left turn of 90°: end 1, start -1).
+    #[test]
+    fn rotating_a_spline_swings_what_follows_and_mitres_the_joint() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 0.0, 0.0, 0.0, 10.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 0.0, 10.0, 0.0, 10.0, 1, 3);
+        add_spline(&mut doc, (0, 0), 3, 0.0, 20.0, 0.0, 10.0, 2, 0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        ed.set_selection(vec![Sel::Spline((0, 0), 2)]);
+        ed.rotate(-90.0);
+        let doc = ed.doc.as_ref().unwrap();
+        let turned = doc.spline((0, 0), 2).unwrap();
+        assert!((turned.heading - 270.0).abs() < 1e-6, "it turned about its start: {}", turned.heading);
+        assert!((turned.length - 10.0).abs() < 1e-9);
+        let c = omsi_geometry::SplineCurve::from_map(turned, DVec2::ZERO);
+        assert!((c.point_at(0.0).truncate() - DVec2::new(0.0, 10.0)).length() < 1e-6, "the start stays on the piece before it");
+        assert!((c.end_point().truncate() - DVec2::new(-10.0, 10.0)).length() < 1e-3, "{:?}", c.end_point());
+        let after = doc.spline((0, 0), 3).unwrap();
+        assert!((after.length - 10.0).abs() < 1e-9, "what follows keeps its length");
+        assert!((after.heading - 270.0).abs() < 1e-6, "{}", after.heading);
+        let ac = omsi_geometry::SplineCurve::from_map(after, DVec2::ZERO);
+        assert!((ac.point_at(0.0).truncate() - c.end_point().truncate()).length() < 1e-3, "it stays joined: {:?}", ac.point_at(0.0));
+        assert!(doc.spline((0, 0), 2).unwrap().next_id == 3 && doc.spline((0, 0), 3).unwrap().prev_id == 2, "the link is kept");
+        let prev = doc.spline((0, 0), 1).unwrap();
+        assert!((prev.skew_end - 1.0).abs() < 1e-6 && (turned.skew_start + 1.0).abs() < 1e-6, "a left corner mitres 1 and -1: {} {}", prev.skew_end, turned.skew_start);
+        assert!((prev.heading).abs() < 1e-9, "the piece before it is not turned");
     }
 
     #[test]
@@ -14103,6 +16012,31 @@ mod tests {
         assert_eq!(doc.spline(k, id).unwrap().next_id, 0);
         assert_eq!(doc.spline((0, 0), 3).unwrap().next_id, id);
         assert_eq!(doc.spline((0, 0), 3).unwrap().prev_id, 0);
+    }
+
+    /// A road drawn on from a free end counts its chain on from that road's (as the game walks
+    /// it along the links), so an object put on it near its start is drawn: counted from 0 it
+    /// lay before its spline and was not drawn, as the game draws it not (#131).
+    #[test]
+    fn an_object_put_on_a_road_drawn_on_from_an_end_is_drawn() {
+        let mut ed = editor();
+        ed.follow_ground = false;
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+        // (on from spline 3's free end at (50, 80), 30 m along its chain)
+        let seg = roads::straight(DVec2::new(50.0, 80.0), DVec2::new(50.0, 110.0)).unwrap();
+        let start = Anchor { pos: DVec3::new(50.0, 80.0, 0.0), heading: 0.0, spline: Some(((0, 0), 3, true)), ..Default::default() };
+        let made = ed.build_road(&mut assets, "Splines\\road.sli", &[seg], 0.0, 0.0, start, None, 4.0).unwrap();
+        ed.history.commit();
+        // (a post 2 m right of the new road, 5 m along it)
+        add_object(ed.doc.as_mut().unwrap(), (0, 0), 50, 52.0, 85.0);
+        ed.attach_object_onto(&crate::library::Library::default(), (0, 0), 50, Some(made[0])).unwrap();
+        let doc = ed.doc.as_ref().unwrap();
+        let t = &doc.tiles[&(0, 0)].tile;
+        let a = t.spline_attachments.iter().find(|a| a.id == 50).unwrap();
+        let objs = crate::place::row_objects(a, &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc));
+        assert_eq!(objs.len(), 1, "drawn: {:?}", a.offset);
+        assert!((objs[0].pose.pos.truncate() - DVec2::new(52.0, 85.0)).length() < 1e-3, "where it stood: {:?}", objs[0].pose.pos);
+        assert_eq!(doc.spline(made[0].0, made[0].1).unwrap().map_chain_offset, Some(30.0));
     }
 
     /// An end that already continues into another piece is left as it is: the new road
@@ -15005,6 +16939,77 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// A road run into a wide one-way road whose roadway lies mostly to one side of its line
+    /// (8.3 m to its left, 4.55 m to its right, three lanes: as Chuguev's `3polos.sli`), with
+    /// the tightest corner style: the road run in ends at the wide road's kerb, not in its
+    /// lanes, and so does the arm its own wide side reaches over; the arm on its narrow side
+    /// keeps the style's tight cut.
+    #[test]
+    fn a_road_into_a_wide_one_sided_road_stops_at_its_kerb() {
+        let content = std::env::temp_dir().join(format!("om-one-sided-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&content);
+        std::fs::create_dir_all(&content).unwrap();
+        let rel = "Splines\\Test\\3lanes_one_sided.sli";
+        let lane = |x: f32| omsi_scenery::PathDef { kind: 0, start: [x, 0.1, 0.0], width: 3.75, direction: 0, ..Default::default() };
+        let pt = |x: f32, u: f32| omsi_scenery::SplineProfilePoint { x, z: 0.1, u, v_scale: 0.167 };
+        let model = crate::assets::SplineModel {
+            def: omsi_scenery::Spline { profiles: vec![omsi_scenery::SplineProfile { texture: 0, points: vec![pt(-8.3, 0.995), pt(4.55, 0.005)] }], paths: vec![lane(-5.625), lane(-1.875), lane(1.875)], ..Default::default() },
+            materials: Vec::new(),
+            half_width: 8.3,
+        };
+        let mut assets = Assets::new(content.join("no-omsi"), content.clone());
+        assets.splines.insert(rel.to_lowercase(), crate::assets::Slot::Ready(std::sync::Arc::new(model)));
+        let mut doc = flat_map(1);
+        doc.dir = content.join("maps").join("OneSided");
+        let mut ed = Editor::default();
+        ed.content_dir = Some(content.clone());
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        ed.road_type = Some(rel.into());
+        ed.road_styles.set(rel, crate::road_maker::JunctionStyle { corner: 0.5, ..Default::default() });
+        let lib = Library::default();
+        let click = |ed: &mut Editor, a: &mut Assets, x: f64, y: f64| {
+            ed.cursor = Some(DVec3::new(x, y, 0.0));
+            ed.plan_road(a);
+            ed.road_click(a, &lib);
+            ed.tick(a, 0.0, false);
+        };
+        // east along y = 150 (its wide side north), then a branch run in from the north
+        // (heading south: its wide side east)
+        click(&mut ed, &mut assets, 60.0, 150.0);
+        click(&mut ed, &mut assets, 240.0, 150.0);
+        ed.right_click();
+        click(&mut ed, &mut assets, 150.0, 260.0);
+        click(&mut ed, &mut assets, 150.0, 151.0);
+        ed.right_click();
+        for _ in 0..20 { ed.tick(&mut assets, 0.0, false); }
+        let doc = ed.doc.as_ref().unwrap();
+        let t = &doc.tiles[&(0, 0)].tile;
+        let j: Vec<_> = t.objects.iter().filter(|o| o.file.contains("junction_")).collect();
+        assert_eq!(j.len(), 1);
+        let centre = DVec2::new(j[0].pos[0], j[0].pos[1]);
+        let ends: Vec<DVec2> = t
+            .splines
+            .iter()
+            .filter(|s| !s.deleted)
+            .flat_map(|s| {
+                let c = omsi_geometry::SplineCurve::from_map(s, tile_origin((0, 0)));
+                [(s.prev_id == 0).then(|| c.point_at(0.0).truncate()), (s.next_id == 0).then(|| c.end_point().truncate())]
+            })
+            .flatten()
+            .filter(|p| (*p - centre).length() < 25.0)
+            .collect();
+        assert_eq!(ends.len(), 3, "{ends:?}");
+        let north = ends.iter().find(|p| p.y > 152.0).expect("the branch's end");
+        let east = ends.iter().find(|p| p.x > centre.x + 1.0).expect("the east arm's end");
+        let west = ends.iter().find(|p| p.x < centre.x - 1.0).expect("the west arm's end");
+        // (the corner style's cut: (8.3 * 1.15 + 4) * 0.5 = 6.77 m)
+        assert!(north.y - 150.0 >= 8.3 + 0.3, "the branch ends {:.2} m from the wide road's line, inside its 8.3 m", north.y - 150.0);
+        assert!(east.x - centre.x >= 8.3 + 0.3, "the east arm ends {:.2} m out, under the branch's wide side", east.x - centre.x);
+        assert!(centre.x - west.x < 7.5, "the west arm keeps the tight corner: {:.2} m", centre.x - west.x);
+        let _ = std::fs::remove_dir_all(&content);
+    }
+
     #[test]
     fn a_road_into_another_makes_a_t_junction() {
         let road_s = std::env::var("TJ_MAIN").unwrap_or("Splines\\Marcel\\str_2spur_8m_borkumer1.sli".into());
@@ -15348,5 +17353,1084 @@ mod tests {
             eprintln!("grab follow (chain) {i}: {:?}", t.elapsed());
         }
         ed.grab_cancel();
+    }
+
+    #[test]
+    fn test_vertex_to_vertex_snap() {
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        add_object(&mut doc, (0, 0), 2, 120.0, 150.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+
+        // Select object 1
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        assert_eq!(ed.free_selected(), vec![((0, 0), 1)]);
+
+        // Start vertex snapping
+        ed.start_vertex_snap();
+        assert!(ed.vertex_snap.is_some());
+        assert_eq!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickSource);
+
+        // Advance to PickTarget with source vertex at (100.0, 100.0, 0.0)
+        let source = DVec3::new(100.0, 100.0, 0.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(source);
+        let lib = crate::library::Library::default();
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickTarget { source });
+
+        // Hover over target vertex at (120.0, 150.0, 5.0) and click
+        let target = DVec3::new(120.0, 150.0, 5.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(target);
+        ed.left_press(&mut assets, &lib, false);
+
+        // In 2-point orient snap, point 1 translates the object and enters PickSource2
+        assert!(matches!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickSource2 { anchor } if anchor == target));
+
+        // Pressing Esc / cancel finishes translation
+        ed.cancel_vertex_snap();
+        assert!(ed.vertex_snap.is_none());
+
+        // Check object 1 position moved by (20.0, 50.0, 5.0)
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (120.0, 150.0));
+        assert!((o.pos[2] - 5.0).abs() < 1e-4);
+
+        // Test Undo
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (100.0, 100.0));
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+
+        // Test full 2-point orient alignment (translation + rotation)
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        ed.start_vertex_snap();
+        ed.vertex_snap.as_mut().unwrap().hover = Some(source);
+        ed.left_press(&mut assets, &lib, false);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(target);
+        ed.left_press(&mut assets, &lib, false);
+        // Now at PickSource2 with anchor = target (120, 150, 5)
+        // Pick 2nd point on object east of anchor: (130, 150, 5) -> baseline vector (10, 0)
+        let src2 = DVec3::new(130.0, 150.0, 5.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(src2);
+        ed.left_press(&mut assets, &lib, false);
+        assert!(matches!(ed.vertex_snap.as_ref().unwrap().stage, VertexSnapStage::PickTarget2 { anchor, source2 } if anchor == target && source2 == src2));
+
+        // Pick target 2 north of anchor: (120, 160, 5) -> target vector (0, 10)
+        let tgt2 = DVec3::new(120.0, 160.0, 5.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(tgt2);
+        ed.left_press(&mut assets, &lib, false);
+        // Snapping and orientation alignment completed
+        assert!(ed.vertex_snap.is_none());
+
+        // Check object rotated around pivot
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        // Baseline heading (10, 0) is 90 deg. Target heading (0, 10) is 0 deg.
+        // Difference is -90 deg (270 deg). Heading should change by 270 deg.
+        assert!((o.rot[0] - 270.0).abs() < 1e-3 || (o.rot[0] + 90.0).abs() < 1e-3);
+
+        // Test Shift (horizontal only snapping)
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        ed.start_vertex_snap();
+        let o_pos = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().pos;
+        let cur_source = DVec3::from(o_pos);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(cur_source);
+        ed.left_press(&mut assets, &lib, false);
+        let tgt3 = DVec3::new(200.0, 200.0, 50.0);
+        ed.vertex_snap.as_mut().unwrap().hover = Some(tgt3);
+        // Press with shift = true
+        ed.left_press(&mut assets, &lib, true);
+        ed.cancel_vertex_snap();
+        assert!(ed.vertex_snap.is_none());
+
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (200.0, 200.0));
+        // Z should remain same because shift keeps horizontal only
+        assert!((o.pos[2] - cur_source.z).abs() < 1e-4);
+    }
+
+    #[test]
+    fn test_edge_to_edge_snap() {
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        add_object(&mut doc, (0, 0), 2, 150.0, 200.0);
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let mut assets = Assets::new(std::env::temp_dir().join("openmapper-no-omsi"), std::env::temp_dir().join("openmapper-no-content"));
+
+        // Select object 1
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        assert_eq!(ed.free_selected(), vec![((0, 0), 1)]);
+
+        // Start edge snapping
+        ed.start_edge_snap();
+        assert!(ed.edge_snap.is_some());
+        assert_eq!(ed.edge_snap.as_ref().unwrap().stage, EdgeSnapStage::PickSource);
+
+        // Pick source edge: (100.0, 100.0, 0.0) -> (110.0, 100.0, 0.0) (heading 90 deg)
+        let src_edge = [DVec3::new(100.0, 100.0, 0.0), DVec3::new(110.0, 100.0, 0.0)];
+        ed.edge_snap.as_mut().unwrap().hover = Some((src_edge, DVec3::new(102.0, 100.0, 0.0)));
+        let lib = crate::library::Library::default();
+        ed.left_press(&mut assets, &lib, false);
+        assert_eq!(ed.edge_snap.as_ref().unwrap().stage, EdgeSnapStage::PickTarget { source: src_edge });
+
+        // Hover over target edge: (150.0, 200.0, 4.0) -> (150.0, 210.0, 4.0) (heading 0 deg)
+        let tgt_edge = [DVec3::new(150.0, 200.0, 4.0), DVec3::new(150.0, 210.0, 4.0)];
+        ed.edge_snap.as_mut().unwrap().hover = Some((tgt_edge, DVec3::new(150.0, 200.2, 4.0)));
+        ed.left_press(&mut assets, &lib, false);
+
+        // Edge snap completed
+        assert!(ed.edge_snap.is_none());
+
+        // Check object 1 moved to target and rotated -90 deg (270 deg)
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (150.0, 200.0));
+        assert!((o.pos[2] - 4.0).abs() < 1e-4);
+        assert!((o.rot[0] - 270.0).abs() < 1e-4);
+
+        // Test Undo
+        ed.undo();
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (100.0, 100.0));
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+        assert!((o.rot[0] - 0.0).abs() < 1e-4);
+
+        // Test Shift (horizontal only snapping)
+        ed.select(Some(Sel::Object((0, 0), 1)));
+        ed.start_edge_snap();
+        ed.edge_snap.as_mut().unwrap().hover = Some((src_edge, DVec3::new(102.0, 100.0, 0.0)));
+        ed.left_press(&mut assets, &lib, false);
+        ed.edge_snap.as_mut().unwrap().hover = Some((tgt_edge, DVec3::new(150.0, 200.2, 4.0)));
+        // Press with shift = true
+        ed.left_press(&mut assets, &lib, true);
+        assert!(ed.edge_snap.is_none());
+
+        let d = ed.doc.as_ref().unwrap();
+        let o = d.object((0, 0), 1).unwrap();
+        assert_eq!((o.pos[0].round(), o.pos[1].round()), (150.0, 200.0));
+        // Z should remain 0 because shift keeps horizontal only
+        assert!((o.pos[2] - 0.0).abs() < 1e-4);
+        assert!((o.rot[0] - 270.0).abs() < 1e-4);
+    }
+}
+
+/// The length of a road from one end along its linked pieces (m, at most 200).
+/// Whether `p` lies within 12 m of a place an author's junction was found at (see `aj_keep`).
+fn aj_kept(keep: &std::collections::HashSet<(i64, i64)>, p: DVec2) -> bool {
+    let c = ((p.x / 16.0).floor() as i64, (p.y / 16.0).floor() as i64);
+    keep.contains(&c)
+}
+
+/// A spline by its IDCode, looked for first in the tiles round `near` (a linked piece lies in
+/// the same tile or the next), then (`everywhere`) in all of them.
+fn find_near(doc: &Document, near: Option<TileKey>, id: i64, everywhere: bool) -> Option<(TileKey, &MapSpline)> {
+    if id == 0 {
+        return None;
+    }
+    if let Some(k) = near {
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let q = (k.0 + dx, k.1 + dy);
+                if let Some(s) = doc.tiles.get(&q).and_then(|t| t.tile.splines.iter().find(|s| s.id == id && !s.deleted)) {
+                    return Some((q, s));
+                }
+            }
+        }
+    }
+    if everywhere { doc.find_spline(id) } else { None }
+}
+
+fn chain_length(doc: &Document, k: TileKey, id: i64, from_end: bool) -> f64 {
+    let mut total = 0.0;
+    let (mut k, mut id, mut fwd) = (k, id, !from_end);
+    for _ in 0..20 {
+        let Some(s) = doc.spline(k, id) else { break };
+        total += s.length;
+        let next = if fwd { s.next_id } else { s.prev_id };
+        if next == 0 || total > 200.0 {
+            break;
+        }
+        let Some((nk, ns)) = doc.tiles.iter().find_map(|(tk, t)| t.tile.splines.iter().find(|x| x.id == next && !x.deleted).map(|x| (*tk, x))) else { break };
+        // (going on the same way when the next piece starts where this one ended)
+        fwd = ns.prev_id == id;
+        k = nk;
+        id = next;
+    }
+    total
+}
+
+/// The spline types a street model is built with.
+#[derive(Clone, Debug, Default)]
+pub struct StreetTypes {
+    /// By class (0 main, 1 street, 2 service): two-way type and one-way type.
+    pub road: [(String, String); 3],
+    pub path: String,
+    /// Types with their carriageway widths: a street takes the nearest to its (measured) width.
+    pub choices: Vec<crate::street_model::TypeChoice>,
+    /// Make each street's own type with the road maker from these textures (roadway, paving).
+    pub make: Option<(std::path::PathBuf, std::path::PathBuf)>,
+    /// The ground layer laid under hardstanding: an apron at each dead end of a street, and the
+    /// car parks and paved yards given in `paved`.
+    pub apron: Option<usize>,
+    /// Paved areas (closed outlines, world): car parks, yards.
+    pub paved: Vec<Vec<DVec2>>,
+    /// The designed heights of the roads where they leave the ground: the streets are laid at
+    /// them, so their plates are made for the heights the roads end up at.
+    pub heights: Option<std::sync::Arc<crate::street_model::Heights>>,
+}
+
+/// A merge (or diverge) as it is laid: its long plate runs `lu` metres back up the main road
+/// from the model's node and `ld` on down it; the slip road ends (or starts) at `at`, beside
+/// the plate's upstream end (a merge) or downstream end (a diverge), running `heading`; it
+/// leaves its own course `approach` metres from there.
+#[derive(Clone, Copy, Debug)]
+pub struct MergePlan {
+    pub m: crate::street_model::Merge,
+    pub lu: f64,
+    pub ld: f64,
+    pub at: DVec2,
+    pub heading: f64,
+    pub approach: f64,
+}
+
+/// The merges of the model as they can be laid with these types (one that has no room is
+/// left out: an ordinary junction is made there).
+pub fn merge_plans(net: &crate::street_model::Network, typ: &[Option<(String, f64)>], assets: &mut Assets) -> Vec<MergePlan> {
+    let len = |si: usize| net.streets[si].axis.windows(2).map(|w| (w[1] - w[0]).length()).sum::<f64>();
+    let mut out: Vec<MergePlan> = Vec::new();
+    let mut taken: std::collections::HashSet<(usize, bool)> = Default::default();
+    for m in &net.merges {
+        let beside = if m.diverge { m.main_out } else { m.main_in };
+        let (Some(main_t), Some(ramp_t), Some(_), Some(_)) = (&typ[beside], &typ[m.ramp], &typ[m.main_in], &typ[m.main_out]) else { continue };
+        let (Some(me), Some(re)) = (assets.spline(&main_t.0).and_then(|x| crate::pocket::extent(&x)), assets.spline(&ramp_t.0).and_then(|x| crate::pocket::extent(&x))) else { continue };
+        // (edge to edge: the main road's outer edge on the slip road's side, the slip road's
+        // edge on the main road's side; the splines run the way their traffic does)
+        let o = if m.right { me.1 as f64 - re.0 as f64 } else { re.1 as f64 - me.0 as f64 };
+        let t = (net.way_at(m.main_in, true, 15.0) + net.way_at(m.main_out, false, 15.0)).normalize_or_zero();
+        if t == DVec2::ZERO {
+            continue;
+        }
+        let class = net.streets[m.main_in].class.min(net.streets[m.main_out].class);
+        let full = if class == 0 { 60.0 } else { 36.0 };
+        let (mut lu, mut ld) = if m.diverge { (full * 0.6, full * 0.4) } else { (full * 0.4, full * 0.6) };
+        let f = 1f64.min(0.45 * len(m.main_in) / lu).min(0.45 * len(m.main_out) / ld);
+        lu *= f;
+        ld *= f;
+        if lu + ld < 14.0 {
+            continue;
+        }
+        // (the slip road leaves its course this far before its end, and keeps the rest: as far
+        // as it has room for, at most half of it, the other half being its other end's)
+        // (a short slip road: the plate's part beside it shortened to what it has room for)
+        let approach = ((if m.diverge { ld } else { lu }) + 30.0).max(o * 4.0).min(0.48 * len(m.ramp));
+        let bend = o.max(8.0);
+        let room = approach - bend;
+        if room < 6.0 {
+            continue;
+        }
+        if m.diverge { ld = ld.min(room) } else { lu = lu.min(room) }
+        if lu + ld < 14.0 || !taken.insert((m.ramp, !m.diverge)) {
+            continue;
+        }
+        let nrm = if m.right { DVec2::new(t.y, -t.x) } else { DVec2::new(-t.y, t.x) };
+        let p = net.nodes[m.node];
+        let at = if m.diverge { p + t * ld + nrm * o } else { p - t * lu + nrm * o };
+        out.push(MergePlan { m: *m, lu, ld, at, heading: roads::heading_of(t), approach });
+    }
+    out
+}
+
+/// A slip road's axis with its ends brought alongside the main roads: the axis kept up to
+/// `approach` metres from such an end, fitted, and carried on from there by two arcs to the
+/// end given (where, which way). `ends`: for its start and for its end.
+fn slip_axis(axis: &[DVec2], class: u8, ends: [Option<(DVec2, f64, f64)>; 2]) -> Option<Vec<Seg>> {
+    let total: f64 = axis.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+    // (the point `d` metres along)
+    let at = |d: f64| -> (usize, DVec2) {
+        let mut run = 0.0;
+        for (i, w) in axis.windows(2).enumerate() {
+            let l = (w[1] - w[0]).length();
+            if run + l >= d {
+                return (i, w[0] + (w[1] - w[0]) * ((d - run) / l.max(1e-9)));
+            }
+            run += l;
+        }
+        (axis.len() - 2, axis[axis.len() - 1])
+    };
+    let a = ends[0].map(|e| e.2).unwrap_or(0.0);
+    let b = total - ends[1].map(|e| e.2).unwrap_or(0.0);
+    if b - a < 5.0 {
+        return None;
+    }
+    let (ia, pa) = at(a);
+    let (ib, pb) = at(b);
+    let mut kept: Vec<DVec2> = vec![pa];
+    kept.extend(axis[ia + 1..=ib].iter().copied().filter(|q| (*q - pa).length() > 0.5 && (*q - pb).length() > 0.5));
+    kept.push(pb);
+    let mut segs = crate::street_model::fit_g1(&kept, class);
+    if segs.is_empty() {
+        return None;
+    }
+    let link = |p: DVec2, hp: f64, q: DVec2, hq: f64| -> Option<Vec<Seg>> {
+        roads::biarc(p, hp, q, hq).filter(|s| s.iter().all(|g| g.radius == 0.0 || g.radius.abs() > 15.0)).or_else(|| crate::ed_author::chain_through(&[p, q], Some(hp), Some(hq)).ok())
+    };
+    if let Some((p, h, _)) = ends[0] {
+        let first = segs[0];
+        let mut lead = link(p, h, first.start, first.heading)?;
+        lead.extend(segs);
+        segs = lead;
+    }
+    if let Some((p, h, _)) = ends[1] {
+        let last = *segs.last().unwrap();
+        segs.extend(link(last.end(), last.end_heading(), p, h)?);
+    }
+    Some(segs)
+}
+
+/// What `build_streets` made.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+pub struct StreetReport {
+    pub loops_merged: usize,
+    /// The paved areas (aprons at dead ends, car parks): outlines in world metres.
+    pub hardstanding: Vec<Vec<[f64; 2]>>,
+    pub aprons: usize,
+    pub trees_off_paving: usize,
+    pub paved: usize,
+    pub streets: usize,
+    pub pieces: usize,
+    pub plates: usize,
+    /// Merges and diverges laid as slip roads alongside, with their long plates.
+    pub merges: usize,
+    /// Merges and diverges the model has (those with no room are ordinary junctions), and
+    /// where those laid alongside are.
+    pub merges_found: usize,
+    pub merge_at: Vec<[f64; 2]>,
+    /// Drives and yard roads ended at a street's edge, with no plate.
+    pub drives: usize,
+    pub joined: usize,
+    pub paths: usize,
+    pub skipped: Vec<String>,
+}
+
+impl Editor {
+    /// A junction plate from road ends given by the street model (the arms are named, never
+    /// searched for): three or more ends cut back and plated; two ends joined (in line: linked;
+    /// at an angle or of different widths: a bend or a taper). Whether anything was made.
+    pub fn plate_from_ends(&mut self, assets: &mut Assets, ends: &[(TileKey, i64, bool)]) -> Result<bool, String> {
+        self.plate_from_ends_with(assets, ends, &PlateAsk::default())
+    }
+
+    /// As `plate_from_ends`, with what is asked for over the road styles' defaults.
+    pub fn plate_from_ends_with(&mut self, assets: &mut Assets, ends: &[(TileKey, i64, bool)], ask: &PlateAsk) -> Result<bool, String> {
+        let (Some(content), asphalt) = (self.content_dir.clone(), self.asphalt.clone()) else { return Err("no content folder".into()) };
+        let styles = self.road_styles.clone();
+        let (follow, adapt) = (self.follow_ground, self.auto_adapt);
+        let Some(doc) = self.doc.as_ref() else { return Err("no map".into()) };
+        // each end: where, which way it points out of its road, its half width
+        let mut info: Vec<(TileKey, i64, bool, DVec3, f64, f64)> = Vec::new();
+        for &(k, id, at_end) in ends {
+            let Some(sp) = doc.spline(k, id) else { continue };
+            let half = assets.spline(&sp.file).map(|m| m.half_width as f64).unwrap_or(3.0);
+            let c = omsi_geometry::SplineCurve::from_map(sp, tile_origin(k));
+            if at_end {
+                info.push((k, id, true, c.end_point(), roads::norm_deg(c.heading_at(sp.length) + 180.0), half));
+            } else {
+                info.push((k, id, false, c.point_at(0.0), c.heading_at(0.0), half));
+            }
+        }
+        if info.len() < 2 {
+            return Err(format!("{} of {} ends found", info.len(), ends.len()));
+        }
+        let centre = info.iter().map(|e| e.3).sum::<DVec3>() / info.len() as f64;
+        let headings: Vec<f64> = info.iter().map(|e| e.4).collect();
+        let sharpest = headings.iter().enumerate().flat_map(|(i, a)| headings.iter().skip(i + 1).map(move |b| (roads::norm_deg(a - b + 180.0) - 180.0).abs())).fold(180.0f64, f64::min);
+        let halves: Vec<f64> = info.iter().map(|e| e.5).collect();
+        let doc = self.doc.as_mut().unwrap();
+        if info.len() == 2 {
+            let step = (halves[0] - halves[1]).abs();
+            // in line and of one width: the two roads simply go on into each other; where they
+            // do not meet exactly (a step or a kink, however small), both are cut back a little
+            // and a smooth piece of the same road laid between them
+            // (of one width at any angle: a bend of the road itself, never a plate)
+            if step < 0.25 {
+                let gap = (info[0].3 - info[1].3).length();
+                let kink = 180.0 - sharpest;
+                if gap < 0.02 && kink < 0.3 {
+                    return Ok(crate::check::apply_link(doc, (info[0].0, info[0].1, info[0].2), (info[1].0, info[1].1, info[1].2)));
+                }
+                let shortest = info.iter().map(|e| chain_length(doc, e.0, e.1, e.2)).fold(f64::MAX, f64::min);
+                // (room for an arc of twice the road's half width, at least 4 m, round the bend)
+                let r = (2.0 * halves[0]).max(4.0);
+                let back = (r * (kink.to_radians() * 0.5).tan() + 0.5 + gap * 4.0).min(shortest * 0.4);
+                let file = doc.spline(info[0].0, info[0].1).map(|s| s.file.clone()).unwrap_or_default();
+                let cut: Vec<(TileKey, i64, bool)> = info.iter().filter_map(|e| if back > 0.05 { doc.trim(e.0, e.1, e.2, back) } else { Some((e.0, e.1, e.2)) }).collect();
+                if cut.len() != 2 {
+                    return Err("joint: a road could not be cut back".into());
+                }
+                let (Some(a), Some(b)) = (crate::ed_author::end_of(doc, cut[0]), crate::ed_author::end_of(doc, cut[1])) else { return Err("joint: ends lost".into()) };
+                let segs = crate::ed_author::chain_through(&[a.0.truncate(), b.0.truncate()], Some(a.1), Some(roads::norm_deg(b.1 + 180.0)))?;
+                crate::ed_author::lay_chain_in(doc, &file, &segs, Some(cut[0]), Some(cut[1]), 0.0)?;
+                return Ok(true);
+            }
+            let back = if adapt && step >= 0.25 { taper_back(step) } else { halves.iter().cloned().fold(3.0, f64::max) + 2.0 };
+            // (never more than 40 % of the shorter road: a short piece is not eaten by its joint)
+            let shortest = info.iter().filter_map(|e| doc.spline(e.0, e.1).map(|_s| chain_length(doc, e.0, e.1, e.2))).fold(f64::MAX, f64::min);
+            let back = match ask.back {
+                Some(b) => b.max(0.0),
+                None => back.min(shortest * 0.4).max(1.0),
+            };
+            let arms: Vec<crate::junction::Arm> = info.iter().filter_map(|e| if back > 0.01 { doc.trim(e.0, e.1, e.2, back) } else { Some((e.0, e.1, e.2)) }).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+            if arms.len() != 2 {
+                return Err(format!("joint: {} arms left after cutting back {back:.1} m", arms.len()));
+            }
+            join_two(doc, assets, adapt, follow, &content, asphalt.as_deref(), &arms[0], &arms[1]);
+            return Ok(true);
+        }
+        let corner = info.iter().filter_map(|e| doc.spline(e.0, e.1).map(|s| styles.get(&s.file).corner)).fold(1.0f64, f64::max).clamp(0.5, 3.0);
+        let r = crate::junction::radius_at(&halves, sharpest.max(20.0)) * corner;
+        // (paths meet in a small paved plate: a fixed short cut-back, not the roads' clearance)
+        let footway = halves.iter().all(|h| *h <= 2.5);
+        let back = if footway { vec![2.5; info.len()] } else { crate::junction::cut_back(doc, assets, &info.iter().map(|e| Some((e.0, e.1, e.2))).collect::<Vec<_>>(), r) };
+        // (no arm is cut back by more than 45 % of its road: an arm is never eaten by its plate)
+        let back: Vec<f64> = match (&ask.backs, ask.back) {
+            // (asked for, end by end: a merge's long plate)
+            (Some(b), _) if b.len() == info.len() => b.iter().map(|x| x.max(0.0)).collect(),
+            // (asked for: the roads already end where the plate is to begin, or this far back)
+            (_, Some(b)) => vec![b.max(0.0); info.len()],
+            _ => info.iter().zip(back).map(|(e, b)| b.min(chain_length(doc, e.0, e.1, e.2) * 0.45).max(0.5)).collect(),
+        };
+        let arm_dbg: Vec<(i64, bool, f64, f64, i64, i64)> = info.iter().map(|e| { let s = doc.spline(e.0, e.1); (e.1, e.2, (chain_length(doc, e.0, e.1, e.2) * 10.0).round() / 10.0, s.map(|s| (s.length * 10.0).round() / 10.0).unwrap_or(-1.0), s.map(|s| s.prev_id).unwrap_or(0), s.map(|s| s.next_id).unwrap_or(0)) }).collect();
+        let arms: Vec<crate::junction::Arm> = info.iter().zip(&back).filter_map(|(e, b)| if *b > 0.01 { doc.trim(e.0, e.1, e.2, *b) } else { Some((e.0, e.1, e.2)) }).map(|x| crate::junction::Arm { key: x.0, id: x.1, at_end: x.2 }).collect();
+        if arms.len() < 3 {
+            return Err(format!("{} of {} arms left after cutting back {:?} (arms: {:?})", arms.len(), info.len(), back.iter().map(|b| (b * 10.0).round() / 10.0).collect::<Vec<_>>(), arm_dbg));
+        }
+        let mut opts = style_options(doc, &styles, &arms, centre);
+        if let Some(l) = ask.lights {
+            opts.lights = l;
+        }
+        if let Some(c) = &ask.crossings {
+            // (by the arms as given: the heading out of the junction along each)
+            opts.crossings = c.iter().filter_map(|&i| info.get(i)).map(|e| roads::heading_of(e.3.truncate() - centre.truncate())).collect();
+        }
+        match crate::junction::make_with(doc, assets, &content, asphalt.as_deref(), centre, &arms, &opts) {
+            Ok(_) => {
+                if follow {
+                    let e = arm_ends_world(doc, &arms);
+                    let reach = crate::junction::reach(doc, assets, centre, &arms).max(back.iter().cloned().fold(r, f64::max) * 1.1);
+                    conform_disc(doc, centre, reach, &e);
+                }
+                Ok(true)
+            }
+            Err(e) => Err(format!("plate: {e}")),
+        }
+    }
+
+    /// The street model built: every street laid as its fitted axis (one road, tangent-continuous,
+    /// never snapped to anything near), plates where three or more streets meet at a model node,
+    /// streets of one node joined, paths laid and linked where they meet. One undo step.
+    pub fn build_streets(&mut self, assets: &mut Assets, net: &crate::street_model::Network, types: &StreetTypes) -> StreetReport {
+        let mut rep = StreetReport::default();
+        let t0 = Instant::now();
+        let files: Vec<String> = types.road.iter().flat_map(|t| [t.0.clone(), t.1.clone()]).chain([types.path.clone()]).chain(types.choices.iter().map(|c| c.file.clone())).filter(|f| !f.is_empty()).collect();
+        for f in &files {
+            while assets.spline(f).is_none() && !assets.spline_failed(f) && t0.elapsed().as_secs() < 20 {
+                assets.poll();
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+        }
+        let Some(doc) = self.doc.as_ref() else { return rep };
+        self.history.begin(tr("Streets from the street model", "Улицы по модели улиц"));
+        let keys: Vec<TileKey> = doc.tiles.keys().copied().collect();
+        for k in keys {
+            self.history.touch_tile(doc, k);
+        }
+        self.history.touch_global(doc);
+        // the axis kept within the map: pieces outside left out, the one across the edge cut there
+        let inside = |doc: &Document, p: DVec2| doc.tiles.contains_key(&tile_of(p));
+        let mut at_node: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+        // (where each end was laid: a spline cut back at its other end is made anew with another
+        // IDCode, and its end here is then found again by its place)
+        let mut end_pos: std::collections::HashMap<(TileKey, i64, bool), (DVec2, f64)> = Default::default();
+        let mut made_types: std::collections::HashSet<String> = Default::default();
+        let mut laid: Vec<(usize, Vec<(TileKey, i64)>, f64, f64)> = Vec::new(); // street, splines, length, half
+        // each street's type first (a merge lays its slip road by both roads' widths)
+        let mut typ: Vec<Option<(String, f64)>> = vec![None; net.streets.len()];
+        for (si, s) in net.streets.iter().enumerate() {
+            let (two, one) = &types.road[s.class.min(2) as usize];
+            let made_type = match (&types.make, &self.content_dir) {
+                (Some((asph, pave)), Some(content)) => {
+                    let spec = crate::street_model::road_spec(s, asph, pave);
+                    let rel = format!("Splines\\openMapper\\{}.sli", spec.file_stem());
+                    if !made_types.contains(&rel) {
+                        match spec.write(content) {
+                            Ok(r) => {
+                                made_types.insert(r.clone());
+                                let t1 = Instant::now();
+                                while assets.spline(&r).is_none() && !assets.spline_failed(&r) && t1.elapsed().as_secs() < 10 {
+                                    assets.poll();
+                                    std::thread::sleep(std::time::Duration::from_millis(10));
+                                }
+                            }
+                            Err(e) => rep.skipped.push(format!("type {}: {e}", spec.name)),
+                        }
+                    }
+                    made_types.contains(&rel).then_some(rel)
+                }
+                _ => None,
+            };
+            let picked = made_type.or_else(|| crate::street_model::choose(s, &types.choices).map(|c| c.file.clone()));
+            let fallback = if s.oneway { one.clone() } else { two.clone() };
+            let rel = &picked.unwrap_or(fallback);
+            let Some(model) = assets.spline(rel) else { rep.skipped.push(format!("no type {rel}")); continue };
+            typ[si] = Some((rel.clone(), model.half_width as f64));
+        }
+        let plans = merge_plans(net, &typ, assets);
+        rep.merges_found = net.merges.len();
+        // (slip roads' ends laid alongside the main road: street and end -> where, which way)
+        let mut slip: std::collections::HashMap<(usize, bool), (DVec2, f64, f64)> = Default::default();
+        for p in &plans {
+            slip.insert((p.m.ramp, !p.m.diverge), (p.at, p.heading, p.approach));
+        }
+        let mut slip_failed: std::collections::HashSet<usize> = Default::default();
+        // (one height for each node, for every street meeting there: from the design where it
+        // takes a road there off the ground, else the ground. Each street is then laid from its
+        // node's height, coming to its own profile no steeper than 6 %)
+        let mut node_z: std::collections::HashMap<usize, f64> = Default::default();
+        if let (Some(d), Some(doc)) = (types.heights.as_ref().filter(|h| !h.is_empty()), self.doc.as_ref()) {
+            let mut acc: std::collections::HashMap<usize, (f64, usize)> = Default::default();
+            for (si, st) in net.streets.iter().enumerate() {
+                if typ[si].is_none() || st.axis.len() < 2 {
+                    continue;
+                }
+                for (k, at_end) in [(0usize, false), (1usize, true)] {
+                    let n = st.ends[k];
+                    let p = net.nodes[n];
+                    let h = roads::heading_of(net.way_at(si, at_end, 10.0));
+                    if let Some(z) = d.at_on(p, h, &st.ways).filter(|z| (z - doc.ground(p)).abs() > 0.05) {
+                        let e = acc.entry(n).or_insert((0.0, 0));
+                        e.0 += z;
+                        e.1 += 1;
+                    }
+                }
+            }
+            node_z = acc.into_iter().map(|(n, (z, c))| (n, z / c as f64)).collect();
+        }
+        // (the ends of the merges' roads: street and end -> the spline end laid there)
+        let mut merge_end: std::collections::HashMap<(usize, bool), (TileKey, i64, bool)> = Default::default();
+        // (each end laid at a node: its street's class and its type's half width)
+        let mut end_info: std::collections::HashMap<(TileKey, i64, bool), (u8, f64)> = Default::default();
+        let merge_arm: std::collections::HashSet<(usize, bool)> = plans.iter().flat_map(|p| [(p.m.main_in, true), (p.m.main_out, false), (p.m.ramp, !p.m.diverge)]).collect();
+        for (si, s) in net.streets.iter().enumerate() {
+            let Some((rel, half)) = typ[si].clone() else { continue };
+            let rel = &rel;
+            // (the axis runs exactly from node to node: whatever moved its ends a little — the
+            // imagery's shifts, the joints' smoothing — an end off its node is an end left free)
+            let mut axis = s.axis.clone();
+            if axis.len() >= 2 {
+                let n = axis.len();
+                axis[0] = net.nodes[s.ends[0]];
+                axis[n - 1] = net.nodes[s.ends[1]];
+            }
+            let mut segs = crate::street_model::fit_g1(&axis, s.class);
+            // (a slip road's end at a merge: brought alongside the main road, edge to edge)
+            let ends_to = [slip.get(&(si, false)).copied(), slip.get(&(si, true)).copied()];
+            if ends_to.iter().any(|e| e.is_some()) {
+                match slip_axis(&axis, s.class, ends_to) {
+                    Some(g) => segs = g,
+                    None => {
+                        slip_failed.insert(si);
+                    }
+                }
+            }
+            let target = |at_end: bool| -> DVec2 {
+                match (slip_failed.contains(&si), ends_to[at_end as usize]) {
+                    (false, Some((p, _, _))) => p,
+                    _ => net.nodes[s.ends[at_end as usize]],
+                }
+            };
+            let Some(doc) = self.doc.as_ref() else { break };
+            let mut kept: Vec<Seg> = Vec::new();
+            let (mut cut0, mut cut1) = (false, false);
+            for (i, g) in segs.iter().enumerate() {
+                let (a, b) = (inside(doc, g.start), inside(doc, g.end()));
+                match (a, b) {
+                    (true, true) => kept.push(*g),
+                    (true, false) | (false, true) => {
+                        // halve to the edge
+                        let (mut lo, mut hi) = if a { (0.0, g.length) } else { (g.length, 0.0) };
+                        for _ in 0..30 {
+                            let m = (lo + hi) * 0.5;
+                            if inside(doc, g.point(m)) { lo = m } else { hi = m }
+                        }
+                        let back = if a { (lo - 0.3).max(0.0) } else { (lo + 0.3).min(g.length) };
+                        let piece = if a { g.piece(0.0, back) } else { g.piece(back, g.length) };
+                        if piece.length > 0.5 {
+                            kept.push(piece);
+                        }
+                        if a { cut1 = true } else { cut0 = i == 0 || cut0 || true }
+                    }
+                    _ => {
+                        if kept.is_empty() { cut0 = true } else { cut1 = true }
+                    }
+                }
+            }
+            if kept.len() < 1 {
+                continue;
+            }
+            // (a street leaving the map and coming back is two roads, never one linked across
+            // the gap)
+            let mut runs: Vec<Vec<Seg>> = Vec::new();
+            for g in kept {
+                match runs.last_mut() {
+                    Some(r) if (r.last().unwrap().end() - g.start).length() < 0.05 => r.push(g),
+                    _ => runs.push(vec![g]),
+                }
+            }
+            let _ = (cut0, cut1);
+            for run in runs {
+                let Some(doc) = self.doc.as_ref() else { break };
+                // (where the design takes the road off the ground, it is laid at the designed
+                // heights in pieces of 15 m, which follow its vertical curves)
+                let design = types.heights.as_ref().filter(|h| !h.is_empty());
+                let off = |p: DVec2, h: f64| design.and_then(|d| d.at_on(p, h, &s.ways)).filter(|z| (z - doc.ground(p)).abs() > 0.05);
+                let (r0, r1) = (run[0].start, run.last().unwrap().end());
+                let end_z = |at_end: bool, q: DVec2| -> Option<f64> {
+                    let n = s.ends[at_end as usize];
+                    if (q - net.nodes[n]).length() < 0.5 { node_z.get(&n).copied() } else { None }
+                };
+                let (nz0, nz1) = (end_z(false, r0), end_z(true, r1));
+                let leaves = design.is_some() && (nz0.is_some() || nz1.is_some() || run.iter().any(|g| (0..=4).any(|k| { let d = g.length * k as f64 / 4.0; off(g.point(d), g.heading_at(d)).is_some() })));
+                let pieces = roads::split(&run, if leaves { 15.0 } else { 50.0 });
+                let (q0, q1) = (pieces[0].start, pieces.last().unwrap().end());
+                let (z0, z1) = (doc.ground(q0), doc.ground(q1));
+                let given = leaves.then(|| {
+                    let mut at: Vec<(DVec2, f64)> = pieces.iter().map(|g| (g.start, g.heading)).collect();
+                    at.push((q1, pieces.last().unwrap().end_heading()));
+                    let mut z: Vec<f64> = at.iter().map(|(p, h)| off(*p, *h).unwrap_or_else(|| doc.ground(*p))).collect();
+                    let mut s = vec![0.0];
+                    for g in &pieces {
+                        s.push(s.last().unwrap() + g.length);
+                    }
+                    // (from the nodes' heights, no steeper than 6 % onto its own profile; between
+                    // two nodes too far apart in height for that, straight from the one to the other)
+                    let total = *s.last().unwrap();
+                    for i in 0..z.len() {
+                        let (mut lo, mut hi) = (f64::MIN, f64::MAX);
+                        if let Some(a) = nz0 {
+                            lo = lo.max(a - 0.06 * s[i]);
+                            hi = hi.min(a + 0.06 * s[i]);
+                        }
+                        if let Some(b) = nz1 {
+                            lo = lo.max(b - 0.06 * (total - s[i]));
+                            hi = hi.min(b + 0.06 * (total - s[i]));
+                        }
+                        z[i] = if lo <= hi {
+                            z[i].clamp(lo, hi)
+                        } else {
+                            let (a, b) = (nz0.unwrap_or(z[i]), nz1.unwrap_or(z[i]));
+                            a + (b - a) * s[i] / total.max(0.01)
+                        };
+                    }
+                    let n = z.len();
+                    (0..n).map(|i| {
+                        let (a, b) = (i.saturating_sub(1), (i + 1).min(n - 1));
+                        let g = if b > a { (z[b] - z[a]) / (s[b] - s[a]).max(0.1) * 100.0 } else { 0.0 };
+                        (z[i], g.clamp(-8.0, 8.0))
+                    }).collect::<Vec<(f64, f64)>>()
+                });
+                let start = Anchor { pos: DVec3::new(q0.x, q0.y, z0), heading: pieces[0].heading, ..Default::default() };
+                let Some(made) = self.lay_road_with(assets, rel, &pieces, z0, z1, start, None, half, given) else { continue };
+                rep.streets += 1;
+                rep.pieces += made.len();
+                laid.push((si, made.clone(), pieces.iter().map(|g| g.length).sum(), half));
+                let Some(doc) = self.doc.as_ref() else { break };
+                // (an end is the street's at its node when the node is on the map and the laid
+                // road reaches it)
+                let node_in = |n: usize| inside(doc, net.nodes[n]);
+                if let Some(f) = made.first().filter(|_| node_in(s.ends[0]) && (q0 - target(false)).length() < 0.5) {
+                    if merge_arm.contains(&(si, false)) {
+                        merge_end.insert((si, false), (f.0, f.1, false));
+                    } else {
+                        at_node.entry(s.ends[0]).or_default().push((f.0, f.1, false));
+                    }
+                    end_pos.insert((f.0, f.1, false), (q0, pieces[0].heading));
+                    end_info.insert((f.0, f.1, false), (s.class, half));
+                }
+                if let Some(l) = made.last().filter(|_| node_in(s.ends[1]) && (q1 - target(true)).length() < 0.5) {
+                    if merge_arm.contains(&(si, true)) {
+                        merge_end.insert((si, true), (l.0, l.1, true));
+                    } else {
+                        at_node.entry(s.ends[1]).or_default().push((l.0, l.1, true));
+                    }
+                    end_pos.insert((l.0, l.1, true), (q1, pieces.last().unwrap().end_heading()));
+                    end_info.insert((l.0, l.1, true), (s.class, half));
+                }
+            }
+        }
+        // the merges: their three ends, or (a slip road that could not be laid alongside, an
+        // end missing) an ordinary junction of what there is
+        let mut merge_jobs: Vec<(Vec<(TileKey, i64, bool)>, Vec<f64>, usize)> = Vec::new();
+        for p in &plans {
+            let arms = [(p.m.main_in, true), (p.m.main_out, false), (p.m.ramp, !p.m.diverge)];
+            let got: Vec<Option<(TileKey, i64, bool)>> = arms.iter().map(|a| merge_end.get(a).copied()).collect();
+            if !slip_failed.contains(&p.m.ramp) && got.iter().all(|g| g.is_some()) {
+                merge_jobs.push((got.into_iter().flatten().collect(), vec![p.lu, p.ld, 0.0], p.m.node));
+            } else {
+                at_node.entry(p.m.node).or_default().extend(got.into_iter().flatten());
+                rep.skipped.push(format!("merge at ({:.1}, {:.1}) laid as a junction", net.nodes[p.m.node].x, net.nodes[p.m.node].y));
+            }
+        }
+        for (ends, backs, n) in merge_jobs {
+            let Some(doc) = self.doc.as_ref() else { break };
+            let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).collect();
+            if ends.len() != 3 {
+                rep.skipped.push(format!("merge at ({:.1}, {:.1}): {} of 3 ends found", net.nodes[n].x, net.nodes[n].y, ends.len()));
+                continue;
+            }
+            let ask = PlateAsk { backs: Some(backs), ..Default::default() };
+            match self.plate_from_ends_with(assets, &ends, &ask) {
+                Ok(true) => {
+                    rep.merges += 1;
+                    rep.merge_at.push([net.nodes[n].x, net.nodes[n].y]);
+                }
+                Ok(false) => {}
+                Err(e) => rep.skipped.push(format!("merge at ({:.1}, {:.1}): {e}", net.nodes[n].x, net.nodes[n].y)),
+            }
+        }
+        // junctions closer than two of them need: one complex junction. A street joining two
+        // junction nodes and shorter than both their corners ask for is taken out and the nodes
+        // are made one, with all the other arms.
+        let mut root: Vec<usize> = (0..net.nodes.len()).collect();
+        fn find(r: &mut Vec<usize>, x: usize) -> usize {
+            let mut x = x;
+            while r[x] != x {
+                r[x] = r[r[x]];
+                x = r[x];
+            }
+            x
+        }
+        let mut gone: std::collections::HashSet<(TileKey, i64)> = Default::default();
+        for (si, made, len, half) in &laid {
+            let s = &net.streets[*si];
+            let (a, b) = (s.ends[0], s.ends[1]);
+            let deg = |n: usize| at_node.get(&n).map(|v| v.len()).unwrap_or(0);
+            // (and only while the junction made of them stays compact: a plate grows with the
+            // distance between the nodes it joins)
+            if a != b && deg(a) >= 3 && deg(b) >= 3 && *len < (2.0 * (half + 9.0)).min(20.0) {
+                let (ra, rb) = (find(&mut root, a), find(&mut root, b));
+                root[ra] = rb;
+                gone.extend(made.iter().copied());
+            }
+        }
+        // a small loop of service roads (a bus turning loop, a drive round a yard island, all
+        // under 150 m round): one junction of its outer arms, its pieces taken out — the plate
+        // then lies over the whole loop with its island, as such places are paved
+        {
+            let len_of: std::collections::HashMap<usize, f64> = laid.iter().map(|(si, _, len, _)| (*si, *len)).collect();
+            let adj = |n: usize| -> Vec<(usize, usize, f64)> {
+                laid.iter().filter_map(|(si, _, len, _)| {
+                    let st = &net.streets[*si];
+                    if st.class < 2 || st.ends[0] == st.ends[1] {
+                        return None;
+                    }
+                    if st.ends[0] == n { Some((*si, st.ends[1], *len)) } else if st.ends[1] == n { Some((*si, st.ends[0], *len)) } else { None }
+                }).collect()
+            };
+            let mut in_loop: std::collections::HashSet<usize> = Default::default();
+            for (si, _, len, _) in &laid {
+                let st = &net.streets[*si];
+                if st.class < 2 || st.ends[0] == st.ends[1] || *len > 80.0 {
+                    continue;
+                }
+                let (a, b) = (st.ends[0], st.ends[1]);
+                // another way from b back to a, at most three streets, the loop under 150 m
+                let mut stack: Vec<(usize, f64, Vec<usize>)> = vec![(b, *len, vec![*si])];
+                while let Some((n, l, path)) = stack.pop() {
+                    if n == a && path.len() >= 2 {
+                        in_loop.extend(path.iter().copied());
+                        continue;
+                    }
+                    if path.len() >= 4 {
+                        continue;
+                    }
+                    for (sj, m, lj) in adj(n) {
+                        if !path.contains(&sj) && l + lj < 150.0 {
+                            let mut p2 = path.clone();
+                            p2.push(sj);
+                            stack.push((m, l + lj, p2));
+                        }
+                    }
+                }
+            }
+            let _ = len_of;
+            // (each loop taken as one junction only when three or more roads come in from outside:
+            // a loop that is the end of a single drive stays as it is)
+            let mut lr: Vec<usize> = (0..net.nodes.len()).collect();
+            for si in &in_loop {
+                let st = &net.streets[*si];
+                let (ra, rb) = (find(&mut lr, st.ends[0]), find(&mut lr, st.ends[1]));
+                if ra != rb {
+                    lr[ra] = rb;
+                }
+            }
+            let loop_streets: std::collections::HashSet<usize> = in_loop.clone();
+            let mut outer: std::collections::HashMap<usize, usize> = Default::default();
+            for (si, _, _, _) in &laid {
+                if loop_streets.contains(si) {
+                    continue;
+                }
+                let st = &net.streets[*si];
+                for e in st.ends {
+                    if loop_streets.iter().any(|l| net.streets[*l].ends.contains(&e)) {
+                        *outer.entry(find(&mut lr, e)).or_default() += 1;
+                    }
+                }
+            }
+            // (and only a compact one: its nodes within 40 m of one another — a wider loop made one
+            // plate spreads asphalt over the lawns between its roads)
+            let mut spread: std::collections::HashMap<usize, (DVec2, DVec2)> = Default::default();
+            for si in &in_loop {
+                for e in net.streets[*si].ends {
+                    let r = find(&mut lr, e);
+                    let p = net.nodes[e];
+                    let b = spread.entry(r).or_insert((p, p));
+                    b.0 = b.0.min(p);
+                    b.1 = b.1.max(p);
+                }
+            }
+            for (si, made, _, _) in &laid {
+                if in_loop.contains(si) {
+                    let st = &net.streets[*si];
+                    if outer.get(&find(&mut lr, st.ends[0])).copied().unwrap_or(0) < 3 {
+                        continue;
+                    }
+                    if spread.get(&find(&mut lr, st.ends[0])).map(|b| (b.1 - b.0).length() > 38.0).unwrap_or(true) {
+                        continue;
+                    }
+                    let (ra, rb) = (find(&mut root, st.ends[0]), find(&mut root, st.ends[1]));
+                    if ra != rb {
+                        root[ra] = rb;
+                    }
+                    gone.extend(made.iter().copied());
+                    rep.loops_merged += 1;
+                }
+            }
+        }
+        if !gone.is_empty() {
+            if let Some(doc) = self.doc.as_mut() {
+                for (k, id) in &gone {
+                    doc.delete_spline(*k, *id);
+                }
+            }
+        }
+        let mut merged: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+        for (n, v) in at_node.into_iter() {
+            let r = find(&mut root, n);
+            merged.entry(r).or_default().extend(v.into_iter().filter(|e| !gone.contains(&(e.0, e.1))));
+        }
+        // the nodes: plates where three or more meet, joints where two do
+        let mut nodes: Vec<(usize, Vec<(TileKey, i64, bool)>)> = merged.into_iter().filter(|(_, v)| v.len() >= 2).collect();
+        nodes.sort_by_key(|(n, _)| *n);
+        for (n, ends) in nodes {
+            // (a street with both its ends in one junction lies inside it: taken out)
+            let mut ends = ends;
+            // (a long one — a turning loop leaving the junction and coming back to it — stays: its
+            // two ends are two arms)
+            let twice: Vec<(TileKey, i64)> = match self.doc.as_ref() {
+                Some(doc) => ends.iter().filter(|e| ends.iter().filter(|o| (o.0, o.1) == (e.0, e.1)).count() > 1 && chain_length(doc, e.0, e.1, e.2) < 30.0).map(|e| (e.0, e.1)).collect(),
+                None => Vec::new(),
+            };
+            if !twice.is_empty() {
+                if let Some(doc) = self.doc.as_mut() {
+                    for (k, id) in &twice {
+                        doc.delete_spline(*k, *id);
+                    }
+                }
+                ends.retain(|e| !twice.contains(&(e.0, e.1)));
+            }
+            // (drives and yard roads coming into a street that goes on through: each ends at the
+            // street's outer edge, as a drive meets a kerb, and the street is joined straight on,
+            // with no plate)
+            let class_of = |e: &(TileKey, i64, bool)| end_info.get(e).map(|x| x.0).unwrap_or(1);
+            let road: Vec<(TileKey, i64, bool)> = ends.iter().filter(|e| class_of(e) < 2).copied().collect();
+            let drives: Vec<(TileKey, i64, bool)> = ends.iter().filter(|e| class_of(e) >= 2).copied().collect();
+            if road.len() >= 2 && !drives.is_empty() {
+                let edge = road.iter().filter_map(|e| end_info.get(e).map(|x| x.1)).fold(0.0, f64::max);
+                if let Some(doc) = self.doc.as_mut() {
+                    for e in &drives {
+                        let Some(e2) = relocate_end(doc, *e, end_pos.get(e).copied()) else { continue };
+                        let back = (edge + 0.2).min(chain_length(doc, e2.0, e2.1, e2.2) * 0.8);
+                        if back > 0.3 {
+                            doc.trim(e2.0, e2.1, e2.2, back);
+                        }
+                        rep.drives += 1;
+                    }
+                }
+                ends = road;
+            } else if ends.len() >= 3 && road.is_empty() {
+                // (yard roads only: one going on nearly straight through, the others ending at
+                // its edge, as a drive meets it; a plate only where none goes straight on)
+                let out = |e: &(TileKey, i64, bool)| end_pos.get(e).map(|(_, h)| if e.2 { roads::norm_deg(h + 180.0) } else { *h });
+                let mut best: Option<(usize, usize, f64)> = None;
+                for a in 0..ends.len() {
+                    for b in a + 1..ends.len() {
+                        let (Some(ha), Some(hb)) = (out(&ends[a]), out(&ends[b])) else { continue };
+                        let off = (180.0 - (roads::norm_deg(ha - hb + 180.0) - 180.0).abs()).abs();
+                        if off < 30.0 && best.map_or(true, |x| off < x.2) {
+                            best = Some((a, b, off));
+                        }
+                    }
+                }
+                if let Some((a, b, _)) = best {
+                    let through = vec![ends[a], ends[b]];
+                    let edge = through.iter().filter_map(|e| end_info.get(e).map(|x| x.1)).fold(0.0, f64::max);
+                    if let Some(doc) = self.doc.as_mut() {
+                        for (i, e) in ends.iter().enumerate() {
+                            if i == a || i == b {
+                                continue;
+                            }
+                            let Some(e2) = relocate_end(doc, *e, end_pos.get(e).copied()) else { continue };
+                            let back = (edge + 0.2).min(chain_length(doc, e2.0, e2.1, e2.2) * 0.8);
+                            if back > 0.3 {
+                                doc.trim(e2.0, e2.1, e2.2, back);
+                            }
+                            rep.drives += 1;
+                        }
+                    }
+                    ends = through;
+                }
+            }
+            let Some(doc) = self.doc.as_ref() else { break };
+            let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).fold(Vec::new(), |mut v, e| { if !v.contains(&e) { v.push(e) } v });
+            if ends.len() < 2 {
+                continue;
+            }
+            match self.plate_from_ends(assets, &ends) {
+                Ok(true) => if ends.len() >= 3 { rep.plates += 1 } else { rep.joined += 1 },
+                Ok(false) => {}
+                Err(e) => rep.skipped.push(format!("node ({:.1}, {:.1}), {} ends: {e}", net.nodes[n].x, net.nodes[n].y, ends.len())),
+            }
+        }
+        // the paths: the path network's pieces, plates where three or more meet, joints where two do
+        if let Some(pm) = assets.spline(&types.path) {
+            let half = pm.half_width as f64;
+            let mut at_pnode: std::collections::HashMap<usize, Vec<(TileKey, i64, bool)>> = Default::default();
+            for (p, ab) in &net.path_edges {
+                // (across a car park or a paved yard people walk anywhere: no path laid there)
+                let samples: Vec<DVec2> = p.windows(2).flat_map(|w| { let n = ((w[1] - w[0]).length().ceil() as usize).max(1); (0..n).map(move |i| w[0] + (w[1] - w[0]) * (i as f64 / n as f64)) }).collect();
+                let paved = samples.iter().filter(|q| types.paved.iter().any(|a| crate::ed_author::inside_ring(a, **q))).count();
+                if !samples.is_empty() && paved * 10 >= samples.len() * 6 {
+                    rep.skipped.push(format!("path across paving at ({:.0}, {:.0}) left out", p[0].x, p[0].y));
+                    continue;
+                }
+                let segs = crate::street_model::fit_g1(p, 3);
+                let Some(doc) = self.doc.as_ref() else { break };
+                if segs.is_empty() || segs.iter().any(|g| !inside(doc, g.start) || !inside(doc, g.end())) {
+                    continue;
+                }
+                let pieces = roads::split(&segs, 50.0);
+                let (q0, q1) = (pieces[0].start, pieces.last().unwrap().end());
+                let (z0, z1) = (doc.ground(q0), doc.ground(q1));
+                let start = Anchor { pos: DVec3::new(q0.x, q0.y, z0), heading: pieces[0].heading, ..Default::default() };
+                if let Some(made) = self.lay_road(assets, &types.path, &pieces, z0, z1, start, None, half) {
+                    rep.paths += 1;
+                    if let (Some(f), Some(l)) = (made.first(), made.last()) {
+                        at_pnode.entry(ab[0]).or_default().push((f.0, f.1, false));
+                        at_pnode.entry(ab[1]).or_default().push((l.0, l.1, true));
+                        end_pos.insert((f.0, f.1, false), (q0, pieces[0].heading));
+                        end_pos.insert((l.0, l.1, true), (q1, pieces.last().unwrap().end_heading()));
+                    }
+                }
+            }
+            let mut pn: Vec<(usize, Vec<(TileKey, i64, bool)>)> = at_pnode.into_iter().filter(|(_, v)| v.len() >= 2).collect();
+            pn.sort_by_key(|(n, _)| *n);
+            for (n, ends) in pn {
+                let Some(doc) = self.doc.as_ref() else { break };
+                let ends: Vec<(TileKey, i64, bool)> = ends.iter().filter_map(|e| relocate_end(doc, *e, end_pos.get(e).copied())).fold(Vec::new(), |mut v, e| { if !v.contains(&e) { v.push(e) } v });
+                if ends.len() < 2 {
+                    continue;
+                }
+                match self.plate_from_ends(assets, &ends) {
+                    Ok(true) => if ends.len() >= 3 { rep.plates += 1 } else { rep.joined += 1 },
+                    Ok(false) => {}
+                    Err(e) => rep.skipped.push(format!("path node ({:.1}, {:.1}): {e}", net.path_nodes[n].x, net.path_nodes[n].y)),
+                }
+            }
+        }
+        // hardstanding: an apron where a street ends with nothing there (a yard drive ends on a
+        // paved place, never in the grass), and the paved areas given
+        {
+            let mut polys: Vec<Vec<DVec2>> = types.paved.clone();
+            rep.paved = polys.len();
+            if let Some(doc) = self.doc.as_ref() {
+                for (si, s) in net.streets.iter().enumerate() {
+                    for (end, n) in [(0usize, s.ends[0]), (1usize, s.ends[1])] {
+                        if net.degree(n) != 1 || !inside(doc, net.nodes[n]) {
+                            continue;
+                        }
+                        // (the axis's last stretch: which way the street runs out there)
+                        let ax = &s.axis;
+                        let (p, q) = if end == 0 { (ax[0], ax[1.min(ax.len() - 1)]) } else { (ax[ax.len() - 1], ax[ax.len().saturating_sub(2)]) };
+                        let d = (p - q).normalize_or_zero();
+                        if d == DVec2::ZERO {
+                            continue;
+                        }
+                        // (a turning head: a disc round the end, a little beyond it, not a slab)
+                        let rr = (s.width * 0.5 + 1.5).max(4.5);
+                        let c = p + d * (rr * 0.5);
+                        polys.push((0..24).map(|k| { let t = k as f64 / 24.0 * std::f64::consts::TAU; c + DVec2::new(t.cos(), t.sin()) * rr }).collect());
+                        rep.aprons += 1;
+                        let _ = si;
+                    }
+                }
+            }
+            rep.hardstanding = polys.iter().map(|p| p.iter().map(|q| [(q.x * 100.0).round() / 100.0, (q.y * 100.0).round() / 100.0]).collect()).collect();
+            if let Some(doc) = self.doc.as_mut() {
+                if let Some(layer) = types.apron {
+                    if let Err(e) = crate::ed_author::paint_areas_in(doc, layer, &polys, 1.5, false) {
+                        rep.skipped.push(format!("aprons: {e}"));
+                    }
+                }
+                // (no tree grows on the paving)
+                for (k, t) in doc.tiles.iter_mut() {
+                    let org = tile_origin(*k);
+                    let before = t.tile.objects.len();
+                    t.tile.objects.retain(|o| !(crate::street_check::is_tree_file(&o.file) && polys.iter().any(|p| crate::ed_author::inside_ring(p, org + DVec2::new(o.pos[0], o.pos[1])))));
+                    if t.tile.objects.len() != before {
+                        rep.trees_off_paving += before - t.tile.objects.len();
+                        t.touch_content();
+                    }
+                }
+            }
+        }
+        self.finish_step();
+        rep
+    }
+}
+
+#[cfg(test)]
+mod slip_tests {
+    use super::*;
+
+    #[test]
+    fn a_slip_road_is_brought_alongside_ending_where_and_how_it_is_asked_to() {
+        // a slip road coming in from the south-west towards (200, 0), to end at (176, -9.5)
+        // running east beside the main road
+        let axis: Vec<DVec2> = (0..=20).map(|i| { let t = i as f64 / 20.0; DVec2::new(20.0 + 180.0 * t, -90.0 * (1.0 - t) * (1.0 - t)) }).collect();
+        let end = DVec2::new(176.0, -9.5);
+        let segs = slip_axis(&axis, 0, [None, Some((end, 90.0, 60.0))]).expect("laid");
+        let last = segs.last().unwrap();
+        assert!((last.end() - end).length() < 0.01, "{:?}", last.end());
+        assert!((roads::norm_deg(last.end_heading() - 90.0 + 180.0) - 180.0).abs() < 0.5, "{}", last.end_heading());
+        // tangent-continuous all along, its start where the road starts
+        assert!(crate::street_model::max_break(&segs) < 0.1 && crate::street_model::max_gap(&segs) < 0.05);
+        assert!((segs[0].start - axis[0]).length() < 0.01);
     }
 }

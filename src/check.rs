@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::{DVec2, DVec3};
 use omsi_geometry::SplineCurve;
 
@@ -21,6 +21,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::{Category, Library};
 use crate::ui::Action;
+use crate::theme::pal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Severity {
@@ -113,12 +114,14 @@ pub enum Kind {
     UnschedMissing,
     StopUnused,
     SignalRouteBroken,
+    TrolleyWire,
     ChronoUnmatched,
     LampsDark,
     HeavyTile,
     LinkLost,
     HeadUnlinked,
     DepotFile,
+    RowBeforeSpline,
 }
 
 impl Kind {
@@ -145,12 +148,14 @@ impl Kind {
             Kind::UnschedMissing => tr("Traffic groups not in the AI lists", "Группы трафика не в списках ИИ"),
             Kind::StopUnused => tr("Stops no trip calls at", "Остановки без рейсов"),
             Kind::SignalRouteBroken => tr("Signal routes naming what is gone", "Маршруты сигналов с исчезнувшим"),
+            Kind::TrolleyWire => tr("Trolleybus wire the game cannot use", "Контактная сеть, которую игра не поймёт"),
             Kind::ChronoUnmatched => tr("Chrono changes of what is gone", "Хроно-изменения исчезнувшего"),
             Kind::LampsDark => tr("Lamps lighting no ground at night", "Фонари не освещают землю ночью"),
             Kind::HeavyTile => tr("Tiles with very many objects", "Тайлы с очень большим числом объектов"),
             Kind::LinkLost => tr("Objects linked to one that is gone", "Объекты, связанные с исчезнувшим"),
             Kind::HeadUnlinked => tr("Signal heads linked to no crossing", "Светофоры без перекрёстка"),
             Kind::DepotFile => tr("Depot files (destinations)", "Файлы депо (конечные)"),
+            Kind::RowBeforeSpline => tr("Rows the game does not show", "Ряды, которые игра не показывает"),
         }
     }
 
@@ -183,6 +188,8 @@ impl Kind {
             Kind::LinkLost => tr("An object takes its state ([varparent]) from an object no longer on the map: a signal head stays dark, a display blank. Link it to another in its properties (Linked objects), or \"Fix\" forgets the link.", "Объект берёт состояние ([varparent]) от объекта, которого больше нет на карте: светофор не горит, табло пустое. Свяжите его с другим в свойствах («Связанные объекты») или «Исправить» уберёт связь."),
             Kind::HeadUnlinked => tr("A traffic light's signal head takes its light from a crossing's program ([varparent]); this one is linked to none while others like it are, so it stays dark in the game. Select it and link it in its properties (Linked objects).", "Головка светофора берёт сигнал из программы перекрёстка ([varparent]); эта ни с чем не связана, хотя такие же связаны, и в игре она не горит. Выберите её и свяжите в свойствах («Связанные объекты»)."),
             Kind::DepotFile => tr("A depot file (.hof) gives the buses their destinations, the stop names on their displays and the routes their IBIS knows. Without one the signs stay empty and the IBIS knows no line. \"Fix\" makes it from the map's lines, or adds what the lines need to the map's own (Map > Depot files to see and change it).", "Файл депо (.hof) даёт автобусам конечные, имена остановок на табло и маршруты, которые знает IBIS. Без него указатели пусты, а IBIS не знает ни одной линии. «Исправить» создаст его по линиям карты или добавит в собственный файл карты то, чего не хватает линиям (Карта > Файлы депо, чтобы посмотреть и изменить)."),
+            Kind::RowBeforeSpline => tr("A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.", "Ряд объектов вдоль дороги (фонари, столбики, парковочные места) начинается раньше дороги, на которой лежит: его расстояние считается от начала цепочки дороги, а здесь оно меньше длины цепочки до этой дороги. OMSI 2 и openOMSI не показывают его совсем, редактор тоже. Положите ряд заново или увеличьте его начало в свойствах."),
+            Kind::TrolleyWire => tr("openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.", "openOMSI делает стрелку только там, где сходятся ровно три пролёта контактной сети, а стрелку там, где они больше не сходятся, пропускает; пролёт в секции, которой нет в сети, остаётся без подстанции. Откройте Карта > Контактная сеть троллейбуса, чтобы исправить."),
             Kind::SignalRouteBroken => tr("A signal route names a signal or track pieces no longer on the map: the signal may never clear. Open Map > Signal routes and take the track again, or delete the route.", "Маршрут сигнала указывает сигнал или участки пути, которых больше нет на карте: сигнал может так и не открыться. Откройте Карта > Маршруты сигналов и возьмите пути заново или удалите маршрут."),
         }
     }
@@ -217,6 +224,9 @@ struct Snapshot {
     tt_doc: Option<Document>,
     /// The bus stops, with the tile each is on.
     stops: Vec<(TileKey, crate::stops::Found)>,
+    /// Rows the game does not draw (their first object before their own spline): tile,
+    /// IDCode, file, where their spline starts.
+    refused_rows: Vec<(TileKey, i64, String, DVec2)>,
 }
 
 /// What the catalogue says of a file.
@@ -332,6 +342,17 @@ fn snapshot(doc: &Document, lib: &Library) -> Snapshot {
         }).collect(),
         object_ids: doc.tiles.values().flat_map(|t| t.tile.objects.iter().chain(&t.tile.attach_objects).map(|o| o.id).chain(t.tile.spline_attachments.iter().map(|a| a.id)).chain(t.chrono.iter().flat_map(|c| c.objects.iter().chain(&c.attach_objects).map(|o| o.id)))).collect(),
         stops: doc.tiles.iter().flat_map(|(k, t)| t.tile.objects.iter().filter(|o| o.flag == 7 && o.extra.len() >= 4).map(move |o| (*k, crate::stops::Found { id: o.id, name: o.extra[0].clone(), at: tile_origin(*k) + DVec2::new(o.pos[0], o.pos[1]) }))).collect(),
+        refused_rows: doc
+            .tiles
+            .iter()
+            .flat_map(|(k, t)| {
+                let splines = &t.tile.splines;
+                t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none() && omsi_world::map_index::row_starts_before_its_spline(a, splines)).map(move |a| {
+                    let s = &splines[a.spline_index.max(0) as usize];
+                    (*k, a.id, a.file.clone(), tile_origin(*k) + DVec2::new(s.pos[0], s.pos[1]))
+                })
+            })
+            .collect(),
         tt_doc: (!doc.timetable.lines.is_empty() || !doc.timetable.trips.is_empty() || !doc.traffic.veh_groups.is_empty()).then(|| doc.for_reading()),
     }
 }
@@ -440,7 +461,9 @@ impl Grid {
     /// What lies in the cells round `p` (within one cell of it).
     fn near(&self, p: DVec2) -> impl Iterator<Item = usize> + '_ {
         let (x, y) = self.key(p);
-        (-1..=1).flat_map(move |dx| (-1..=1).map(move |dy| (x + dx, y + dy))).flat_map(move |k| self.cells.get(&k).into_iter().flatten().copied())
+        // (a point thrown out to the end of the numbers by a broken spline of a map file is
+        // in the last cell: the one beyond it is not there to look in)
+        (x.saturating_sub(1)..=x.saturating_add(1)).flat_map(move |cx| (y.saturating_sub(1)..=y.saturating_add(1)).map(move |cy| (cx, cy))).flat_map(move |k| self.cells.get(&k).into_iter().flatten().copied())
     }
 }
 
@@ -718,6 +741,9 @@ fn run(s: Snapshot, roots: Vec<PathBuf>) -> Vec<Issue> {
         let file = s.objects.iter().find(|o| o.id == *id).map(|o| short(&o.file)).unwrap_or_default();
         out.push(issue(Severity::Warning, Kind::LinkLost, file, format!("[varparent] {p}"), Some(*at), Some(Sel::Object(*k, *id)), Some(Fix::DropVarParent(*k, *id))));
     }
+    for (k, id, file, at) in &s.refused_rows {
+        out.push(issue(Severity::Warning, Kind::RowBeforeSpline, short(file), format!("IDCode {id}"), Some(*at), Some(Sel::Attached(*k, *id)), None));
+    }
     out.sort_by(|a, b| a.severity.cmp(&b.severity).then(a.kind.cmp(&b.kind)));
     out
 }
@@ -827,6 +853,21 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
         let net = crate::timetable::network::Network::build(d, &mut files);
         for trip in trips {
             let pos: Vec<Option<DVec3>> = trip.stations.iter().map(|id| crate::timetable::stop_world(d, &mut files, *id)).collect();
+            // (the way as saved: where its paths do not join, the game's bus loses it)
+            if let Some(track) = tt.track(&trip.name) {
+                let lanes = crate::timetable::way::lanes_of_track(&net, &track.entries, &d.order);
+                if lanes.iter().all(|l| l.is_some()) {
+                    let lanes: Vec<usize> = lanes.into_iter().flatten().collect();
+                    if let Some(&(k, m)) = crate::timetable::way::gaps(&net, &lanes).first() {
+                        let p = net.lanes[lanes[k]].pts.last().copied();
+                        out.push(Issue { severity: Severity::Warning, kind: Kind::TripNoRoute, title: trip.name.clone(), detail: format!("{} {} ({m:.1} m)", tr("its way has a gap after path", "в его пути разрыв после пути"), k + 1), at: p.map(|p| p.truncate()), sel: None, fix: None });
+                        continue;
+                    }
+                }
+            }
+            if tt.by_hand(&trip.name) {
+                continue;
+            }
             let r = crate::timetable::route::find(&net, &pos, d.global.left_hand_traffic, crate::timetable::route::ways_of(tt, &trip.name, &net, &d.order));
             if r.ok() {
                 continue;
@@ -836,7 +877,8 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
                 Some(Problem::NoObject(i)) => (*i, format!("{} {}", tr("the stop has no object:", "у остановки нет объекта:"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoRoad(i)) if r.ways == Some(crate::timetable::route::Ways::Rail) => (*i, format!("{} {}", tr("no track beside", "нет рельсов у"), stop_name(trip.stations[*i]))),
                 Some(Problem::NoRoad(i)) => (*i, format!("{} {}", tr("no road beside", "нет дороги у"), stop_name(trip.stations[*i]))),
-                Some(Problem::NoWay(i)) => (*i, format!("{} {} -> {}", tr("no way", "нет пути"), stop_name(trip.stations[*i]), trip.stations.get(i + 1).map(|s| stop_name(*s)).unwrap_or_default())),
+                Some(Problem::OffWay(i)) => (*i, format!("{} {}", tr("its way does not pass", "его путь не проходит у"), stop_name(trip.stations[*i]))),
+                Some(Problem::NoWay(i)) =>(*i, format!("{} {} -> {}", tr("no way", "нет пути"), stop_name(trip.stations[*i]), trip.stations.get(i + 1).map(|s| stop_name(*s)).unwrap_or_default())),
                 None => (0, tr("no way found", "путь не найден").to_string()),
             };
             let (at, sel) = trip.stations.get(i).map(|id| place(&mut files, *id)).unwrap_or((None, None));
@@ -852,6 +894,12 @@ fn timetable_issues(d: &Document, roots: &[PathBuf], out: &mut Vec<Issue>) {
         if gone > 0 {
             let k = d.tiles.iter().find(|(_, t)| t.tile.objects.iter().any(|o| o.id == r.signal.0)).map(|(k, _)| *k);
             out.push(Issue { severity: Severity::Warning, kind: Kind::SignalRouteBroken, title: format!("{} {i}", tr("Route", "Маршрут")), detail: format!("{gone} {}", tr("gone", "нет на карте")), at: None, sel: k.map(|k| Sel::Object(k, r.signal.0)), fix: None });
+        }
+    }
+    // the trolleybus wire: joints the game cannot use, switches without a frog
+    if let Some(w) = &d.traffic.trolley {
+        for (p, text) in crate::trolley::problems(w) {
+            out.push(Issue { severity: Severity::Warning, kind: Kind::TrolleyWire, title: tr("Trolleybus wire", "Контактная сеть").to_string(), detail: text, at: Some(p.truncate()), sel: None, fix: None });
         }
     }
     // chrono scenarios: their changes name things of the map or of a scenario
@@ -896,6 +944,22 @@ fn times(n: usize) -> String {
 /// A file's name without its folders.
 fn short(file: &str) -> String {
     file.rsplit(['\\', '/']).next().unwrap_or(file).to_string()
+}
+
+/// Two free spline ends linked (inside a step the caller has open). Whether they were.
+pub fn apply_link(doc: &mut Document, a: End, b: End) -> bool {
+    let free = |doc: &Document, e: &End| doc.spline(e.0, e.1).map(|s| if e.2 { s.next_id == 0 } else { s.prev_id == 0 }).unwrap_or(false);
+    if !(free(doc, &a) && free(doc, &b) && a.1 != b.1) {
+        return false;
+    }
+    for (me, other) in [(a, b), (b, a)] {
+        let Some(t) = doc.tiles.get_mut(&me.0) else { return false };
+        if let Some(s) = t.tile.splines.iter_mut().find(|s| s.id == me.1 && !s.deleted) {
+            if me.2 { s.next_id = other.1 } else { s.prev_id = other.1 }
+        }
+        t.touch_content();
+    }
+    true
 }
 
 /// Put an issue right (as one step that can be undone). Returns whether anything changed.
@@ -1193,22 +1257,22 @@ impl Checker {
         }
         let mut open = self.open;
         let mut fix_now: Vec<(usize, Fix)> = Vec::new();
-        egui::Window::new(icons::labelled(Icon::CheckCircle, tr("Map check", "Проверка карты"))).id(egui::Id::new("map check")).open(&mut open).default_pos([300.0, 90.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::FactCheck, tr("Map check", "Проверка карты"))).id(egui::Id::new("map check")).open(&mut open).default_pos([300.0, 90.0]).default_size([460.0, 520.0]).resizable(true).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let can = !self.running() && !lib.scanning && ed.doc.is_some();
-                if ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::CheckCircle, tr("Check again", "Проверить снова")))).clicked() {
+                if ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Refresh, tr("Check again", "Проверить снова")))).clicked() {
                     if let Some(doc) = &ed.doc {
                         self.start(doc, lib);
                     }
                 }
                 if self.running() || lib.scanning {
                     ui.spinner();
-                    ui.label(RichText::new(tr("Checking the map…", "Проверяем карту…")).color(Color32::GRAY));
+                    ui.label(RichText::new(tr("Checking the map…", "Проверяем карту…")).color(pal().text_dim));
                 } else if let Some(list) = &self.issues {
                     let errors = list.iter().filter(|i| i.severity == Severity::Error).count();
                     let warnings = list.iter().filter(|i| i.severity == Severity::Warning).count();
                     let notes = list.len() - errors - warnings;
-                    ui.label(RichText::new(format!("{} {errors} · {} {warnings} · {} {notes}", tr("errors", "ошибок"), tr("warnings", "предупреждений"), tr("notes", "заметок"))).color(Color32::GRAY));
+                    ui.label(RichText::new(format!("{} {errors} · {} {warnings} · {} {notes}", tr("errors", "ошибок"), tr("warnings", "предупреждений"), tr("notes", "заметок"))).color(pal().text_dim));
                 }
             });
             ui.separator();
@@ -1225,9 +1289,9 @@ impl Checker {
                     let group = i..end;
                     let sev = list[i].severity;
                     let (icon, color) = match sev {
-                        Severity::Error => (Icon::Error, Color32::from_rgb(235, 100, 90)),
-                        Severity::Warning => (Icon::Warning, Color32::from_rgb(235, 180, 70)),
-                        Severity::Info => (Icon::Info, Color32::from_rgb(130, 170, 230)),
+                        Severity::Error => (Icon::Error, pal().error),
+                        Severity::Warning => (Icon::Warning, pal().warn),
+                        Severity::Info => (Icon::Info, pal().info),
                     };
                     let left = group.clone().filter(|n| !self.fixed.contains(n)).count();
                     let folded = self.folded.contains(&kind);
@@ -1242,14 +1306,14 @@ impl Checker {
                         }
                         ui.label(icon.text(15.0).color(color));
                         let fixable: Vec<usize> = group.clone().filter(|n| list[*n].fix.is_some() && !self.fixed.contains(n)).collect();
-                        if fixable.len() > 1 && ui.small_button(tr("Fix all", "Исправить все")).clicked() {
+                        if fixable.len() > 1 && ui.small_button(icons::labelled(Icon::Build, tr("Fix all", "Исправить все"))).clicked() {
                             for n in fixable {
                                 fix_now.push((n, list[n].fix.clone().unwrap()));
                             }
                         }
                     });
                     if !folded {
-                        ui.label(RichText::new(kind.help()).small().color(Color32::GRAY));
+                        ui.label(RichText::new(kind.help()).small().color(pal().text_dim));
                         for n in group.clone() {
                             let it = &list[n];
                             let done = self.fixed.contains(&n);
@@ -1267,7 +1331,7 @@ impl Checker {
                                     ui.add_space(12.0);
                                     let full = format!("{}  {}", it.title, it.detail);
                                     let text = RichText::new(full.clone());
-                                    let text = if done { text.strikethrough().color(Color32::DARK_GRAY) } else { text };
+                                    let text = if done { text.strikethrough().color(pal().text_off) } else { text };
                                     let r = ui.add(egui::Label::new(text).sense(egui::Sense::click()).truncate());
                                     let hint = if it.at.is_some() { format!("{full}\n{}", tr("Click to fly there", "Клик: перелететь туда")) } else { full };
                                     let r = r.on_hover_text(hint);
@@ -1359,6 +1423,20 @@ pub fn cli(cfg: &Path) -> i32 {
 mod tests {
     use super::*;
 
+    /// A point at the far end of the numbers (a broken spline of a map file sends its end
+    /// there) is looked round without the cell numbers overflowing: the check of
+    /// Solnechnogorsk_2024 stopped there.
+    #[test]
+    fn a_point_at_the_end_of_the_numbers_is_looked_round() {
+        let mut g = Grid::new(2.0);
+        let far = DVec2::new(f64::INFINITY, f64::MAX);
+        g.add(far, 0);
+        g.add(DVec2::new(1.0, 1.0), 1);
+        assert_eq!(g.near(far).collect::<Vec<_>>(), vec![0]);
+        assert_eq!(g.near(DVec2::new(f64::NEG_INFINITY, f64::MIN)).count(), 0);
+        assert_eq!(g.near(DVec2::new(1.5, 1.5)).collect::<Vec<_>>(), vec![1]);
+    }
+
     fn spline(id: i64, x: f64, heading: f64, prev: i64, next: i64) -> SplineRec {
         let p = DVec3::new(x, 0.0, 0.0);
         let q = p + DVec3::new(heading.to_radians().sin(), heading.to_radians().cos(), 0.0) * 10.0;
@@ -1368,7 +1446,7 @@ mod tests {
     fn snap(splines: Vec<SplineRec>) -> Snapshot {
         let mut kinds = HashMap::new();
         kinds.insert("splines\\road.sli".to_string(), KindRec { cat: Category::Roads, half_width: 4.0, bus_stop: false, lanes: true, abs_height: false, lamp: false, light_head: false });
-        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), mounts: Default::default(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new() }
+        Snapshot { objects: Vec::new(), splines, chrono_lanes: Vec::new(), kinds, entries: Vec::new(), next_id: 100, listed_missing: Vec::new(), no_terrain: Vec::new(), unlit: HashSet::new(), ground: Vec::new(), map_dir: PathBuf::new(), mounts: Default::default(), tiles: HashSet::new(), parents: HashSet::new(), var_links: Vec::new(), object_ids: HashSet::new(), tt_doc: None, stops: Vec::new(), refused_rows: Vec::new() }
     }
 
     #[test]
@@ -1399,6 +1477,7 @@ mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         for k in tiles {
             doc.tiles.insert(*k, crate::doc::TileDoc::new_flat(0.0));
@@ -1611,6 +1690,21 @@ mod tests {
         let lost: Vec<_> = issues.iter().filter(|i| i.kind == Kind::LinkLost).collect();
         assert_eq!(lost.len(), 1);
         assert_eq!(lost[0].fix, Some(Fix::DropVarParent((0, 0), 2)));
+    }
+
+    /// A row starting before its own spline (20 m into its chain, the row at 5 m) is one the
+    /// game does not draw: it is named, a row laid from its spline is not.
+    #[test]
+    fn a_row_starting_before_its_spline_is_named() {
+        use crate::selection::tests::{add_spline, flat_map};
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 0.0, 0.0, 20.0, 0, 2);
+        add_spline(&mut doc, (0, 0), 2, 100.0, 20.0, 0.0, 40.0, 1, 0);
+        let row = |id: i64, d: f64| omsi_map::SplineAttachment { file: "Sceneryobjects\\lamp.sco".into(), id, spline_index: 1, offset: [3.0, 0.0, d], ..Default::default() };
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments = vec![row(5, 5.0), row(6, 25.0)];
+        let issues = run(snapshot(&doc, &Library::default()), Vec::new());
+        let rows: Vec<_> = issues.iter().filter(|i| i.kind == Kind::RowBeforeSpline).map(|i| i.sel).collect();
+        assert_eq!(rows, vec![Some(Sel::Attached((0, 0), 5))]);
     }
 
     #[test]

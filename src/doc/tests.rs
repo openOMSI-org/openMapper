@@ -23,6 +23,8 @@ pub(crate) fn sample_map(roots: &Roots) -> Document {
     global.friendly_name = "Round trip: Тест".into();
     global.description = "two lines\nof text".into();
     global.next_id_code = 100;
+    // (openOMSI's transport modes: a tram map)
+    global.transport.declare_keyword("tram_transport");
     global.ground_textures = vec![
         GroundTex { texture: "Texture\\gras.bmp".into(), detail_texture: "Texture\\gras_det.bmp".into(), params: [0.0, 1.0, 60.0] },
         GroundTex { texture: "Texture\\sand.bmp".into(), detail_texture: "Texture\\noise_low.bmp".into(), params: [8.0, 16.0, 4.0] },
@@ -42,6 +44,7 @@ pub(crate) fn sample_map(roots: &Roots) -> Document {
         traffic: Default::default(),
         descriptions: Default::default(),
         groups: Vec::new(),
+        global_extra: Vec::new(),
     };
     for k in [(0, 0), (1, 0), (0, -1)] {
         doc.add_tile(k);
@@ -88,6 +91,7 @@ fn a_map_saved_reads_back_the_same() {
     assert_eq!(back.global.friendly_name, doc.global.friendly_name);
     assert_eq!(back.global.description.trim(), doc.global.description);
     assert_eq!(back.global.next_id_code, 100);
+    assert_eq!(back.global.transport, doc.global.transport);
     assert_eq!(back.global.ground_textures.len(), 2);
     assert_eq!(back.tiles.keys().collect::<Vec<_>>(), doc.tiles.keys().collect::<Vec<_>>());
     assert_eq!(back.order, doc.order);
@@ -372,7 +376,7 @@ fn a_new_map_has_the_cars_its_traffic_names() {
 /// Where the objects of every row on tile (0, 0) stand.
 fn row_spots(doc: &Document) -> Vec<DVec3> {
     let t = &doc.tiles[&(0, 0)].tile;
-    let mut v: Vec<DVec3> = t.spline_attachments.iter().flat_map(|a| crate::place::row_objects(a, &t.splines, tile_origin((0, 0)))).map(|o| o.pose.pos).collect();
+    let mut v: Vec<DVec3> = t.spline_attachments.iter().flat_map(|a| crate::place::row_objects(a, &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc))).map(|o| o.pose.pos).collect();
     v.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
     v
 }
@@ -627,4 +631,123 @@ fn the_timetable_follows_the_tile_list_before_a_background_save() {
     assert_eq!(tt.stops[0].group, 0);
     assert_eq!(tt.order, vec![(1, 0)]);
     assert!(tt.dirty);
+}
+
+/// A tile from OMSI 1 (version 10) writes a linked spline at place 0: it goes on from the end
+/// of the spline before it - a 40 m curve of radius 300 climbing 2 % here - and is saved where
+/// it goes on; one written unlinked (-1) keeps its own place.
+#[test]
+fn an_old_tiles_linked_splines_go_on_from_the_one_before_and_are_saved_there() {
+    let text = "[version]\n10\n\n\
+[spline]\n0\nSplines\\road.sli\n0\n-1\n180\n5\n170\n10\n40\n300\n2\n2\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n2\n0\n0\n0\n0\n0\n50\n50\n0\n8\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n3\n-1\n0\n0\n0\n0\n20\n0\n0\n0\n0\n0\n";
+    let d = std::env::temp_dir().join(format!("openmapper-test-linked-{}", std::process::id()));
+    std::fs::create_dir_all(&d).unwrap();
+    let p = d.join("tile_0_0.map");
+    std::fs::write(&p, text).unwrap();
+    let tile = read_tile_file(&p).unwrap();
+    let first = omsi_geometry::SplineCurve::from_map(&tile.splines[0], DVec2::ZERO);
+    let end = first.end_point();
+    assert!((DVec3::from_array(tile.splines[1].pos) - end).length() < 1e-9, "{:?} vs {end:?}", tile.splines[1].pos);
+    assert!((tile.splines[1].heading - first.heading_at(40.0)).abs() < 1e-9);
+    assert!((tile.splines[1].pos[2] - 5.8).abs() < 1e-9, "the height at the end of a 2 % climb of 40 m");
+    assert_eq!((tile.splines[2].pos, tile.splines[2].heading), ([0.0; 3], 0.0));
+    // (written as version 14, with both neighbours named and every place its own)
+    let back = Tile::parse(&omsi_cfg::CfgFile::from_str("tile_0_0.map", &tile_text(&tile)));
+    assert!(back.splines.iter().all(|s| !s.linked));
+    assert_eq!((back.splines[0].next_id, back.splines[1].prev_id), (2, 0));
+    assert!((DVec3::from_array(back.splines[1].pos) - end).length() < 1e-6, "{:?}", back.splines[1].pos);
+    let _ = std::fs::remove_dir_all(&d);
+}
+
+/// A map from OMSI 1 lists no `[entrypoints]`: its start points are the entry point objects of
+/// its tiles, as Omsi.exe and openOMSI take them, and opening it changes nothing to save.
+#[test]
+fn a_map_without_entrypoints_takes_its_tiles_entry_objects() {
+    let _map = one_map();
+    let roots = scratch("entry-objects");
+    let map = roots.content.join("maps").join("Old");
+    std::fs::create_dir_all(&map).unwrap();
+    std::fs::create_dir_all(roots.content.join("Sceneryobjects").join("Generic")).unwrap();
+    std::fs::write(roots.content.join("Sceneryobjects/Generic/entrypoint_bus.sco"), "[entrypoint]\n[onlyeditor]\n").unwrap();
+    std::fs::write(map.join("tile_0_0.map"), "[version]\n10\n\n[object]\n0\nSceneryobjects\\Generic\\entrypoint_bus.sco\n7\n6.5\n225.5\n0.2\n90\n1\nDepot\n").unwrap();
+    std::fs::write(map.join("global.cfg"), "[map]\n0\n0\ntile_0_0.map\n").unwrap();
+    omsi_cfg::add_content_root(roots.content.clone());
+    let doc = Document::load(&roots, &map.join("global.cfg"), |_| {});
+    omsi_cfg::remove_content_root(&roots.content);
+    let doc = doc.unwrap();
+    let e: Vec<_> = doc.global.entry_points.iter().map(|e| (e.object_id, e.name.as_str(), e.group)).collect();
+    assert_eq!(e, vec![(7, "Depot", 0)]);
+    assert!(doc.global.entry_points[0].pos.iter().all(|v| v.is_finite()), "{:?}", doc.global.entry_points[0].pos);
+    assert!(!doc.is_dirty());
+    let _ = std::fs::remove_dir_all(&roots.content);
+}
+
+/// The blocks of global.cfg the editor does not know (an add-on's, a newer game's) are written
+/// back as they were and where they were: after the block they followed, the first before
+/// everything, and a description's text is not taken for one.
+#[test]
+fn global_cfg_keeps_the_blocks_it_does_not_know_in_their_places() {
+    let _map = one_map();
+    let roots = scratch("foreign-blocks");
+    let map = roots.content.join("maps").join("Foreign");
+    std::fs::create_dir_all(&map).unwrap();
+    std::fs::write(map.join("tile_0_0.map"), "[version]\n14\n").unwrap();
+    std::fs::write(
+        map.join("global.cfg"),
+        "[mod_header]\nfirst\n\n[name]\nForeign\n\n[friendlyname]\nForeign map\n\n[weather_preset]\nrain\n0.5\n\n\
+[description]\nA map\n[Hinweis]\nmore text\n[end]\n\n[NextIDCode]\n10\n\n[groundtex]\nTexture\\gras.bmp\nTexture\\gras_det.bmp\n0\n1\n60\n\n\
+[after_ground]\n1\n\n[map]\n0\n0\ntile_0_0.map\n\n[trailer]\nx\ny\n",
+    )
+    .unwrap();
+    let doc = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    let text = global_text(&doc);
+    let at = |k: &str| text.find(k).unwrap_or_else(|| panic!("{k} is missing:\n{text}"));
+    assert!(at("[mod_header]\nfirst\n") < at("[name]"));
+    assert!(at("[friendlyname]") < at("[weather_preset]\nrain\n0.5\n") && at("[weather_preset]") < at("[description]"));
+    assert!(at("[groundtex]") < at("[after_ground]\n1\n") && at("[after_ground]") < at("[map]"));
+    assert!(at("[map]") < at("[trailer]\nx\ny\n"));
+    assert!(!text.contains("[Hinweis]\n\n"), "the description's own line is no block of its own:\n{text}");
+    assert_eq!(text.matches("[weather_preset]").count(), 1);
+    // (and written again the same)
+    let back = super::save::foreign_blocks(&text.lines().map(str::to_string).collect::<Vec<_>>());
+    assert_eq!(back, doc.global_extra);
+    let _ = std::fs::remove_dir_all(&roots.content);
+}
+
+/// A tile from OMSI 1 writes no chain distances (the game walks them along the links); saved
+/// as version 14 it writes the ones walked, so a row on the second spline of a chain stands
+/// where it stood once the map is saved and read again (it stood 40 m off).
+#[test]
+fn an_old_tiles_rows_stand_where_they_stood_after_a_save() {
+    let _map = one_map();
+    let roots = scratch("old-chain");
+    let map = roots.content.join("maps").join("Old");
+    std::fs::create_dir_all(&map).unwrap();
+    // (north from (100, 50): 40 m, then a linked spline of 60 m, a lamp 50 m into the chain)
+    std::fs::write(
+        map.join("tile_0_0.map"),
+        "[version]\n10\n\n\
+[spline]\n0\nSplines\\road.sli\n1\n-1\n100\n0\n50\n0\n40\n0\n0\n0\n0\n0\n\n\
+[spline]\n0\nSplines\\road.sli\n2\n0\n0\n0\n0\n0\n60\n0\n0\n0\n0\n0\n\n\
+[splineAttachement]\n0\nSceneryobjects\\lamp.sco\n7\n1\n3\n0\n50\n0\n0\n0\n0\n",
+    )
+    .unwrap();
+    std::fs::write(map.join("global.cfg"), "[name]\nOld\n\n[map]\n0\n0\ntile_0_0.map\n").unwrap();
+    let spots = |doc: &Document| {
+        let t = &doc.tiles[&(0, 0)].tile;
+        crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(doc)).iter().map(|o| o.pose.pos).collect::<Vec<_>>()
+    };
+    let mut doc = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    let before = spots(&doc);
+    assert_eq!(before.len(), 1);
+    assert!((before[0] - DVec3::new(103.0, 100.0, 0.0)).length() < 1e-6, "{before:?}");
+    doc.tiles.get_mut(&(0, 0)).unwrap().dirty = true;
+    save(&mut doc).unwrap();
+    let back = Document::load(&roots, &map.join("global.cfg"), |_| {}).unwrap();
+    assert_eq!(back.tiles[&(0, 0)].tile.version, 14);
+    let after = spots(&back);
+    assert!(after.len() == 1 && (after[0] - before[0]).length() < 1e-6, "{after:?} - {before:?}");
+    let _ = std::fs::remove_dir_all(&roots.content);
 }

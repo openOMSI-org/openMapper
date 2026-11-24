@@ -1,11 +1,17 @@
-//! Where things a tile places indirectly stand, as openOMSI puts them (ported from its
-//! `tiles.rs`, which is private to the game): the objects of `[splineAttachement]` rows along
-//! their spline chains, and `[attachObj]` objects hanging on a `[new_attachment]` point of
-//! their parent.
+//! Where things a tile places indirectly stand, as openOMSI puts them (its `omsi-world`): the
+//! objects of `[splineAttachement]` rows along their spline chains, and `[attachObj]` objects
+//! hanging on a `[new_attachment]` point of their parent.
 
-use glam::{DVec2, DVec3, Mat4, Vec3};
-use omsi_geometry::SplineCurve;
+use std::hash::{Hash, Hasher};
+use std::sync::{Arc, Mutex};
+
+use glam::{DVec2, DVec3, Mat4};
 use omsi_map::{MapSpline, SplineAttachment};
+use omsi_world::map_index::{self, IndexedSpline, MapIndex};
+
+use crate::doc::{Document, TileKey};
+
+pub use omsi_world::map_index::attachment_matrix;
 
 /// A world pose: position, and the rotation of the object's frame.
 #[derive(Debug, Clone, Copy)]
@@ -30,30 +36,14 @@ impl Pose {
     /// its own heading/pitch/bank `own` (D3DX order: the point's rotation, then the object's
     /// own, then the parent's), as Omsi.exe puts it there.
     pub fn attached(&self, attach: &Mat4, own: [f64; 3]) -> Pose {
-        let local = attach.transform_point3(Vec3::ZERO);
-        let pos = self.pos + self.rot.transform_vector3(local).as_dvec3();
-        let (_, r, _) = attach.to_scale_rotation_translation();
-        let (_, parent, _) = self.rot.to_scale_rotation_translation();
-        let rot = Mat4::from_quat((omsi_geometry::object_rotation_ypr(own).to_scale_rotation_translation().1 * r * parent).normalize());
-        Pose { pos, rot }
+        map_index::Pose { pos: self.pos, rot: self.rot }.attached(attach, own).into()
     }
 }
 
-/// The transform of a `[new_attachment]` point in its parent's frame: the operations act in
-/// the order they are listed, like the original's Direct3D matrices.
-pub fn attachment_matrix(a: &omsi_scenery::sco::Attachment) -> Mat4 {
-    let mut m = Mat4::IDENTITY;
-    for (op, v) in &a.ops {
-        let step = match (op.as_str(), v.as_slice()) {
-            ("attach_trans", [x, y, z, ..]) => Mat4::from_translation(Vec3::new(*x, *y, *z)),
-            ("attach_rot_x", [r, ..]) => Mat4::from_rotation_x(-r.to_radians()),
-            ("attach_rot_y", [r, ..]) => Mat4::from_rotation_y(-r.to_radians()),
-            ("attach_rot_z", [r, ..]) => Mat4::from_rotation_z(-r.to_radians()),
-            _ => continue,
-        };
-        m = step * m;
+impl From<map_index::Pose> for Pose {
+    fn from(p: map_index::Pose) -> Pose {
+        Pose { pos: p.pos, rot: p.rot }
     }
-    m
 }
 
 /// One object of a spline attachment row.
@@ -64,105 +54,215 @@ pub struct RowObject {
     pub pose: Pose,
 }
 
-/// How far past the end of a chain a lone object still stands at its end.
-const CHAIN_END_TOLERANCE: f64 = 1.0;
-
-#[derive(Debug, Clone, Copy)]
-struct RowStart {
-    s: f64,
-    j: usize,
-    backwards: bool,
-}
-
-fn first_after(d0: f64, acc: f64, interval: f64) -> Option<(f64, usize)> {
-    if interval > 0.0 {
-        let j = ((acc - d0) / interval + 1e-6).ceil().max(0.0) as usize;
-        Some((d0 + j as f64 * interval - acc, j))
-    } else if d0 >= acc - 1e-6 {
-        Some((d0 - acc, 0))
-    } else {
-        None
-    }
-}
-
-fn place_on(att: &SplineAttachment, spline: &MapSpline, origin: DVec2, start: RowStart) -> Vec<RowObject> {
-    let curve = SplineCurve { half_cant_width: omsi_geometry::half_cant_width_of(&spline.file), ..SplineCurve::from_map(spline, origin) };
-    let len = spline.length.max(0.0);
-    let interval = att.interval.max(0.0);
-    let range = att.range.max(0.0);
-    let (x, h) = (att.offset[0], att.offset[1]);
-    let RowStart { mut s, mut j, backwards, .. } = start;
-    let far = if backwards { spline.prev_id } else { spline.next_id };
-    let chain_ends = far == 0;
-    let single = interval <= 0.0 || range < interval;
-    let end = len + if chain_ends && single { CHAIN_END_TOLERANCE } else { 1e-6 };
-    let mut out = Vec::new();
-    loop {
-        if interval > 0.0 && j as f64 * interval > range + 1e-6 {
-            break;
-        }
-        if s > end {
-            break;
-        }
-        if s >= -1e-6 {
-            let along = s.clamp(0.0, len);
-            let (u, side, turn) = if backwards { (len - along, -x, 180.0) } else { (along, x, 0.0) };
-            let pos = curve.offset_point(u, side, h);
-            let pitch = if att.tilt { curve.slope_at(u).atan().to_degrees() } else { 0.0 };
-            let bank = if att.tilt && side.abs() < curve.half_cant_width { (curve.cant_at(u) / 100.0).atan().to_degrees() } else { 0.0 };
-            let mut own = omsi_geometry::map_rotation(att.rot);
-            own[0] += turn;
-            let rot = omsi_geometry::object_rotation([curve.heading_at(u), pitch, bank]) * omsi_geometry::object_rotation_ypr(own);
-            out.push(RowObject { index: j, pose: Pose { pos, rot } });
-        }
-        if interval <= 0.0 {
-            break;
-        }
-        s += interval;
-        j += 1;
-        if out.len() > 4096 {
-            break;
-        }
-    }
-    out
-}
-
 /// The objects of row record `att` of a tile whose splines are `splines` (curves starting at
-/// `origin`, the tile's corner). Object `j` lies `d + j * interval` along the chain from its
-/// start while `j * interval <= range`, on the record's own spline and on the splines after
-/// it in the chain inside the same tile.
-pub fn row_objects(att: &SplineAttachment, splines: &[MapSpline], origin: DVec2) -> Vec<RowObject> {
-    let si = att.spline_index.max(0) as usize;
-    let Some(own) = splines.get(si).filter(|s| !s.deleted) else { return Vec::new() };
-    let offset = own.map_chain_offset.unwrap_or(0.0);
-    let d0 = att.offset[2] - offset;
-    let start = RowStart { s: d0, j: 0, backwards: false };
-    let interval = att.interval.max(0.0);
-    let last = d0 + if interval > 0.0 { (att.range.max(0.0) / interval + 1e-6).floor() * interval } else { 0.0 };
-    let mut out = place_on(att, own, origin, start);
-    let (mut cur, mut acc, mut backwards) = (si, 0.0, false);
-    let mut seen = vec![si];
-    loop {
-        acc += splines[cur].length.max(0.0);
-        if last <= acc + 1e-6 {
-            break;
-        }
-        let c = &splines[cur];
-        let next_id = if backwards { c.prev_id } else { c.next_id };
-        let Some(ni) = splines.iter().position(|s| s.id == next_id && !s.deleted) else { break };
-        if seen.contains(&ni) || seen.len() > 500 {
-            break;
-        }
-        seen.push(ni);
-        let next = &splines[ni];
-        if next.prev_id == c.id {
-            backwards = false;
-        } else if next.next_id == c.id {
-            backwards = true;
-        }
-        let Some((s, j)) = first_after(d0, acc, interval) else { break };
-        out.extend(place_on(att, next, origin, RowStart { s, j, backwards }));
-        cur = ni;
+/// `origin`, the tile's corner), where the game lays them (`omsi-world`'s `tile_row_objects`):
+/// along the record's own spline and the ones after it in the tile, with `index` - the whole
+/// map's chains (see [`row_index`]) - for where a chain goes on beyond the tile. A record whose
+/// first object would lie before its own spline places none, as Omsi.exe draws none of it.
+pub fn row_objects(att: &SplineAttachment, splines: &[MapSpline], origin: DVec2, index: &MapIndex) -> Vec<RowObject> {
+    if att.repeater.is_none() && map_index::row_starts_before_its_spline(att, splines) {
+        return Vec::new();
     }
-    out
+    map_index::tile_row_objects(att, splines, origin, Some(index)).into_iter().map(|(_, o)| RowObject { index: o.index, pose: o.pose.into() }).collect()
+}
+
+/// What the rows need of the whole map, as the game's map index holds it: every spline's
+/// length and links (a chain read without its own offsets is walked through other tiles, and
+/// one that goes on into another tile does not end there), and the first object each repeater
+/// carries (the object between two tiles' copies of a row is placed once). Made again when
+/// any of that changes (looked over, which is far quicker than making it).
+pub fn row_index(doc: &Document) -> Arc<MapIndex> {
+    static LAST: Mutex<Option<(u64, Arc<MapIndex>)>> = Mutex::new(None);
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    for t in doc.tiles.values() {
+        chain_data(&t.tile, &mut h);
+    }
+    let key = h.finish();
+    let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((_, ix)) = last.as_ref().filter(|(k, _)| *k == key) {
+        return ix.clone();
+    }
+    let ix = Arc::new(build_row_index(doc));
+    *last = Some((key, ix.clone()));
+    ix
+}
+
+/// What of a tile the rows read beyond their own tile: its splines' lengths, links and chain
+/// distances, and its repeaters' counts.
+fn chain_data(t: &omsi_map::Tile, h: &mut impl Hasher) {
+    for s in t.splines.iter().filter(|s| !s.deleted) {
+        (s.id, s.prev_id, s.next_id, s.length.to_bits(), s.map_chain_offset.map(f64::to_bits)).hash(h);
+    }
+    for a in t.spline_attachments.iter().filter(|a| a.repeater.is_some()) {
+        (a.id, a.spline_index, a.repeater, a.offset[2].to_bits(), a.interval.to_bits()).hash(h);
+    }
+}
+
+/// What the rows of tile `k` depend on beyond it: the chains of the tiles around, where they
+/// run on and where the object at a border is decided (0 for a tile without rows). The view
+/// lays a tile's rows out again when it changes, not only when the tile itself does.
+pub fn rows_beyond(doc: &Document, k: TileKey) -> u64 {
+    if doc.tiles.get(&k).is_none_or(|t| t.tile.spline_attachments.is_empty()) {
+        return 0;
+    }
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+        if let Some(t) = doc.tiles.get(&(k.0 + dx, k.1 + dy)) {
+            (dx, dy).hash(&mut h);
+            chain_data(&t.tile, &mut h);
+        }
+    }
+    h.finish()
+}
+
+fn build_row_index(doc: &Document) -> MapIndex {
+    let mut ix = MapIndex::default();
+    for t in doc.tiles.values() {
+        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            ix.splines.insert(s.id, IndexedSpline { length: s.length, map_chain_offset: s.map_chain_offset, prev: s.prev_id, next: s.next_id });
+        }
+    }
+    // (the map's count of the first object, or the record's own copy of the row where that
+    // says an earlier one: `MapIndex::build`)
+    for t in doc.tiles.values() {
+        for a in &t.tile.spline_attachments {
+            let Some((_, first)) = a.repeater else { continue };
+            let Some(s) = t.tile.splines.get(a.spline_index.max(0) as usize) else { continue };
+            ix.repeater_first.insert((a.id, s.id), first);
+            let Some(local) = ix.splines.get(&s.id).copied().filter(|_| a.interval > 0.0) else { continue };
+            let d0 = a.offset[2] - chain_offset(&ix, s.id, local);
+            let ours = ((JOINT_TOLERANCE - d0) / a.interval).ceil().max(0.0) as usize;
+            ix.repeater_first.insert((a.id, s.id), ours.min(first));
+        }
+    }
+    ix
+}
+
+/// How far spline `s` starts from the start of its chain, where a row on it counts its
+/// distance from: its own number, else (a tile older than version 11) the walk back along the
+/// map's links that the game makes.
+pub fn chain_offset_of(doc: &Document, s: &MapSpline) -> f64 {
+    s.map_chain_offset.unwrap_or_else(|| walked_chain_offset(&row_index(doc), s))
+}
+
+/// The same walk with the map's index at hand: the lengths before `s` along the links.
+pub fn walked_chain_offset(ix: &MapIndex, s: &MapSpline) -> f64 {
+    chain_offset(ix, s.id, IndexedSpline { length: s.length, map_chain_offset: None, prev: s.prev_id, next: s.next_id })
+}
+
+/// One object standing on a joint belongs to the spline before (`omsi-world`'s).
+const JOINT_TOLERANCE: f64 = 0.01;
+
+/// How far spline `id` starts from the start of its chain: its own number, else the lengths
+/// before it along the links (`omsi-world`'s `chain_offset_from`).
+fn chain_offset(ix: &MapIndex, id: i64, mut spline: IndexedSpline) -> f64 {
+    if let Some(offset) = spline.map_chain_offset {
+        return offset;
+    }
+    let (mut cur, mut forward, mut acc) = (id, true, 0.0);
+    let mut seen = vec![id];
+    loop {
+        let prev_id = if forward { spline.prev } else { spline.next };
+        let Some(p) = ix.splines.get(&prev_id) else { break };
+        if seen.contains(&prev_id) || seen.len() > 500 {
+            break;
+        }
+        if p.next == cur {
+            forward = true;
+        } else if p.prev == cur {
+            forward = false;
+        }
+        acc += p.length;
+        seen.push(prev_id);
+        cur = prev_id;
+        spline = *p;
+    }
+    acc
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::doc::{tile_origin, tile_size};
+    use crate::selection::tests::{add_spline, flat_map};
+
+    fn row(id: i64, spline_index: i32, d: f64, interval: f64, range: f64, repeater: Option<(usize, usize)>) -> SplineAttachment {
+        SplineAttachment { file: "Sceneryobjects\\lamp.sco".into(), id, spline_index, offset: [0.0, 0.0, d], interval, range, repeater, ..Default::default() }
+    }
+
+    /// Every object the rows of the map place (world x, y).
+    fn placed(doc: &Document) -> Vec<DVec2> {
+        let rows = row_index(doc);
+        let mut v = Vec::new();
+        for (k, t) in &doc.tiles {
+            for a in &t.tile.spline_attachments {
+                v.extend(row_objects(a, &t.tile.splines, tile_origin(*k), &rows).iter().map(|o| o.pose.pos.truncate()));
+            }
+        }
+        v
+    }
+
+    /// A road running east from tile (0, 0) into tile (1, 0) with a row on it every 100 m, the
+    /// next tile's spline `chain` along the chain and its copy of the row (a repeater) laid
+    /// from `repeater_d`, the map counting object `first` as the first on it.
+    fn border_row(chain: f64, master_d: f64, repeater_d: f64, first: usize) -> Document {
+        let mut doc = flat_map(2);
+        let ts = tile_size();
+        add_spline(&mut doc, (0, 0), 1, 0.0, 150.0, 90.0, ts, 0, 2);
+        add_spline(&mut doc, (1, 0), 2, 0.0, 150.0, 90.0, ts, 1, 0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.splines[0].map_chain_offset = Some(0.0);
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.splines[0].map_chain_offset = Some(chain);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.push(row(9, 0, master_d, 100.0, 500.0, None));
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.spline_attachments.push(row(9, 0, repeater_d, 100.0, 500.0, Some((0, first))));
+        doc
+    }
+
+    /// The row's object at a tile border stands there once, whichever side of the joint the
+    /// map's rounding of the chain puts it, and also when neither tile's copy of the row reaches
+    /// it by itself (the next copy starts with the object after it), as openOMSI places it.
+    #[test]
+    fn a_row_object_on_a_tile_border_is_placed_once() {
+        let ts = tile_size();
+        for (chain, master_d, repeater_d, first) in [(ts + 0.0004, 0.0, 0.0, 4), (ts - 0.0004, 0.0, 0.0, 3), (ts, 0.5, 0.0, 4)] {
+            let got = placed(&border_row(chain, master_d, repeater_d, first));
+            let at_border = got.iter().filter(|p| (p.x - ts).abs() < 0.6).count();
+            assert_eq!(at_border, 1, "chain {chain}, rows from {master_d} and {repeater_d}: {got:?}");
+            assert_eq!(got.len(), 6, "every 100 m from 0 to 500: {got:?}");
+        }
+    }
+
+    /// A tile written without the chain's distances (older than version 11) has a row on a
+    /// spline going on from one in the tile before counted from the start of the chain there,
+    /// as the game walks it; a row the game refuses (its first object before its own spline)
+    /// places nothing.
+    #[test]
+    fn a_row_counts_along_its_chain_through_the_tiles_and_one_before_its_spline_places_nothing() {
+        let mut doc = flat_map(2);
+        let ts = tile_size();
+        add_spline(&mut doc, (0, 0), 1, 0.0, 150.0, 90.0, ts, 0, 2);
+        add_spline(&mut doc, (1, 0), 2, 0.0, 150.0, 90.0, 100.0, 1, 3);
+        add_spline(&mut doc, (1, 0), 3, 100.0, 150.0, 90.0, 100.0, 2, 0);
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.spline_attachments.push(row(9, 0, ts + 10.0, 0.0, 0.0, None));
+        let got = placed(&doc);
+        assert_eq!(got.len(), 1);
+        assert!((got[0] - DVec2::new(ts + 10.0, 150.0)).length() < 1e-6, "{got:?}");
+        // (on spline 3, 100 m into its tile's chain, at 50 m: 50 m before it)
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.spline_attachments[0] = row(9, 1, 50.0, 0.0, 0.0, None);
+        assert!(placed(&doc).is_empty());
+    }
+
+    /// A tile's rows are laid out again when a spline of the chain they run on into the tile
+    /// next door changes, and not when anything else there does.
+    #[test]
+    fn rows_depend_on_the_chains_of_the_tiles_around() {
+        let mut doc = border_row(tile_size(), 0.0, 0.0, 3);
+        let before = rows_beyond(&doc, (0, 0));
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.objects.push(omsi_map::MapObject { file: "Sceneryobjects\\x.sco".into(), id: 50, ..Default::default() });
+        assert_eq!(rows_beyond(&doc, (0, 0)), before, "an object there changes nothing");
+        doc.tiles.get_mut(&(1, 0)).unwrap().tile.splines[0].length = 120.0;
+        assert_ne!(rows_beyond(&doc, (0, 0)), before, "its spline does");
+        // (a tile without rows depends on nothing beyond)
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.spline_attachments.clear();
+        assert_eq!(rows_beyond(&doc, (0, 0)), 0);
+    }
 }

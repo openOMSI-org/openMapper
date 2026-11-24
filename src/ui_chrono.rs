@@ -10,7 +10,7 @@ use crate::doc::Sel;
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
-use crate::ui::{ACCENT, TEXT_DIM};
+use crate::theme::pal;
 
 struct Scenario {
     dir: PathBuf,
@@ -318,7 +318,7 @@ impl ChronoWindow {
                 egui::Frame::new().fill(Color32::from_rgba_unmultiplied(120, 60, 20, 235)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 5)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(format!("{} «{name}»", tr("Editing the scenario", "Правка сценария"))).color(Color32::WHITE).strong());
-                        done = ui.button(tr("Done", "Готово")).clicked();
+                        done = ui.button(icons::labelled(Icon::Check, tr("Done", "Готово"))).clicked();
                     });
                 });
             });
@@ -399,8 +399,8 @@ impl ChronoWindow {
         let doc_ref: &crate::doc::Document = doc;
         let n_sel = ed.selection().len();
         let catalogue = ed.object_type.clone();
-        egui::Window::new(icons::labelled(Icon::History, tr("Chrono scenarios", "Хроно-сценарии"))).id(egui::Id::new("chrono")).open(&mut open).default_pos([330.0, 90.0]).default_size([500.0, 520.0]).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("How the map changes over the years: each scenario from its first day lays its own tiles, lines and tickets over the map. The view shows the map as on the day chosen here; what you edit is always the map itself.", "Как карта меняется со временем: каждый сценарий с первого дня накладывает на карту свои тайлы, линии и билеты. Вид показывает карту на выбранный здесь день; правится всегда сама карта.")).small().color(TEXT_DIM));
+        egui::Window::new(icons::labelled(Icon::Chrono, tr("Chrono scenarios", "Хроно-сценарии"))).id(egui::Id::new("chrono")).open(&mut open).default_pos([330.0, 90.0]).default_size([500.0, 520.0]).resizable(true).show(ctx, |ui| {
+            ui.label(RichText::new(tr("How the map changes over the years: each scenario from its first day lays its own tiles, lines and tickets over the map. The view shows the map as on the day chosen here; what you edit is always the map itself.", "Как карта меняется со временем: каждый сценарий с первого дня накладывает на карту свои тайлы, линии и билеты. Вид показывает карту на выбранный здесь день; правится всегда сама карта.")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.label(tr("Show the map as on", "Показать карту на"));
                 let (mut y, mut m, mut d) = (date / 10_000, date / 100 % 100, date % 100);
@@ -412,12 +412,12 @@ impl ChronoWindow {
                 if a || b || c {
                     date = y * 10_000 + m * 100 + d;
                 }
-                if ui.button(tr("Today", "Сегодня")).clicked() {
+                if ui.button(icons::labelled(Icon::Calendar, tr("Today", "Сегодня"))).clicked() {
                     date = crate::doc::today_code();
                 }
             });
             let active = list.iter().filter(|s| s.cfg.active_on(date)).count();
-            ui.label(RichText::new(format!("{} {} / {}", tr("Active on that day:", "Действуют в этот день:"), active, list.len())).color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {} / {}", tr("Active on that day:", "Действуют в этот день:"), active, list.len())).color(pal().text_dim));
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.new_name).hint_text(tr("New scenario's name", "Имя нового сценария")).desired_width(200.0));
                 if ui.add_enabled(!self.new_name.trim().is_empty(), egui::Button::new(icons::labelled(Icon::Add, tr("New scenario", "Новый сценарий")))).on_hover_text(tr("A scenario starting on the day shown, after the others", "Сценарий с показанного дня, после остальных")).clicked() {
@@ -426,7 +426,7 @@ impl ChronoWindow {
             });
             if let Some(e) = &mut self.editing {
                 ui.separator();
-                ui.label(RichText::new(e.dir.file_name().unwrap_or_default().to_string_lossy()).strong().color(ACCENT));
+                ui.label(RichText::new(e.dir.file_name().unwrap_or_default().to_string_lossy()).strong().color(pal().accent));
                 egui::Grid::new("chrono edit").num_columns(2).spacing(egui::Vec2::new(8.0, 5.0)).show(ui, |ui| {
                     crate::ui::prop_row(ui, tr("Name", "Название"), |ui| {
                         ui.add(egui::TextEdit::singleline(&mut e.title).desired_width(260.0));
@@ -443,7 +443,7 @@ impl ChronoWindow {
                             if on {
                                 date_edit(ui, &mut e.end);
                             } else {
-                                ui.label(RichText::new(tr("for good", "навсегда")).color(TEXT_DIM));
+                                ui.label(RichText::new(tr("for good", "навсегда")).color(pal().text_dim));
                             }
                         });
                     });
@@ -503,7 +503,7 @@ impl ChronoWindow {
                         for t in texts.iter_mut() {
                             ui.add(egui::TextEdit::singleline(t).desired_width(140.0));
                         }
-                        if ui.button(tr("Write", "Записать")).clicked() {
+                        if ui.button(icons::labelled(Icon::Save, tr("Write", "Записать"))).clicked() {
                             relabel = Some((*id, texts.clone()));
                         }
                     });
@@ -523,7 +523,7 @@ impl ChronoWindow {
                                 if crate::ui_edit::RULES.iter().any(|(k, v)| *k == r.kind && *v) {
                                     ui.add(egui::DragValue::new(&mut r.value).speed(0.1).max_decimals(2));
                                 }
-                                if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                                if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                                     remove = Some(i);
                                 }
                             });
@@ -535,13 +535,13 @@ impl ChronoWindow {
                             if ui.button(icons::labelled(Icon::Add, tr("Add a rule", "Добавить правило"))).clicked() {
                                 new.push(omsi_map::MapRule { path_index: 0, kind: "speedlimit".into(), value: 30.0, extra: 0.0, kill: false });
                             }
-                            if ui.add_enabled(new != old, egui::Button::new(tr("Write", "Записать"))).clicked() {
+                            if ui.add_enabled(new != old, egui::Button::new(icons::labelled(Icon::Save, tr("Write", "Записать")))).clicked() {
                                 write_rules = Some((*sel, old.clone(), new.clone()));
                             }
                         });
                     });
                 }
-                ui.label(RichText::new(tr("Written into the scenario at once (undo does not take it out of the scenario).", "Записывается в сценарий сразу (отмена не убирает это из сценария).")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Written into the scenario at once (undo does not take it out of the scenario).", "Записывается в сценарий сразу (отмена не убирает это из сценария).")).small().color(pal().text_dim));
                 // what the scenario has, tile by tile
                 // (the map's own copy once it has one)
                 let contents = self.contents.get_or_insert_with(|| {
@@ -554,21 +554,21 @@ impl ChronoWindow {
                     egui::ScrollArea::vertical().id_salt("chrono contents list").max_height(220.0).show(ui, |ui| {
                         let name = |f: &str| lib.find(f).map(|a| a.name.clone()).unwrap_or_else(|| f.rsplit('\\').next().unwrap_or(f).to_string());
                         for (k, file, t) in contents.iter() {
-                            ui.label(RichText::new(format!("{} {}, {} · {file}", tr("Tile", "Тайл"), k.0, k.1)).small().color(TEXT_DIM));
+                            ui.label(RichText::new(format!("{} {}, {} · {file}", tr("Tile", "Тайл"), k.0, k.1)).small().color(pal().text_dim));
                             let org = crate::doc::tile_origin(*k);
                             let mut row = |ui: &mut egui::Ui, mark: &str, text: String, at: Option<glam::DVec2>, part: crate::chrono_edit::Part, back: bool| {
                                 ui.horizontal(|ui| {
-                                    ui.label(RichText::new(mark).monospace().color(ACCENT));
+                                    ui.label(RichText::new(mark).monospace().color(pal().accent));
                                     ui.label(text);
                                     if let Some(p) = at {
-                                        if ui.small_button(icons::labelled(Icon::Focus, "")).on_hover_text(tr("Go there", "Перейти туда")).clicked() {
+                                        if icons::small(ui, Icon::Focus, tr("Go there", "Перейти туда")).clicked() {
                                             look = Some(p);
                                         }
                                     }
                                     if back && ui.small_button(tr("into the map", "в карту")).on_hover_text(tr("Out of the scenario into the map itself: there on every day", "Из сценария в саму карту: будет во все дни")).clicked() {
                                         take = Some((*k, file.clone(), part, true));
                                     }
-                                    if ui.small_button(icons::labelled(Icon::Delete, "")).on_hover_text(tr("Take it out of the scenario", "Убрать из сценария")).clicked() {
+                                    if icons::small(ui, Icon::Delete, tr("Take it out of the scenario", "Убрать из сценария")).clicked() {
                                         take = Some((*k, file.clone(), part, false));
                                     }
                                 });
@@ -595,65 +595,65 @@ impl ChronoWindow {
                             }
                         }
                         if contents.is_empty() {
-                            ui.label(RichText::new(tr("Nothing yet.", "Пока ничего.")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("Nothing yet.", "Пока ничего.")).color(pal().text_dim));
                         }
                     });
                 });
                 ui.add_space(4.0);
                 if self.session.is_some() {
-                    ui.label(RichText::new(tr("Its own things are on the map: select, move, change and place as usual. The map's own things stay the map's.", "Его вещи на карте: выделяйте, двигайте, меняйте и ставьте как обычно. Вещи самой карты остаются в карте.")).color(ACCENT));
-                    if ui.button(icons::labelled(Icon::CheckCircle, tr("Done: back into the scenario", "Готово: обратно в сценарий"))).clicked() {
+                    ui.label(RichText::new(tr("Its own things are on the map: select, move, change and place as usual. The map's own things stay the map's.", "Его вещи на карте: выделяйте, двигайте, меняйте и ставьте как обычно. Вещи самой карты остаются в карте.")).color(pal().accent));
+                    if ui.button(icons::labelled(Icon::Check, tr("Done: back into the scenario", "Готово: обратно в сценарий"))).clicked() {
                         session_toggle = true;
                     }
-                } else if ui.button(icons::labelled(Icon::Objects, tr("Edit its own things on the map", "Править его вещи на карте"))).on_hover_text(tr("What it brings in is put on the map to work with as with anything else; Done writes it back (undo starts afresh)", "То, что он добавляет, ставится на карту, с ним работают как с любым другим; «Готово» записывает обратно (история отмены начинается заново)")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its own things on the map", "Править его вещи на карте"))).on_hover_text(tr("What it brings in is put on the map to work with as with anything else; Done writes it back (undo starts afresh)", "То, что он добавляет, ставится на карту, с ним работают как с любым другим; «Готово» записывает обратно (история отмены начинается заново)")).clicked() {
                     session_toggle = true;
                 }
                 if self.tt_session.is_some() {
-                    ui.label(RichText::new(tr("The Lines window shows its timetable (the map's with its own laid over): lines, trips and tours edited there are the scenario's; a line of the map taken away is taken off from its day.", "Окно линий показывает его расписание (карты с наложенным своим): правки линий, рейсов и выходов там — сценария; убранная линия карты снимается с его дня.")).color(ACCENT));
+                    ui.label(RichText::new(tr("The Lines window shows its timetable (the map's with its own laid over): lines, trips and tours edited there are the scenario's; a line of the map taken away is taken off from its day.", "Окно линий показывает его расписание (карты с наложенным своим): правки линий, рейсов и выходов там — сценария; убранная линия карты снимается с его дня.")).color(pal().accent));
                     ui.horizontal(|ui| {
-                        if ui.button(icons::labelled(Icon::CheckCircle, tr("Done with its timetable", "Готово с расписанием"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Check, tr("Done with its timetable", "Готово с расписанием"))).clicked() {
                             tt_toggle = true;
                         }
                         if ui.button(icons::labelled(Icon::Bus, tr("Lines window", "Окно линий"))).clicked() {
                             actions.push(crate::ui::Action::OpenLines);
                         }
                     });
-                } else if ui.button(icons::labelled(Icon::Bus, tr("Edit its timetable", "Править его расписание"))).on_hover_text(tr("Its own lines, trips and tours in the Lines window; Done writes only what differs from the map's (undo starts afresh)", "Его линии, рейсы и выходы в окне линий; «Готово» записывает только отличия от карты (история отмены начинается заново)")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its timetable", "Править его расписание"))).on_hover_text(tr("Its own lines, trips and tours in the Lines window; Done writes only what differs from the map's (undo starts afresh)", "Его линии, рейсы и выходы в окне линий; «Готово» записывает только отличия от карты (история отмены начинается заново)")).clicked() {
                     tt_toggle = true;
                 }
                 if self.lists_session.is_some() {
-                    ui.label(RichText::new(tr("The Traffic window shows its AI lists (the map's with its own added): vehicles and type groups added there, and a depot's own depot file, are the scenario's from its day.", "Окно трафика показывает его списки ИИ (карты с добавленным своим): добавленные там машины и группы типов и свой файл депо — сценария с его дня.")).color(ACCENT));
+                    ui.label(RichText::new(tr("The Traffic window shows its AI lists (the map's with its own added): vehicles and type groups added there, and a depot's own depot file, are the scenario's from its day.", "Окно трафика показывает его списки ИИ (карты с добавленным своим): добавленные там машины и группы типов и свой файл депо — сценария с его дня.")).color(pal().accent));
                     ui.horizontal(|ui| {
-                        if ui.button(icons::labelled(Icon::CheckCircle, tr("Done with its AI lists", "Готово со списками ИИ"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Check, tr("Done with its AI lists", "Готово со списками ИИ"))).clicked() {
                             lists_toggle = true;
                         }
-                        if ui.button(icons::labelled(Icon::Traffic, tr("Traffic window", "Окно трафика"))).clicked() {
+                        if ui.button(icons::labelled(Icon::Car, tr("Traffic window", "Окно трафика"))).clicked() {
                             actions.push(crate::ui::Action::OpenTraffic);
                         }
                     });
-                } else if ui.button(icons::labelled(Icon::Traffic, tr("Edit its AI lists", "Править его списки ИИ"))).on_hover_text(tr("Vehicles it adds to the groups and depots (OMSI's ailists_#upd.cfg); taking one away is the map's own business", "Машины, которые он добавляет в группы и депо (ailists_#upd.cfg OMSI); убирать машины — дело самой карты")).clicked() {
+                } else if ui.button(icons::labelled(Icon::Edit, tr("Edit its AI lists", "Править его списки ИИ"))).on_hover_text(tr("Vehicles it adds to the groups and depots (OMSI's ailists_#upd.cfg); taking one away is the map's own business", "Машины, которые он добавляет в группы и депо (ailists_#upd.cfg OMSI); убирать машины — дело самой карты")).clicked() {
                     lists_toggle = true;
                 }
                 ui.horizontal(|ui| {
                     if ui.button(icons::labelled(Icon::Save, tr("Write the scenario", "Записать сценарий"))).clicked() {
                         write = true;
                     }
-                    if ui.button(tr("Close", "Закрыть")).clicked() {
+                    if ui.button(icons::labelled(Icon::Close, tr("Close", "Закрыть"))).clicked() {
                         close_edit = true;
                     }
                 });
             }
             ui.separator();
             if list.is_empty() {
-                ui.label(RichText::new(tr("The map has no chrono scenarios.", "У карты нет хроно-сценариев.")).color(TEXT_DIM));
+                ui.label(RichText::new(tr("The map has no chrono scenarios.", "У карты нет хроно-сценариев.")).color(pal().text_dim));
             }
             egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                 for s in list.iter() {
                     let on = s.cfg.active_on(date);
                     ui.horizontal(|ui| {
-                        ui.label(if on { Icon::RadioOn.text(14.0).color(ACCENT) } else { Icon::RadioOff.text(14.0).color(TEXT_DIM) });
+                        ui.label(if on { Icon::RadioOn.text(14.0).color(pal().accent) } else { Icon::RadioOff.text(14.0).color(pal().text_dim) });
                         ui.vertical(|ui| {
-                            ui.label(RichText::new(&s.name).color(if on { Color32::WHITE } else { TEXT_DIM }));
+                            ui.label(RichText::new(&s.name).color(if on { pal().text_strong } else { pal().text_dim }));
                             let mut facts = format!("{} {}", tr("from", "с"), date_text(s.cfg.start_date));
                             if s.cfg.end_date > 0 {
                                 facts.push_str(&format!(" {} {}", tr("to", "по"), date_text(s.cfg.end_date)));
@@ -668,11 +668,11 @@ impl ChronoWindow {
                                 facts.push_str(&format!(" · {}", tr("own tickets", "свои билеты")));
                             }
                             ui.horizontal_wrapped(|ui| {
-                                ui.label(RichText::new(facts).small().color(TEXT_DIM));
+                                ui.label(RichText::new(facts).small().color(pal().text_dim));
                                 if s.cfg.start_date > 0 && ui.small_button(tr("Its first day", "Первый день")).clicked() {
                                     date = s.cfg.start_date;
                                 }
-                                if ui.small_button(tr("Properties", "Свойства")).clicked() {
+                                if ui.small_button(icons::labelled(Icon::Tune, tr("Properties", "Свойства"))).clicked() {
                                     edit = Some(Edit { dir: s.dir.clone(), title: s.title.clone(), description: s.description.clone(), start: s.cfg.start_date, end: s.cfg.end_date, lines: s.cfg.deactivate_lines.clone(), tickets: s.cfg.ticket_pack.clone(), money: s.cfg.money_system.clone() });
                                 }
                             });

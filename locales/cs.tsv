@@ -2788,3 +2788,445 @@ no track within 15 m	do 15 m nejsou koleje
 the tracks are not joined, or run the other way (see View > AI lanes)	koleje nejsou spojeny nebo vedou opačně (viz Zobrazení > Pruhy AI)
 no track beside	žádné koleje vedle
 Drives on	Jezdí po
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Zvolený zdrojový vertex. Klikněte na cílový vrchol, který chcete přichytit (Shift: pouze horizontální, Esc: zrušení)
+Aim at a vertex of the selected object	Zamiřte na vrchol vybraného objektu
+Snapped to vertex! (Ctrl+Z to undo)	Přichyceno k vrcholu! (Ctrl+Z pro vrácení zpět)
+Aim at a target vertex or spline endpoint	Zamiřte na cílový vrchol nebo koncový bod spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Okraj zdroje vybrán. Kliknutím na cílovou hranu nebo cestu zarovnáte (Shift: pouze vodorovně, Esc: zrušení)
+Aim at an edge of the selected object	Zamiřte na okraj vybraného objektu
+Aligned edge to edge! (Ctrl+Z to undo)	Zarovnáno od okraje k okraji! (Ctrl+Z pro vrácení zpět)
+Aim at a target edge or road	Zamiřte na cílovou hranu nebo silnici
+Target cancelled. Pick a source vertex again	Cíl zrušen. Znovu vyberte zdrojový vrchol
+Vertex snap cancelled	Vertex snap zrušeno
+Target cancelled. Pick a source edge again	Cíl zrušen. Znovu vyberte okraj zdroje
+Edge snap cancelled	Uchopení okraje zrušeno
+Select an object first to snap its vertex	Nejprve vyberte objekt, abyste přichytili jeho vrchol
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Uchop vertexu: klikněte na zdrojový vertex na vybraném objektu (Esc pro zrušení)
+Snap vertex to vertex	Přichytit vrchol k vrcholu
+Select an object first to align its edge	Nejprve vyberte objekt a zarovnejte jeho okraj
+Edge snap: click a source edge on the selected object (Esc to cancel)	Uchopení hrany: klikněte na zdrojovou hranu na vybraném objektu (zrušte pomocí klávesy Esc)
+Snap edge to edge	Přichytit okraj k okraji
+Snap vertex to vertex (V)	Přichytit vrchol k vrcholu (V)
+Snap edge to edge (L)	Přichytit okraj k okraji (L)
+Snap vertex (V)	Vrchol přichycení (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Přichyťte vrchol tohoto objektu k jinému vrcholu (Zkratka: V)
+Snap edge (L)	Zacvakávací okraj (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Přichyťte okraj tohoto objektu k jinému okraji nebo silnici (Zkratka: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Přichytit vrchol vybraného objektu k vrcholu jiného objektu (V)\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Zarovnat okraj vybraného objektu k okraji nebo silnici (L)\nOtočí a přichytí kolineárně\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Bod 1 zarovnán! Klikněte na 2. bod na objektu pro otočení, nebo Esc pro dokončení
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referenční úhel nastaven. Klikněte na cílový bod nebo silnici pro zarovnání (Esc: dokončit)
+Pick a different vertex on the object	Vyberte jiný vrchol na objektu
+Click a 2nd reference point on the object, or Esc to finish	Klikněte na 2. referenční bod na objektu nebo Esc pro dokončení
+Aligned angle! (Ctrl+Z to undo)	Úhel zarovnán! (Ctrl+Z pro vrácení zpět)
+Vertex snap complete	Přichycení vrcholu dokončeno
+Align vertex angle	Zarovnat úhel vrcholu
+Complete to	Dokončit k
+Complete to: a new piece between the free ends of the selected splines	Dokončit k: nový kus mezi volnými konci vybraných splinů
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Nový kus typu prvního vybraného splinu mezi dvěma volnými konci vybraných splinů, navazující na oba polohou, směrem i výškou; ty samy se nemění. Znovu: spojí se dva zbylé konce a kruh se uzavře.
+The two ends already meet	Tyto dva konce se už stýkají
+Select the splines whose free ends are to be joined	Vyberte spliny, jejichž volné konce se mají spojit
+No piece of spline can join these two ends	Žádný kus splinu tyto dva konce nespojí
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Otevřena kopie této mapy od openMapperu ve složce obsahu (mapa ve složce OMSI 2 se nikdy nezapisuje)
+Read in again, changed on disk by another program:	Načteno znovu, změněno na disku jiným programem:
+Could not bring the changes over	Změny se nepodařilo převzít
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Soubory mapy byly změněny po tomto automatickém uložení (jiným programem, např. editorem OMSI 2). Obnovení položí starší dlaždice z uložení přes tyto změny.
+tile(s)	dlaždice
+the global settings	globální nastavení
+the timetable	jízdní řád
+the traffic	provoz
+the descriptions	popisy
+Reload from disk	Znovu načíst z disku
+The map changed on disk	Mapa se na disku změnila
+Another program changed the map's files where it has changes here not saved yet:	Jiný program změnil soubory mapy tam, kde jsou zde neuložené změny:
+The other changes made on disk were read in already.	Ostatní změny z disku už byly načteny.
+Keep mine	Ponechat moje
+The map changed in OMSI 2's folder	Mapa se změnila ve složce OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Kopie této mapy v instalaci byla změněna po uložení kopie openMapperu ve složce obsahu, např. editorem OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Převzetí změn nahradí tyto soubory v kopii openMapperu; nahrazené soubory zůstanou v záloze (Soubor > Dřívější verze).
+Bring the changes over	Převzít změny
+Keep openMapper's copy	Ponechat kopii openMapperu
+its way has a gap after path	jeho trasa má mezeru za cestou
+its way does not pass	jeho trasa nevede kolem
+On demand	Na znamení
+Not served (checkpoint)	Neobsluhovaná (kontrolní bod)
+Wait for departure time	Čekat na čas odjezdu
+Always + wait for departure time	Vždy + čekat na čas odjezdu
+The bus stops only when somebody waits or wants to get off (the game's default)	Autobus zastaví, jen když někdo čeká nebo chce vystoupit (výchozí ve hře)
+The bus always stops here	Autobus tu vždy zastaví
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Autobus projede bez zastavení: zastávka jen vyznačuje trasu (kontrolní bod)
+The bus stops only when it is early, and waits there for its departure time	Autobus zastaví, jen když jede napřed, a čeká tam na čas odjezdu
+The bus always stops here, and when it is early it waits for its departure time	Autobus tu vždy zastaví, a když jede napřed, čeká na čas odjezdu
+All trips	Všechny spoje
+Every trip of the map, those no tour drives too	Každý spoj mapy, i ty, které nejede žádný turnus
+The line number the trip shows; the line of this number lists it among its trips	Číslo linky, které spoj ukazuje; linka s tímto číslem ho uvádí mezi svými spoji
+Way picked by hand:	Trasa vybraná ručně:
+the paths picked do not pass this stop	vybrané cesty nevedou kolem této zastávky
+Other trips	Ostatní spoje
+The time profile this departure runs to	Časový profil, podle kterého jede tento odjezd
+Time profile	Časový profil
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Spoj může mít několik profilů (špička, noc…): každý odjezd turnusu říká, podle kterého jede
+The profile's name	Název profilu
+A new profile, a copy of this one	Nový profil, kopie tohoto
+Delete this profile (its departures run to the first)	Smazat tento profil (jeho odjezdy pojedou podle prvního)
+Times from stop to stop	Časy od zastávky k zastávce
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	U každé zastávky lze nastavit čas od předchozí: další časy se posunou a s nimi i čas spoje. Nenastavené časy se řídí vzdáleností mezi pevnými; na pevné zastávce autobus, který jede napřed, čeká.
+From the stop before	Od předchozí zastávky
+After departure	Po odjezdu
+Minutes from the stop before to this one	Minuty od předchozí zastávky k této
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Jako v editoru OMSI 2. Najeďte na volbu a uvidíte, co autobus udělá.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Každý spoj mapy, ať ho ukazuje kterákoli linka nebo jede kterýkoli turnus. Spoj, který nejede žádný turnus, zůstává a lze ho tu upravit, dát turnusu nebo smazat.
+trips	spojů
+driven by no tour	nejede žádný turnus
+no tour	žádný turnus
+departures	odjezdů
+No path there: click a lane of a road (View > AI lanes shows them)	Tady není cesta: klikněte na pruh silnice (Zobrazení > Pruhy AI je ukáže)
+Done picking paths	Hotovo
+Pick the paths on the map	Vybrat cesty na mapě
+Choose the way yourself, path by path, as in OMSI 2's editor	Vyberte trasu sami, cestu po cestě, jako v editoru OMSI 2
+Find the way automatically	Najít trasu automaticky
+Forget the paths picked: the way is found along the roads again	Zapomenout vybrané cesty: trasa se znovu najde podél silnic
+The paths were picked by hand: they are kept when the stops change.	Cesty byly vybrány ručně: při změně zastávek zůstanou.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klikejte na cesty v pohledu. Cesta za koncem nebo před začátkem se přidá i s cestami k ní; cesta vedle trasy nahradí úsek, který objíždí (jiná větev na křižovatce); cesta z trasy se odebere. Trasa smí začínat před první zastávkou a pokračovat za poslední.
+The way breaks after path	Trasa se přerušuje za cestou
+the paths do not join, the bus's GPS loses its way here in the game	cesty na sebe nenavazují, GPS autobusu tu ve hře ztrácí trasu
+Paths of the way	Cesty trasy
+Cut before the first stop	Odříznout před první zastávkou
+Cut after the last stop	Odříznout za poslední zastávkou
+path	cesta
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Vlastní ovládání openMapper: kamera podle volby v Kamera, klávesy podle Zobrazení > Ovládání
+The keys as in View > Controls	Klávesy podle Zobrazení > Ovládání
+A copy of its own was made for the script: the original type is unchanged	Pro skript byla vytvořena vlastní kopie: původní typ zůstal beze změny
+Trolleybus wire the game cannot use	Trolejbusové vedení, které hra nemůže použít
+Rows the game does not show	Řady, které hra nezobrazuje
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Řada objektů podél silnice (lampy, sloupky, parkovací místa) začíná před silnicí, na které leží: její vzdálenost se počítá od začátku řetězu silnic a zde je menší než délka řetězu před touto silnicí. OMSI 2 ani openOMSI ji vůbec nezobrazí, editor také ne. Položte řadu znovu nebo jí ve vlastnostech zvětšete začátek.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI vytvoří výhybku jen tam, kde se stýkají přesně tři úseky trolejového vedení, a výhybku nastavenou tam, kde se už žádné nestýkají, vynechá; úsek v sekci, kterou síť nemá, zůstane bez měnírny. Opravíte to v Mapa > Trolejbusové vedení.
+Trolleybus wire	Trolejbusové vedení
+Select the next road piece (joined at its end; Shift: add it)	Vybrat další kus silnice (připojený na jeho konci; Shift: přidat jej)
+Select the previous road piece (joined at its start; Shift: add it)	Vybrat předchozí kus silnice (připojený na jeho začátku; Shift: přidat jej)
+the up arrow	šipka nahoru
+the down arrow	šipka dolů
+the left arrow	šipka vlevo
+the right arrow	šipka vpravo
+Select three objects or more (the two farthest apart stay)	Vyberte tři nebo více objektů (dva nejvzdálenější zůstanou na místě)
+Line up	Seřadit do přímky
+Space evenly	Rozmístit rovnoměrně
+Splines laid	Spliny položeny
+The spline reaches past the map: add tiles there first	Spline vede mimo mapu: nejprve tam přidejte dlaždice
+Ground painted over areas	Zem přemalována po plochách
+Track beds	Kolejová lože
+Ground under surfaces	Zem pod povrchy
+Form the ground	Tvarovat zem
+Select a road piece first	Nejprve vyberte kus silnice
+Nothing is joined at its end	K jeho konci není nic připojeno
+Nothing is joined at its start	K jeho začátku není nic připojeno
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Posun: táhněte šipku podél X, Y nebo Z, čtverec v jeho rovině, kruh po zemi
+Rotate: drag a ring to turn about X, Y or Z	Otáčení: táhněte kruh a otáčejte kolem X, Y nebo Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Měřítko: táhněte šipku pro změnu měřítka podél osy, čtverec pro dvě, kruh pro všechny tři
+Junctions where the roads meet	Křižovatky tam, kde se silnice potkávají
+Streets from the street model	Ulice podle modelu ulic
+perimeter	obvod
+needs	vyžaduje
+built	sestaveno
+signed by	podepsáno
+not signed: the game loads it with a warning that its author is not known	bez podpisu: hra jej načte s varováním, že autor není znám
+openOMSI has no such function (the API of version	openOMSI takovou funkci nemá (API verze
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` je pro skripty mapy; skript objektů má jen funkce omsi
+no such module in the project (modules/…)	takový modul v projektu není (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	hra takovou událost neposílá (pokud ji nepošle skript přes omsi.emit)
+a name is needed	je potřeba název
+a file of that name is there already	soubor s tímto názvem už existuje
+Empty module	Prázdný modul
+Test run of	Zkušební běh
+does nothing in the test run (no game): it gives false	ve zkušebním běhu nic nedělá (hra neběží): vrací false
+has nothing to read in the test run (no game): it gives nil	ve zkušebním běhu nemá co číst (hra neběží): vrací nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	objekt instalace OMSI 2 se nikdy nemění: nejprve z něj udělejte vlastní objekt
+Dark	Tmavý
+As the system	Podle systému
+power (current on: branch)	proudem (s proudem: odbočka)
+indicator	blinkrem
+radio	rádiem
+to the branch	do odbočky
+at random	náhodně
+spans meet in one point: the game makes no switch there (a frog is three)	úseků se stýká v jednom bodě: hra zde výhybku nevytvoří (rozvětvení jsou tři)
+Switch	Výhybka
+no three spans meet there any more	už se zde nestýkají tři úseky
+A span is in section	Úsek je v sekci
+that the network does not have	kterou síť nemá
+the wire spline	spline drátu
+the mast	stožár
+the frog	rozvětvení
+the insulator	izolátor
+is not there	neexistuje
+no wire spline: nothing of the wire is shown on the map	žádný spline drátu: ze samotného vedení se na mapě nic nezobrazí
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	profil splinu drátu není dvojice tenkých drátů nad 3 m: položí se tak, jak je, a openOMSI jej bez trolley.txt nebude považovat za vedení
+a kit of that name is there already	sada s tímto názvem už existuje
+Renew the wire from its kit	Obnovit vedení podle jeho sady
+Theme	Motiv
+Back to the 3D view	Zpět do 3D pohledu
+The plan view from above, north up	Pohled shora, sever nahoře
+Put the windows back in their first places	Vrátit okna na jejich původní místa
+Trolleybus wire…	Trolejbusové vedení…
+: there are unsaved changes	: jsou neuložené změny
+Assets: every object and road type, with pictures	Assety: všechny objekty a typy silnic s obrázky
+Close the openOMSI session started from here	Zavřít relaci openOMSI spuštěnou odsud
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Vybrat místo startu, vozidlo, čas a počasí a projet mapu v openOMSI
+Search commands	Hledat příkazy
+Every command of the menus by its name	Každý příkaz z nabídek podle jeho názvu
+Right-click the view for what can be done there; Search commands finds the rest	Pravý klik do pohledu: co se tam dá dělat; zbytek najde Hledat příkazy
+Right-click the view: its menu	Pravý klik do pohledu: jeho nabídka
+Snap vertex	Přichytit vrchol
+Snap edge	Přichytit okraj
+Out of the mix	Odebrat ze směsi
+more as OMSI 2 is read…	další přibudou, jak se čte OMSI 2…
+Reading the content of OMSI 2…	Čte se obsah OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Nic nenalezeno: zkuste méně písmen nebo Vše v Zobrazit
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Nic takového: zvolte Vše v Zobrazit nebo importujte assety (Soubor > Import assetů)
+a table of functions	tabulka funkcí
+a module	modul
+Next (Enter)	Další (Enter)
+Previous (Shift+Enter)	Předchozí (Shift+Enter)
+Match case	Rozlišovat velikost písmen
+Replace	Nahradit
+Replace…	Nahradit…
+Click: a breakpoint (F9 on the cursor's line)	Klik: zarážka (F9 na řádku kurzoru)
+permission	oprávnění
+The light before	Předchozí semafor
+The next light	Další semafor
+The phase before	Předchozí fáze
+The next phase	Další fáze
+to 	do 
+Select the piece joined at its start (,)	Vybrat kus připojený na jeho začátku (,)
+Select the piece joined at its end (.)	Vybrat kus připojený na jeho konci (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Klikněte na dva body a změříte vzdálenost a sklon mezi nimi (U) · Shift + kliknutí: rohy plochy (její velikost a obvod) · pravý klik: vypnout
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Přichytit vrchol vybraného objektu k vrcholu jiného objektu\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Zarovnat okraj vybraného objektu k okraji nebo silnici\nOtočí a přichytí kolineárně\nShift: Pouze vodorovně, Esc/Kliknutí pravým tlačítkem: Zrušit
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Na přímce mezi dvěma nejvzdálenějšími, se stejnými rozestupy (sloupky, lampy, řada stromů)
+Equal steps between the two farthest apart, each keeping its distance to the side	Stejné rozestupy mezi dvěma nejvzdálenějšími, každý si ponechá svou boční vzdálenost
+height, m	výška, m
+gradient, %	sklon, %
+cant, %	převýšení, %
+Rotate, °	Otočení, °
+Name, file, IDCode, stop, x, y or tile x y	Název, soubor, IDCode, zastávka, x, y nebo dlaždice x y
+listed, no file	v seznamu, bez souboru
+The camera over the tile's middle	Kamera nad středem dlaždice
+its folder	jeho složka
+Line up the selected objects	Seřadit vybrané objekty do přímky
+Space the selected objects evenly	Rozmístit vybrané objekty rovnoměrně
+Next road piece	Další kus silnice
+Previous road piece	Předchozí kus silnice
+The run ended	Běh skončil
+installed as	nainstalováno jako
+failed	selhalo
+Run	Spustit
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Spustit skripty zde, v editoru, s funkcemi hry (F5 v kódu)
+Step in	Vstoupit
+Run and stop at the first line (F11)	Spustit a zastavit na prvním řádku (F11)
+Continue	Pokračovat
+Pause	Pozastavit
+Stop the clock; a script running stops at its next line	Zastavit hodiny; běžící skript se zastaví na dalším řádku
+Over	Přes
+Step over (F10)	Krokovat s přeskočením (F10)
+Into	Dovnitř
+Step into (F11)	Krokovat s vnořením (F11)
+Out	Ven
+Step out (Shift+F11)	Vystoupit z funkce (Shift+F11)
+Restart	Znovu
+The map's scripts	Skripty mapy
+The game's clock in the run	Hodiny hry v běhu
+Set the game's clock of the run (sends minute)	Nastavit hodiny hry v běhu (posílá minute)
+starts 	start 
+The hour the run starts at	Hodina, ve které běh začíná
+Save all	Uložit vše
+Build .oop	Sestavit .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Jeden soubor se skripty mapy ke sdílení: zkompilovaný a obfuskovaný, s potřebnými oprávněními (kompilátor Development Tools)
+API	API
+The game's functions and events	Funkce a události hry
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Tato mapa zatím nemá žádné skripty. Její skripty běží v openOMSI, zatímco se na ní hraje: reagují na to, co se děje (zastávka, hodina, spoj), zobrazují zprávy, mění provoz a počasí.
+Start the map's scripts	Založit skripty mapy
+Object scripts (Lua)	Skripty objektů (Lua)
+No object on the map has a Lua script.	Žádný objekt na mapě nemá skript Lua.
+Refresh	Obnovit
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Skripty, které objekt scenérie uvádí v [lua_script]: jeden běží pro každý objekt svého typu poblíž kamery (jen openOMSI)
+Selected object	Vybraný objekt
+Select one object on the map to see its scripts.	Vyberte na mapě jeden objekt a uvidíte jeho skripty.
+No OMSI 2 script (.osc).	Žádný skript OMSI 2 (.osc).
+Lua script (openOMSI)	Skript Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Skript pro každý objekt tohoto typu, vedle jeho .sco a uvedený v něm ([lua_script]); OMSI 2 jej přeskočí. Objekt instalace se nejprve stane vlastní kopií mapy.
+OMSI 2 script (.osc)	Skript OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Vlastní skript objektu se seznamem proměnných, spouští jej OMSI 2 i openOMSI; jeho lampy a části [visible] se řídí proměnnými, které nastavuje
+Rust plugin	Plugin v Rustu
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Plugin mapy napsaný v Rustu, zkompilovaný do WebAssembly do souboru .oop. K sestavení je potřeba Rust (rustup) s cílem wasm32-unknown-unknown.
+Make the Rust plugin	Vytvořit plugin v Rustu
+Build and install	Sestavit a nainstalovat
+cargo builds it, the .oop goes into the content folder's plugins	cargo jej sestaví, .oop se uloží do plugins složky obsahu
+Starts with the map	Spouští se s mapou
+Rename…	Přejmenovat…
+Earlier in the order	Dříve v pořadí
+Later in the order	Později v pořadí
+Delete (into openMapper's bin)	Smazat (do koše openMapper)
+New script	Nový skript
+New module	Nový modul
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Každý se spustí, když se na mapě hraje, v tomto pořadí (pravým klikem jej přesunete); ten, který selže, nechá ostatní běžet. Používejte map.on, map.every, map.after: působí jen na této mapě.
+Modules	Moduly
+Code the scripts share: local util = require("modules.util")	Kód sdílený skripty: local util = require("modules.util")
+Data	Data
+Files the scripts read (data/), pictures and sounds	Soubory, které skripty čtou (data/), obrázky a zvuky
+Made by openMapper	Vytvořil openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Otevřete skript vlevo nebo vytvořte nový.\n\nF5 spustí skripty zde v editoru, F9 nastaví zarážku, F10 / F11 krokují,\nCtrl+Space doplňuje, Ctrl+F hledá, Ctrl+G přejde na řádek, Ctrl+/ zakomentuje.
+Read only: a file of the installation or made by openMapper	Jen pro čtení: soubor instalace nebo vytvořený openMapperem
+Problems	Problémy
+Console	Konzole
+Debugger	Ladicí program
+Events	Události
+error	chyba
+warning	varování
+No problems in the open files.	V otevřených souborech nejsou žádné problémy.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Zde se zobrazí, co skripty vypisují a ukazují na obrazovce, a chyby, které udělají, když běží (Spustit, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua ke spuštění ve skriptech (v rámci, kde se zastavily, jsou-li zastaveny); šipky nahoru a dolů: historie
+Start a run first (Run, F5)	Nejprve spusťte běh (Spustit, F5)
+(empty)	(prázdné)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Běží. Zarážka (klik vlevo od čísla řádku nebo F9) tam skripty zastaví; Pozastavit je zastaví na dalším řádku.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Neběží. Spusťte (F5) skripty; zarážka je zastaví a zde bude zásobník volání, proměnné každé funkce a sledované hodnoty.
+Stopped	Zastaveno
+Call stack	Zásobník volání
+Locals	Lokální proměnné
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	Konzole vyhodnocuje v tomto rámci: název, výraz, přiřazení.
+Storage and objects	Úložiště a objekty
+Send	Poslat
+As if the game sent it: every handler of it runs	Jako by ji poslala hra: spustí se všechny její obslužné funkce
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Spusťte skripty a posílejte jim události hry ručně: dosažená zastávka, dveře, nová hodina… Hodiny samy posílají frame, minute a hour.
+Listening	Naslouchají
+timers	časovače
+Sign with the key	Podepsat klíčem
+a secret key file of oopc keygen (optional)	soubor tajného klíče z oopc keygen (nepovinné)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Sestavit .oop vytvoří jeden soubor se skripty mapy ke sdílení (ve složce dist projektu): zkompilovaný, obfuskovaný, s oprávněními, která jeho kód potřebuje. Hra spouští složku skriptů tak, jak je; .oop slouží k jejich předání bez zdrojových kódů.
+Search functions and events	Hledat funkce a události
+since	od verze
+for an .oop	pro .oop
+Double-click puts it into the script at the cursor.	Dvojklik jej vloží do skriptu na pozici kurzoru.
+A stop on this path	Zastávka na této cestě
+branch	odbočka
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Trolejové vedení, pod kterým jezdí trolejbusy openOMSI (trolley.txt vedle mapy; OMSI 2 jej ignoruje). Bez něj hra čte spliny vedení z mapy.
+Start a wire for this map	Založit vedení pro tuto mapu
+Lay	Pokládka
+Sections	Sekce
+Spans	Úseky
+Switches	Výhybky
+Pick in the view	Výběr v pohledu
+A click in the view picks a span or a switch (yellow dot)	Kliknutí v pohledu vybere úsek nebo výhybku (žlutá tečka)
+The wires over the road surface	Dráty nad povrchem silnice
+the kerb lane each way	krajní pruh v obou směrech
+the way the road runs	ve směru silnice
+against the road's way	proti směru silnice
+Section	Sekce
+Kit	Sada
+ (every map)	 (všechny mapy)
+none: the wire for the game only	žádná: vedení jen pro hru
+A new kit	Nová sada
+My wire	Moje vedení
+Change this kit	Změnit tuto sadu
+its wire spline	její spline drátu
+its masts, every	její stožáry, každých
+The kit names no mast	Sada neuvádí stožár
+Frogs and section insulators are put where the wire has them, as the kit names them.	Rozvětvení a úsekové děliče se umístí tam, kde je vedení má, tak jak je sada uvádí.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Na mapu se nic nepokládá, vedení je jen pro hru. Sada (+) uvádí vaše vlastní modely drátu, jeho stožárů, rozvětvení a izolátorů.
+Over the selected roads	Nad vybranými silnicemi
+Select roads in the view first (double-click: a whole road)	Nejprve vyberte silnice v pohledu (dvojklik: celá silnice)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Pruhy vybraného objektu (křižovatky): zaškrtněte ty, nad kterými vede drát. Tři stýkající se úseky tvoří rozvětvení.
+It has no street lanes.	Nemá žádné pruhy pro vozidla.
+lane	pruh
+Over the ticked lanes	Nad zaškrtnutými pruhy
+Select one junction to lay the wire over its lanes.	Vyberte jednu křižovatku a položte vedení nad její pruhy.
+Draw a span by hand	Nakreslit úsek ručně
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Klikejte jeho body v pohledu; začatý nebo ukončený na konci úseku se k němu připojí, uprostřed úseku z něj tam odbočí (rozvětvení)
+points: click the next in the view	bodů: klikněte na další v pohledu
+Finish	Hotovo
+Read the map's wire splines	Načíst spliny vedení z mapy
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Spliny kreslené jako dvojice drátů (trolejbusové mapy pro OMSI 2): úsek podél každého, jak je čte hra
+Network	Síť
+Voltage	Napětí
+Wire spacing	Rozteč drátů
+How uneven the contact wire is: worn or icy wire 0.003 and more	Jak nerovný je trolejový drát: opotřebený nebo namrzlý drát 0.003 a více
+Delete the whole wire	Smazat celé vedení
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt zmizí při dalším uložení; hra bude opět číst spliny vedení z mapy
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Části vedení napájené z jedné měnírny. Kde se dvě stýkají, je beznapěťová mezera (izolátor).
+name	název
+live	pod napětím
+The feeder's resistance: the voltage drops with the current	Odpor napáječe: napětí klesá s proudem
+Power the feeder takes back from a braking bus	Výkon, který napáječ přijme zpět od brzdícího vozidla
+spans	úseků
+Add a section	Přidat sekci
+Insulators (where sections meet)	Izolátory (kde se sekce stýkají)
+ m dead	 m bez napětí
+Span	Úsek
+points	bodů
+Spacing	Rozteč
+its own	vlastní
+Drag: the whole span up or down	Táhněte: celý úsek nahoru nebo dolů
+The span the other way: the positive wire is on the right of its way	Úsek opačným směrem: kladný drát je vpravo ve směru úseku
+Pick a span in the view, or in the list.	Vyberte úsek v pohledu nebo v seznamu.
+section	sekce
+A switch where three spans meet (yellow in the view). Every frog gets one.	Výhybka tam, kde se stýkají tři úseky (žlutá v pohledu). Každé rozvětvení má jednu.
+No frogs yet: lay three spans meeting in one point (a branch).	Zatím žádná rozvětvení: položte tři úseky stýkající se v jednom bodě (odbočku).
+Spans laid:	Položeno úseků:
+Wire kit	Sada trolejového vedení
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Vaše vlastní modely (vytvořené v Blenderu nebo kdekoli, uložené ve složce obsahu), které zobrazují vedení na mapě: spline drátu a objekty stožáru, výhybky a izolátoru. Sada je soubor .cfg, který je uvádí; měňte ji zde, jako text nebo v libovolném textovém editoru.
+As text	Jako text
+The name is the kit's file: make a copy to rename it	Název je soubor sady: pro přejmenování vytvořte kopii
+For	Pro
+this map	tuto mapu
+every map	všechny mapy
+Take the one selected on the map	Vzít vybraný na mapě
+Select a spline of it on the map first	Nejprve vyberte jeho spline na mapě
+Select such an object on the map first	Nejprve vyberte takový objekt na mapě
+Choose the file	Vybrat soubor
+The file must lie in the content folder or in OMSI 2's	Soubor musí ležet ve složce obsahu nebo ve složce OMSI 2
+Not there	Nenalezeno
+Wire spline	Spline drátu
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	.sli, jehož profil umístí dráty do jejich výšky nad silnicí; pokládá se podél každého úseku
+Mast	Stožár
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: počátek u jeho paty, výložník sahá podél jeho -y k drátu
+Frog	Výhybka
+A .sco hung where the wire branches: its origin on the wire, y along it	.sco zavěšený tam, kde se drát větví: počátek na drátu, y podél něj
+Insulator	Izolátor
+A .sco hung where two sections meet: its origin on the wire, y along it	.sco zavěšený tam, kde se stýkají dvě sekce: počátek na drátu, y podél něj
+Masts	Stožáry
+every	každých
+From a mast's foot to its wire, across the road	Od paty stožáru k jeho drátu, napříč silnicí
+from the wire	od drátu
+Mast turned	Natočení stožáru
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Pro model, jehož výložník nesahá podél -y: 90, když sahá podél -x, -90 podél +x, 180 podél +y
+arm	výložník
+The wire spline's wires	Dráty splinu
+high	vysoko
+across its line	od jeho osy
+Save and renew the map's wire	Uložit a obnovit vedení mapy
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Spliny drátu a stožáry položené z této sady převezmou její soubory v aktuální podobě; rozvětvení a izolátory se umístí znovu
+A new kit from this one (to rename it, or change it apart)	Nová sada z této (pro přejmenování nebo samostatné úpravy)
+Show the file	Zobrazit soubor
+Changed to the kit's files:	Změněno na soubory sady:
+a display shows the switch of its name	tabule ukazuje výhybku s tímto názvem
+Set by	Ovládání
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Poloha, když hra načítá vedení (náhodně: losuje se jednou za běh; v online hře rovně)
+Contact plate	Kontaktní spínač
+ m before the frog	 m před rozvětvením
+Power on from	Proud od
+Invert	Obrátit
+the other way round	naopak
+Channel	Kanál
+any	libovolný
+Range	Dosah
+Route codes	Kódy tras
+A route code	Kód trasy
+Flip	Převrátit
+Left to right	Zleva doprava
+Top to bottom	Shora dolů
+Dark theme	Tmavý motiv
+Light theme	Světlý motiv
+Lit	Světlo
+Right footway texture	Textura pravého chodníku
+Left footway texture	Textura levého chodníku
+like the left one	jako levý
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	Dráhy pruhů vedou tak, jak je má mapa s levostranným provozem (jednosměrná silnice si směr ponechá)

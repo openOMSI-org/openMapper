@@ -2,7 +2,7 @@
 //! signal the track pieces it protects, its distant signal, the next signal and a speed
 //! limit. Pieces and signals are taken from what is selected in the view.
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use omsi_map::ailists::SignalRoute;
 
 use crate::doc::Sel;
@@ -12,7 +12,8 @@ use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::library::Library;
 use crate::traffic::File;
-use crate::ui::{prop_row, Action, ACCENT, TEXT_DIM};
+use crate::ui::{prop_row, Action};
+use crate::theme::pal;
 
 #[derive(Default)]
 pub struct SignalWindow {
@@ -56,7 +57,7 @@ impl SignalWindow {
         let mut show: Option<Vec<Sel>> = None;
         let mut open = self.open;
         egui::Window::new(icons::labelled(Icon::Traffic, tr("Signal routes", "Маршруты сигналов"))).id(egui::Id::new("signal routes")).open(&mut open).default_pos([330.0, 90.0]).default_size([480.0, 560.0]).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("Each railway signal clears when a train wants the track pieces of its route and none stands on them.", "Сигнал открывается, когда поезду нужны пути его маршрута и на них никто не стоит.")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("Each railway signal clears when a train wants the track pieces of its route and none stands on them.", "Сигнал открывается, когда поезду нужны пути его маршрута и на них никто не стоит.")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 let can = sel_object.is_some();
                 if ui.add_enabled(can, egui::Button::new(icons::labelled(Icon::Add, tr("New route for the selected signal", "Новый маршрут для выбранного сигнала")))).on_disabled_hover_text(tr("Select a signal (one object) in the view first", "Сначала выберите в окне вида сигнал (один объект)")).clicked() {
@@ -67,12 +68,12 @@ impl SignalWindow {
                 }
             });
             if let Some((_, false)) = sel_object {
-                ui.label(RichText::new(tr("The selected object does not look like a signal (its name says nothing of one): check it is.", "Выбранный объект не похож на сигнал (в названии этого нет): проверьте.")).small().color(Color32::from_rgb(230, 160, 60)));
+                ui.label(RichText::new(tr("The selected object does not look like a signal (its name says nothing of one): check it is.", "Выбранный объект не похож на сигнал (в названии этого нет): проверьте.")).small().color(pal().warn));
             }
             ui.separator();
             egui::ScrollArea::vertical().id_salt("routes").max_height(200.0).auto_shrink([false, true]).show(ui, |ui| {
                 if routes.is_empty() {
-                    ui.label(RichText::new(tr("No routes yet.", "Маршрутов пока нет.")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("No routes yet.", "Маршрутов пока нет.")).color(pal().text_dim));
                 }
                 for (i, r) in routes.iter().enumerate() {
                     let text = format!("{i}: {} · {} {}{}", name_of(ed, lib, r.signal.0), r.entries.len(), tr("pieces", "участков"), r.speed_limit.map(|v| format!(" · {v:.0} km/h")).unwrap_or_default());
@@ -89,12 +90,12 @@ impl SignalWindow {
             let mut remove = false;
             {
                 let r = &mut routes[i];
-                ui.label(RichText::new(format!("{} {i}", tr("Route", "Маршрут"))).strong().color(ACCENT));
+                ui.label(RichText::new(format!("{} {i}", tr("Route", "Маршрут"))).strong().color(pal().accent));
                 egui::Grid::new("route").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
                     prop_row(ui, tr("Signal", "Сигнал"), |ui| {
                         ui.label(name_of(ed, lib, r.signal.0));
                         if let Some((id, _)) = sel_object.filter(|s| s.0 != r.signal.0) {
-                            if ui.small_button(tr("the selected", "выбранный")).clicked() {
+                            if ui.small_button(icons::labelled(Icon::Dropper, tr("the selected", "выбранный"))).clicked() {
                                 r.signal.0 = id;
                             }
                         }
@@ -106,11 +107,11 @@ impl SignalWindow {
                         prop_row(ui, label, |ui| {
                             ui.label(v.map(|id| name_of(ed, lib, id)).unwrap_or_else(|| tr("none", "нет").to_string()));
                             if let Some((id, _)) = sel_object.filter(|s| Some(s.0) != *v && s.0 != r.signal.0) {
-                                if ui.small_button(tr("the selected", "выбранный")).clicked() {
+                                if ui.small_button(icons::labelled(Icon::Dropper, tr("the selected", "выбранный"))).clicked() {
                                     *v = Some(id);
                                 }
                             }
-                            if v.is_some() && ui.small_button("×").clicked() {
+                            if v.is_some() && icons::small(ui, Icon::Close, tr("None", "Нет")).clicked() {
                                 *v = None;
                             }
                         });
@@ -136,7 +137,7 @@ impl SignalWindow {
                     if ui.add_enabled(!pieces.is_empty(), egui::Button::new(label)).on_hover_text(tr("Every rail path of the selected tracks and switches (double-click a track: all of it); replaces the pieces", "Все рельсовые пути выбранных рельсов и стрелок (двойной клик по пути — весь); заменяет участки")).clicked() {
                         r.entries = pieces.iter().map(|(id, p)| [*id, *p, 0, 0]).collect();
                     }
-                    if ui.add_enabled(!pieces.is_empty(), egui::Button::new(tr("Add them", "Добавить их"))).clicked() {
+                    if ui.add_enabled(!pieces.is_empty(), egui::Button::new(icons::labelled(Icon::Add, tr("Add them", "Добавить их")))).clicked() {
                         for (id, p) in &pieces {
                             if !r.entries.iter().any(|e| e[0] == *id && e[1] == *p) {
                                 r.entries.push([*id, *p, 0, 0]);

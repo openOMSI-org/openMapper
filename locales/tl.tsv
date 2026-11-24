@@ -2788,3 +2788,445 @@ no track within 15 m	walang riles sa loob ng 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	hindi nakakabit ang mga riles, o kabilang direksyon ang takbo (tingnan ang View > Mga AI lane)
 no track beside	walang riles sa tabi ng
 Drives on	Tumatakbo sa
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Pinili ang source vertex. I-click ang isang target na vertex para i-snap (Shift: pahalang lang, Esc: kanselahin)
+Aim at a vertex of the selected object	Layunin ang isang vertex ng napiling bagay
+Snapped to vertex! (Ctrl+Z to undo)	Na-snap sa vertex! (Ctrl+Z para i-undo)
+Aim at a target vertex or spline endpoint	Layunin ang isang target na vertex o spline endpoint
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Pinili ang gilid ng pinagmulan. Mag-click ng target na gilid o kalsada para i-align (Shift: pahalang lang, Esc: kanselahin)
+Aim at an edge of the selected object	Layunin ang isang gilid ng napiling bagay
+Aligned edge to edge! (Ctrl+Z to undo)	Naka-align gilid sa gilid! (Ctrl+Z para i-undo)
+Aim at a target edge or road	Layunin ang isang target na gilid o kalsada
+Target cancelled. Pick a source vertex again	Kinansela ang target. Pumili muli ng source vertex
+Vertex snap cancelled	Kinansela ang vertex snap
+Target cancelled. Pick a source edge again	Kinansela ang target. Pumili muli ng gilid ng pinagmulan
+Edge snap cancelled	Kinansela ang Edge snap
+Select an object first to snap its vertex	Pumili muna ng isang bagay upang kunin ang tuktok nito
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex snap: mag-click ng source vertex sa napiling object (Esc para kanselahin)
+Snap vertex to vertex	Mag-snap vertex sa vertex
+Select an object first to align its edge	Pumili muna ng isang bagay upang ihanay ang gilid nito
+Edge snap: click a source edge on the selected object (Esc to cancel)	Edge snap: mag-click ng source edge sa napiling object (Esc para kanselahin)
+Snap edge to edge	Snap gilid sa gilid
+Snap vertex to vertex (V)	I-snap ang vertex sa vertex (V)
+Snap edge to edge (L)	Snap gilid sa gilid (L)
+Snap vertex (V)	Snap vertex (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Mag-snap ng vertex ng object na ito sa isa pang vertex (Shortcut: V)
+Snap edge (L)	Snap na gilid (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	I-snap ang isang gilid ng bagay na ito sa isa pang gilid o kalsada (Shortcut: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Mag-snap ng vertex ng napiling object papunta sa vertex ng isa pang object (V)\nShift: Horizontal lang, Esc/Right-click: Cancel
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	I-align ang isang gilid ng napiling bagay sa isang gilid o kalsada (L)\nUmiikot at kumukuha ng collinear\nShift: Pahalang lamang, Esc/Right-click: Kanselahin
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Naitugma ang Punto 1! Mag-click ng ika-2 punto sa bagay upang paikutin, o Esc upang matapos
+Reference angle set. Click a target point or spline to align (Esc: finish)	Naitakda ang anggulo ng sanggunian. Mag-click ng target na punto o daan upang itugma (Esc: tapusin)
+Pick a different vertex on the object	Pumili ng ibang vertex sa bagay
+Click a 2nd reference point on the object, or Esc to finish	Mag-click ng ika-2 sangguniang punto sa bagay, o Esc upang matapos
+Aligned angle! (Ctrl+Z to undo)	Naitugma ang anggulo! (Ctrl+Z upang i-undo)
+Vertex snap complete	Nakumpleto ang snap ng vertex
+Align vertex angle	Itugma ang anggulo ng vertex
+Complete to	Kumpletuhin hanggang
+Complete to: a new piece between the free ends of the selected splines	Kumpletuhin hanggang: bagong piraso sa pagitan ng malayang dulo ng mga napiling spline
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Bagong piraso na kauri ng unang napiling spline sa pagitan ng dalawang malayang dulo ng mga napiling spline, tugma sa pareho sa puwesto, direksyon at taas; hindi binabago ang dalawa. Muli: pinagdudugtong ang dalawang natitirang dulo at nasasara ang singsing.
+The two ends already meet	Nagtatagpo na ang dalawang dulo
+Select the splines whose free ends are to be joined	Piliin ang mga spline na pagdudugtungin ang malayang dulo
+No piece of spline can join these two ends	Walang piraso ng spline na makapagdudugtong sa dalawang dulong ito
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Binuksan ang kopya ng openMapper ng mapang ito sa content folder (hindi kailanman sinusulatan ang nasa folder ng OMSI 2)
+Read in again, changed on disk by another program:	Binasa muli, binago sa disk ng ibang programa:
+Could not bring the changes over	Hindi madala ang mga pagbabago
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Binago ang mga file ng mapa pagkatapos ng autosave na ito (ng ibang programa, gaya ng editor ng OMSI 2). Ang pagbalik ay maglalagay ng mas lumang tile ng autosave sa ibabaw ng mga pagbabagong iyon.
+tile(s)	tile
+the global settings	ang pangkalahatang setting
+the timetable	ang timetable
+the traffic	ang trapiko
+the descriptions	ang mga paglalarawan
+Reload from disk	I-reload mula sa disk
+The map changed on disk	Nagbago ang mapa sa disk
+Another program changed the map's files where it has changes here not saved yet:	Binago ng ibang programa ang mga file ng mapa kung saan may mga hindi pa naseseyb na pagbabago rito:
+The other changes made on disk were read in already.	Nabasa na ang iba pang pagbabago sa disk.
+Keep mine	Panatilihin ang akin
+The map changed in OMSI 2's folder	Nagbago ang mapa sa folder ng OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Binago ang kopya ng mapang ito sa instalasyon pagkatapos maseyb ang kopya ng openMapper sa content folder, halimbawa ng editor ng OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Papalitan ng pagdadala ang mga file na iyon sa kopya ng openMapper; itinatabi ang mga napalitang file sa isang backup (File > Mga naunang bersyon).
+Bring the changes over	Dalhin ang mga pagbabago
+Keep openMapper's copy	Panatilihin ang kopya ng openMapper
+its way has a gap after path	may puwang ang daan nito pagkatapos ng path
+its way does not pass	hindi dumadaan ang daan nito sa
+On demand	Kapag may sasakay o bababa
+Not served (checkpoint)	Hindi hinihintuan (checkpoint)
+Wait for departure time	Hintayin ang oras ng alis
+Always + wait for departure time	Palagi + hintayin ang oras ng alis
+The bus stops only when somebody waits or wants to get off (the game's default)	Humihinto lang ang bus kapag may naghihintay o gustong bumaba (default ng laro)
+The bus always stops here	Palaging humihinto rito ang bus
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Dumadaan ang bus nang hindi humihinto: tanda lang ng daan ang hintuan (checkpoint)
+The bus stops only when it is early, and waits there for its departure time	Humihinto lang ang bus kapag maaga ito, at doon hinihintay ang oras ng alis nito
+The bus always stops here, and when it is early it waits for its departure time	Palaging humihinto rito ang bus, at kapag maaga ito hinihintay nito ang oras ng alis
+All trips	Lahat ng biyahe
+Every trip of the map, those no tour drives too	Bawat biyahe ng mapa, pati ang mga walang tour na nagmamaneho
+The line number the trip shows; the line of this number lists it among its trips	Ang numero ng linyang ipinapakita ng biyahe; inililista ito ng linyang may numerong ito sa mga biyahe nito
+Way picked by hand:	Daang pinili nang manu-mano:
+the paths picked do not pass this stop	hindi dumadaan sa hintuang ito ang mga napiling path
+Other trips	Ibang biyahe
+The time profile this departure runs to	Ang time profile na sinusunod ng departure na ito
+Time profile	Time profile
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Puwedeng may ilang profile ang biyahe (rush hour, gabi…): sinasabi ng bawat departure ng tour kung alin ang sinusunod nito
+The profile's name	Ang pangalan ng profile
+A new profile, a copy of this one	Bagong profile, kopya nito
+Delete this profile (its departures run to the first)	Burahin ang profile na ito (susunod sa una ang mga departure nito)
+Times from stop to stop	Oras mula hintuan hanggang hintuan
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Maitatakda sa bawat hintuan ang oras mula sa naunang hintuan: gumagalaw kasabay ang mga oras pagkatapos nito, pati ang oras ng biyahe. Ang mga oras na hindi itinakda ay sumusunod sa layo sa pagitan ng mga nakapirmi; sa nakapirming hintuan, naghihintay ang bus na maaga.
+From the stop before	Mula sa naunang hintuan
+After departure	Pagkaalis
+Minutes from the stop before to this one	Minuto mula sa naunang hintuan hanggang dito
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Gaya sa editor ng OMSI 2. I-hover ang isang pagpipilian para makita ang ginagawa ng bus.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Bawat biyahe ng mapa, anumang linya ang nagpapakita nito o anumang tour ang nagmamaneho nito. Iniingatan ang biyaheng walang tour na nagmamaneho, at dito ito maaaring i-edit, ibigay sa isang tour o burahin.
+trips	biyahe
+driven by no tour	walang tour na nagmamaneho
+no tour	walang tour
+departures	departure
+No path there: click a lane of a road (View > AI lanes shows them)	Walang path diyan: mag-click ng lane ng kalsada (ipinapakita ang mga ito ng Tingnan > Mga AI lane)
+Done picking paths	Tapos na sa pagpili
+Pick the paths on the map	Piliin ang mga path sa mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Ikaw ang pumili ng daan, isa-isang path, gaya sa editor ng OMSI 2
+Find the way automatically	Hanapin ang daan nang awtomatiko
+Forget the paths picked: the way is found along the roads again	Kalimutan ang mga napiling path: muling hahanapin ang daan sa mga kalsada
+The paths were picked by hand: they are kept when the stops change.	Pinili nang manu-mano ang mga path: iniingatan ang mga ito kapag nagbago ang mga hintuan.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Mag-click ng mga path sa view. Idinadagdag ang isang path pagkatapos ng dulo o bago ang simula, kasama ang mga path papunta roon; ang isang nasa tabi ng daan ay pumapalit sa bahaging iniikutan nito (ibang sanga sa isang junction); inaalis ang path na nasa daan. Puwedeng magsimula ang daan bago ang unang hintuan at magpatuloy pagkatapos ng huli.
+The way breaks after path	Napuputol ang daan pagkatapos ng path
+the paths do not join, the bus's GPS loses its way here in the game	hindi nagdudugtong ang mga path, naliligaw dito ang GPS ng bus sa laro
+Paths of the way	Mga path ng daan
+Cut before the first stop	Putulin bago ang unang hintuan
+Cut after the last stop	Putulin pagkatapos ng huling hintuan
+path	path
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Sariling kontrol ng openMapper: ang camera ayon sa pinili sa Kamera, ang mga key ayon sa Tingnan > Mga kontrol
+The keys as in View > Controls	Ang mga key ayon sa Tingnan > Mga kontrol
+A copy of its own was made for the script: the original type is unchanged	Gumawa ng sariling kopya para sa script: hindi nabago ang orihinal na uri
+Trolleybus wire the game cannot use	Trolleybus wire na hindi magagamit ng laro
+Rows the game does not show	Mga hanay na hindi ipinapakita ng laro
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Nagsisimula ang isang hanay ng object sa tabi ng kalsada (mga lamp, poste, parking bay) bago ang kalsadang kinalalagyan nito: binibilang ang distansya nito mula sa simula ng chain ng kalsada, at dito ay mas maliit ito kaysa sa haba ng chain bago ang kalsadang iyon. Hindi ito ipinapakita ng OMSI 2 at openOMSI, pati ng editor. Ilatag muli ang hanay, o lakihan ang simula nito sa properties nito.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	Gumagawa lang ang openOMSI ng switch kung saan eksaktong tatlong span ng overhead wire ang nagtatagpo, at nilalaktawan ang switch na nakalagay kung saan wala nang nagtatagpo; walang substation ang span sa section na wala sa network. Buksan ang Mapa > Trolleybus wire para ayusin ito.
+Trolleybus wire	Trolleybus wire
+Select the next road piece (joined at its end; Shift: add it)	Piliin ang susunod na piraso ng kalsada (nakadugtong sa dulo nito; Shift: idagdag)
+Select the previous road piece (joined at its start; Shift: add it)	Piliin ang naunang piraso ng kalsada (nakadugtong sa simula nito; Shift: idagdag)
+the up arrow	ang arrow pataas
+the down arrow	ang arrow pababa
+the left arrow	ang arrow pakaliwa
+the right arrow	ang arrow pakanan
+Select three objects or more (the two farthest apart stay)	Pumili ng tatlo o higit pang object (hindi gagalaw ang dalawang pinakamalayo sa isa't isa)
+Line up	Ihanay
+Space evenly	Pantayin ang pagitan
+Splines laid	Nailatag ang mga spline
+The spline reaches past the map: add tiles there first	Lumalampas sa mapa ang spline: magdagdag muna ng tile doon
+Ground painted over areas	Pininturahan ang lupa sa mga lugar
+Track beds	Mga track bed
+Ground under surfaces	Lupa sa ilalim ng mga ibabaw
+Form the ground	Hubugin ang lupa
+Select a road piece first	Pumili muna ng piraso ng kalsada
+Nothing is joined at its end	Walang nakadugtong sa dulo nito
+Nothing is joined at its start	Walang nakadugtong sa simula nito
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Ilipat: i-drag ang arrow sa X, Y o Z, ang parisukat sa plane nito, ang bilog sa ibabaw ng lupa
+Rotate: drag a ring to turn about X, Y or Z	Ikutin: i-drag ang singsing para umikot sa X, Y o Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Scale: i-drag ang arrow para mag-scale sa axis na iyon, ang parisukat para sa dalawa, ang bilog para sa tatlo
+Junctions where the roads meet	Mga junction kung saan nagtatagpo ang mga kalsada
+Streets from the street model	Mga kalye mula sa street model
+perimeter	perimeter
+needs	kailangan
+built	nabuo
+signed by	na-sign ng
+not signed: the game loads it with a warning that its author is not known	hindi naka-sign: ilo-load ito ng laro nang may babalang hindi kilala ang may-akda nito
+openOMSI has no such function (the API of version	walang ganitong function ang openOMSI (ang API ng bersyon
+`map` is for the map's scripts; a script of objects has the omsi functions only	Para sa mga script ng mapa ang `map`; ang script ng mga object ay may mga omsi function lang
+no such module in the project (modules/…)	walang ganitong module sa project (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	hindi nagpapadala ang laro ng ganitong event (maliban kung ipadala ito ng script gamit ang omsi.emit)
+a name is needed	kailangan ng pangalan
+a file of that name is there already	may file na sa pangalang iyon
+Empty module	Walang lamang module
+Test run of	Test run ng
+does nothing in the test run (no game): it gives false	walang ginagawa sa test run (walang laro): nagbabalik ng false
+has nothing to read in the test run (no game): it gives nil	walang mababasa sa test run (walang laro): nagbabalik ng nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	hindi kailanman binabago ang object ng installation ng OMSI 2: gawin muna itong sarili mong object
+Dark	Madilim
+As the system	Ayon sa system
+power (current on: branch)	kuryente (may kuryente: branch)
+indicator	indicator
+radio	radyo
+to the branch	sa branch
+at random	random
+spans meet in one point: the game makes no switch there (a frog is three)	span ang nagtatagpo sa iisang punto: walang switch na gagawin ang laro doon (tatlo ang frog)
+Switch	Switch
+no three spans meet there any more	wala nang tatlong span na nagtatagpo roon
+A span is in section	May span sa section
+that the network does not have	na wala sa network
+the wire spline	ang wire spline
+the mast	ang poste
+the frog	ang frog
+the insulator	ang insulator
+is not there	ay wala
+no wire spline: nothing of the wire is shown on the map	walang wire spline: walang bahagi ng wire na ipinapakita sa mapa
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	hindi pares ng manipis na wire na mas mataas sa 3 m ang profile ng wire spline: ilalatag ito nang ganoon, at hindi ito ituturing na wire ng openOMSI kung walang trolley.txt
+a kit of that name is there already	may kit na sa pangalang iyon
+Renew the wire from its kit	I-renew ang wire mula sa kit nito
+Theme	Tema
+Back to the 3D view	Bumalik sa 3D view
+The plan view from above, north up	Ang plan view mula sa itaas, hilaga sa itaas
+Put the windows back in their first places	Ibalik ang mga window sa una nilang puwesto
+Trolleybus wire…	Trolleybus wire…
+: there are unsaved changes	: may mga hindi pa na-save na pagbabago
+Assets: every object and road type, with pictures	Mga asset: bawat object at uri ng kalsada, may larawan
+Close the openOMSI session started from here	Isara ang session ng openOMSI na sinimulan mula rito
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Piliin kung saan magsisimula, ang sasakyan, ang oras at ang panahon, saka imaneho ang mapa sa openOMSI
+Search commands	Maghanap ng command
+Every command of the menus by its name	Bawat command ng mga menu ayon sa pangalan nito
+Right-click the view for what can be done there; Search commands finds the rest	I-right-click ang view para sa magagawa roon; hinahanap ng Maghanap ng command ang iba pa
+Right-click the view: its menu	I-right-click ang view: ang menu nito
+Snap vertex	I-snap ang vertex
+Snap edge	I-snap ang edge
+Out of the mix	Alisin sa mix
+more as OMSI 2 is read…	marami pa habang binabasa ang OMSI 2…
+Reading the content of OMSI 2…	Binabasa ang content ng OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Walang nakita: subukan ang mas kaunting letra, o Lahat sa Ipakita
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Walang ganitong uri: piliin ang Lahat sa Ipakita, o mag-import ng asset (File > Mag-import ng asset)
+a table of functions	isang table ng mga function
+a module	isang module
+Next (Enter)	Susunod (Enter)
+Previous (Shift+Enter)	Nauna (Shift+Enter)
+Match case	Itugma ang case
+Replace	Palitan
+Replace…	Palitan…
+Click: a breakpoint (F9 on the cursor's line)	Click: breakpoint (F9 sa linya ng cursor)
+permission	permission
+The light before	Ang naunang ilaw
+The next light	Ang susunod na ilaw
+The phase before	Ang naunang yugto
+The next phase	Ang susunod na yugto
+to 	hanggang 
+Select the piece joined at its start (,)	Piliin ang pirasong nakadugtong sa simula nito (,)
+Select the piece joined at its end (.)	Piliin ang pirasong nakadugtong sa dulo nito (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	I-click ang dalawang punto para sukatin ang distansya at gradient sa pagitan nila (U) · Shift + mga click: mga sulok ng isang lugar (laki at perimeter nito) · right-click: patayin
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	I-snap ang vertex ng napiling object sa vertex ng ibang object\nShift: Pahalang lang, Esc/Right-click: Kanselahin
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Ihanay ang edge ng napiling object sa isang edge o kalsada\nIniikot at sini-snap nang collinear\nShift: Pahalang lang, Esc/Right-click: Kanselahin
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Sa tuwid na linya sa pagitan ng dalawang pinakamalayo, sa pantay na hakbang (mga poste, lamp, hanay ng puno)
+Equal steps between the two farthest apart, each keeping its distance to the side	Pantay na hakbang sa pagitan ng dalawang pinakamalayo, pinapanatili ng bawat isa ang layo nito sa gilid
+height, m	taas, m
+gradient, %	gradient, %
+cant, %	cant, %
+Rotate, °	Ikot, °
+Name, file, IDCode, stop, x, y or tile x y	Pangalan, file, IDCode, hintuan, x, y o tile x y
+listed, no file	nakalista, walang file
+The camera over the tile's middle	Ang camera sa ibabaw ng gitna ng tile
+its folder	ang folder nito
+Line up the selected objects	Ihanay ang mga napiling object
+Space the selected objects evenly	Pantayin ang pagitan ng mga napiling object
+Next road piece	Susunod na piraso ng kalsada
+Previous road piece	Naunang piraso ng kalsada
+The run ended	Natapos ang run
+installed as	na-install bilang
+failed	nabigo
+Run	Patakbuhin
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Patakbuhin ang mga script dito, sa editor, gamit ang mga function ng laro (F5 sa code)
+Step in	Step in
+Run and stop at the first line (F11)	Patakbuhin at huminto sa unang linya (F11)
+Continue	Ituloy
+Pause	I-pause
+Stop the clock; a script running stops at its next line	Ihinto ang orasan; hihinto ang tumatakbong script sa susunod nitong linya
+Over	Over
+Step over (F10)	Step over (F10)
+Into	Into
+Step into (F11)	Step into (F11)
+Out	Out
+Step out (Shift+F11)	Step out (Shift+F11)
+Restart	I-restart
+The map's scripts	Mga script ng mapa
+The game's clock in the run	Ang orasan ng laro sa run
+Set the game's clock of the run (sends minute)	Itakda ang orasan ng laro sa run (nagpapadala ng minute)
+starts 	simula 
+The hour the run starts at	Ang oras ng simula ng run
+Save all	I-save lahat
+Build .oop	I-build ang .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Isang file ng mga script ng mapa para ibahagi: compiled at obfuscated, kasama ang mga permission na kailangan nila (compiler ng Development Tools)
+API	API
+The game's functions and events	Mga function at event ng laro
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Wala pang script ang mapang ito. Tumatakbo ang mga script nito sa openOMSI habang nilalaro ito: tumutugon sila sa nangyayari (hintuan, oras, biyahe), nagpapakita ng mensahe, binabago ang trapiko at panahon.
+Start the map's scripts	Simulan ang mga script ng mapa
+Object scripts (Lua)	Mga script ng object (Lua)
+No object on the map has a Lua script.	Walang object sa mapa na may Lua script.
+Refresh	I-refresh
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Mga script na binabanggit ng scenery object sa [lua_script]: isa ang tumatakbo para sa bawat object ng uri nito malapit sa camera (openOMSI lang)
+Selected object	Napiling object
+Select one object on the map to see its scripts.	Pumili ng isang object sa mapa para makita ang mga script nito.
+No OMSI 2 script (.osc).	Walang OMSI 2 script (.osc).
+Lua script (openOMSI)	Lua script (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Script para sa bawat object ng ganitong uri, katabi ng .sco nito at binabanggit dito ([lua_script]); nilalaktawan ito ng OMSI 2. Ang object ng installation ay nagiging sariling kopya muna ng mapa.
+OMSI 2 script (.osc)	OMSI 2 script (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Sariling script ng object kasama ang listahan ng variable nito, pinapatakbo ng OMSI 2 at openOMSI; sinusunod ng mga lamp at [visible] na bahagi nito ang mga variable na itinatakda nito
+Rust plugin	Rust plugin
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Plugin ng mapa na nakasulat sa Rust, kino-compile sa WebAssembly sa isang .oop. Kailangan ng Rust (rustup) na may target na wasm32-unknown-unknown para i-build ito.
+Make the Rust plugin	Gawin ang Rust plugin
+Build and install	I-build at i-install
+cargo builds it, the .oop goes into the content folder's plugins	bina-build ito ng cargo, napupunta ang .oop sa plugins ng content folder
+Starts with the map	Nagsisimula kasama ng mapa
+Rename…	Palitan ang pangalan…
+Earlier in the order	Mas maaga sa pagkakasunod
+Later in the order	Mas huli sa pagkakasunod
+Delete (into openMapper's bin)	Burahin (sa bin ng openMapper)
+New script	Bagong script
+New module	Bagong module
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Nagsisimula ang bawat isa kapag nilalaro ang mapa, sa ganitong pagkakasunod (right-click para ilipat ang isa); ang pumalya ay hindi pumipigil sa iba. Gamitin ang map.on, map.every, map.after: sa mapang ito lang sila gumagana.
+Modules	Mga module
+Code the scripts share: local util = require("modules.util")	Code na pinagsasaluhan ng mga script: local util = require("modules.util")
+Data	Data
+Files the scripts read (data/), pictures and sounds	Mga file na binabasa ng mga script (data/), larawan at tunog
+Made by openMapper	Gawa ng openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Magbukas ng script sa kaliwa, o gumawa ng bago.\n\nPinapatakbo ng F5 ang mga script dito sa editor, naglalagay ng breakpoint ang F9, nag-i-step ang F10 / F11,\nnagko-complete ang Ctrl+Space, naghahanap ang Ctrl+F, pumupunta sa linya ang Ctrl+G, nagko-comment out ang Ctrl+/.
+Read only: a file of the installation or made by openMapper	Read-only: file ng installation o gawa ng openMapper
+Problems	Mga problema
+Console	Console
+Debugger	Debugger
+Events	Mga event
+error	error
+warning	babala
+No problems in the open files.	Walang problema sa mga bukas na file.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Lumalabas dito ang ipini-print ng mga script, ang ipinapakita nila sa screen at ang mga error nila kapag tumatakbo sila (Patakbuhin, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua na patatakbuhin sa mga script (sa frame na hinintuan, kung nakahinto); Up at Down: history
+Start a run first (Run, F5)	Magsimula muna ng run (Patakbuhin, F5)
+(empty)	(walang laman)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Tumatakbo. Hinihinto ng breakpoint (click sa kaliwa ng numero ng linya, o F9) ang mga script doon; hinihinto sila ng I-pause sa susunod nilang linya.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Hindi tumatakbo. Patakbuhin (F5) ang mga script; hinihinto sila ng breakpoint, at narito ang call stack, ang mga variable ng bawat function at ang mga value na binabantayan.
+Stopped	Nakahinto
+Call stack	Call stack
+Locals	Mga local
+Upvalues	Mga upvalue
+The console evaluates in this frame: a name, an expression, an assignment.	Sa frame na ito nag-e-evaluate ang console: pangalan, expression, assignment.
+Storage and objects	Storage at mga object
+Send	Ipadala
+As if the game sent it: every handler of it runs	Na parang ipinadala ng laro: tatakbo ang bawat handler nito
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Patakbuhin ang mga script para mano-manong ipadala sa kanila ang mga event ng laro: naabot na hintuan, pinto, bagong oras… Kusang nagpapadala ang orasan ng frame, minute at hour.
+Listening	Nakikinig
+timers	mga timer
+Sign with the key	I-sign gamit ang key
+a secret key file of oopc keygen (optional)	secret key file ng oopc keygen (opsyonal)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Gumagawa ang I-build ang .oop ng isang file ng mga script ng mapa para ibahagi (sa dist folder ng project): compiled, obfuscated, kasama ang mga permission na kailangan ng code nito. Pinapatakbo ng laro ang folder ng mga script nang ganoon; ang .oop ay para ipamigay ang mga ito nang walang source.
+Search functions and events	Maghanap ng function at event
+since	mula bersyon
+for an .oop	para sa .oop
+Double-click puts it into the script at the cursor.	Isinisingit ito ng double-click sa script sa cursor.
+A stop on this path	Hintuan sa path na ito
+branch	branch
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Ang overhead wire na dinadaanan ng mga trolleybus ng openOMSI (trolley.txt katabi ng mapa; hindi ito pinapansin ng OMSI 2). Kung wala ito, binabasa ng laro ang mga wire spline ng mapa.
+Start a wire for this map	Magsimula ng wire para sa mapang ito
+Lay	Ilatag
+Sections	Mga section
+Spans	Mga span
+Switches	Mga switch
+Pick in the view	Pumili sa view
+A click in the view picks a span or a switch (yellow dot)	Pumipili ng span o switch (dilaw na tuldok) ang click sa view
+The wires over the road surface	Taas ng mga wire sa ibabaw ng kalsada
+the kerb lane each way	ang lane sa gilid sa bawat direksyon
+the way the road runs	sa takbo ng kalsada
+against the road's way	salungat sa takbo ng kalsada
+Section	Section
+Kit	Kit
+ (every map)	 (bawat mapa)
+none: the wire for the game only	wala: ang wire ay para sa laro lang
+A new kit	Bagong kit
+My wire	Aking wire
+Change this kit	Baguhin ang kit na ito
+its wire spline	ang wire spline nito
+its masts, every	ang mga poste nito, bawat
+The kit names no mast	Walang posteng binabanggit ang kit
+Frogs and section insulators are put where the wire has them, as the kit names them.	Inilalagay ang mga frog at section insulator kung saan mayroon ang wire, ayon sa binabanggit ng kit.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Walang inilalatag sa mapa, para sa laro lang ang wire. Binabanggit ng kit (+) ang sarili mong mga model ng wire, mga poste, frog at insulator nito.
+Over the selected roads	Sa ibabaw ng mga napiling kalsada
+Select roads in the view first (double-click: a whole road)	Pumili muna ng mga kalsada sa view (double-click: buong kalsada)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Ang mga lane ng napiling object (isang junction): lagyan ng tsek ang mga dadaanan ng wire. Ang tatlong span na nagtatagpo ay bumubuo ng frog.
+It has no street lanes.	Wala itong lane para sa sasakyan.
+lane	lane
+Over the ticked lanes	Sa ibabaw ng mga naka-tsek na lane
+Select one junction to lay the wire over its lanes.	Pumili ng isang junction para ilatag ang wire sa ibabaw ng mga lane nito.
+Draw a span by hand	Gumuhit ng span nang mano-mano
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	I-click ang mga punto nito sa view; kapag sinimulan o tinapos sa dulo ng span, dudugtong ito roon, at sa gitna ng span ay sasanga ito roon (isang frog)
+points: click the next in the view	punto: i-click ang susunod sa view
+Finish	Tapusin
+Read the map's wire splines	Basahin ang mga wire spline ng mapa
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Mga spline na iginuhit bilang pares ng wire (mga trolleybus map na gawa para sa OMSI 2): isang span sa bawat isa, gaya ng pagbasa ng laro
+Network	Network
+Voltage	Boltahe
+Wire spacing	Pagitan ng wire
+How uneven the contact wire is: worn or icy wire 0.003 and more	Gaano kahindi pantay ang contact wire: 0.003 pataas para sa luma o nagyelong wire
+Delete the whole wire	Burahin ang buong wire
+trolley.txt goes with the next save; the game reads the map's wire splines again	Mawawala ang trolley.txt sa susunod na pag-save; babasahin muli ng laro ang mga wire spline ng mapa
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Mga bahaging pinapakain ng iisang substation. Kung saan nagtatagpo ang dalawa ay may dead stretch (isang insulator).
+name	pangalan
+live	may kuryente
+The feeder's resistance: the voltage drops with the current	Ang resistance ng feeder: bumababa ang boltahe kasabay ng current
+Power the feeder takes back from a braking bus	Kuryenteng ibinabalik sa feeder mula sa bus na nagpepreno
+spans	span
+Add a section	Magdagdag ng section
+Insulators (where sections meet)	Mga insulator (kung saan nagtatagpo ang mga section)
+ m dead	 m na walang kuryente
+Span	Span
+points	punto
+Spacing	Pagitan
+its own	sarili
+Drag: the whole span up or down	I-drag: ang buong span pataas o pababa
+The span the other way: the positive wire is on the right of its way	Ang span sa kabilang direksyon: nasa kanan ng takbo nito ang positive wire
+Pick a span in the view, or in the list.	Pumili ng span sa view, o sa listahan.
+section	section
+A switch where three spans meet (yellow in the view). Every frog gets one.	Switch kung saan nagtatagpo ang tatlong span (dilaw sa view). Bawat frog ay may isa.
+No frogs yet: lay three spans meeting in one point (a branch).	Wala pang frog: maglatag ng tatlong span na nagtatagpo sa iisang punto (isang branch).
+Spans laid:	Mga span na nailatag:
+Wire kit	Wire kit
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Ang sarili mong mga model (ginawa sa Blender o kahit saan, inilagay sa content folder) na nagpapakita ng wire sa mapa: ang wire spline at ang mga object na poste, frog at insulator. Ang kit ay isang .cfg file na bumabanggit sa kanila; baguhin ito rito, bilang text, o sa kahit anong text editor.
+As text	Bilang text
+The name is the kit's file: make a copy to rename it	Ang pangalan ay ang file ng kit: gumawa ng kopya para palitan ang pangalan nito
+For	Para sa
+this map	mapang ito
+every map	bawat mapa
+Take the one selected on the map	Kunin ang napili sa mapa
+Select a spline of it on the map first	Pumili muna ng spline nito sa mapa
+Select such an object on the map first	Pumili muna ng ganoong object sa mapa
+Choose the file	Piliin ang file
+The file must lie in the content folder or in OMSI 2's	Dapat nasa content folder o sa folder ng OMSI 2 ang file
+Not there	Wala roon
+Wire spline	Wire spline
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Isang .sli na ang profile ay naglalagay ng mga wire sa taas nila sa ibabaw ng kalsada; inilalatag ito sa bawat span
+Mast	Poste
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Isang .sco: ang origin nito ay nasa paanan, ang braso nito ay umaabot sa -y nito papunta sa wire
+Frog	Frog
+A .sco hung where the wire branches: its origin on the wire, y along it	Isang .sco na nakasabit kung saan sumasanga ang wire: ang origin nito ay nasa wire, y kasunod nito
+Insulator	Insulator
+A .sco hung where two sections meet: its origin on the wire, y along it	Isang .sco na nakasabit kung saan nagtatagpo ang dalawang section: ang origin nito ay nasa wire, y kasunod nito
+Masts	Mga poste
+every	bawat
+From a mast's foot to its wire, across the road	Mula sa paanan ng poste hanggang sa wire nito, pahalang sa kalsada
+from the wire	mula sa wire
+Mast turned	Ikot ng poste
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Para sa model na ang braso ay hindi umaabot sa -y nito: 90 kapag umaabot sa -x, -90 sa +x, 180 sa +y
+arm	braso
+The wire spline's wires	Mga wire ng wire spline
+high	taas
+across its line	mula sa gitnang linya nito
+Save and renew the map's wire	I-save at i-renew ang wire ng mapa
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Kinukuha ng mga wire spline at poste na inilatag mula sa kit na ito ang mga file nito sa kasalukuyang anyo; muling inilalagay ang mga frog at insulator
+A new kit from this one (to rename it, or change it apart)	Bagong kit mula rito (para palitan ang pangalan, o baguhin nang hiwalay)
+Show the file	Ipakita ang file
+Changed to the kit's files:	Pinalitan ng mga file ng kit:
+a display shows the switch of its name	ipinapakita ng display ang switch na may ganitong pangalan
+Set by	Kontrolado ng
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Kung saan ito nakatayo kapag binasa ng laro ang wire (random: binubunot minsan bawat run; diretso sa online na laro)
+Contact plate	Contact plate
+ m before the frog	 m bago ang frog
+Power on from	May kuryente mula sa
+Invert	Baligtarin
+the other way round	baligtad
+Channel	Channel
+any	kahit ano
+Range	Abot
+Route codes	Mga code ng ruta
+A route code	Code ng ruta
+Flip	I-flip
+Left to right	Kaliwa pakanan
+Top to bottom	Itaas pababa
+Dark theme	Madilim na tema
+Light theme	Maliwanag na tema
+Lit	Ilaw
+Right footway texture	Texture ng kanang bangketa
+Left footway texture	Texture ng kaliwang bangketa
+like the left one	tulad ng kaliwa
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	Ang mga daan ng linya ay tumatakbo tulad ng sa mapa na kaliwa ang takbo (ang isang-daang kalsada ay nananatili sa direksyon nito)

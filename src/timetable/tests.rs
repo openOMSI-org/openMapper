@@ -528,3 +528,246 @@ fn a_tram_trip_runs_on_its_track() {
     tt.set_route(&trip, r.track(&net, &[tile]), r.links(&net, &[tile], &[10, 11]));
     assert_eq!(route::ways_of(&tt, &trip, &net, &[tile]), Some(route::Ways::Rail));
 }
+
+/// A road object's lane that ends a couple of metres off the road it meets (laid a little
+/// under it, as Städtedreieck's are) still runs on into the road, as openOMSI links them
+/// (#120); a road on a bridge over it, 6 m up, does not.
+#[test]
+fn a_lane_a_little_off_the_road_in_height_runs_on_into_it() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let north = |y0: f64, y1: f64, z: f64| vec![DVec3::new(0.0, y0, z), DVec3::new(0.0, y1, z)];
+    net.add(PathKey { tile, id: 1, path: 0 }, north(0.0, 20.0, -2.5), 20.0, 0, 0, (false, false));
+    net.add(PathKey { tile, id: 2, path: 0 }, north(20.0, 120.0, 0.0), 100.0, 1, 0, (true, false));
+    net.add(PathKey { tile, id: 3, path: 0 }, north(20.0, 120.0, 6.0), 100.0, 2, 0, (true, false));
+    net.link();
+    let first = net.by_key[&PathKey { tile, id: 1, path: 0 }][0];
+    let ids: Vec<i64> = net.lanes[first].next.iter().map(|&l| net.lanes[l].key.id).collect();
+    assert_eq!(ids, vec![2]);
+}
+
+/// A lane of a broken spline far out (Solnechnogorsk_2024 has some 10^22 m north) is linked
+/// with the rest without the cell numbers overflowing: saving the map stopped there.
+#[test]
+fn a_lane_at_the_end_of_the_numbers_is_linked_without_overflowing() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let north = |y0: f64, y1: f64| vec![DVec3::new(0.0, y0, 0.0), DVec3::new(0.0, y1, 0.0)];
+    net.add(PathKey { tile, id: 1, path: 0 }, north(1.15e22, 1.15e22 + 10.0), 10.0, 0, 0, (true, false));
+    net.add(PathKey { tile, id: 2, path: 0 }, north(-1.15e22 - 10.0, -1.15e22), 10.0, 1, 0, (true, false));
+    net.add(PathKey { tile, id: 3, path: 0 }, north(0.0, 20.0), 20.0, 2, 0, (true, false));
+    net.link();
+    assert!(net.lanes.iter().all(|l| l.next.is_empty()));
+}
+
+/// A road north: `A` to y 100, a 1 m piece `S` (a junction's connector), `B` on from y 101
+/// to a junction at y 120 and a detour `D` beside it; on past the junction, and a road
+/// leading into `A` from the south.
+fn junction_net() -> (Network, std::collections::HashMap<i64, usize>) {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let p = |pts: &[(f64, f64)]| pts.iter().map(|q| DVec3::new(q.0, q.1, 0.0)).collect::<Vec<_>>();
+    // (one way each: direction 0, the way the points run)
+    let mut add = |id: i64, pts: Vec<DVec3>, spline: bool| {
+        let len: f64 = pts.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+        net.add(PathKey { tile, id, path: 0 }, pts, len, id as usize, 0, (spline, false));
+    };
+    add(1, p(&[(0.0, 0.0), (0.0, 100.0)]), true);
+    add(2, p(&[(0.0, 100.0), (0.0, 101.0)]), false);
+    add(3, p(&[(0.0, 101.0), (0.0, 120.0)]), true);
+    add(4, p(&[(0.0, 101.0), (2.0, 106.0), (2.0, 115.0), (0.0, 120.0)]), false);
+    add(5, p(&[(0.0, 120.0), (0.0, 220.0)]), true);
+    add(6, p(&[(0.0, -100.0), (0.0, 0.0)]), true);
+    net.link();
+    let ids = (1..=6).map(|id| (id, net.by_key[&PathKey { tile, id, path: 0 }][0])).collect();
+    (net, ids)
+}
+
+/// A short piece between two paths is driven, not jumped over to the path after it: the
+/// way found joins all along, as the game's bus needs it to (#122).
+#[test]
+fn a_short_connector_is_driven_not_jumped() {
+    let (net, id) = junction_net();
+    // (path 3 starts 1 m past path 1's end, within the 1.5 m a link may span)
+    assert_eq!(net.lanes[id[&1]].next, vec![id[&2]]);
+    let at = |pts: &[(f64, f64)]| pts.iter().map(|p| Some(DVec3::new(p.0, p.1, 0.0))).collect::<Vec<_>>();
+    let r = route::find(&net, &at(&[(2.5, 50.0), (2.5, 180.0)]), false, None);
+    assert!(r.ok(), "{:?}", r.problems);
+    let ids: Vec<i64> = r.lanes.iter().map(|l| net.lanes[*l].key.id).collect();
+    assert_eq!(ids, vec![1, 2, 3, 5]);
+    assert!(way::gaps(&net, &r.lanes).is_empty());
+    // the track read back names the same lanes
+    let track = r.track(&net, &[(0, 0)]);
+    let back: Vec<Option<usize>> = way::lanes_of_track(&net, &track, &[(0, 0)]);
+    assert_eq!(back, r.lanes.iter().map(|l| Some(*l)).collect::<Vec<_>>());
+    // a way that leaves the piece out breaks where it is
+    let broken = vec![id[&1], id[&3], id[&5]];
+    let g = way::gaps(&net, &broken);
+    assert_eq!(g.len(), 1);
+    assert_eq!(g[0].0, 0);
+    assert!((g[0].1 - 1.0).abs() < 1e-6);
+}
+
+/// The way picked path by path as in OMSI 2's editor: a path clicked after the end comes
+/// with the paths to it, one before the start goes first, another branch at a junction
+/// takes the place of the one it goes round, and a path of the way clicked is taken out.
+#[test]
+fn a_way_picked_by_hand() {
+    let (net, id) = junction_net();
+    let ids = |lanes: &[usize]| lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>();
+    let mut w = way::with_lane(&net, &[], id[&1]);
+    assert_eq!(ids(&w), vec![1]);
+    // after the end: the connector and the straight way filled in
+    w = way::with_lane(&net, &w, id[&5]);
+    assert_eq!(ids(&w), vec![1, 2, 3, 5]);
+    // before the start (a way before the first stop)
+    w = way::with_lane(&net, &w, id[&6]);
+    assert_eq!(ids(&w), vec![6, 1, 2, 3, 5]);
+    // the detour in place of the straight way
+    w = way::with_lane(&net, &w, id[&4]);
+    assert_eq!(ids(&w), vec![6, 1, 2, 4, 5]);
+    assert!(way::gaps(&net, &w).is_empty());
+    // the first taken out again
+    w = way::with_lane(&net, &w, id[&6]);
+    assert_eq!(ids(&w), vec![1, 2, 4, 5]);
+    // the stops found along it, the way running on past the last
+    let at = |pts: &[(f64, f64)]| pts.iter().map(|p| Some(DVec3::new(p.0, p.1, 0.0))).collect::<Vec<_>>();
+    let r = way::along(&net, &w, &at(&[(2.5, 50.0), (2.5, 150.0)]), false);
+    assert!(r.ok() && r.by_hand, "{:?}", r.problems);
+    assert_eq!(r.stops.iter().map(|s| s.0).collect::<Vec<_>>(), vec![0, 3]);
+    assert!((r.legs[0] - (50.0 + 1.0 + net.lanes[id[&4]].length() + 30.0)).abs() < 1e-6, "{:?}", r.legs);
+    // a stop the way does not pass
+    let r = way::along(&net, &w, &at(&[(2.5, 50.0), (40.0, 150.0)]), false);
+    assert_eq!(r.problems, vec![route::Problem::OffWay(1)]);
+}
+
+/// A path clicked past the end of the way is added after the end, even where it leads round
+/// the block back into the way: the way does not turn back to the start of the line (#135).
+#[test]
+fn a_path_past_the_end_does_not_loop_back_to_the_start() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let p = |pts: &[(f64, f64)]| pts.iter().map(|q| DVec3::new(q.0, q.1, 0.0)).collect::<Vec<_>>();
+    let mut add = |id: i64, pts: Vec<DVec3>| {
+        let len: f64 = pts.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+        net.add(PathKey { tile, id, path: 0 }, pts, len, id as usize, 0, (true, false));
+    };
+    add(1, p(&[(0.0, 0.0), (0.0, 100.0)]));
+    add(2, p(&[(0.0, 100.0), (0.0, 200.0)]));
+    add(3, p(&[(0.0, 200.0), (0.0, 300.0)]));
+    // round the block from the end of 3 back into the start of 2
+    add(4, p(&[(0.0, 300.0), (0.0, 320.0), (-20.0, 340.0), (-60.0, 340.0), (-80.0, 320.0), (-80.0, 80.0), (-60.0, 60.0), (-20.0, 60.0), (0.0, 80.0), (0.0, 100.0)]));
+    net.link();
+    let id: std::collections::HashMap<i64, usize> = (1..=4).map(|i| (i, net.by_key[&PathKey { tile, id: i, path: 0 }][0])).collect();
+    assert!(net.lanes[id[&4]].next.contains(&id[&2]), "the block leads back into the way");
+    let ids = |lanes: &[usize]| lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>();
+    let w = way::with_lane(&net, &[id[&1], id[&2]], id[&3]);
+    assert_eq!(ids(&w), vec![1, 2, 3]);
+    // and the path after it too
+    let w = way::with_lane(&net, &w, id[&4]);
+    assert_eq!(ids(&w), vec![1, 2, 3, 4]);
+    // a gap in the way is mended by a path clicked in it
+    let w = way::with_lane(&net, &[id[&1], id[&3]], id[&2]);
+    assert_eq!(ids(&w), vec![1, 2, 3]);
+}
+
+/// A way not found all the way keeps the part found, up to the stop it could not go on
+/// from: the rest is picked by hand from there (#135).
+#[test]
+fn a_way_found_part_of_the_way_keeps_that_part() {
+    let tile = (0, 0);
+    let mut net = Network::default();
+    let p = |pts: &[(f64, f64)]| pts.iter().map(|q| DVec3::new(q.0, q.1, 0.0)).collect::<Vec<_>>();
+    let mut add = |id: i64, pts: Vec<DVec3>| {
+        let len: f64 = pts.windows(2).map(|w| (w[1] - w[0]).length()).sum();
+        net.add(PathKey { tile, id, path: 0 }, pts, len, id as usize, 0, (true, false));
+    };
+    add(1, p(&[(0.0, 0.0), (0.0, 100.0)]));
+    add(2, p(&[(0.0, 100.0), (0.0, 200.0)]));
+    // (10 m on from the end of 2: not joined)
+    add(3, p(&[(0.0, 210.0), (0.0, 300.0)]));
+    net.link();
+    let at = |pts: &[(f64, f64)]| pts.iter().map(|p| Some(DVec3::new(p.0, p.1, 0.0))).collect::<Vec<_>>();
+    let r = route::find(&net, &at(&[(2.5, 20.0), (2.5, 150.0), (2.5, 250.0)]), false, None);
+    assert_eq!(r.problems, vec![route::Problem::NoWay(1)]);
+    assert!(!r.ok());
+    assert_eq!(r.lanes.iter().map(|l| net.lanes[*l].key.id).collect::<Vec<_>>(), vec![1, 2]);
+    assert_eq!(r.stops.len(), 2);
+}
+
+/// A trip's paths picked by hand are kept as they are when saved and read again: its track
+/// says so in a line the game passes over, and it reads back the same.
+#[test]
+fn a_track_picked_by_hand_reads_back() {
+    let mut tt = Timetable::default();
+    let out = scratch("byhand");
+    let line = tt.add_line("4");
+    let trip = tt.add_trip(&line, "4_A", vec![1, 2]);
+    let entries = vec![TrackEntry { values: vec![10.0, 0.0, 0.0, 3.0, 50.0, 0.0] }, TrackEntry { values: vec![11.0, 1.0, 0.0, 7.0, 12.5, 0.0] }];
+    tt.set_by_hand(&trip, Some((entries.clone(), Vec::new())));
+    assert!(tt.by_hand(&trip));
+    save_to(&mut tt, &out, &[]).unwrap();
+    let text = std::fs::read_to_string(out.join("TTData").join("4_A.ttr")).unwrap();
+    assert!(text.contains(BY_HAND));
+    let back = TimetableData::load(&out);
+    assert!(back.errors.is_empty(), "{:?}", back.errors);
+    assert_eq!(back.tracks[0].entries, entries);
+    let again = Timetable::load(&out, &[]);
+    assert!(again.by_hand("4_a"));
+    // renamed, it stays picked by hand; found automatically again, it is not
+    tt.rename_trip(&trip, "4_B").unwrap();
+    assert!(tt.by_hand("4_B") && !tt.by_hand("4_A"));
+    tt.set_by_hand("4_B", None);
+    assert!(!tt.by_hand("4_B") && tt.reroute.contains("4_b"));
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+/// The time from stop to stop set in a profile: the stop before keeps its time, the times
+/// after move along and the trip's time with them; a second profile, and the departures
+/// that ran to a profile taken away run to the first (#116).
+#[test]
+fn the_time_from_stop_to_stop() {
+    let mut p = omsi_timetable::TripProfile { name: "standard".into(), factor: 12.0, ..Default::default() };
+    let legs = [100.0, 100.0, 100.0];
+    // 0, 4, 8, 12: the leg into stop 2 from 4 to 6 minutes
+    profile::set_leg(&mut p, 4, &legs, 2, 6.0);
+    let t: Vec<f32> = stop_times(4, &legs, &p).iter().map(|x| x.0).collect();
+    assert_eq!(t, vec![0.0, 4.0, 10.0, 14.0]);
+    assert_eq!(p.factor, 14.0);
+    // the last leg: the trip's time follows, nothing else moves
+    profile::set_leg(&mut p, 4, &legs, 3, 1.5);
+    let t: Vec<f32> = stop_times(4, &legs, &p).iter().map(|x| x.0).collect();
+    assert_eq!(t, vec![0.0, 4.0, 10.0, 11.5]);
+    assert_eq!(p.factor, 11.5);
+    // the first leg: the later stops move with it
+    profile::set_leg(&mut p, 4, &legs, 1, 2.0);
+    let t: Vec<f32> = stop_times(4, &legs, &p).iter().map(|x| x.0).collect();
+    assert_eq!(t, vec![0.0, 2.0, 8.0, 9.5]);
+    profile::set_total(&mut p, 4, 20.0);
+    assert_eq!(stop_times(4, &legs, &p)[3].0, 20.0);
+    // a second profile; the departures follow when one is taken away
+    let mut tt = Timetable::default();
+    let line = tt.add_line("9");
+    let trip = tt.add_trip(&line, "9_A", vec![1, 2, 3, 4]);
+    tt.trip_mut(&trip).unwrap().profiles[0] = p.clone();
+    assert_eq!(tt.add_profile(&trip, 0), Some(1));
+    assert_eq!(tt.add_profile(&trip, 0), Some(2));
+    let names: Vec<String> = tt.trip(&trip).unwrap().profiles.iter().map(|p| p.name.clone()).collect();
+    assert_eq!(names, vec!["standard", "standard 2", "standard 3"]);
+    tt.lines[0].tours.push(omsi_timetable::Tour { number: "1".into(), ai_group: String::new(), extra: ALL_DAYS.to_string(), trips: (0..3).map(|k| omsi_timetable::TourTrip { trip: trip.clone(), profile: k, departure: 300.0 + k as f32 * 30.0 }).collect() });
+    tt.remove_profile(&trip, 1);
+    assert_eq!(tt.lines[0].tours[0].trips.iter().map(|x| x.profile).collect::<Vec<_>>(), vec![0, 0, 1]);
+    // the profiles as OMSI 2 reads them
+    let back = omsi_timetable::Trip::parse(&omsi_cfg::CfgFile::from_str(format!("{trip}.ttp"), &trip_text(tt.trip(&trip).unwrap())));
+    assert_eq!(back.profiles, tt.trip(&trip).unwrap().profiles);
+}
+
+/// The ways OMSI 2 serves a stop, each said in its own words.
+#[test]
+fn every_way_a_stop_is_served_has_a_name() {
+    let mut names: Vec<&str> = crate::stops::StopKind::SERVE.iter().map(|v| crate::stops::StopKind::of_serve(*v).unwrap()).collect();
+    names.sort();
+    names.dedup();
+    assert_eq!(names.len(), 5);
+    assert!(crate::stops::StopKind::SERVE.contains(&2));
+}

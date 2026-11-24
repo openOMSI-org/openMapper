@@ -1,15 +1,10 @@
-//! Scripts for maps, of the two kinds the games run:
-//!
-//! * openOMSI's Lua plugins: a map's own script is a plugin folder `plugins/map_<folder>/` of
-//!   the content folder whose `main.lua` has a header (generated here) that makes `on` and
-//!   `every` work on this map only, and the part the author writes below it;
-//! * OMSI 2's object scripts (`.osc`): what a scenery object runs every frame. They are
-//!   checked with openOMSI's own compiler, so what is reported is what the game would say.
+//! OMSI 2's object scripts (`.osc`): what a scenery object runs every frame, checked with
+//! openOMSI's own compiler, so what is reported is what the game would say; and lights
+//! switched by a script. The map's Lua scripts for openOMSI are `crate::script`.
 
-use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use crate::editable::{self, Source, When};
+use crate::editable;
 use crate::i18n::tr;
 
 /// A problem in a script: the line (1-based, 0 when it belongs to no line) and what is wrong.
@@ -17,113 +12,6 @@ use crate::i18n::tr;
 pub struct Diag {
     pub line: usize,
     pub message: String,
-}
-
-// ------------------------------------------------------------------------------------ Lua
-
-/// What a Lua script is checked for: that it reads as Lua 5.4, which openOMSI runs.
-pub fn check_lua(text: &str) -> Vec<Diag> {
-    match full_moon::parse(text) {
-        Ok(_) => Vec::new(),
-        Err(errors) => errors.iter().map(|e| Diag { line: e.range().0.line(), message: e.error_message().into_owned() }).collect(),
-    }
-}
-
-const MARK: &str = "-- ===== your script below =====";
-
-/// A folder name a plugin can have.
-fn plugin_name(map_folder: &str) -> String {
-    let s: String = map_folder.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
-    format!("map_{s}")
-}
-
-/// A map's Lua script (`plugins/map_<folder>/main.lua` of the content folder).
-pub fn lua_path(content: &Path, map_folder: &str) -> PathBuf {
-    content.join("plugins").join(plugin_name(map_folder)).join("main.lua")
-}
-
-fn lua_header(map_folder: &str, friendly: &str) -> String {
-    let lua_string = |s: &str| format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"").replace(['\r', '\n'], " "));
-    let mut h = String::new();
-    let _ = writeln!(h, "-- A script of the map {} (openMapper: Map > Scripts).", friendly.replace(['\r', '\n'], " "));
-    let _ = writeln!(h, "-- It runs on this map only: `on` and `every` below are `omsi.on` and `omsi.every`");
-    let _ = writeln!(h, "-- for this map. Everything above the line is made by openMapper; write below it.");
-    let _ = writeln!(h, "local MAP = {}", lua_string(map_folder));
-    let _ = writeln!(h, "local function here() return omsi.map.name() == MAP end");
-    let _ = writeln!(h, "local function on(event, fn) omsi.on(event, function(...) if here() then return fn(...) end end) end");
-    let _ = writeln!(h, "local function every(seconds, fn) omsi.every(seconds, function() if here() then fn() end end) end");
-    let _ = writeln!(h, "{MARK}");
-    h
-}
-
-/// The part of the map's script the author writes (None: the map has no script yet).
-pub fn read_lua(content: &Path, map_folder: &str) -> Option<String> {
-    let text = omsi_cfg::decode_text(&std::fs::read(lua_path(content, map_folder)).ok()?).replace("\r\n", "\n");
-    Some(match text.find(MARK) {
-        Some(i) => text[i + MARK.len()..].trim_start_matches('\n').to_string(),
-        // (a file written by hand: all of it is the author's)
-        None => text,
-    })
-}
-
-/// Write the map's script: openMapper's header, then `body`.
-pub fn write_lua(content: &Path, map_folder: &str, friendly: &str, body: &str) -> anyhow::Result<()> {
-    let path = lua_path(content, map_folder);
-    if let Some(d) = path.parent() {
-        std::fs::create_dir_all(d)?;
-    }
-    let text = format!("{}{}", lua_header(map_folder, friendly), body.replace("\r\n", "\n"));
-    crate::doc::safe::write_atomic(&path, text.as_bytes())?;
-    Ok(())
-}
-
-pub fn delete_lua(content: &Path, map_folder: &str) -> std::io::Result<()> {
-    let path = lua_path(content, map_folder);
-    std::fs::remove_file(&path)?;
-    // (the folder, if nothing else is in it)
-    if let Some(d) = path.parent() {
-        let _ = std::fs::remove_dir(d);
-    }
-    Ok(())
-}
-
-pub struct Template {
-    pub title: &'static str,
-    pub text: &'static str,
-}
-
-/// Ready-made Lua scripts to start from.
-pub fn lua_templates() -> Vec<Template> {
-    vec![
-        Template {
-            title: tr("Empty script", "Пустой скрипт"),
-            text: "-- Write what should happen on this map. Events: https://openomsi.org/\n-- on(\"stop_arrive\", function(name, id, number, delay) ... end)\n-- every(10, function() ... end)\n",
-        },
-        Template {
-            title: tr("A greeting when the bus is taken", "Приветствие, когда садишься в автобус"),
-            text: "on(\"vehicle\", function(name)\n  if name then\n    omsi.message(\"Welcome! You drive the \" .. name .. \" on \" .. MAP, 6)\n  end\nend)\n",
-        },
-        Template {
-            title: tr("Announce every stop", "Объявлять каждую остановку"),
-            text: "-- the stop's name and how late (or early) the bus is\non(\"stop_arrive\", function(name, id, number, delay)\n  omsi.ui.toast(string.format(\"%d. %s, %s\", number, name, omsi.fmt.delay(delay)))\nend)\n",
-        },
-        Template {
-            title: tr("Traffic by the hour", "Движение по часам"),
-            text: "-- busy in the rush hours, quiet at night (cars around the camera)\non(\"hour\", function(h)\n  if h >= 7 and h < 9 or h >= 16 and h < 18 then\n    omsi.traffic.set_density(300)\n  elseif h >= 22 or h < 5 then\n    omsi.traffic.set_density(40)\n  else\n    omsi.traffic.set_density(150)\n  end\nend)\n",
-        },
-        Template {
-            title: tr("Weather at a time", "Погода в заданное время"),
-            text: "-- the sky closes at six in the evening\non(\"hour\", function(h)\n  if h == 18 then\n    omsi.weather.set({ clouds = \"Overcast 1\" })\n  end\nend)\n",
-        },
-        Template {
-            title: tr("Speed limit warning", "Предупреждение о скорости"),
-            text: "-- once a second: over the lane's speed limit\nevery(1, function()\n  local limit = omsi.map.speed_limit()\n  local kmh = omsi.var(\"Velocity\")\n  if limit and kmh and kmh > limit + 5 then\n    omsi.message(string.format(\"Slow down: %.0f km/h, the limit is %.0f\", kmh, limit), 2)\n  end\nend)\n",
-        },
-        Template {
-            title: tr("Next stop on the screen", "Следующая остановка на экране"),
-            text: "-- on a new trip, say where it ends\non(\"trip_start\", function(trip, name, terminus)\n  omsi.message(string.format(\"Trip %d: to %s\", trip, terminus), 6)\nend)\n",
-        },
-    ]
 }
 
 // ------------------------------------------------------------------------------------ OMSI 2
@@ -236,117 +124,80 @@ pub fn declared(dir: &Path, sco: &ScoScripts) -> (Vec<String>, Vec<String>, Vec<
     (read(&sco.varlists), read(&sco.strlists), sco.consts.iter().map(|f| omsi_cfg::resolve_path(dir, f)).collect())
 }
 
-/// What a scripted light does.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Behaviour {
-    /// Lit from one hour of the day to another (a shop's sign).
-    Hours { from: f32, to: f32 },
-    /// Lit and dark in turn, a whole period in seconds (a beacon).
-    Blink { period: f32 },
-    /// Lit through the months from one to another, 1 to 12 (Christmas lights).
-    Months { from: u8, to: u8 },
-}
-
-impl Behaviour {
-    pub fn label(self) -> &'static str {
-        match self {
-            Behaviour::Hours { .. } => tr("Lit during certain hours", "Горит в определённые часы"),
-            Behaviour::Blink { .. } => tr("Blinks", "Мигает"),
-            Behaviour::Months { .. } => tr("Lit in certain months", "Горит в определённые месяцы"),
-        }
-    }
-
-    /// The script that sets `lit`.
-    pub fn osc(self) -> String {
-        let mut s = String::from("' A light made in openMapper: the variable lit says whether it shines.\n' Change the rule below as you like; keep the {frame} ... {end} around it.\n\n{frame}\n");
-        match self {
-            Behaviour::Hours { from, to } => {
-                // (past midnight when the end comes before the start)
-                let join = if from <= to { "&&" } else { "||" };
-                let _ = write!(s, "\t' minutes since midnight\n\t(L.S.Time) 60 / s0\n\t{} >= l0 {} < {join}\n\t(S.L.lit)\n", (from * 60.0).round(), (to * 60.0).round());
-            }
-            Behaviour::Blink { period } => {
-                let p = period.max(0.2);
-                let _ = write!(s, "\t' seconds of play, shining for the first half of every period\n\t(L.S.GetTime) {p} % {} < (S.L.lit)\n", p / 2.0);
-            }
-            Behaviour::Months { from, to } => {
-                let join = if from <= to { "&&" } else { "||" };
-                let _ = write!(s, "\t(L.S.Month) s0\n\t{from} >= l0 {to} <= {join}\n\t(S.L.lit)\n");
+/// The `[lua_script]` files a `.sco` names, relative to it.
+pub fn lua_scripts_of(sco: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut lines = sco.lines().map(str::trim);
+    while let Some(l) = lines.next() {
+        if l.eq_ignore_ascii_case("[lua_script]") {
+            if let Some(f) = lines.next() {
+                let f = f.split('#').next().unwrap_or("").trim();
+                if !f.is_empty() {
+                    out.push(f.to_string());
+                }
             }
         }
-        s.push_str("{end}\n");
-        s
     }
+    out
 }
 
-/// A light that a script of its own switches: where the files go and what to write.
-pub fn scripted_light(color: [u8; 3], range: f32, stem: &str) -> Source {
-    let mut src = crate::makers::light_source(&crate::makers::Settings { light_color: color, light_range: range, light_night_only: false, ..Default::default() });
-    for l in &mut src.lights {
-        l.when = When::Var("lit".into());
+/// What a new OMSI 2 script of an object starts as.
+const OSC_START: &str = "' A script of a scenery object (OMSI 2 and openOMSI): {init} runs once, {frame} every frame.\n' The object's variables are listed in its varlist file, one per line: (L.L.name) reads one,\n' (S.L.name) sets it; lamps and [visible] parts of the object follow them.\n\n{init}\n{end}\n\n{frame}\n{end}\n";
+
+/// A script for every object of the type `rel`: Lua for openOMSI (`[lua_script]`, beside the
+/// `.sco`) or OMSI 2's (`[script]` with its variable list, in `script\`). An object of the
+/// installation is never changed: the caller makes it the map's own first. The script's file.
+pub fn add_script(roots: &crate::install::Roots, rel: &str, lua: bool) -> anyhow::Result<PathBuf> {
+    let sco = editable::sco_path(roots, rel).ok_or_else(|| anyhow::anyhow!("{rel}: no .sco"))?;
+    anyhow::ensure!(sco.starts_with(&roots.content), "{}", tr("an object of the OMSI 2 installation is never changed: make it an object of your own first", "объект установки OMSI 2 не меняется: сначала сделайте его своим"));
+    let dir = sco.parent().unwrap_or(Path::new("")).to_path_buf();
+    let stem: String = sco.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().chars().map(|c| if c.is_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect();
+    let text = omsi_cfg::decode_text(&std::fs::read(&sco)?);
+    let (file, lines) = if lua {
+        let name = format!("{stem}.lua");
+        if lua_scripts_of(&text).iter().any(|s| s.eq_ignore_ascii_case(&name)) {
+            return Ok(dir.join(name));
+        }
+        if !dir.join(&name).exists() {
+            std::fs::write(dir.join(&name), crate::script::project::OBJECT_TEMPLATE)?;
+        }
+        (dir.join(&name), format!("[lua_script]\n{name}\n"))
+    } else {
+        let listed = sco_scripts(&text);
+        if let Some(first) = listed.scripts.first() {
+            // (OMSI 2 reads one script list: the object's own script is the one to change)
+            return Ok(omsi_cfg::resolve_path(&dir, first));
+        }
+        std::fs::create_dir_all(dir.join("script"))?;
+        let (osc, vars) = (format!("script\\{stem}.osc"), format!("script\\{stem}_varlist.txt"));
+        let path = omsi_cfg::resolve_path(&dir, &osc);
+        if !path.exists() {
+            std::fs::write(&path, OSC_START.replace('\n', "\r\n"))?;
+        }
+        if !omsi_cfg::resolve_path(&dir, &vars).exists() {
+            std::fs::write(omsi_cfg::resolve_path(&dir, &vars), "")?;
+        }
+        (path, format!("[script]\n1\n{osc}\n\n[varnamelist]\n1\n{vars}\n"))
+    };
+    match editable::load(roots, rel) {
+        // (an openMapper object: its .sco is written from its source, so the lines go there)
+        Some(mut src) => {
+            src.extra.push_str(&format!("\n{lines}"));
+            editable::save(roots, rel, &src)?;
+        }
+        None => {
+            let add = format!("{}\r\n{}", if text.ends_with('\n') { "" } else { "\r\n" }, lines.replace('\n', "\r\n"));
+            crate::doc::safe::write_atomic(&sco, &omsi_cfg::encode_text(&format!("{text}{add}")))?;
+        }
     }
-    src.name = "Scripted light".into();
-    src.extra = format!("[script]\n1\nscript\\{stem}.osc\n\n[varnamelist]\n1\nscript\\{stem}_varlist.txt\n");
-    src
-}
-
-/// Write the script of a scripted light beside the object (after the object itself is saved).
-pub fn write_light_script(dir: &Path, stem: &str, b: Behaviour) -> anyhow::Result<()> {
-    std::fs::create_dir_all(dir.join("script"))?;
-    std::fs::write(dir.join("script").join(format!("{stem}.osc")), b.osc().replace('\n', "\r\n"))?;
-    std::fs::write(dir.join("script").join(format!("{stem}_varlist.txt")), "lit\r\n")?;
-    Ok(())
-}
-
-/// Save a scripted light as a new object of the map: its relative path.
-pub fn make_light(roots: &crate::install::Roots, map: &str, b: Behaviour, color: [u8; 3], range: f32) -> anyhow::Result<String> {
-    let rel = editable::new_rel(roots, map, "ScriptedLight");
-    let (dir, stem) = editable::folder_of(roots, &rel);
-    let src = scripted_light(color, range, &stem);
-    editable::save(roots, &rel, &src)?;
-    write_light_script(&dir, &stem, b)?;
-    Ok(rel)
+    omsi_cfg::content_changed();
+    crate::hot::own_change();
+    Ok(file)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn lua_errors_have_lines() {
-        assert!(check_lua("on(\"hour\", function(h)\n  print(h)\nend)\n").is_empty());
-        let d = check_lua("local x = 1\nif x then\n  print(x)\n");
-        assert!(!d.is_empty(), "an if without end");
-        let d = check_lua("local a = \nprint(a)\nlocal = 3");
-        assert!(d.iter().any(|d| d.line >= 1));
-        // Lua 5.4: integer division and goto are fine
-        assert!(check_lua("local a = 7 // 2\ngoto done\n::done::").is_empty());
-    }
-
-    #[test]
-    fn a_map_script_keeps_its_header_apart() {
-        let dir = std::env::temp_dir().join(format!("om-script-{}", std::process::id()));
-        write_lua(&dir, "My map", "My \"map\"", "on(\"hour\", function(h) end)\n").unwrap();
-        let path = lua_path(&dir, "My map");
-        assert!(path.ends_with("plugins/map_My_map/main.lua"));
-        let text = std::fs::read_to_string(&path).unwrap();
-        assert!(text.contains("local MAP = \"My map\""));
-        assert!(check_lua(&text).is_empty(), "the whole file reads as Lua");
-        assert_eq!(read_lua(&dir, "My map").as_deref(), Some("on(\"hour\", function(h) end)\n"));
-        // writing again does not pile up headers
-        write_lua(&dir, "My map", "My map", &read_lua(&dir, "My map").unwrap()).unwrap();
-        assert_eq!(std::fs::read_to_string(&path).unwrap().matches(MARK).count(), 1);
-        delete_lua(&dir, "My map").unwrap();
-        assert!(read_lua(&dir, "My map").is_none());
-        let _ = std::fs::remove_dir_all(dir);
-    }
-
-    #[test]
-    fn templates_are_valid_lua() {
-        for t in lua_templates() {
-            assert!(check_lua(t.text).is_empty(), "{}", t.title);
-        }
-    }
 
     #[test]
     fn variables_are_found_in_a_script() {
@@ -357,15 +208,33 @@ mod tests {
 
     #[test]
     fn the_game_compiler_checks_a_script() {
-        let ok = Behaviour::Hours { from: 18.0, to: 23.0 }.osc();
-        assert!(check_osc(&ok, &["lit".into()], &[], &[]).is_empty(), "{:?}", check_osc(&ok, &["lit".into()], &[], &[]));
-        for b in [Behaviour::Blink { period: 2.0 }, Behaviour::Months { from: 12, to: 1 }, Behaviour::Hours { from: 22.0, to: 5.0 }] {
-            let d = check_osc(&b.osc(), &["lit".into()], &[], &[]);
-            assert!(d.is_empty(), "{b:?}: {d:?}");
-        }
+        let ok = "{frame}\n\t(L.S.Time) 60 / s0\n\t1080 >= l0 1380 < &&\n\t(S.L.lit)\n{end}\n";
+        assert!(check_osc(ok, &["lit".into()], &[], &[]).is_empty(), "{:?}", check_osc(ok, &["lit".into()], &[], &[]));
+        assert!(check_osc(OSC_START, &[], &[], &[]).is_empty());
         // a variable the object does not list is a problem the game would report
         let d = check_osc("{frame}\n 1 (S.L.unknown)\n{end}\n", &[], &[], &[]);
         assert!(!d.is_empty());
+    }
+
+    #[test]
+    fn any_object_of_the_content_gets_a_lua_or_an_omsi_2_script() {
+        let roots = crate::doc::tests::scratch("add_script");
+        let dir = roots.content.join("Sceneryobjects").join("Mine");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("gate.sco"), "[mesh]\r\ngate.x\r\n").unwrap();
+        let rel = "Sceneryobjects\\Mine\\gate.sco";
+        let lua = add_script(&roots, rel, true).unwrap();
+        let osc = add_script(&roots, rel, false).unwrap();
+        assert!(lua.is_file() && osc.is_file());
+        // (again: the same files, nothing added twice)
+        assert_eq!(add_script(&roots, rel, true).unwrap(), lua);
+        assert_eq!(add_script(&roots, rel, false).unwrap(), osc);
+        let sco = omsi_cfg::decode_text(&std::fs::read(dir.join("gate.sco")).unwrap());
+        assert_eq!(lua_scripts_of(&sco), vec!["gate.lua"]);
+        assert_eq!(sco_scripts(&sco).scripts, vec!["script\\gate.osc"]);
+        assert!(sco.starts_with("[mesh]"));
+        // (the installation's objects are never written)
+        assert!(add_script(&roots, "Sceneryobjects\\Nowhere\\x.sco", true).is_err());
     }
 
     #[test]

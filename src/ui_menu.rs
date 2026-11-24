@@ -1,7 +1,7 @@
 //! The menu a right click in the view opens (the Select tool, and Game logic on one of its
 //! things): copy, paste there, duplicate, delete, group and ungroup, and the like.
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec3;
 
 use crate::editor::Editor;
@@ -9,6 +9,7 @@ use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
 use crate::ui::Action;
+use crate::theme::pal;
 
 /// Where the menu is open: its corner on the screen and the ground point clicked.
 #[derive(Clone, Copy)]
@@ -45,14 +46,14 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 }
                 (None, _) => format!("{} {n}", tr("Selected:", "Выбрано:")),
             };
-            ui.label(RichText::new(title).strong().color(Color32::from_gray(230)));
+            ui.label(RichText::new(title).strong().color(pal().text_strong));
             ui.separator();
             let any = n > 0;
             if item(ui, Icon::Copy, tr("Copy", "Копировать"), "Ctrl+C", any) {
                 actions.push(Action::Copy);
                 done = true;
             }
-            if item(ui, Icon::Copy, tr("Cut", "Вырезать"), "Ctrl+X", any) {
+            if item(ui, Icon::Cut, tr("Cut", "Вырезать"), "Ctrl+X", any) {
                 actions.push(Action::Cut);
                 done = true;
             }
@@ -60,7 +61,7 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 actions.push(Action::PasteAt(m.ground));
                 done = true;
             }
-            if item(ui, Icon::Add, tr("Duplicate", "Дублировать"), "Ctrl+D", any) {
+            if item(ui, Icon::Duplicate, tr("Duplicate", "Дублировать"), "Ctrl+D", any) {
                 actions.push(Action::Duplicate);
                 done = true;
             }
@@ -77,24 +78,29 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
             if road.is_some() || joinable.is_some() {
                 ui.separator();
             }
-            if road.is_some() && item(ui, Icon::Road, tr("Cut the road here", "Разрезать дорогу здесь"), "", true) {
+            if road.is_some() && item(ui, Icon::Cut, tr("Cut the road here", "Разрезать дорогу здесь"), "", true) {
                 if let Some(g) = m.ground {
                     ed.cut_road_at(g.truncate());
                 }
                 done = true;
             }
             if let Some((k, id)) = joinable {
-                if item(ui, Icon::Route, tr("Join with the next piece", "Соединить со следующим куском"), "", true) {
+                if item(ui, Icon::Link, tr("Join with the next piece", "Соединить со следующим куском"), "", true) {
                     ed.join_with_next(k, id);
                     done = true;
                 }
             }
+            // (two free ends among the selected splines: a new piece between them)
+            if sels.iter().any(|s| matches!(s, crate::doc::Sel::Spline(..))) && item(ui, Icon::Complete, tr("Complete to", "Достроить до"), "J", true) {
+                ed.complete_to();
+                done = true;
+            }
             ui.separator();
-            if item(ui, Icon::Layers, tr("Group", "Сгруппировать"), "Ctrl+G", n >= 2 && group.is_none()) {
+            if item(ui, Icon::Group, tr("Group", "Сгруппировать"), "Ctrl+G", n >= 2 && group.is_none()) {
                 ed.group_selection();
                 done = true;
             }
-            if item(ui, Icon::Layers, tr("Ungroup", "Разгруппировать"), "Ctrl+Shift+G", ed.selection_grouped()) {
+            if item(ui, Icon::Ungroup, tr("Ungroup", "Разгруппировать"), "Ctrl+Shift+G", ed.selection_grouped()) {
                 ed.ungroup_selection();
                 done = true;
             }
@@ -108,24 +114,24 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 done = true;
             }
             let one_object = matches!(ed.selected, Some(crate::doc::Sel::Object(..))) && sels.len() == 1;
-            if item(ui, Icon::Route, tr("Crossing editor…", "Редактор перекрёстка…"), "", one_object) {
+            if item(ui, Icon::Crossing, tr("Crossing editor…", "Редактор перекрёстка…"), "", one_object) {
                 actions.push(Action::CrossingPaths);
                 done = true;
             }
             let splines = sels.iter().any(|s| matches!(s, crate::doc::Sel::Spline(..)));
-            if item(ui, Icon::Add, tr("From the selected splines", "По выделенным сплайнам"), "P", splines) {
+            if item(ui, Icon::Line, tr("From the selected splines", "По выделенным сплайнам"), "P", splines) {
                 actions.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines));
                 done = true;
             }
-            if item(ui, Icon::Add, tr("Draw a polygon", "Нарисовать многоугольник"), "Shift+P", true) {
+            if item(ui, Icon::Polygon, tr("Draw a polygon", "Нарисовать многоугольник"), "Shift+P", true) {
                 actions.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonDraw));
                 done = true;
             }
-            if item(ui, Icon::Import, tr("Export…", "Экспорт…"), "", any) {
+            if item(ui, Icon::UploadFile, tr("Export…", "Экспорт…"), "", any) {
                 actions.push(Action::Mesh(crate::ui_mesh::MeshAction::ExportModel));
                 done = true;
             }
-            if item(ui, Icon::Save, tr("Keep for other maps…", "Сохранить для других карт…"), "", any) {
+            if item(ui, Icon::Inventory, tr("Keep for other maps…", "Сохранить для других карт…"), "", any) {
                 actions.push(Action::SavedGroups);
                 done = true;
             }
@@ -134,7 +140,7 @@ pub fn show(ctx: &egui::Context, menu: &mut Option<ViewMenu>, ed: &mut Editor, l
                 actions.push(Action::SelectAll);
                 done = true;
             }
-            if item(ui, Icon::Select, tr("Deselect", "Снять выделение"), "Esc", any) {
+            if item(ui, Icon::Deselect, tr("Deselect", "Снять выделение"), "Esc", any) {
                 ed.select(None);
                 done = true;
             }

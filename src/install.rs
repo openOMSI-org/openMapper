@@ -64,6 +64,9 @@ pub struct Prefs {
     /// The interface's zoom (0: not chosen, as 1).
     #[serde(default)]
     pub ui_scale: f32,
+    /// The interface's colours: "dark", "light" or "system" (empty: dark).
+    #[serde(default)]
+    pub theme: String,
     /// How the mouse moves the camera: "map" (the default, like map editors and city
     /// builders) or "fly" (like Unity / Unreal: right button looks round, W A S D fly).
     #[serde(default)]
@@ -166,6 +169,40 @@ impl Default for SnapBar {
     }
 }
 
+/// Where egui keeps the windows' places and sizes, the panels' widths and what is folded
+/// between runs (`~/.openomsi/openmapper_ui.ron`).
+fn ui_memory_path() -> PathBuf {
+    openomsi_data_dir().join("openmapper_ui.ron")
+}
+
+/// The windows and panels as they were left; the options (theme, zoom) stay as the settings
+/// set them. A file from another egui that cannot be read is passed over.
+pub fn load_ui_memory(ctx: &egui::Context) {
+    if let Ok(s) = std::fs::read_to_string(ui_memory_path()) {
+        restore_ui_memory(ctx, &s);
+    }
+}
+
+pub fn save_ui_memory(ctx: &egui::Context) {
+    match ctx.memory(ron::to_string) {
+        Ok(s) => {
+            if let Err(e) = std::fs::write(ui_memory_path(), s) {
+                log::warn!("the windows' places: {e}");
+            }
+        }
+        Err(e) => log::warn!("the windows' places: {e}"),
+    }
+}
+
+fn restore_ui_memory(ctx: &egui::Context, text: &str) {
+    let Ok(m) = ron::from_str::<egui::Memory>(text) else { return };
+    ctx.memory_mut(|mem| {
+        let options = std::mem::take(&mut mem.options);
+        *mem = m;
+        mem.options = options;
+    });
+}
+
 impl Prefs {
     fn path() -> PathBuf {
         openomsi_data_dir().join("openmapper.json")
@@ -225,9 +262,17 @@ impl Prefs {
         self.save();
     }
 
+    /// The camera kept for a map folder, if it is one the camera can take (a broken one in the
+    /// settings would throw the view about at every start).
     pub fn last_view(&self, map_dir: &Path) -> Option<[f64; 6]> {
         let s = map_dir.to_string_lossy();
-        self.last_views.iter().find(|(d, _)| *d == s).map(|(_, v)| *v)
+        let mut v = self.last_views.iter().find(|(d, _)| *d == s).map(|(_, v)| *v)?;
+        if !v.iter().all(|x| x.is_finite()) {
+            return None;
+        }
+        v[4] = v[4].clamp(-85.0, 89.5);
+        v[5] = v[5].clamp(0.5, 8000.0);
+        Some(v)
     }
 
     pub fn push_recent(&mut self, cfg: &Path) {
@@ -353,9 +398,6 @@ impl Roots {
         let content = content_dir();
         let _ = omsi_cfg::ensure_content_layout(&content);
         omsi_cfg::add_content_root(content.clone());
-        if let Err(e) = omsi_cfg::publisher::mount_packs(&content) {
-            log::warn!("publisher packs: {e}");
-        }
         omsi_cfg::add_content_root(omsi.clone());
         Roots { omsi, content }
     }
@@ -392,6 +434,11 @@ pub fn list_maps(roots: &Roots) -> Vec<MapEntry> {
     let extra = omsi_cfg::content_dirs("maps");
     let mut dirs = vec![content_maps.clone()];
     dirs.extend(extra.iter().filter(|p| p.starts_with(&roots.content) && **p != content_maps && **p != install_maps).cloned());
+    // Pack maps are listed explicitly; their assets stay outside ordinary content roots.
+    match omsi_cfg::publisher::mount_packs(&roots.content) {
+        Ok(mounts) => dirs.extend(mounts.into_iter().map(|mount| mount.join("maps"))),
+        Err(e) => log::warn!("publisher packs: {e}"),
+    }
     dirs.push(install_maps.clone());
     dirs.extend(extra.into_iter().filter(|p| !p.starts_with(&roots.content) && *p != install_maps));
     let mut seen_dirs = std::collections::HashSet::new();
@@ -462,10 +509,58 @@ mod publisher_maps {
         ).unwrap();
         omsi_cfg::add_content_root(content.clone());
         let mounts = omsi_cfg::publisher::mount_packs(&content).unwrap();
-        let found = list_maps(&Roots { omsi, content: content.clone() });
+        let roots = Roots { omsi, content: content.clone() };
+        let found = list_maps(&roots);
         assert!(found.iter().any(|m| m.name == "Protected Map" && m.in_content && omsi_cfg::vfs::is_file(&m.cfg)));
+        assert!(!omsi_cfg::vfs::is_file(&roots.resolve("maps/Protected/global.cfg")), "listing a pack must not expose its files to ordinary lookups");
         for mount in mounts { omsi_cfg::vfs::unmount_sealed(&mount); omsi_cfg::remove_content_root(&mount); }
         omsi_cfg::remove_content_root(&content);
         std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_window_moved_comes_back_where_it_was_left() {
+        let frame = |ctx: &egui::Context, at: Option<egui::Pos2>| {
+            let _ = ctx.run_ui(egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 800.0))), ..Default::default() }, |ui| {
+                let mut w = egui::Window::new("Saved views").id(egui::Id::new("saved views"));
+                if let Some(p) = at {
+                    w = w.current_pos(p);
+                }
+                w.show(ui.ctx(), |ui| ui.label("x"));
+            });
+        };
+        let first = egui::Context::default();
+        frame(&first, Some(egui::pos2(300.0, 240.0)));
+        frame(&first, None);
+        let text = first.memory(ron::to_string).unwrap();
+        let next = egui::Context::default();
+        next.set_zoom_factor(1.25);
+        restore_ui_memory(&next, &text);
+        frame(&next, None);
+        let at = next.memory(|m| m.area_rect(egui::Id::new("saved views"))).unwrap().min;
+        assert!((at - egui::pos2(300.0, 240.0)).length() < 1.0, "{at:?}");
+        // (the zoom is the settings', not the file's)
+        assert_eq!(next.zoom_factor(), 1.25);
+        // (a file that cannot be read changes nothing)
+        restore_ui_memory(&next, "not ron");
+        assert!(next.memory(|m| m.area_rect(egui::Id::new("saved views"))).is_some());
+    }
+
+    #[test]
+    fn a_broken_camera_kept_in_the_settings_is_not_taken() {
+        let mut p = Prefs::default();
+        p.last_views.push(("a".into(), [1.0, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        p.last_views.push(("b".into(), [f64::NAN, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        p.last_views.push(("c".into(), [1.0, 2.0, 3.0, 20.0, 400.0, f64::INFINITY]));
+        p.last_views.push(("d".into(), [1.0, 2.0, 3.0, 20.0, 400.0, 1e9]));
+        assert_eq!(p.last_view(Path::new("a")), Some([1.0, 2.0, 3.0, 20.0, 45.0, 300.0]));
+        assert_eq!(p.last_view(Path::new("b")), None);
+        assert_eq!(p.last_view(Path::new("c")), None);
+        assert_eq!(p.last_view(Path::new("d")), Some([1.0, 2.0, 3.0, 20.0, 89.5, 8000.0]));
     }
 }

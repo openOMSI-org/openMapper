@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 use super::Server;
 
 /// The tools that change the map or write files (refused when the server is read-only).
-pub const EDITS: &[&str] = &[
-    "new_map", "set_editor", "click", "stroke", "command", "undo", "redo", "draw_road", "roundabout", "bus_pocket", "place_objects", "bus_stop", "start_point", "ai_path", "terrain_brush", "ramp", "water", "paint", "plant", "edit_object", "edit_spline", "delete", "tiles", "ground_textures", "make_line", "fix", "sample", "save", "export",
+pub const EDITS: &[&str] = &["road_type", "plate", "lay_spline", "complex_junction", 
+    "new_map", "set_editor", "click", "stroke", "command", "undo", "redo", "draw_road", "roundabout", "bus_pocket", "place_objects", "bus_stop", "start_point", "ai_path", "terrain_brush", "ramp", "water", "paint", "paint_area", "track_beds", "ground_under", "form_ground", "plant", "edit_object", "edit_spline", "build_streets", "auto_junctions", "delete", "tiles", "ground_textures", "make_line", "fix", "sample", "save", "export",
 ];
 
 fn point() -> Value {
@@ -57,6 +57,28 @@ impl Server {
                 "lanes": { "type": "boolean", "description": "Show AI paths and technical splines (on by default)." },
                 "grid": { "type": "boolean", "description": "Grid lines with coordinates (on by default)." }
             }), &[], true),
+            tool("shot", "The map as the editor draws it, in 3D (PNG): real meshes, textures, road markings, junction plates, ground, shadows. Drawn without a window (works with the screen locked). `plan: true` looks straight down (north up) over `radius` metres; otherwise a perspective from `yaw` (heading of the view, 0 = looking north), `pitch` (down angle) and `distance` round `center`. `overlay` draws labels over it: ids (spline IDCodes), ends (free spline ends: red = nothing there, orange = another end lies on it unjoined), links (joined ends green, ends on a junction plate blue), issues (the map check), street (street_check findings), grid (world coordinate lines every `grid` metres, 10 by default), all. `marks` puts points of one's own. Waits until every model and texture is up (`complete` in the answer).", json!({
+                "center": p,
+                "plan": { "type": "boolean", "description": "Straight down, north up." },
+                "radius": { "type": "number", "description": "Plan: metres from the centre to the nearer edge (120 by default). Perspective: the distance when `distance` is not given." },
+                "yaw": { "type": "number" }, "pitch": { "type": "number", "description": "Degrees down (35 by default)." },
+                "distance": { "type": "number" }, "lift": { "type": "number", "description": "Metres the point looked at is raised over the ground." },
+                "fov": { "type": "number", "description": "Vertical field of view, degrees (50)." },
+                "width": { "type": "integer" }, "height": { "type": "integer" },
+                "hour": { "type": "number", "description": "Time of day for the light (hours)." },
+                "technical": { "type": "boolean", "description": "Also draw what the game hides (AI paths, helpers)." },
+                "overlay": { "type": "array", "items": { "type": "string", "enum": ["ids", "ends", "links", "issues", "street", "grid", "all"] } },
+                "grid": { "type": "number", "description": "The grid layer's spacing (m)." },
+                "marks": { "type": "array", "items": { "type": "object", "properties": { "at": p, "z": { "type": "number" }, "text": { "type": "string" }, "colour": { "type": "array", "items": { "type": "integer" } } } } },
+                "file": { "type": "string", "description": "Also save the PNG there." },
+                "imagery": { "type": "object", "description": "Dated aerial imagery to compare with: {url: tile URL with {z} {x} {y}, z: zoom (19)}. Given once, it is remembered; `true` uses the remembered one.", "properties": { "url": { "type": "string" }, "z": { "type": "integer" } } },
+                "compare": { "type": "string", "enum": ["side", "blend", "imagery"], "description": "With imagery: the map and the imagery under the same view side by side (default), blended (`opacity`), or the imagery alone." },
+                "opacity": { "type": "number" },
+                "wait": { "type": "number", "description": "Seconds to wait for models and textures at most (60)." }
+            }), &[], true),
+            tool("raster", "What the map has where, as a grid of classes (grey PNG, one byte a cell, row 0 north): 0 none, 1 carriageway, 2 footway, 3 path, 4 track, 5 plate or surface, 6 building, 7 other object, 8 tree. For comparing the map with imagery cell by cell. `file` also saves it.", json!({
+                "min": p, "max": p, "cell": { "type": "number", "description": "Metres a cell (1)." }, "file": { "type": "string" }
+            }), &["min", "max"], true),
             tool("query", "What is near a point or in a box: objects, splines, bus stops and start points, nearest first, with IDCodes. Filter by file text.", json!({
                 "at": p, "radius": { "type": "number", "description": "Metres, 50 by default." },
                 "min": p, "max": p,
@@ -87,8 +109,10 @@ impl Server {
                 "line": { "type": "string", "description": "Only this line." }
             }), &[], true),
             tool("editor_state", "The editor now: the tool and its mode and settings, the road / object type chosen, the selection, the undo and redo steps.", json!({}), &[], true),
-            tool("script", "The map's Lua script (openOMSI plugin: events like on(\"stop_arrive\", fn), every(seconds, fn), omsi.* calls). Without `text`: read it and the templates. With `text`: check it as Lua 5.4 and (with --allow-edit) write it; `delete: true` removes it.", json!({
-                "text": { "type": "string" }, "delete": { "type": "boolean" }
+            tool("script", "The map's scripts for openOMSI, a project of Lua files: scripts/*.lua start in order when the map is played (map.on(event, fn), map.every(seconds, fn), map.after... act on this map only; omsi.* is the game's API), modules/*.lua are shared (require(\"modules.name\")). No arguments: the files, templates and notes. `file`: read it with its problems; with `text`: write it (refused when it has errors). `new: {kind: script|module, name, template | text}` makes one; `file` + `delete: true` removes it; `file` + `on: false` switches a script off. `run: {seconds, speed, clock (hour), events: [{at, name, args}]}` runs the scripts in the editor (no game: what needs a bus answers nil) and gives what they printed and their errors.", json!({
+                "file": { "type": "string" }, "text": { "type": "string" }, "delete": { "type": "boolean" }, "on": { "type": "boolean" },
+                "new": { "type": "object", "properties": { "kind": { "type": "string", "enum": ["script", "module"] }, "name": { "type": "string" }, "template": { "type": "string" }, "text": { "type": "string" } } },
+                "run": { "type": "object", "properties": { "seconds": { "type": "number" }, "speed": { "type": "number" }, "clock": { "type": "number" }, "events": { "type": "array", "items": { "type": "object", "properties": { "at": { "type": "number" }, "name": { "type": "string" }, "args": { "type": "array" } } } } } }
             }), &[], true),
             tool("reload", "Read the map from disk again (after another program changed it). Unsaved edits are dropped.", json!({}), &[], false),
             tool("open_map", "Open a map by its global.cfg (see list_maps). The open one is dropped (save it first).", json!({ "path": { "type": "string" } }), &["path"], false),
@@ -96,7 +120,7 @@ impl Server {
         if !self.allow_edit {
             for x in &mut t {
                 if x["name"] == "script" {
-                    x["description"] = json!("The map's Lua script and its templates; `text` is only checked (the server is read-only).");
+                    x["description"] = json!("The map's scripts (a project of Lua files): listed, read with their problems and run in the editor's test run; nothing is written (the server is read-only).");
                 }
             }
             return t;
@@ -118,10 +142,10 @@ impl Server {
             tool("stroke", "The left button held down along a path for some seconds, with the tool as set: a terrain or paint brush, the plant brush, a drag.", json!({
                 "path": points("The cursor's way (one point: held still)."), "seconds": { "type": "number", "description": "How long, 1 by default; the brush works as long as it is held." }
             }), &["path"], false),
-            tool("command", "One of the editor's commands (menus, keys) on the selection or the map: undo, redo, cancel, confirm, delete, copy, cut, paste, duplicate, select_all, select_none, rotate {degrees}, move {dx, dy}, raise {dz}, reverse, lay_on_ground, even_chain, continue_spline, parallel_copy {distance}, level_under_objects, align_to_roads, turn_objects {random}, lean_objects {lean}, replace_objects {file}, retype_splines {file}, replace_everywhere {from, to, splines}, cut_spline {id, at}, join_with_next {id}, wire_along {file}, paint_along {layer, width, under}, array {count, step:[dx,dy], turn, rows, row_step:[dx,dy]}, group, ungroup, remake_junctions, flatten_terrain, grow_map, align_ground, place_rows, detach_lanes.", json!({
+            tool("command", "One of the editor's commands (menus, keys) on the selection or the map: undo, redo, cancel, confirm, delete, copy, cut, paste, duplicate, select_all, select_none, rotate {degrees}, move {dx, dy}, raise {dz}, reverse, lay_on_ground, even_chain, complete_to, next_piece {add} / prev_piece {add} (the road piece joined at the selected one's end / start selected, or added), continue_spline, parallel_copy {distance}, level_under_objects, align_to_roads, turn_objects {random}, lean_objects {lean}, line_up (the selected objects at equal steps on the line between the two farthest apart), space_evenly (equal steps along that line, each keeping its distance to the side), replace_objects {file}, retype_splines {file}, replace_everywhere {from, to, splines}, cut_spline {id, at}, join_with_next {id}, link_ends {a, b} (two free spline ends lying on one another linked, any angle), wire_along {file}, trolley_wire {height, ways: both|with|against, section, lanes, kit, wires, masts} (openOMSI's trolleybus overhead wire, trolley.txt, laid over the selected roads' kerb lanes, or with `lanes` over those street lanes of the selected junction: `lanes: []` lists them; a frog where three spans meet gets a switch; shown on the map with the wire splines, masts, frogs and insulators of a kit of the map maker's (`kit`, see the trolley_kit tool; none: the wire for the game only)), trolley_from_splines {section} (the wire read off the map's wire splines), trolley_span {points, height, section, kit, wires} (a wire span drawn through points; an end on a span's middle branches off there with a frog), trolley_kit {cfg, name, scope: map|shared, renew} (a kit naming the map maker's own content the wire is shown with, as its .cfg: [name], [wire] a .sli, [mast] [frog] [insulator] .sco files (empty: none), [masts] step, distance from the wire and the mast's turn (0: its arm along -y, 90: -x, -90: +x); without `cfg` the kits and a new kit's text; `renew` puts the kit's files in place of its old ones on what is laid), trolley_switch {at, mode: power|indicator|radio|fixed, initial: straight|branch|random, name, channel, range, routes: [[code, way]]}, paint_along {layer, width, under}, array {count, step:[dx,dy], turn, rows, row_step:[dx,dy]}, group, ungroup, remake_junctions, flatten_terrain, grow_map, align_ground, place_rows, detach_lanes.", json!({
                 "name": { "type": "string" }, "args": { "type": "object" }
             }), &["name"], false),
-            tool("select", "Select objects and splines: by `ids`, or what is within `radius` of `at` (kinds, file filter), or everything like an IDCode (`alike`), or a spline's whole chain (`chain`), or `all` / `none`. `add` keeps what is selected. The selection is what `command`, `delete` and `render` act on or show.", json!({
+            tool("select", "Select objects and splines: by `ids`, or what is within `radius` of `at` (kinds, file filter), or everything like an IDCode (`alike`), or a spline's whole chain (`chain`), or `all` (narrowed by `kinds` and `file` when given) / `none`. `add` keeps what is selected. The selection is what `command`, `delete` and `render` act on or show.", json!({
                 "ids": ids, "at": p, "radius": { "type": "number" },
                 "kinds": { "type": "array", "items": { "type": "string", "enum": ["objects", "splines"] } },
                 "file": { "type": "string" }, "alike": { "type": "integer" }, "chain": { "type": "integer" },
@@ -132,7 +156,7 @@ impl Server {
             // ------------------------------------------------------------------ in one call
             tool("draw_road", "Draw a road (or track, footpath, wall, fence, any spline type) through points with the road tool: it curves smoothly from point to point, joins to road ends and roads it meets, and makes junctions where roads cross or branch, as for a person. `closed` comes back to the first point; `separate` makes each pair of points its own road.", json!({
                 "points": points("Two or more points."), "type": { "type": "string", "description": "The spline file (catalogue); the road type chosen before when left out." },
-                "closed": { "type": "boolean" }, "separate": { "type": "boolean" }, "options": road_opts
+                "closed": { "type": "boolean" }, "shape": { "type": "string", "enum": ["smooth", "osm"], "description": "smooth (default): curves through every point as the road tool does; osm: straights with the corners rounded into arcs, as the OpenStreetMap import lays a way (no overshoot at sharp corners)." }, "class": { "type": "string", "enum": ["service", "street", "main", "tram", "rail"], "description": "With shape osm: the corner radius (10, 20, 60, 25, 300 m); tram and rail lay tracks (switches where one branches with Auto-Switch on)." }, "separate": { "type": "boolean" }, "options": road_opts
             }), &["points"], false),
             tool("roundabout", "A roundabout of a road type: the ring, the roads inside cut back to it, junctions where they meet it. Best with a one-way road type.", json!({
                 "center": p, "radius": { "type": "number", "description": "Metres to the ring's middle line (at least 10)." }, "type": { "type": "string" }
@@ -140,10 +164,10 @@ impl Server {
             tool("bus_pocket", "A bus bay on a road at a point: the road widened there, with tapers.", json!({
                 "at": p, "length": { "type": "number", "description": "Full-width length (m)." }, "width": { "type": "number", "description": "How much wider (m), 3 by default." }, "type": { "type": "string", "description": "The pocket's road type (default: found)." }
             }), &["at"], false),
-            tool("place_objects", "Place objects (buildings, lamps, signs, benches, trees...) in one call, each standing on the ground. Each item: file, at, heading (deg, clockwise from north), height (m above the ground), align_to_road (turn to face the nearest road and stand at its edge), labels (its text strings). Up to 5000.", json!({
+            tool("place_objects", "Place objects (buildings, lamps, signs, benches, trees...) in one call, each standing on the ground. Each item: file, at, heading (deg, clockwise from north), height (m above the ground), align_to_road (turn to face the nearest road and stand at its edge), labels (its text strings), scale ([x, y, z] along its own axes: a scaled copy of its type). Up to 5000.", json!({
                 "items": { "type": "array", "items": { "type": "object", "properties": {
                     "file": { "type": "string" }, "at": p, "heading": { "type": "number" }, "height": { "type": "number" },
-                    "align_to_road": { "type": "boolean" }, "labels": { "type": "array", "items": { "type": "string" } }
+                    "align_to_road": { "type": "boolean" }, "labels": { "type": "array", "items": { "type": "string" } }, "scale": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3, "description": "Size along the object's own axes [x across, y up, z along]: a scaled copy of its type is made, as the Scale handles do." }
                 }, "required": ["file", "at"] } },
                 "file": { "type": "string", "description": "The file for items that name none." }
             }), &["items"], false),
@@ -171,6 +195,19 @@ impl Server {
                 "path": points("Where the brush goes."), "layer": { "type": "integer" }, "texture": { "type": "string" },
                 "radius": { "type": "number" }, "strength": { "type": "number" }, "seconds": { "type": "number" }, "erase": { "type": "boolean" }
             }), &["path"], false),
+            tool("paint_area", "Lay a ground texture over whole areas (closed outlines, world): full inside, fading over `feather` metres (1) outside; the layers above taken away there so it shows. For yards, car parks, sports grounds, verges. `texture` adds it to the map when it lacks it; or name the `layer`. `erase` takes the layer away instead.", json!({
+                "areas": { "type": "array", "items": points("A closed outline.") }, "layer": { "type": "integer" }, "texture": { "type": "string" },
+                "feather": { "type": "number" }, "erase": { "type": "boolean" }
+            }), &["areas"], false),
+            tool("track_beds", "Make the ground the tracks' bed: under every track brought to `top` (0.64 m) over the rail line across `core` (3.2 m) either side, blending back over `blend` (6 m), never up through a road or path; painted with `texture` (or `layer`) `paint` (3.4 m) either side. With track types whose ballast lies flat, parallel tracks, switches and track ends then share one bed.", json!({
+                "top": { "type": "number" }, "core": { "type": "number" }, "blend": { "type": "number" }, "texture": { "type": "string" }, "layer": { "type": "integer" }, "paint": { "type": "number" }
+            }), &[], false),
+            tool("form_ground", "Form the ground once from everything lying on it (roads, paths, junction plates, paved areas, tracks and switches): under each footprint the ground is brought to 6 cm under the surface (a track's bed to `bed_top` over its line, `bed_half` either side), up or down; round it, back to its own height over `blend` metres; between the samples it is kept under every surface by lowering only the cell it is in. Buildings are never surfaces. Reports how far the ground moved, the samples moved more than `limit` (a fault of what lies there), and anything lying where the map has no ground. `texture`/`layer`: paint the track beds (+ `paint_extra` m). `dry_run`: measure only. `min`/`max`: only the ground in that box is formed (what lies outside still counts, so the edge meets it).", json!({
+                "bed_top": { "type": "number" }, "bed_half": { "type": "number" }, "blend": { "type": "number" }, "limit": { "type": "number" },
+                "texture": { "type": "string" }, "layer": { "type": "integer" }, "paint_extra": { "type": "number" }, "dry_run": { "type": "boolean" },
+                "min": p, "max": p
+            }), &[], false),
+            tool("ground_under", "Keep the ground under every surface: junction plates, paved areas, crossing decks (their upward faces), roads, paths and tracks on the ground. Terrain samples within a cell's diagonal of a surface are brought 6 cm below it where higher, so no grass shows through.", json!({}), &[], false),
             tool("plant", "Plant trees: in an area (its outline, `area`), or along a path with the brush; a mix of tree files (default: the catalogue's first trees), `spacing` metres apart. `erase` clears plants along the path.", json!({
                 "area": points("The area's outline."), "path": points("The brush's way."), "mix": { "type": "array", "items": { "type": "string" } },
                 "spacing": { "type": "number" }, "radius": { "type": "number" }, "seconds": { "type": "number" }, "erase": { "type": "boolean" }
@@ -184,6 +221,38 @@ impl Server {
                 "start_height": { "type": "number" }, "end_height": { "type": "number" }, "start_grade": { "type": "number" }, "end_grade": { "type": "number" },
                 "start_cant": { "type": "number" }, "end_cant": { "type": "number" }, "cut_at": { "type": "number" }
             }), &["id"], false),
+            tool("build_streets", "Build streets from OpenStreetMap the right way (docs/street-model.md): the ways read as evidence into a street model (streets chained through their nodes, divided streets from pairs of one-way ways, sidewalk lines absorbed into their street, footways cut at the street's edge, crossings found), each axis fitted as tangent-continuous straights and arcs, junction plates at the model's nodes with their arms named, paths laid. `file`: an Overpass JSON answer (`out geom`) with highway ways; `types`: {main: [two-way, one-way], street: [...], service: [...], path} spline files. Gives back counts and the crossings (point, street heading) for zebras. `model_only`: nothing built, the street model given back instead (nodes with degree, streets, merges).", json!({
+                "file": { "type": "string" }, "types": { "type": "object" }, "model_only": { "type": "boolean" },
+                "heights": { "type": "string", "description": "a JSON file of designed heights where roads leave the ground: [[[x, y, z], ...], ...], one line of points per way; streets are laid at them (pieces of 15 m there) and their plates made for them" }
+            }), &["file", "types"], false),
+            tool("auto_junctions", "Auto-Junction over the roads already on the map, as the Roads tool makes them when a road is drawn: every road's end run into another road's middle becomes a T junction, every place two roads cross an X junction (2.5 m above or below: a bridge, left; an end at a junction object's connector: joined already). In `center` + `radius`, or the whole map. Gives back how many roads were gone over and junctions made.", json!({
+                "center": { "description": "[x, y] world metres" }, "radius": { "type": "number" }
+            }), &[], false),
+            tool("road_type", "Make a road type of one's own with the road maker (written to Splines\\openMapper\\<name>.sli and usable at once by draw_road, lay_spline, edit_spline): lanes each way, lane width, median (raised or level, its own texture), footways each side, kerb height, bus pocket, textures (names in the content folder or installation; plain asphalt by default) and painted lines (`markings`: [{x: across from the roadway's middle, m, right positive; style: Solid | Dashed | Double | SolidDashed; color: [r, g, b]; width; dash; gap}], or `standard_markings`).", json!({
+                "spec": { "type": "object", "description": "{name, lanes_fwd, lanes_back, lane_width, median, median_raised, footway, footway_right, left_hand, kerb, pocket, roadway_tex, footway_tex, footway_right_tex, median_tex, marked, markings}" },
+                "standard_markings": { "type": "boolean" }
+            }), &["spec"], false),
+            tool("plate", "A junction plate (3+ ends) or a joint (2 ends: linked when in line and of one width, else a short plate tapering between them) from road ends named one by one. The roads are cut back for the corners unless `cut_back` says how far (0: they already end where the plate begins; a list: each end its own, in order). `crossings`: indices of the ends that get a zebra; `lights`: traffic lights.", json!({
+                "ends": { "type": "array", "items": { "description": "A spline end: {id, end: \"start\" | \"end\"}, [id, \"end\"] or \"id:end\"." } },
+                "cut_back": { "description": "metres, or a list of metres, one per end" }, "lights": { "type": "boolean" },
+                "crossings": { "type": "array", "items": { "type": "integer" } }
+            }), &["ends"], false),
+            tool("lay_spline", "Lay a chain of one spline type (road, path, kerb, marking, fence...) through points, tangent-continuous everywhere (biarcs between the points, no kinks), optionally starting from a road end `from` and finishing at `to` (their position, heading and height taken, and linked). Or give the pieces exactly as `segs` [{x, y, heading, radius (0 straight, > 0 right), length}]. Heights follow the ground (+ `lift`).", json!({
+                "type": { "type": "string" }, "points": points("Points it passes through, in order."),
+                "from": { "description": "A spline end: {id, end: \"start\" | \"end\"}, [id, \"end\"] or \"id:end\"." }, "to": { "description": "A spline end: {id, end: \"start\" | \"end\"}, [id, \"end\"] or \"id:end\"." },
+                "start_heading": { "type": "number" }, "end_heading": { "type": "number" },
+                "segs": { "type": "array", "items": { "type": "object" } },
+                "lift": { "type": "number" }
+            }), &["type"], false),
+            tool("complex_junction", "Draw a junction of one's own from pieces of any spline type (asphalt roads, painted lines, kerbs, footways), each through `points` (tangent-continuous) or exact `segs`, plus objects (`objects`: [{type, at, heading, z}]), in world coordinates. Where its road pieces cross, the plate is made (`plate`: false for none). Put on the map as ordinary splines and objects (one undo step).", json!({
+                "pieces": { "type": "array", "items": { "type": "object", "properties": { "type": { "type": "string" }, "points": points("Points of the piece."), "segs": { "type": "array" }, "lift": { "type": "number" }, "start_heading": { "type": "number" }, "end_heading": { "type": "number" } } } },
+                "objects": { "type": "array", "items": { "type": "object" } },
+                "center": p, "plate": { "type": "boolean" }, "radius": { "type": "number" }, "name": { "type": "string" }
+            }), &["pieces"], false),
+            tool("street_check", "What the street model forbids, found on the map (docs/street-model.md): road_end_free (a road ends with nothing there, not at the map edge), ends_unjoined (two ends on one another, not linked), link_kink (a link with a kink > 1.5° or a gap > 5 cm), path_into_road (a path ends inside a carriageway), object_on_road (an object stands in a carriageway), object_not_square (a lamp, sign, light or stop not square to its road). `fix`: the fixable ones put right (objects to the kerb + 0.9 m and squared, ends linked). In `center` + `radius`, or the whole map.", json!({
+                "center": p, "radius": { "type": "number" }, "fix": { "type": "boolean" },
+                "kinds": { "type": "array", "items": { "type": "string" } }, "limit": { "type": "integer" }
+            }), &[], true),
             tool("delete", "Delete objects and splines by IDCode (junctions and links are put right as for a person).", json!({ "ids": ids }), &["ids"], false),
             tool("tiles", "Add tiles ([[tx, ty], ...], next to the map), remove tiles, set a tile's water level (null: none), or grow the map by a ring of tiles.", json!({
                 "add": { "type": "array", "items": { "type": "array", "items": { "type": "integer" } } },

@@ -2788,3 +2788,445 @@ no track within 15 m	15 m के भीतर ट्रैक नहीं
 the tracks are not joined, or run the other way (see View > AI lanes)	ट्रैक जुड़े नहीं हैं, या उल्टी दिशा में हैं (व्यू > AI लेन देखें)
 no track beside	पास में ट्रैक नहीं:
 Drives on	किस पर चलती है
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	स्रोत शीर्ष चुना गया. स्नैप करने के लिए लक्ष्य शीर्ष पर क्लिक करें (शिफ्ट: केवल क्षैतिज, Esc: रद्द करें)
+Aim at a vertex of the selected object	चयनित वस्तु के शीर्ष पर निशाना लगाओ
+Snapped to vertex! (Ctrl+Z to undo)	शीर्ष पर पहुंच गया! (पूर्ववत करने के लिए Ctrl+Z)
+Aim at a target vertex or spline endpoint	लक्ष्य शीर्ष या तख़्ता समापन बिंदु पर निशाना लगाओ
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	स्रोत किनारा चुना गया. संरेखित करने के लिए लक्ष्य किनारे या सड़क पर क्लिक करें (शिफ्ट: केवल क्षैतिज, Esc: रद्द करें)
+Aim at an edge of the selected object	चयनित वस्तु के एक किनारे पर निशाना लगाएँ
+Aligned edge to edge! (Ctrl+Z to undo)	किनारे से किनारे तक संरेखित! (पूर्ववत करने के लिए Ctrl+Z)
+Aim at a target edge or road	लक्ष्य किनारे या सड़क पर निशाना लगाओ
+Target cancelled. Pick a source vertex again	लक्ष्य रद्द कर दिया गया. एक स्रोत शीर्ष फिर से चुनें
+Vertex snap cancelled	वर्टेक्स स्नैप रद्द कर दिया गया
+Target cancelled. Pick a source edge again	लक्ष्य रद्द कर दिया गया. स्रोत किनारा फिर से चुनें
+Edge snap cancelled	एज स्नैप रद्द किया गया
+Select an object first to snap its vertex	किसी ऑब्जेक्ट के शीर्ष को स्नैप करने के लिए पहले उसका चयन करें
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	वर्टेक्स स्नैप: चयनित ऑब्जेक्ट पर स्रोत वर्टेक्स पर क्लिक करें (रद्द करने के लिए Esc)
+Snap vertex to vertex	शीर्ष को शीर्ष पर स्नैप करें
+Select an object first to align its edge	किसी ऑब्जेक्ट के किनारे को संरेखित करने के लिए पहले उसका चयन करें
+Edge snap: click a source edge on the selected object (Esc to cancel)	एज स्नैप: चयनित ऑब्जेक्ट पर सोर्स एज पर क्लिक करें (रद्द करने के लिए Esc)
+Snap edge to edge	किनारे से किनारे तक स्नैप करें
+Snap vertex to vertex (V)	शीर्ष को शीर्ष पर स्नैप करें (V)
+Snap edge to edge (L)	किनारे से किनारे तक स्नैप करें (एल)
+Snap vertex (V)	स्नैप वर्टेक्स (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	इस ऑब्जेक्ट के एक शीर्ष को दूसरे शीर्ष पर स्नैप करें (शॉर्टकट: V)
+Snap edge (L)	स्नैप एज (एल)
+Snap an edge of this object to another edge or road (Shortcut: L)	इस वस्तु के एक किनारे को दूसरे किनारे या सड़क पर स्नैप करें (शॉर्टकट: एल)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	चयनित ऑब्जेक्ट के शीर्ष को किसी अन्य ऑब्जेक्ट के शीर्ष पर स्नैप करें (V)\nशिफ्ट: केवल क्षैतिज, Esc/राइट-क्लिक: रद्द करें
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	चयनित ऑब्जेक्ट के किनारे को किसी किनारे या सड़क पर संरेखित करें (L)\nघुमाता है और संरेख में स्नैप करता है\nशिफ्ट: क्षैतिज केवल, Esc/राइट-क्लिक करें: रद्द करें
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	बिंदु 1 संरेखित! घुमाने के लिए वस्तु पर दूसरे बिंदु पर क्लिक करें, या समाप्त करने के लिए Esc दबाएं
+Reference angle set. Click a target point or spline to align (Esc: finish)	संदर्भ कोण सेट। संरेखित करने के लिए लक्ष्य बिंदु या सड़क पर क्लिक करें (Esc: समाप्त)
+Pick a different vertex on the object	वस्तु पर कोई भिन्न शीर्ष चुनें
+Click a 2nd reference point on the object, or Esc to finish	वस्तु पर दूसरा संदर्भ बिंदु क्लिक करें, या समाप्त करने के लिए Esc दबाएं
+Aligned angle! (Ctrl+Z to undo)	कोण संरेखित! (पूर्ववत करने के लिए Ctrl+Z)
+Vertex snap complete	शीर्ष स्नैप पूर्ण
+Align vertex angle	शीर्ष कोण संरेखित करें
+Complete to	तक पूरा करें
+Complete to: a new piece between the free ends of the selected splines	तक पूरा करें: चुनी हुई स्प्लाइनों के खुले सिरों के बीच नया टुकड़ा
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	पहली चुनी हुई स्प्लाइन के प्रकार का नया टुकड़ा, चुनी हुई स्प्लाइनों के दो खुले सिरों के बीच, जो दोनों से जगह, दिशा और ऊँचाई में मिलता है; वे दोनों नहीं बदलतीं। फिर से: बचे हुए दो सिरे जुड़ते हैं और घेरा बंद होता है।
+The two ends already meet	ये दोनों सिरे पहले से मिलते हैं
+Select the splines whose free ends are to be joined	वे स्प्लाइनें चुनें जिनके खुले सिरे जोड़ने हैं
+No piece of spline can join these two ends	स्प्लाइन का कोई टुकड़ा इन दो सिरों को नहीं जोड़ सकता
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	इस मैप की openMapper प्रति कंटेंट फ़ोल्डर में खोली गई (OMSI 2 फ़ोल्डर वाली कभी नहीं लिखी जाती)
+Read in again, changed on disk by another program:	फिर से पढ़ा गया, डिस्क पर किसी दूसरे प्रोग्राम ने बदला:
+Could not bring the changes over	बदलाव नहीं लाए जा सके
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	इस ऑटोसेव के बाद मैप की फ़ाइलें बदली गईं (किसी दूसरे प्रोग्राम से, जैसे OMSI 2 का एडिटर)। पुनर्स्थापित करने से ऑटोसेव की पुरानी टाइलें उन बदलावों के ऊपर आ जाएँगी।
+tile(s)	टाइल
+the global settings	वैश्विक सेटिंग्स
+the timetable	समय-सारणी
+the traffic	ट्रैफ़िक
+the descriptions	विवरण
+Reload from disk	डिस्क से फिर लोड करें
+The map changed on disk	मैप डिस्क पर बदल गया
+Another program changed the map's files where it has changes here not saved yet:	किसी दूसरे प्रोग्राम ने मैप की फ़ाइलें वहाँ बदलीं जहाँ यहाँ बिना सहेजे बदलाव हैं:
+The other changes made on disk were read in already.	डिस्क के बाकी बदलाव पहले ही पढ़ लिए गए।
+Keep mine	मेरे रखें
+The map changed in OMSI 2's folder	मैप OMSI 2 फ़ोल्डर में बदल गया
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	इंस्टॉलेशन में इस मैप की प्रति, कंटेंट फ़ोल्डर में openMapper की प्रति सहेजे जाने के बाद बदली गई, जैसे OMSI 2 के एडिटर से
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	बदलाव लाने से openMapper की प्रति की वे फ़ाइलें बदल जाएँगी; बदली गई फ़ाइलें बैकअप में रहती हैं (फ़ाइल > पिछले संस्करण)।
+Bring the changes over	बदलाव लाएँ
+Keep openMapper's copy	openMapper की प्रति रखें
+its way has a gap after path	इसके रास्ते में इस पाथ के बाद अंतर है:
+its way does not pass	इसका रास्ता इसके पास से नहीं जाता:
+On demand	माँग पर
+Not served (checkpoint)	सेवा नहीं (चेकपॉइंट)
+Wait for departure time	डिपार्चर समय का इंतज़ार करें
+Always + wait for departure time	हमेशा + डिपार्चर समय का इंतज़ार करें
+The bus stops only when somebody waits or wants to get off (the game's default)	बस तभी रुकती है जब कोई इंतज़ार कर रहा हो या उतरना चाहे (गेम का डिफ़ॉल्ट)
+The bus always stops here	बस यहाँ हमेशा रुकती है
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	बस बिना रुके निकल जाती है: स्टॉप केवल रास्ता चिह्नित करता है (चेकपॉइंट)
+The bus stops only when it is early, and waits there for its departure time	बस तभी रुकती है जब वह जल्दी हो, और वहाँ अपने डिपार्चर समय का इंतज़ार करती है
+The bus always stops here, and when it is early it waits for its departure time	बस यहाँ हमेशा रुकती है, और जल्दी होने पर अपने डिपार्चर समय का इंतज़ार करती है
+All trips	सभी ट्रिप
+Every trip of the map, those no tour drives too	मैप का हर ट्रिप, वे भी जिन्हें कोई टूर नहीं चलाता
+The line number the trip shows; the line of this number lists it among its trips	ट्रिप जो लाइन नंबर दिखाता है; इस नंबर की लाइन इसे अपने ट्रिप में गिनती है
+Way picked by hand:	रास्ता हाथ से चुना गया:
+the paths picked do not pass this stop	चुने गए पाथ इस स्टॉप के पास से नहीं जाते
+Other trips	दूसरे ट्रिप
+The time profile this departure runs to	वह टाइम प्रोफ़ाइल जिससे यह डिपार्चर चलता है
+Time profile	टाइम प्रोफ़ाइल
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	एक ट्रिप की कई प्रोफ़ाइल हो सकती हैं (भीड़ का समय, रात…): टूर का हर डिपार्चर बताता है कि वह किससे चलता है
+The profile's name	प्रोफ़ाइल का नाम
+A new profile, a copy of this one	नई प्रोफ़ाइल, इसकी कॉपी
+Delete this profile (its departures run to the first)	यह प्रोफ़ाइल हटाएँ (इसके डिपार्चर पहली से चलेंगे)
+Times from stop to stop	स्टॉप से स्टॉप तक का समय
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	हर स्टॉप पर पिछले स्टॉप से समय तय किया जा सकता है: उसके बाद के समय साथ खिसकते हैं, और उनके साथ ट्रिप का समय भी। जो समय तय नहीं हैं वे तय समयों के बीच की दूरी के हिसाब से चलते हैं; तय स्टॉप पर जल्दी पहुँची बस इंतज़ार करती है।
+From the stop before	पिछले स्टॉप से
+After departure	डिपार्चर के बाद
+Minutes from the stop before to this one	पिछले स्टॉप से इस तक मिनट
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 के एडिटर की तरह। बस क्या करती है यह देखने के लिए किसी विकल्प पर माउस ले जाएँ।
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	मैप का हर ट्रिप, चाहे कोई भी लाइन उसे दिखाए या कोई भी टूर उसे चलाए। जिस ट्रिप को कोई टूर नहीं चलाता वह रखा जाता है, और यहाँ बदला, किसी टूर को दिया या हटाया जा सकता है।
+trips	ट्रिप
+driven by no tour	किसी टूर से नहीं
+no tour	कोई टूर नहीं
+departures	डिपार्चर
+No path there: click a lane of a road (View > AI lanes shows them)	वहाँ कोई पाथ नहीं: किसी सड़क की लेन पर क्लिक करें (दृश्य > AI लेन उन्हें दिखाता है)
+Done picking paths	चुनना पूरा
+Pick the paths on the map	मैप पर पाथ चुनें
+Choose the way yourself, path by path, as in OMSI 2's editor	रास्ता खुद चुनें, पाथ दर पाथ, OMSI 2 के एडिटर की तरह
+Find the way automatically	रास्ता अपने-आप ढूँढें
+Forget the paths picked: the way is found along the roads again	चुने गए पाथ भूल जाएँ: रास्ता फिर से सड़कों के साथ ढूँढा जाता है
+The paths were picked by hand: they are kept when the stops change.	पाथ हाथ से चुने गए थे: स्टॉप बदलने पर वे बने रहते हैं।
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	व्यू में पाथ पर क्लिक करें। अंत के बाद या शुरुआत से पहले वाला पाथ, उस तक के पाथों के साथ, जुड़ जाता है; रास्ते के बगल वाला पाथ उस हिस्से की जगह लेता है जिसके चारों ओर वह जाता है (जंक्शन पर दूसरी शाखा); रास्ते का पाथ निकाल दिया जाता है। रास्ता पहले स्टॉप से पहले शुरू हो सकता है और आखिरी के बाद आगे जा सकता है।
+The way breaks after path	रास्ता इस पाथ के बाद टूटता है:
+the paths do not join, the bus's GPS loses its way here in the game	पाथ आपस में नहीं जुड़ते, गेम में बस का GPS यहाँ रास्ता खो देता है
+Paths of the way	रास्ते के पाथ
+Cut before the first stop	पहले स्टॉप से पहले काटें
+Cut after the last stop	आखिरी स्टॉप के बाद काटें
+path	पाथ
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMapper का अपना नियंत्रण: कैमरा जैसा कैमरा में चुना गया, कुंजियाँ जैसी दृश्य > नियंत्रण में
+The keys as in View > Controls	कुंजियाँ जैसी दृश्य > नियंत्रण में
+A copy of its own was made for the script: the original type is unchanged	स्क्रिप्ट के लिए इसकी अपनी कॉपी बनाई गई: मूल टाइप नहीं बदला
+Trolleybus wire the game cannot use	ट्रॉलीबस तार जिसे गेम इस्तेमाल नहीं कर सकता
+Rows the game does not show	कतारें जो गेम नहीं दिखाता
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	सड़क के साथ ऑब्जेक्ट की एक कतार (लैंप, खंभे, पार्किंग स्थान) उस सड़क से पहले शुरू होती है जिस पर वह बिछी है: उसकी दूरी सड़क की शृंखला की शुरुआत से गिनी जाती है, और यह उस सड़क से पहले की शृंखला की लंबाई से कम है। OMSI 2 और openOMSI इसमें से कुछ नहीं दिखाते, और न ही एडिटर। कतार फिर से बिछाएँ, या उसके गुणों में बड़ी शुरुआत दें।
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI स्विच सिर्फ़ वहीं बनाता है जहाँ ओवरहेड तार के ठीक तीन स्पैन मिलते हैं, और जहाँ अब कोई नहीं मिलता वहाँ रखा स्विच छोड़ दिया जाता है; ऐसे सेक्शन का स्पैन जो नेटवर्क में नहीं है, बिना सबस्टेशन के रहता है। ठीक करने के लिए नक्शा > ट्रॉलीबस तार खोलें।
+Trolleybus wire	ट्रॉलीबस तार
+Select the next road piece (joined at its end; Shift: add it)	अगला सड़क टुकड़ा चुनें (उसके अंत पर जुड़ा; Shift: जोड़ें)
+Select the previous road piece (joined at its start; Shift: add it)	पिछला सड़क टुकड़ा चुनें (उसकी शुरुआत पर जुड़ा; Shift: जोड़ें)
+the up arrow	ऊपर वाला ऐरो
+the down arrow	नीचे वाला ऐरो
+the left arrow	बायाँ ऐरो
+the right arrow	दायाँ ऐरो
+Select three objects or more (the two farthest apart stay)	तीन या अधिक ऑब्जेक्ट चुनें (सबसे दूर के दो अपनी जगह रहते हैं)
+Line up	एक सीध में करें
+Space evenly	बराबर दूरी पर रखें
+Splines laid	स्प्लाइन बिछाए गए
+The spline reaches past the map: add tiles there first	स्प्लाइन मैप से बाहर जाता है: पहले वहाँ टाइलें जोड़ें
+Ground painted over areas	क्षेत्रों पर ज़मीन रंगी गई
+Track beds	ट्रैक बेड
+Ground under surfaces	सतहों के नीचे ज़मीन
+Form the ground	सतहों के अनुसार ज़मीन ढालें
+Select a road piece first	पहले एक सड़क टुकड़ा चुनें
+Nothing is joined at its end	इसके अंत पर कुछ नहीं जुड़ा
+Nothing is joined at its start	इसकी शुरुआत पर कुछ नहीं जुड़ा
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	मूव: X, Y या Z के साथ ऐरो खींचें, वर्ग को उसके प्लेन में, वृत्त को ज़मीन पर
+Rotate: drag a ring to turn about X, Y or Z	घुमाएँ: X, Y या Z के चारों ओर घुमाने के लिए रिंग खींचें
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	स्केल: उस अक्ष पर स्केल करने के लिए ऐरो खींचें, दो अक्षों के लिए वर्ग, तीनों के लिए वृत्त
+Junctions where the roads meet	जहाँ सड़कें मिलती हैं वहाँ जंक्शन
+Streets from the street model	स्ट्रीट मॉडल से गलियाँ
+perimeter	परिधि
+needs	अनुमति चाहिए
+built	बनाया गया
+signed by	हस्ताक्षरकर्ता
+not signed: the game loads it with a warning that its author is not known	हस्ताक्षर नहीं: गेम इसे इस चेतावनी के साथ लोड करता है कि इसका लेखक अज्ञात है
+openOMSI has no such function (the API of version	openOMSI में ऐसा कोई फ़ंक्शन नहीं (API संस्करण
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` नक्शे की स्क्रिप्ट के लिए है; ऑब्जेक्ट की स्क्रिप्ट में सिर्फ़ omsi फ़ंक्शन होते हैं
+no such module in the project (modules/…)	प्रोजेक्ट में ऐसा कोई मॉड्यूल नहीं (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	गेम ऐसा कोई इवेंट नहीं भेजता (जब तक कोई स्क्रिप्ट उसे omsi.emit से न भेजे)
+a name is needed	नाम चाहिए
+a file of that name is there already	इस नाम की फ़ाइल पहले से है
+Empty module	खाली मॉड्यूल
+Test run of	टेस्ट रन:
+does nothing in the test run (no game): it gives false	टेस्ट रन में कुछ नहीं करता (गेम नहीं है): false लौटाता है
+has nothing to read in the test run (no game): it gives nil	टेस्ट रन में पढ़ने को कुछ नहीं (गेम नहीं है): nil लौटाता है
+an object of the OMSI 2 installation is never changed: make it an object of your own first	OMSI 2 इंस्टॉलेशन का ऑब्जेक्ट कभी नहीं बदला जाता: पहले उसे अपना ऑब्जेक्ट बनाएँ
+Dark	डार्क
+As the system	सिस्टम जैसी
+power (current on: branch)	करंट से (करंट चालू: ब्रांच)
+indicator	इंडिकेटर से
+radio	रेडियो से
+to the branch	ब्रांच की ओर
+at random	यादृच्छिक
+spans meet in one point: the game makes no switch there (a frog is three)	स्पैन एक बिंदु पर मिलते हैं: गेम यहाँ स्विच नहीं बनाता (फ़्रॉग तीन स्पैन का होता है)
+Switch	स्विच
+no three spans meet there any more	यहाँ अब तीन स्पैन नहीं मिलते
+A span is in section	एक स्पैन सेक्शन
+that the network does not have	में है, जो नेटवर्क में नहीं है
+the wire spline	तार स्प्लाइन
+the mast	खंभा
+the frog	फ़्रॉग
+the insulator	इंसुलेटर
+is not there	नहीं मिला
+no wire spline: nothing of the wire is shown on the map	कोई तार स्प्लाइन नहीं: नक्शे पर तार का कुछ भी नहीं दिखता
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	तार स्प्लाइन की प्रोफ़ाइल 3 m से ऊपर दो पतले तारों की जोड़ी नहीं है: यह जैसी है वैसी बिछाई जाती है, और trolley.txt के बिना openOMSI इसे तार नहीं मानेगा
+a kit of that name is there already	इस नाम का किट पहले से है
+Renew the wire from its kit	तार को उसके किट से नया करें
+Theme	थीम
+Back to the 3D view	3D व्यू पर वापस
+The plan view from above, north up	ऊपर से प्लान व्यू, उत्तर ऊपर
+Put the windows back in their first places	विंडो को उनकी शुरुआती जगह पर वापस रखें
+Trolleybus wire…	ट्रॉलीबस तार…
+: there are unsaved changes	: बिना सेव किए बदलाव हैं
+Assets: every object and road type, with pictures	एसेट: हर ऑब्जेक्ट और सड़क टाइप, तस्वीरों के साथ
+Close the openOMSI session started from here	यहाँ से शुरू किया गया openOMSI सत्र बंद करें
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	शुरुआती जगह, वाहन, समय और मौसम चुनें, फिर openOMSI में मैप पर चलाएँ
+Search commands	कमांड खोजें
+Every command of the menus by its name	मेनू का हर कमांड उसके नाम से
+Right-click the view for what can be done there; Search commands finds the rest	वहाँ क्या किया जा सकता है, यह देखने के लिए व्यू पर राइट-क्लिक करें; बाकी "कमांड खोजें" से मिलता है
+Right-click the view: its menu	व्यू पर राइट-क्लिक: उसका मेनू
+Snap vertex	स्नैप वर्टेक्स
+Snap edge	स्नैप एज
+Out of the mix	मिश्रण से हटाएँ
+more as OMSI 2 is read…	OMSI 2 पढ़े जाने के साथ और आएँगे…
+Reading the content of OMSI 2…	OMSI 2 का कंटेंट पढ़ा जा रहा है…
+Nothing found: try fewer letters, or Everything in Show	कुछ नहीं मिला: कम अक्षर आज़माएँ, या दिखाएँ में "सब कुछ"
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	इस तरह का कुछ नहीं: दिखाएँ में "सब कुछ" चुनें, या एसेट इम्पोर्ट करें (फ़ाइल > एसेट इम्पोर्ट करें)
+a table of functions	फ़ंक्शन की टेबल
+a module	मॉड्यूल
+Next (Enter)	अगला (Enter)
+Previous (Shift+Enter)	पिछला (Shift+Enter)
+Match case	केस मिलाएँ
+Replace	बदलें
+Replace…	बदलें…
+Click: a breakpoint (F9 on the cursor's line)	क्लिक: ब्रेकपॉइंट (कर्सर की लाइन पर F9)
+permission	अनुमति
+The light before	पिछला सिग्नल
+The next light	अगला सिग्नल
+The phase before	पिछला चरण
+The next phase	अगला चरण
+to 	तक 
+Select the piece joined at its start (,)	इसकी शुरुआत पर जुड़ा टुकड़ा चुनें (,)
+Select the piece joined at its end (.)	इसके अंत पर जुड़ा टुकड़ा चुनें (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	दो बिंदुओं पर क्लिक करें, उनके बीच की दूरी और ढलान नापने के लिए (U) · Shift + क्लिक: किसी क्षेत्र के कोने (उसका आकार और परिधि) · राइट-क्लिक: बंद
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	चुने गए ऑब्जेक्ट का एक वर्टेक्स दूसरे ऑब्जेक्ट के वर्टेक्स पर स्नैप करें\nShift: सिर्फ़ क्षैतिज, Esc/राइट-क्लिक: रद्द करें
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	चुने गए ऑब्जेक्ट का एक एज किसी एज या सड़क से संरेखित करें\nघुमाता है और एक सीध में स्नैप करता है\nShift: सिर्फ़ क्षैतिज, Esc/राइट-क्लिक: रद्द करें
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	सबसे दूर के दो के बीच सीधी रेखा पर, बराबर दूरी पर (खंभे, लैंप, पेड़ों की कतार)
+Equal steps between the two farthest apart, each keeping its distance to the side	सबसे दूर के दो के बीच बराबर दूरी, हर एक बगल की अपनी दूरी बनाए रखता है
+height, m	ऊँचाई, m
+gradient, %	ढलान, %
+cant, %	कैंट, %
+Rotate, °	घुमाएँ, °
+Name, file, IDCode, stop, x, y or tile x y	नाम, फ़ाइल, IDCode, स्टॉप, x, y या टाइल x y
+listed, no file	सूची में, फ़ाइल नहीं
+The camera over the tile's middle	कैमरा टाइल के बीच के ऊपर
+its folder	इसका फ़ोल्डर
+Line up the selected objects	चुने गए ऑब्जेक्ट एक सीध में करें
+Space the selected objects evenly	चुने गए ऑब्जेक्ट बराबर दूरी पर रखें
+Next road piece	अगला सड़क टुकड़ा
+Previous road piece	पिछला सड़क टुकड़ा
+The run ended	रन समाप्त हुआ
+installed as	इंस्टॉल किया गया:
+failed	विफल
+Run	चलाएँ
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	स्क्रिप्ट यहीं, एडिटर में, गेम के फ़ंक्शन के साथ चलाएँ (कोड में F5)
+Step in	स्टेप से शुरू करें
+Run and stop at the first line (F11)	चलाएँ और पहली लाइन पर रुकें (F11)
+Continue	जारी रखें
+Pause	रोकें
+Stop the clock; a script running stops at its next line	घड़ी रोकें; चल रही स्क्रिप्ट अपनी अगली लाइन पर रुकती है
+Over	ओवर
+Step over (F10)	स्टेप ओवर (F10)
+Into	अंदर
+Step into (F11)	स्टेप इनटू (F11)
+Out	बाहर
+Step out (Shift+F11)	स्टेप आउट (Shift+F11)
+Restart	फिर से शुरू करें
+The map's scripts	नक्शे की स्क्रिप्ट
+The game's clock in the run	रन में गेम की घड़ी
+Set the game's clock of the run (sends minute)	रन में गेम की घड़ी सेट करें (minute भेजता है)
+starts 	शुरू 
+The hour the run starts at	वह घंटा जिस पर रन शुरू होता है
+Save all	सब सेव करें
+Build .oop	.oop बनाएँ
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	साझा करने के लिए नक्शे की स्क्रिप्ट की एक फ़ाइल: कंपाइल और अस्पष्ट (obfuscated), ज़रूरी अनुमतियों के साथ (Development Tools का कंपाइलर)
+API	API
+The game's functions and events	गेम के फ़ंक्शन और इवेंट
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	इस नक्शे में अभी कोई स्क्रिप्ट नहीं है। इसकी स्क्रिप्ट खेलते समय openOMSI में चलती हैं: वे घटनाओं (स्टॉप, घंटा, ट्रिप) पर प्रतिक्रिया करती हैं, संदेश दिखाती हैं, ट्रैफ़िक और मौसम बदलती हैं।
+Start the map's scripts	नक्शे की स्क्रिप्ट शुरू करें
+Object scripts (Lua)	ऑब्जेक्ट स्क्रिप्ट (Lua)
+No object on the map has a Lua script.	नक्शे पर किसी ऑब्जेक्ट में Lua स्क्रिप्ट नहीं है।
+Refresh	रीफ़्रेश करें
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	वे स्क्रिप्ट जिनका नाम कोई सीनरी ऑब्जेक्ट [lua_script] में देता है: एक स्क्रिप्ट कैमरे के पास उसके टाइप के हर ऑब्जेक्ट के लिए चलती है (सिर्फ़ openOMSI)
+Selected object	चुना गया ऑब्जेक्ट
+Select one object on the map to see its scripts.	इसकी स्क्रिप्ट देखने के लिए नक्शे पर एक ऑब्जेक्ट चुनें।
+No OMSI 2 script (.osc).	कोई OMSI 2 स्क्रिप्ट (.osc) नहीं।
+Lua script (openOMSI)	Lua स्क्रिप्ट (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	इस टाइप के हर ऑब्जेक्ट के लिए एक स्क्रिप्ट, उसकी .sco के बगल में और उसमें नामित ([lua_script]); OMSI 2 इसे छोड़ देता है। इंस्टॉलेशन का ऑब्जेक्ट पहले नक्शे की अपनी कॉपी बनता है।
+OMSI 2 script (.osc)	OMSI 2 स्क्रिप्ट (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	ऑब्जेक्ट की अपनी स्क्रिप्ट, उसकी वेरिएबल सूची के साथ, जिसे OMSI 2 और openOMSI चलाते हैं; उसके लैंप और [visible] भाग उन वेरिएबल का पालन करते हैं जो वह सेट करती है
+Rust plugin	Rust प्लगइन
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Rust में लिखा नक्शे का प्लगइन, WebAssembly में कंपाइल होकर .oop में। इसे बनाने के लिए wasm32-unknown-unknown टारगेट के साथ Rust (rustup) चाहिए।
+Make the Rust plugin	Rust प्लगइन बनाएँ
+Build and install	बनाएँ और इंस्टॉल करें
+cargo builds it, the .oop goes into the content folder's plugins	cargo इसे बनाता है, .oop कंटेंट फ़ोल्डर के plugins में जाता है
+Starts with the map	नक्शे के साथ शुरू होती है
+Rename…	नाम बदलें…
+Earlier in the order	क्रम में पहले
+Later in the order	क्रम में बाद में
+Delete (into openMapper's bin)	हटाएँ (openMapper के बिन में)
+New script	नई स्क्रिप्ट
+New module	नया मॉड्यूल
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	नक्शा खेलते समय हर एक इसी क्रम में शुरू होती है (किसी को खिसकाने के लिए राइट-क्लिक करें); जो विफल हो, वह बाकी को चलने देती है। map.on, map.every, map.after का इस्तेमाल करें: ये सिर्फ़ इसी नक्शे पर काम करते हैं।
+Modules	मॉड्यूल
+Code the scripts share: local util = require("modules.util")	स्क्रिप्ट द्वारा साझा कोड: local util = require("modules.util")
+Data	डेटा
+Files the scripts read (data/), pictures and sounds	फ़ाइलें जो स्क्रिप्ट पढ़ती हैं (data/), तस्वीरें और ध्वनियाँ
+Made by openMapper	openMapper द्वारा बनाया गया
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	बाईं ओर कोई स्क्रिप्ट खोलें, या नई बनाएँ।\n\nF5 स्क्रिप्ट को यहीं एडिटर में चलाता है, F9 ब्रेकपॉइंट लगाता है, F10 / F11 स्टेप करते हैं,\nCtrl+Space पूरा करता है, Ctrl+F खोजता है, Ctrl+G लाइन पर जाता है, Ctrl+/ कमेंट करता है।
+Read only: a file of the installation or made by openMapper	सिर्फ़ पढ़ने के लिए: इंस्टॉलेशन की या openMapper द्वारा बनाई गई फ़ाइल
+Problems	समस्याएँ
+Console	कंसोल
+Debugger	डीबगर
+Events	इवेंट
+error	त्रुटि
+warning	चेतावनी
+No problems in the open files.	खुली फ़ाइलों में कोई समस्या नहीं।
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	स्क्रिप्ट जो प्रिंट करती हैं, स्क्रीन पर दिखाती हैं और उनकी त्रुटियाँ, चलने पर (चलाएँ, F5) यहाँ दिखती हैं।
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	स्क्रिप्ट में चलाने के लिए Lua (रुके होने पर, रुके हुए फ़्रेम में); ऊपर और नीचे: इतिहास
+Start a run first (Run, F5)	पहले रन शुरू करें (चलाएँ, F5)
+(empty)	(खाली)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	चल रहा है। ब्रेकपॉइंट (लाइन नंबर के बाईं ओर क्लिक, या F9) स्क्रिप्ट को वहीं रोकता है; रोकें उन्हें उनकी अगली लाइन पर रोकता है।
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	नहीं चल रहा। स्क्रिप्ट चलाएँ (F5); ब्रेकपॉइंट उन्हें रोकता है, और यहाँ कॉल स्टैक, हर फ़ंक्शन के वेरिएबल और देखने के लिए मान होते हैं।
+Stopped	रुका हुआ
+Call stack	कॉल स्टैक
+Locals	लोकल
+Upvalues	अपवैल्यू (upvalues)
+The console evaluates in this frame: a name, an expression, an assignment.	कंसोल इसी फ़्रेम में मूल्यांकन करता है: नाम, एक्सप्रेशन, असाइनमेंट।
+Storage and objects	स्टोरेज और ऑब्जेक्ट
+Send	भेजें
+As if the game sent it: every handler of it runs	जैसे गेम ने इसे भेजा हो: इसका हर हैंडलर चलता है
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	स्क्रिप्ट को गेम के इवेंट हाथ से भेजने के लिए उन्हें चलाएँ: स्टॉप पहुँचा, दरवाज़ा, नया घंटा… घड़ी frame, minute और hour खुद भेजती है।
+Listening	सुन रहे हैं
+timers	टाइमर
+Sign with the key	कुंजी से हस्ताक्षर करें
+a secret key file of oopc keygen (optional)	oopc keygen की गुप्त कुंजी फ़ाइल (वैकल्पिक)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	".oop बनाएँ" साझा करने के लिए नक्शे की स्क्रिप्ट की एक फ़ाइल बनाता है (प्रोजेक्ट के dist फ़ोल्डर में): कंपाइल, अस्पष्ट (obfuscated), उसके कोड को ज़रूरी अनुमतियों के साथ। गेम स्क्रिप्ट फ़ोल्डर को जैसा है वैसा चलाता है; .oop उन्हें बिना सोर्स के देने के लिए है।
+Search functions and events	फ़ंक्शन और इवेंट खोजें
+since	न्यूनतम संस्करण
+for an .oop	.oop के लिए
+Double-click puts it into the script at the cursor.	डबल-क्लिक इसे स्क्रिप्ट में कर्सर पर डालता है।
+A stop on this path	इस पथ पर एक स्टॉप
+branch	ब्रांच
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	वह ओवरहेड तार जिसके नीचे openOMSI की ट्रॉलीबसें चलती हैं (नक्शे के बगल में trolley.txt; OMSI 2 इसे अनदेखा करता है)। इसके बिना गेम नक्शे के तार स्प्लाइन पढ़ता है।
+Start a wire for this map	इस नक्शे के लिए तार शुरू करें
+Lay	बिछाएँ
+Sections	सेक्शन
+Spans	स्पैन
+Switches	स्विच
+Pick in the view	व्यू में चुनें
+A click in the view picks a span or a switch (yellow dot)	व्यू में क्लिक से स्पैन या स्विच चुना जाता है (पीला बिंदु)
+The wires over the road surface	सड़क की सतह के ऊपर तार
+the kerb lane each way	हर दिशा में किनारे वाली लेन
+the way the road runs	सड़क की दिशा में
+against the road's way	सड़क की दिशा के विपरीत
+Section	सेक्शन
+Kit	किट
+ (every map)	 (हर नक्शा)
+none: the wire for the game only	कोई नहीं: तार सिर्फ़ गेम के लिए
+A new kit	नया किट
+My wire	मेरा तार
+Change this kit	यह किट बदलें
+its wire spline	इसका तार स्प्लाइन
+its masts, every	इसके खंभे, हर
+The kit names no mast	किट में कोई खंभा नहीं बताया गया
+Frogs and section insulators are put where the wire has them, as the kit names them.	फ़्रॉग और सेक्शन इंसुलेटर वहीं लगाए जाते हैं जहाँ तार में होते हैं, जैसे किट में बताए गए हैं।
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	नक्शे पर कुछ नहीं बिछाया जाता, तार सिर्फ़ गेम के लिए है। किट (+) तार, उसके खंभों, फ़्रॉग और इंसुलेटर के आपके अपने मॉडल बताता है।
+Over the selected roads	चुनी गई सड़कों के ऊपर
+Select roads in the view first (double-click: a whole road)	पहले व्यू में सड़कें चुनें (डबल-क्लिक: पूरी सड़क)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	चुने गए ऑब्जेक्ट (जंक्शन) की लेन: उन पर टिक करें जिनके ऊपर तार जाता है। तीन मिलते स्पैन एक फ़्रॉग बनाते हैं।
+It has no street lanes.	इसमें वाहनों की लेन नहीं हैं।
+lane	लेन
+Over the ticked lanes	टिक की गई लेन के ऊपर
+Select one junction to lay the wire over its lanes.	तार को उसकी लेन के ऊपर बिछाने के लिए एक जंक्शन चुनें।
+Draw a span by hand	हाथ से स्पैन बनाएँ
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	व्यू में इसके बिंदुओं पर क्लिक करें; किसी स्पैन के सिरे पर शुरू या खत्म होने पर यह उससे जुड़ता है, स्पैन के बीच में वहाँ से शाखा निकलती है (फ़्रॉग)
+points: click the next in the view	बिंदु: व्यू में अगले पर क्लिक करें
+Finish	पूरा करें
+Read the map's wire splines	नक्शे के तार स्प्लाइन पढ़ें
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	तारों की जोड़ी के रूप में बने स्प्लाइन (OMSI 2 के लिए बने ट्रॉलीबस नक्शे): हर एक के साथ एक स्पैन, जैसे गेम उन्हें पढ़ता है
+Network	नेटवर्क
+Voltage	वोल्टेज
+Wire spacing	तारों के बीच दूरी
+How uneven the contact wire is: worn or icy wire 0.003 and more	कॉन्टैक्ट तार कितना असमान है: घिसा या बर्फ़ से ढका तार 0.003 और अधिक
+Delete the whole wire	पूरा तार हटाएँ
+trolley.txt goes with the next save; the game reads the map's wire splines again	अगले सेव पर trolley.txt हट जाएगा; गेम फिर से नक्शे के तार स्प्लाइन पढ़ेगा
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	एक सबस्टेशन से बिजली पाने वाले हिस्से। जहाँ दो मिलते हैं वहाँ बिना करंट का हिस्सा (इंसुलेटर) होता है।
+name	नाम
+live	करंट चालू
+The feeder's resistance: the voltage drops with the current	फ़ीडर का प्रतिरोध: करंट के साथ वोल्टेज गिरता है
+Power the feeder takes back from a braking bus	ब्रेक लगाती बस से फ़ीडर जो बिजली वापस लेता है
+spans	स्पैन
+Add a section	सेक्शन जोड़ें
+Insulators (where sections meet)	इंसुलेटर (जहाँ सेक्शन मिलते हैं)
+ m dead	 m बिना करंट
+Span	स्पैन
+points	बिंदु
+Spacing	दूरी
+its own	अपना
+Drag: the whole span up or down	खींचें: पूरा स्पैन ऊपर या नीचे
+The span the other way: the positive wire is on the right of its way	स्पैन उल्टी दिशा में: धनात्मक तार उसकी दिशा में दाईं ओर है
+Pick a span in the view, or in the list.	व्यू में या सूची में कोई स्पैन चुनें।
+section	सेक्शन
+A switch where three spans meet (yellow in the view). Every frog gets one.	स्विच जहाँ तीन स्पैन मिलते हैं (व्यू में पीला)। हर फ़्रॉग को एक मिलता है।
+No frogs yet: lay three spans meeting in one point (a branch).	अभी कोई फ़्रॉग नहीं: एक बिंदु पर मिलते तीन स्पैन बिछाएँ (ब्रांच)।
+Spans laid:	बिछाए गए स्पैन:
+Wire kit	तार किट
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	आपके अपने मॉडल (Blender या कहीं भी बने, कंटेंट फ़ोल्डर में रखे) जो नक्शे पर तार दिखाते हैं: तार स्प्लाइन और खंभे, फ़्रॉग व इंसुलेटर ऑब्जेक्ट। किट एक .cfg फ़ाइल है जिसमें उनके नाम हैं; इसे यहाँ, टेक्स्ट के रूप में, या किसी भी टेक्स्ट एडिटर में बदलें।
+As text	टेक्स्ट के रूप में
+The name is the kit's file: make a copy to rename it	नाम ही किट की फ़ाइल है: नाम बदलने के लिए कॉपी बनाएँ
+For	के लिए
+this map	यह नक्शा
+every map	हर नक्शा
+Take the one selected on the map	नक्शे पर चुना गया लें
+Select a spline of it on the map first	पहले नक्शे पर इसका एक स्प्लाइन चुनें
+Select such an object on the map first	पहले नक्शे पर ऐसा ऑब्जेक्ट चुनें
+Choose the file	फ़ाइल चुनें
+The file must lie in the content folder or in OMSI 2's	फ़ाइल कंटेंट फ़ोल्डर में या OMSI 2 के फ़ोल्डर में होनी चाहिए
+Not there	नहीं मिला
+Wire spline	तार स्प्लाइन
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	एक .sli जिसकी प्रोफ़ाइल तारों को सड़क के ऊपर उनकी ऊँचाई पर रखती है; यह हर स्पैन के साथ बिछाया जाता है
+Mast	खंभा
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	एक .sco: इसका मूल बिंदु इसके आधार पर, इसकी भुजा इसके -y के साथ तार तक जाती है
+Frog	फ़्रॉग
+A .sco hung where the wire branches: its origin on the wire, y along it	एक .sco जो वहाँ लटकाया जाता है जहाँ तार की शाखा निकलती है: इसका मूल बिंदु तार पर, y उसके साथ
+Insulator	इंसुलेटर
+A .sco hung where two sections meet: its origin on the wire, y along it	एक .sco जो वहाँ लटकाया जाता है जहाँ दो सेक्शन मिलते हैं: इसका मूल बिंदु तार पर, y उसके साथ
+Masts	खंभे
+every	हर
+From a mast's foot to its wire, across the road	खंभे के आधार से उसके तार तक, सड़क के आर-पार
+from the wire	तार से
+Mast turned	खंभे का घुमाव
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	ऐसे मॉडल के लिए जिसकी भुजा -y के साथ नहीं जाती: -x के साथ हो तो 90, +x के साथ -90, +y के साथ 180
+arm	भुजा
+The wire spline's wires	तार स्प्लाइन के तार
+high	ऊँचाई
+across its line	अपनी रेखा से आड़े
+Save and renew the map's wire	सेव करें और नक्शे का तार नया करें
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	इस किट से बिछाए गए तार स्प्लाइन और खंभे इसकी फ़ाइलें अभी के रूप में लेते हैं; फ़्रॉग और इंसुलेटर फिर से लगाए जाते हैं
+A new kit from this one (to rename it, or change it apart)	इससे नया किट (नाम बदलने, या अलग से बदलने के लिए)
+Show the file	फ़ाइल दिखाएँ
+Changed to the kit's files:	किट की फ़ाइलों में बदला गया:
+a display shows the switch of its name	एक डिस्प्ले इस नाम वाला स्विच दिखाता है
+Set by	किससे नियंत्रित
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	गेम के तार पढ़ते समय यह कहाँ रहता है (यादृच्छिक: हर रन में एक बार चुना जाता है; ऑनलाइन गेम में सीधा)
+Contact plate	कॉन्टैक्ट प्लेट
+ m before the frog	 m फ़्रॉग से पहले
+Power on from	करंट चालू, कम से कम
+Invert	उलटें
+the other way round	उल्टा
+Channel	चैनल
+any	कोई भी
+Range	रेंज
+Route codes	रूट कोड
+A route code	एक रूट कोड
+Flip	पलटें
+Left to right	बाएँ से दाएँ
+Top to bottom	ऊपर से नीचे
+Dark theme	डार्क थीम
+Light theme	लाइट थीम
+Lit	रोशनी
+Right footway texture	दाएँ फुटपाथ की बनावट
+Left footway texture	बाएँ फुटपाथ की बनावट
+like the left one	बाएँ जैसा
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	लेन के पथ वैसे चलते हैं जैसे बाएँ-हाथ यातायात वाले नक्शे में होते हैं (एकतरफ़ा सड़क अपनी दिशा रखती है)

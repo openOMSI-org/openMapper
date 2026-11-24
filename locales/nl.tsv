@@ -2788,3 +2788,446 @@ no track within 15 m	geen spoor binnen 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	de sporen zijn niet verbonden, of lopen de andere kant op (zie Beeld > AI-rijstroken)
 no track beside	geen spoor naast
 Drives on	Rijdt over
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Bronpunt gekozen. Klik op een doelhoekpunt om te snappen (Shift: alleen horizontaal, Esc: annuleren)
+Aim at a vertex of the selected object	Richt op een hoekpunt van het geselecteerde object
+Snapped to vertex! (Ctrl+Z to undo)	Geknapt naar het hoekpunt! (Ctrl+Z om ongedaan te maken)
+Aim at a target vertex or spline endpoint	Richt op een doelhoekpunt of spline-eindpunt
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Bronrand gekozen. Klik op een doelrand of weg om uit te lijnen (Shift: alleen horizontaal, Esc: annuleren)
+Aim at an edge of the selected object	Richt op een rand van het geselecteerde object
+Aligned edge to edge! (Ctrl+Z to undo)	Rand tot rand uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Aim at a target edge or road	Richt op een doelrand of weg
+Target cancelled. Pick a source vertex again	Doel geannuleerd. Kies opnieuw een bronpunt
+Vertex snap cancelled	Vertex-snap geannuleerd
+Target cancelled. Pick a source edge again	Doel geannuleerd. Kies opnieuw een bronrand
+Edge snap cancelled	Randsnap geannuleerd
+Select an object first to snap its vertex	Selecteer eerst een object om het hoekpunt ervan te snappen
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Vertex-snap: klik op een bronpunt op het geselecteerde object (Esc om te annuleren)
+Snap vertex to vertex	Snap hoekpunt op hoekpunt
+Select an object first to align its edge	Selecteer eerst een object om de rand uit te lijnen
+Edge snap: click a source edge on the selected object (Esc to cancel)	Rand snappen: klik op een bronrand op het geselecteerde object (Esc om te annuleren)
+Snap edge to edge	Klik van rand tot rand
+Snap vertex to vertex (V)	Hoekpunt op hoekpunt klikken (V)
+Snap edge to edge (L)	Klik van rand tot rand (L)
+Snap vertex (V)	Snaphoekpunt (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Plaats een hoekpunt van dit object op een ander hoekpunt (sneltoets: V)
+Snap edge (L)	Snaprand (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Plaats een rand van dit object op een andere rand of weg (sneltoets: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Plaats een hoekpunt van het geselecteerde object op een hoekpunt van een ander object (V)\nShift: alleen horizontaal, Esc/klik met de rechtermuisknop: annuleren
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Lijn een rand van het geselecteerde object uit op een rand of weg (L)\nRoteert en snapt collineair\nShift: alleen horizontaal, Esc/rechts klikken: annuleren
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 uitgelijnd! Klik op een 2e punt op het object om te draaien, of Esc om te voltooien
+Reference angle set. Click a target point or spline to align (Esc: finish)	Referentiehoek ingesteld. Klik op een doelpunt of weg om uit te lijnen (Esc: voltooien)
+Pick a different vertex on the object	Kies een ander hoekpunt op het object
+Click a 2nd reference point on the object, or Esc to finish	Klik op een 2e referentiepunt op het object, of Esc om te voltooien
+Aligned angle! (Ctrl+Z om ongedaan te maken)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Vertex snap complete	Hoekpunt magnetisch uitlijnen voltooid
+Align vertex angle	Hoekpunt uitlijningshoek aanpassen
+Aligned angle! (Ctrl+Z to undo)	Hoek uitgelijnd! (Ctrl+Z om ongedaan te maken)
+Complete to	Aanvullen tot
+Complete to: a new piece between the free ends of the selected splines	Aanvullen tot: een nieuw stuk tussen de vrije uiteinden van de geselecteerde splines
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Een nieuw stuk van het type van de eerst geselecteerde spline tussen twee vrije uiteinden van de geselecteerde splines, dat op beide aansluit in plaats, richting en hoogte; die zelf veranderen niet. Nog eens: de twee overgebleven uiteinden worden verbonden en de ring sluit.
+The two ends already meet	De twee uiteinden raken elkaar al
+Select the splines whose free ends are to be joined	Selecteer de splines waarvan de vrije uiteinden verbonden moeten worden
+No piece of spline can join these two ends	Geen stuk spline kan deze twee uiteinden verbinden
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	openMappers kopie van deze kaart in de inhoudsmap geopend (die in de OMSI 2-map wordt nooit beschreven)
+Read in again, changed on disk by another program:	Opnieuw ingelezen, op schijf gewijzigd door een ander programma:
+Could not bring the changes over	De wijzigingen konden niet worden overgenomen
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	De bestanden van de kaart zijn na deze automatische opslag gewijzigd (door een ander programma, zoals de OMSI 2-editor). Herstellen legt de oudere tegels uit de opslag over die wijzigingen.
+tile(s)	tegel(s)
+the global settings	de algemene instellingen
+the timetable	de dienstregeling
+the traffic	het verkeer
+the descriptions	de beschrijvingen
+Reload from disk	Opnieuw laden van schijf
+The map changed on disk	De kaart is op schijf gewijzigd
+Another program changed the map's files where it has changes here not saved yet:	Een ander programma heeft bestanden van de kaart gewijzigd waar hier niet-opgeslagen wijzigingen zijn:
+The other changes made on disk were read in already.	De overige wijzigingen op schijf zijn al ingelezen.
+Keep mine	Mijne behouden
+The map changed in OMSI 2's folder	De kaart is gewijzigd in de OMSI 2-map
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	De kopie van deze kaart in de installatie is gewijzigd nadat openMappers kopie in de inhoudsmap was opgeslagen, bijvoorbeeld door de OMSI 2-editor
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Overnemen vervangt die bestanden in openMappers kopie; de vervangen bestanden blijven bewaard in een back-up (Bestand > Eerdere versies).
+Bring the changes over	Wijzigingen overnemen
+Keep openMapper's copy	openMappers kopie behouden
+its way has a gap after path	zijn route heeft een gat na pad
+its way does not pass	zijn route komt niet langs
+On demand	Op verzoek
+Not served (checkpoint)	Niet bediend (controlepunt)
+Wait for departure time	Wachten op vertrektijd
+Always + wait for departure time	Altijd + wachten op vertrektijd
+The bus stops only when somebody waits or wants to get off (the game's default)	De bus stopt alleen als iemand wacht of wil uitstappen (de standaard van het spel)
+The bus always stops here	De bus stopt hier altijd
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	De bus rijdt door zonder te stoppen: de halte markeert alleen de route (een controlepunt)
+The bus stops only when it is early, and waits there for its departure time	De bus stopt alleen als hij te vroeg is, en wacht daar op zijn vertrektijd
+The bus always stops here, and when it is early it waits for its departure time	De bus stopt hier altijd, en als hij te vroeg is wacht hij op zijn vertrektijd
+All trips	Alle ritten
+Every trip of the map, those no tour drives too	Elke rit van de kaart, ook die geen omloop rijdt
+The line number the trip shows; the line of this number lists it among its trips	Het lijnnummer dat de rit toont; de lijn met dit nummer toont hem bij zijn ritten
+Way picked by hand:	Route met de hand gekozen:
+the paths picked do not pass this stop	de gekozen paden komen niet langs deze halte
+Other trips	Andere ritten
+The time profile this departure runs to	Het tijdprofiel waarnaar dit vertrek rijdt
+Time profile	Tijdprofiel
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Een rit kan meerdere profielen hebben (spits, nacht…): elk vertrek van een omloop zegt naar welk het rijdt
+The profile's name	De naam van het profiel
+A new profile, a copy of this one	Een nieuw profiel, een kopie van dit
+Delete this profile (its departures run to the first)	Dit profiel verwijderen (zijn vertrekken rijden naar het eerste)
+Times from stop to stop	Tijden van halte tot halte
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Bij elke halte kan de tijd vanaf de halte ervoor worden ingesteld: de tijden erna schuiven mee, en de rittijd met ze. Niet ingestelde tijden volgen de afstand tussen de vaste; bij een vaste halte wacht een bus die te vroeg is.
+From the stop before	Vanaf de halte ervoor
+After departure	Na vertrek
+Minutes from the stop before to this one	Minuten van de halte ervoor tot deze
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Zoals in de editor van OMSI 2. Wijs een keuze aan om te zien wat de bus doet.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Elke rit van de kaart, welke lijn hem ook toont of welke omloop hem ook rijdt. Een rit die geen omloop rijdt blijft bewaard, en kan hier worden bewerkt, aan een omloop gegeven of verwijderd.
+trips	ritten
+driven by no tour	door geen omloop gereden
+no tour	geen omloop
+departures	vertrekken
+No path there: click a lane of a road (View > AI lanes shows them)	Geen pad hier: klik op een rijstrook van een weg (Beeld > AI-rijstroken toont ze)
+Done picking paths	Klaar met kiezen
+Pick the paths on the map	De paden op de kaart kiezen
+Choose the way yourself, path by path, as in OMSI 2's editor	Kies de route zelf, pad voor pad, zoals in de editor van OMSI 2
+Find the way automatically	De route automatisch vinden
+Forget the paths picked: the way is found along the roads again	De gekozen paden vergeten: de route wordt weer langs de wegen gevonden
+The paths were picked by hand: they are kept when the stops change.	De paden zijn met de hand gekozen: ze blijven als de haltes veranderen.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klik paden aan in het beeld. Een na het einde of voor het begin wordt toegevoegd, met de paden ernaartoe; een naast de route neemt de plaats in van het stuk waar het omheen gaat (een andere tak op een kruising); een pad van de route wordt weggehaald. De route mag al voor de eerste halte beginnen en na de laatste doorlopen.
+The way breaks after path	De route breekt af na pad
+the paths do not join, the bus's GPS loses its way here in the game	de paden sluiten niet op elkaar aan, de gps van de bus raakt hier in het spel de weg kwijt
+Paths of the way	Paden van de route
+Cut before the first stop	Afknippen voor de eerste halte
+Cut after the last stop	Afknippen na de laatste halte
+path	pad
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Eigen besturing van openMapper: de camera zoals gekozen onder Camera, de toetsen zoals in Beeld > Besturing
+The keys as in View > Controls	De toetsen zoals in Beeld > Besturing
+A copy of its own was made for the script: the original type is unchanged	Er is een eigen kopie gemaakt voor het script: het oorspronkelijke type is ongewijzigd
+Trolleybus wire the game cannot use	Bovenleiding die het spel niet kan gebruiken
+Rows the game does not show	Rijen die het spel niet toont
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Een rij objecten langs een weg (lampen, paaltjes, parkeervakken) begint vóór de weg waarop hij ligt: zijn afstand telt vanaf het begin van de wegketen, en deze is kleiner dan de lengte van de keten vóór zijn weg. OMSI 2 en openOMSI tonen er niets van, en de editor ook niet. Leg de rij opnieuw, of geef hem in zijn eigenschappen een groter begin.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI maakt alleen een wissel waar precies drie overspanningen van de bovenleiding samenkomen, en een wissel op een plek waar er geen meer samenkomen wordt weggelaten; een overspanning in een sectie die het net niet heeft, heeft geen onderstation. Open Kaart > Bovenleiding om het te herstellen.
+Trolleybus wire	Bovenleiding
+Select the next road piece (joined at its end; Shift: add it)	Het volgende wegstuk selecteren (verbonden aan zijn einde; Shift: toevoegen)
+Select the previous road piece (joined at its start; Shift: add it)	Het vorige wegstuk selecteren (verbonden aan zijn begin; Shift: toevoegen)
+the up arrow	pijl omhoog
+the down arrow	pijl omlaag
+the left arrow	pijl links
+the right arrow	pijl rechts
+Select three objects or more (the two farthest apart stay)	Selecteer drie of meer objecten (de twee die het verst uit elkaar liggen blijven staan)
+Line up	Op één lijn zetten
+Space evenly	Gelijkmatig verdelen
+Splines laid	Splines gelegd
+The spline reaches past the map: add tiles there first	De spline reikt voorbij de kaart: voeg daar eerst tegels toe
+Ground painted over areas	Grond over gebieden geverfd
+Track beds	Spoorbeddingen
+Ground under surfaces	Grond onder oppervlakken
+Form the ground	Het terrein vormen
+Select a road piece first	Selecteer eerst een wegstuk
+Nothing is joined at its end	Aan zijn einde is niets verbonden
+Nothing is joined at its start	Aan zijn begin is niets verbonden
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Verschuiven: sleep een pijl langs X, Y of Z, een vierkant in zijn vlak, de cirkel over de grond
+Rotate: drag a ring to turn about X, Y or Z	Draaien: sleep een ring om om X, Y of Z te draaien
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Schalen: sleep een pijl om langs die as te schalen, een vierkant voor twee, de cirkel voor alle drie
+Junctions where the roads meet	Kruispunten waar de wegen samenkomen
+Streets from the street model	Straten uit het stratenmodel
+perimeter	omtrek
+needs	vereist
+built	gebouwd
+signed by	ondertekend door
+not signed: the game loads it with a warning that its author is not known	niet ondertekend: het spel laadt het met een waarschuwing dat de auteur onbekend is
+openOMSI has no such function (the API of version	openOMSI heeft zo'n functie niet (de API van versie
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` is er alleen voor de scripts van de kaart; een objectscript heeft alleen de omsi-functies
+no such module in the project (modules/…)	zo'n module is er niet in het project (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	het spel stuurt zo'n gebeurtenis niet (tenzij een script hem stuurt met omsi.emit)
+a name is needed	er is een naam nodig
+a file of that name is there already	er is al een bestand met die naam
+Empty module	Lege module
+Test run of	Testrun van
+does nothing in the test run (no game): it gives false	doet niets in de testrun (geen spel): geeft false
+has nothing to read in the test run (no game): it gives nil	heeft niets te lezen in de testrun (geen spel): geeft nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	een object van de OMSI 2-installatie wordt nooit gewijzigd: maak er eerst een eigen object van
+Dark	Donker
+As the system	Zoals het systeem
+power (current on: branch)	stroom (met stroom: aftakking)
+indicator	richtingaanwijzer
+radio	radio
+to the branch	naar de aftakking
+at random	willekeurig
+spans meet in one point: the game makes no switch there (a frog is three)	overspanningen komen samen in één punt: het spel maakt daar geen wissel (een luchtwissel heeft er drie)
+Switch	Wissel
+no three spans meet there any more	hier komen geen drie overspanningen meer samen
+A span is in section	Een overspanning ligt in sectie
+that the network does not have	die het net niet heeft
+the wire spline	de draadspline
+the mast	de mast
+the frog	de luchtwissel
+the insulator	de isolator
+is not there	is er niet
+no wire spline: nothing of the wire is shown on the map	geen draadspline: van de draad zelf wordt niets op de kaart getoond
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	het profiel van de draadspline is geen paar dunne draden boven 3 m: hij wordt gelegd zoals hij is, en openOMSI ziet hem zonder trolley.txt niet als de bovenleiding
+a kit of that name is there already	er is al een set met die naam
+Renew the wire from its kit	De draad vernieuwen vanuit zijn set
+Theme	Thema
+Back to the 3D view	Terug naar de 3D-weergave
+The plan view from above, north up	De plattegrond van boven, noord boven
+Put the windows back in their first places	De vensters terugzetten op hun oorspronkelijke plaats
+Trolleybus wire…	Bovenleiding…
+: there are unsaved changes	: er zijn niet-opgeslagen wijzigingen
+Assets: every object and road type, with pictures	Assets: elk object en wegtype, met afbeeldingen
+Close the openOMSI session started from here	De hiervandaan gestarte openOMSI-sessie sluiten
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Kies de startplek, het voertuig, de tijd en het weer en rij dan de kaart in openOMSI
+Search commands	Opdrachten zoeken
+Every command of the menus by its name	Elke opdracht uit de menu's op naam
+Right-click the view for what can be done there; Search commands finds the rest	Rechtsklik op het beeld voor wat daar kan; "Opdrachten zoeken" vindt de rest
+Right-click the view: its menu	Rechtsklik op het beeld: zijn menu
+Snap vertex	Hoekpunt vastzetten
+Snap edge	Rand vastzetten
+Out of the mix	Uit de mix halen
+more as OMSI 2 is read…	er komen er meer terwijl OMSI 2 wordt gelezen…
+Reading the content of OMSI 2…	De content van OMSI 2 wordt gelezen…
+Nothing found: try fewer letters, or Everything in Show	Niets gevonden: probeer minder letters, of "Alles" bij "Tonen"
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Niets van deze soort: kies "Alles" bij "Tonen", of importeer assets (Bestand > Assets importeren)
+a table of functions	een tabel met functies
+a module	een module
+Next (Enter)	Volgende (Enter)
+Previous (Shift+Enter)	Vorige (Shift+Enter)
+Match case	Hoofdlettergevoelig
+Replace	Vervangen
+Replace…	Vervangen…
+Click: a breakpoint (F9 on the cursor's line)	Klik: een onderbrekingspunt (F9 op de regel van de cursor)
+permission	machtiging
+The light before	Het vorige licht
+The next light	Het volgende licht
+The phase before	De vorige fase
+The next phase	De volgende fase
+to 	tot 
+Select the piece joined at its start (,)	Het stuk selecteren dat aan zijn begin verbonden is (,)
+Select the piece joined at its end (.)	Het stuk selecteren dat aan zijn einde verbonden is (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Klik twee punten aan om afstand en helling ertussen te meten (U) · Shift + klikken: de hoeken van een gebied (de grootte en omtrek ervan) · rechtsklik: uit
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Plaats een hoekpunt van het geselecteerde object op een hoekpunt van een ander object\nShift: alleen horizontaal, Esc/rechtsklik: annuleren
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Lijn een rand van het geselecteerde object uit op een rand of weg\nRoteert en snapt collineair\nShift: alleen horizontaal, Esc/rechtsklik: annuleren
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Op de rechte lijn tussen de twee die het verst uit elkaar liggen, met gelijke stappen (palen, lampen, een rij bomen)
+Equal steps between the two farthest apart, each keeping its distance to the side	Gelijke stappen tussen de twee die het verst uit elkaar liggen, elk houdt zijn afstand opzij
+height, m	hoogte, m
+gradient, %	helling, %
+cant, %	overhelling, %
+Rotate, °	Draaien, °
+Name, file, IDCode, stop, x, y or tile x y	Naam, bestand, IDCode, halte, x, y of tegel x y
+listed, no file	vermeld, geen bestand
+The camera over the tile's middle	De camera boven het midden van de tegel
+its folder	zijn map
+Line up the selected objects	De geselecteerde objecten op één lijn zetten
+Space the selected objects evenly	De geselecteerde objecten gelijkmatig verdelen
+Next road piece	Volgend wegstuk
+Previous road piece	Vorig wegstuk
+The run ended	De run is afgelopen
+installed as	geïnstalleerd als
+failed	mislukt
+Run	Uitvoeren
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	De scripts hier in de editor uitvoeren, met de functies van het spel (F5 in de code)
+Step in	Stapsgewijs
+Run and stop at the first line (F11)	Uitvoeren en stoppen op de eerste regel (F11)
+Continue	Doorgaan
+Pause	Pauze
+Stop the clock; a script running stops at its next line	De klok stilzetten; een lopend script stopt bij zijn volgende regel
+Over	Over
+Step over (F10)	Stap over (F10)
+Into	In
+Step into (F11)	Stap in (F11)
+Out	Uit
+Step out (Shift+F11)	Stap uit (Shift+F11)
+Restart	Opnieuw starten
+The map's scripts	De scripts van de kaart
+The game's clock in the run	De klok van het spel in de run
+Set the game's clock of the run (sends minute)	De klok van het spel in de run zetten (stuurt minute)
+starts 	start 
+The hour the run starts at	Het uur waarop de run begint
+Save all	Alles opslaan
+Build .oop	.oop bouwen
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Eén bestand met de scripts van de kaart om te delen: gecompileerd en versluierd, met de machtigingen die ze nodig hebben (de compiler van de Development Tools)
+API	API
+The game's functions and events	De functies en gebeurtenissen van het spel
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Deze kaart heeft nog geen scripts. Zijn scripts draaien in openOMSI terwijl hij gespeeld wordt: ze reageren op wat er gebeurt (een halte, een uur, een rit), tonen berichten, veranderen het verkeer en het weer.
+Start the map's scripts	Scripts voor de kaart beginnen
+Object scripts (Lua)	Objectscripts (Lua)
+No object on the map has a Lua script.	Geen enkel object op de kaart heeft een Lua-script.
+Refresh	Vernieuwen
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Scripts die een scenery-object noemt in [lua_script]: er draait er één voor elk object van zijn type in de buurt van de camera (alleen openOMSI)
+Selected object	Geselecteerd object
+Select one object on the map to see its scripts.	Selecteer één object op de kaart om zijn scripts te zien.
+No OMSI 2 script (.osc).	Geen OMSI 2-script (.osc).
+Lua script (openOMSI)	Lua-script (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Een script voor elk object van dit type, naast zijn .sco en daarin genoemd ([lua_script]); OMSI 2 slaat het over. Een object van de installatie wordt eerst de eigen kopie van de kaart.
+OMSI 2 script (.osc)	OMSI 2-script (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Het eigen script van het object met zijn variabelenlijst, uitgevoerd door OMSI 2 en openOMSI; zijn lampen en [visible]-delen volgen de variabelen die het zet
+Rust plugin	Rust-plug-in
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Een plug-in van de kaart geschreven in Rust, gecompileerd naar WebAssembly in een .oop. Om hem te bouwen is Rust (rustup) met het doel wasm32-unknown-unknown nodig.
+Make the Rust plugin	De Rust-plug-in maken
+Build and install	Bouwen en installeren
+cargo builds it, the .oop goes into the content folder's plugins	cargo bouwt hem, de .oop gaat naar plugins in de contentmap
+Starts with the map	Start met de kaart
+Rename…	Hernoemen…
+Earlier in the order	Eerder in de volgorde
+Later in the order	Later in de volgorde
+Delete (into openMapper's bin)	Verwijderen (naar de bin van openMapper)
+New script	Nieuw script
+New module	Nieuwe module
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Elk script start wanneer de kaart gespeeld wordt, in deze volgorde (rechtsklik om er een te verplaatsen); als er een faalt, blijven de andere draaien. Gebruik map.on, map.every, map.after: die werken alleen op deze kaart.
+Modules	Modules
+Code the scripts share: local util = require("modules.util")	Code die de scripts delen: local util = require("modules.util")
+Data	Data
+Files the scripts read (data/), pictures and sounds	Bestanden die de scripts lezen (data/), afbeeldingen en geluiden
+Made by openMapper	Gemaakt door openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Open links een script, of maak een nieuw.\n\nF5 voert de scripts hier in de editor uit, F9 zet een onderbrekingspunt, F10 / F11 stappen,\nCtrl+Spatie vult aan, Ctrl+F zoekt, Ctrl+G gaat naar een regel, Ctrl+/ maakt commentaar.
+Read only: a file of the installation or made by openMapper	Alleen lezen: een bestand van de installatie of gemaakt door openMapper
+Problems	Problemen
+Console	Console
+Debugger	Debugger
+Events	Gebeurtenissen
+error	fout
+warning	waarschuwing
+No problems in the open files.	Geen problemen in de geopende bestanden.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Wat de scripts afdrukken en op het scherm tonen, en hun fouten verschijnen hier wanneer ze draaien (Uitvoeren, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua om in de scripts uit te voeren (in het frame waar gestopt is, als er gestopt is); pijl omhoog en omlaag: geschiedenis
+Start a run first (Run, F5)	Start eerst een run (Uitvoeren, F5)
+(empty)	(leeg)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Loopt. Een onderbrekingspunt (een klik links van een regelnummer, of F9) stopt de scripts daar; Pauze stopt ze bij hun volgende regel.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Loopt niet. Voer de scripts uit (F5); een onderbrekingspunt stopt ze, en hier staan dan de aanroepstack, de variabelen van elke functie en de bewaakte waarden.
+Stopped	Gestopt
+Call stack	Aanroepstack
+Locals	Lokale variabelen
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	De console evalueert in dit frame: een naam, een expressie, een toewijzing.
+Storage and objects	Opslag en objecten
+Send	Versturen
+As if the game sent it: every handler of it runs	Alsof het spel hem stuurde: elke handler ervan wordt uitgevoerd
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Voer de scripts uit om ze met de hand gebeurtenissen van het spel te sturen: een halte bereikt, een deur, een nieuw uur… De klok stuurt frame, minute en hour vanzelf.
+Listening	Luisteren
+timers	timers
+Sign with the key	Ondertekenen met de sleutel
+a secret key file of oopc keygen (optional)	een geheim sleutelbestand van oopc keygen (optioneel)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	".oop bouwen" maakt één bestand van de scripts van de kaart om te delen (in de dist-map van het project): gecompileerd, versluierd, met de machtigingen die de code nodig heeft. Het spel voert de scriptmap uit zoals hij is; de .oop is om ze weg te geven zonder hun broncode.
+Search functions and events	Functies en gebeurtenissen zoeken
+since	sinds
+for an .oop	voor een .oop
+Double-click puts it into the script at the cursor.	Dubbelklik zet het in het script bij de cursor.
+A stop on this path	Een halte op dit pad
+branch	aftakking
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	De bovenleiding waaronder de trolleybussen van openOMSI rijden (trolley.txt naast de kaart; OMSI 2 negeert hem). Zonder deze leest het spel de draadsplines van de kaart.
+Start a wire for this map	Een bovenleiding voor deze kaart beginnen
+Lay	Leggen
+Sections	Secties
+Spans	Overspanningen
+Switches	Wissels
+Pick in the view	Kiezen in het beeld
+A click in the view picks a span or a switch (yellow dot)	Een klik in het beeld kiest een overspanning of een wissel (gele stip)
+The wires over the road surface	De draden boven het wegdek
+the kerb lane each way	de buitenste rijstrook in elke richting
+the way the road runs	in de rijrichting van de weg
+against the road's way	tegen de rijrichting van de weg in
+Section	Sectie
+Kit	Set
+ (every map)	 (alle kaarten)
+none: the wire for the game only	geen: de draad alleen voor het spel
+A new kit	Een nieuwe set
+My wire	Mijn draad
+Change this kit	Deze set wijzigen
+its wire spline	zijn draadspline
+its masts, every	zijn masten, elke
+The kit names no mast	De set noemt geen mast
+Frogs and section insulators are put where the wire has them, as the kit names them.	Luchtwissels en sectie-isolatoren worden geplaatst waar de draad ze heeft, zoals de set ze noemt.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Er wordt niets op de kaart gelegd, de draad is alleen voor het spel. Een set (+) noemt je eigen modellen van de draad, de masten, luchtwissels en isolatoren.
+Over the selected roads	Boven de geselecteerde wegen
+Select roads in the view first (double-click: a whole road)	Selecteer eerst wegen in het beeld (dubbelklik: een hele weg)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	De rijstroken van het geselecteerde object (een kruispunt): vink aan waar de draad overheen gaat. Drie overspanningen die samenkomen maken een luchtwissel.
+It has no street lanes.	Het heeft geen rijstroken voor verkeer.
+lane	rijstrook
+Over the ticked lanes	Boven de aangevinkte rijstroken
+Select one junction to lay the wire over its lanes.	Selecteer één kruispunt om de draad boven zijn rijstroken te leggen.
+Draw a span by hand	Een overspanning met de hand tekenen
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Klik zijn punten aan in het beeld; begonnen of geëindigd op het einde van een overspanning sluit hij daarop aan, op het midden van een overspanning takt hij daar af (een luchtwissel)
+points: click the next in the view	punten: klik de volgende aan in het beeld
+Finish	Klaar
+Read the map's wire splines	De draadsplines van de kaart lezen
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Splines getekend als een paar draden (trolleybuskaarten gemaakt voor OMSI 2): een overspanning langs elk, zoals het spel ze leest
+Network	Net
+Voltage	Spanning
+Wire spacing	Draadafstand
+How uneven the contact wire is: worn or icy wire 0.003 and more	Hoe ongelijk de rijdraad is: versleten of bevroren draad 0.003 en meer
+Delete the whole wire	De hele bovenleiding verwijderen
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt verdwijnt bij de volgende keer opslaan; het spel leest weer de draadsplines van de kaart
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Stukken gevoed door één onderstation. Waar er twee samenkomen is een spanningsloos stuk (een isolator).
+name	naam
+live	onder spanning
+The feeder's resistance: the voltage drops with the current	De weerstand van de voeding: de spanning daalt met de stroom
+Power the feeder takes back from a braking bus	Vermogen dat de voeding terugneemt van een remmende bus
+spans	overspanningen
+Add a section	Een sectie toevoegen
+Insulators (where sections meet)	Isolatoren (waar secties samenkomen)
+ m dead	 m spanningsloos
+Span	Overspanning
+points	punten
+Spacing	Afstand
+its own	eigen
+Drag: the whole span up or down	Slepen: de hele overspanning omhoog of omlaag
+The span the other way: the positive wire is on the right of its way	De overspanning de andere kant op: de plusdraad ligt rechts in zijn richting
+Pick a span in the view, or in the list.	Kies een overspanning in het beeld of in de lijst.
+section	sectie
+A switch where three spans meet (yellow in the view). Every frog gets one.	Een wissel waar drie overspanningen samenkomen (geel in het beeld). Elke luchtwissel krijgt er een.
+No frogs yet: lay three spans meeting in one point (a branch).	Nog geen luchtwissels: leg drie overspanningen die in één punt samenkomen (een aftakking).
+Spans laid:	Overspanningen gelegd:
+Wire kit	Bovenleidingset
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Je eigen modellen (gemaakt in Blender of waar dan ook, en in de contentmap gezet) die de draad op de kaart tonen: de draadspline en de objecten voor mast, luchtwissel en isolator. De set is een .cfg-bestand dat ze noemt; wijzig hem hier, als tekst, of in een willekeurige teksteditor.
+As text	Als tekst
+The name is the kit's file: make a copy to rename it	De naam is het bestand van de set: maak een kopie om hem te hernoemen
+For	Voor
+this map	deze kaart
+every map	alle kaarten
+Take the one selected on the map	Het op de kaart geselecteerde nemen
+Select a spline of it on the map first	Selecteer eerst zo'n spline op de kaart
+Select such an object on the map first	Selecteer eerst zo'n object op de kaart
+Choose the file	Het bestand kiezen
+The file must lie in the content folder or in OMSI 2's	Het bestand moet in de contentmap liggen of in die van OMSI 2
+Not there	Niet aanwezig
+Wire spline	Draadspline
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Een .sli waarvan het profiel de draden op hun hoogte boven de weg zet; hij wordt langs elke overspanning gelegd
+Mast	Mast
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Een .sco: de oorsprong aan de voet, de arm reikt langs zijn -y naar de draad
+Frog	Luchtwissel
+A .sco hung where the wire branches: its origin on the wire, y along it	Een .sco opgehangen waar de draad vertakt: de oorsprong op de draad, y erlangs
+Insulator	Isolator
+A .sco hung where two sections meet: its origin on the wire, y along it	Een .sco opgehangen waar twee secties samenkomen: de oorsprong op de draad, y erlangs
+Masts	Masten
+every	elke
+From a mast's foot to its wire, across the road	Van de voet van een mast tot zijn draad, dwars over de weg
+from the wire	van de draad
+Mast turned	Mast gedraaid
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Voor een model waarvan de arm niet langs zijn -y reikt: 90 als hij langs -x reikt, -90 langs +x, 180 langs +y
+arm	arm
+The wire spline's wires	De draden van de draadspline
+high	hoog
+across its line	naast zijn as
+Save and renew the map's wire	Opslaan en de draad van de kaart vernieuwen
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	De draadsplines en masten die met deze set gelegd zijn, krijgen zijn bestanden zoals ze nu zijn; luchtwissels en isolatoren worden opnieuw geplaatst
+A new kit from this one (to rename it, or change it apart)	Een nieuwe set op basis van deze (om hem te hernoemen, of apart te wijzigen)
+Show the file	Het bestand tonen
+Changed to the kit's files:	Gewijzigd naar de bestanden van de set:
+a display shows the switch of its name	een display toont de wissel met deze naam
+Set by	Bediend door
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Waar hij staat wanneer het spel de draad leest (willekeurig: één keer per run getrokken; rechtdoor in een online spel)
+Contact plate	Contactplaat
+ m before the frog	 m vóór de luchtwissel
+Power on from	Stroom vanaf
+Invert	Omkeren
+the other way round	andersom
+Channel	Kanaal
+any	elk
+Range	Bereik
+Route codes	Routecodes
+A route code	Een routecode
+Flip	Spiegelen
+Left to right	Links naar rechts
+Top to bottom	Boven naar onder
+Dark theme	Donker thema
+Light theme	Licht thema
+Lit	Licht
+Right footway texture	Textuur van het rechtervoetpad
+Left footway texture	Textuur van het linkervoetpad
+like the left one	zoals links
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	De paden van de rijstroken lopen zoals op een kaart met links rijden (een eenrichtingsweg houdt zijn richting)

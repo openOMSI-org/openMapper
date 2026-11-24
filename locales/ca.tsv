@@ -2788,3 +2788,445 @@ no track within 15 m	cap via a menys de 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	les vies no estan unides o van en sentit contrari (vegeu Vista > Carrils d'IA)
 no track beside	cap via al costat de
 Drives on	Circula per
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Vèrtex font escollit. Feu clic a un vèrtex objectiu per ajustar-lo (Maj: només horitzontal, Esc: cancel·la)
+Aim at a vertex of the selected object	Apunta a un vèrtex de l'objecte seleccionat
+Snapped to vertex! (Ctrl+Z to undo)	Enganxat al vèrtex! (Ctrl+Z per desfer)
+Aim at a target vertex or spline endpoint	Apunteu a un vèrtex objectiu o punt final de spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	S'ha triat la vora de la font. Feu clic a una vora o una carretera objectiu per alinear-la (Maj: només horitzontal, Esc: cancel·la)
+Aim at an edge of the selected object	Apunta a una vora de l'objecte seleccionat
+Aligned edge to edge! (Ctrl+Z to undo)	Alineat vora a vora! (Ctrl+Z per desfer)
+Aim at a target edge or road	Apunta a una vora o carretera objectiu
+Target cancelled. Pick a source vertex again	Objectiu cancel·lat. Torna a triar un vèrtex font
+Vertex snap cancelled	S'ha cancel·lat l'ajust del vèrtex
+Target cancelled. Pick a source edge again	Objectiu cancel·lat. Torna a triar una vora font
+Edge snap cancelled	S'ha cancel·lat la fixació de vora
+Select an object first to snap its vertex	Seleccioneu primer un objecte per ajustar-ne el vèrtex
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Fixació de vèrtex: feu clic a un vèrtex font de l'objecte seleccionat (Esc per cancel·lar)
+Snap vertex to vertex	Ajusta el vèrtex al vèrtex
+Select an object first to align its edge	Seleccioneu primer un objecte per alinear-ne la vora
+Edge snap: click a source edge on the selected object (Esc to cancel)	Fixació de vora: feu clic a una vora font de l'objecte seleccionat (Esc per cancel·lar)
+Snap edge to edge	Enganxa vora a vora
+Snap vertex to vertex (V)	Ajusta el vèrtex al vèrtex (V)
+Snap edge to edge (L)	Enganxa vora a vora (L)
+Snap vertex (V)	Vèrtex de fixació (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Ajusta un vèrtex d'aquest objecte a un altre vèrtex (Drecera: V)
+Snap edge (L)	Vora ajustada (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Fixeu una vora d'aquest objecte a una altra vora o carretera (Drecera: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Ajusta un vèrtex de l'objecte seleccionat a un vèrtex d'un altre objecte (V)\nMaj: només horitzontal, Esc/Clic dret: Cancel·la
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinea una vora de l'objecte seleccionat a una vora o una carretera (L)\nGira i ajusta colineal\nCanvi: només horitzontal, Esc/Clic dret: Cancel·la
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Punt 1 alineat! Feu clic a un 2n punt de l'objecte per girar, o Esc per finalitzar
+Reference angle set. Click a target point or spline to align (Esc: finish)	Angle de referència establert. Feu clic a un punt objectiu o carretera per alinear (Esc: finalitzar)
+Pick a different vertex on the object	Trieu un vèrtex diferent de l'objecte
+Click a 2nd reference point on the object, or Esc to finish	Feu clic a un 2n punt de referència a l'objecte, o Esc per finalitzar
+Aligned angle! (Ctrl+Z to undo)	Angle alineat! (Ctrl+Z per desfer)
+Vertex snap complete	Ajust de vèrtex completat
+Align vertex angle	Alinea l'angle del vèrtex
+Complete to	Completa fins a
+Complete to: a new piece between the free ends of the selected splines	Completa fins a: un tram nou entre els extrems lliures de les splines seleccionades
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Un tram nou del tipus de la primera spline seleccionada entre dos extrems lliures de les splines seleccionades, que coincideix amb tots dos en posició, direcció i alçada; aquestes no canvien. Un altre cop: s'uneixen els dos extrems que queden i es tanca l'anell.
+The two ends already meet	Els dos extrems ja es troben
+Select the splines whose free ends are to be joined	Selecciona les splines els extrems lliures de les quals s'han d'unir
+No piece of spline can join these two ends	Cap tram de spline no pot unir aquests dos extrems
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	S'ha obert la còpia d'openMapper d'aquest mapa a la carpeta de contingut (la de la carpeta d'OMSI 2 no s'escriu mai)
+Read in again, changed on disk by another program:	Llegit de nou, canviat al disc per un altre programa:
+Could not bring the changes over	No s'han pogut portar els canvis
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Els fitxers del mapa es van canviar després d'aquest desament automàtic (per un altre programa, com l'editor d'OMSI 2). Restaurar posa les caselles antigues del desament sobre aquests canvis.
+tile(s)	casella(es)
+the global settings	la configuració global
+the timetable	l'horari
+the traffic	el trànsit
+the descriptions	les descripcions
+Reload from disk	Torna a carregar des del disc
+The map changed on disk	El mapa ha canviat al disc
+Another program changed the map's files where it has changes here not saved yet:	Un altre programa ha canviat fitxers del mapa on aquí hi ha canvis sense desar:
+The other changes made on disk were read in already.	La resta de canvis del disc ja s'han llegit.
+Keep mine	Conserva els meus
+The map changed in OMSI 2's folder	El mapa ha canviat a la carpeta d'OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	La còpia d'aquest mapa a la instal·lació es va canviar després de desar la còpia d'openMapper a la carpeta de contingut, per exemple amb l'editor d'OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Portar els canvis substitueix aquests fitxers de la còpia d'openMapper; els fitxers substituïts es guarden en una còpia de seguretat (Fitxer > Versions anteriors).
+Bring the changes over	Porta els canvis
+Keep openMapper's copy	Conserva la còpia d'openMapper
+its way has a gap after path	el seu camí té un buit després del camí
+its way does not pass	el seu camí no passa per
+On demand	A demanda
+Not served (checkpoint)	Sense servei (punt de control)
+Wait for departure time	Esperar l'hora de sortida
+Always + wait for departure time	Sempre + esperar l'hora de sortida
+The bus stops only when somebody waits or wants to get off (the game's default)	L'autobús només para si algú espera o vol baixar (el predeterminat del joc)
+The bus always stops here	L'autobús sempre para aquí
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	L'autobús passa sense parar: la parada només marca el camí (un punt de control)
+The bus stops only when it is early, and waits there for its departure time	L'autobús només para si va avançat, i hi espera la seva hora de sortida
+The bus always stops here, and when it is early it waits for its departure time	L'autobús sempre para aquí, i si va avançat espera la seva hora de sortida
+All trips	Tots els viatges
+Every trip of the map, those no tour drives too	Tots els viatges del mapa, també els que no fa cap torn
+The line number the trip shows; the line of this number lists it among its trips	El número de línia que mostra el viatge; la línia amb aquest número el mostra entre els seus viatges
+Way picked by hand:	Camí triat a mà:
+the paths picked do not pass this stop	els camins triats no passen per aquesta parada
+Other trips	Altres viatges
+The time profile this departure runs to	El perfil de temps que segueix aquesta sortida
+Time profile	Perfil de temps
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Un viatge pot tenir diversos perfils (hora punta, nit…): cada sortida d'un torn diu quin segueix
+The profile's name	El nom del perfil
+A new profile, a copy of this one	Un perfil nou, còpia d'aquest
+Delete this profile (its departures run to the first)	Elimina aquest perfil (les seves sortides segueixen el primer)
+Times from stop to stop	Temps de parada a parada
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	El temps des de la parada anterior es pot fixar a cada parada: els temps següents es desplacen, i amb ells el temps del viatge. Els temps no fixats segueixen la distància entre els fixats; en una parada fixada, un autobús avançat espera.
+From the stop before	Des de la parada anterior
+After departure	Després de la sortida
+Minutes from the stop before to this one	Minuts des de la parada anterior fins a aquesta
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Com a l'editor d'OMSI 2. Passeu el ratolí per una opció per veure què fa l'autobús.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Tots els viatges del mapa, sigui quina sigui la línia que els mostra o el torn que els fa. Un viatge que no fa cap torn es conserva, i aquí es pot editar, donar a un torn o eliminar.
+trips	viatges
+driven by no tour	sense cap torn
+no tour	sense torn
+departures	sortides
+No path there: click a lane of a road (View > AI lanes shows them)	Aquí no hi ha cap camí: feu clic a un carril d'una carretera (Visualitza > Carrils d'IA els mostra)
+Done picking paths	Fet
+Pick the paths on the map	Tria els camins al mapa
+Choose the way yourself, path by path, as in OMSI 2's editor	Trieu el camí vosaltres, camí a camí, com a l'editor d'OMSI 2
+Find the way automatically	Troba el camí automàticament
+Forget the paths picked: the way is found along the roads again	Oblida els camins triats: el camí es torna a trobar per les carreteres
+The paths were picked by hand: they are kept when the stops change.	Els camins s'han triat a mà: es conserven quan canvien les parades.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Feu clic a camins a la vista. Un després del final o abans de l'inici s'afegeix, amb els camins fins a ell; un al costat del recorregut ocupa el lloc del tram que envolta (una altra branca en una cruïlla); un camí del recorregut es treu. El recorregut pot començar abans de la primera parada i continuar després de l'última.
+The way breaks after path	El camí s'interromp després del camí
+the paths do not join, the bus's GPS loses its way here in the game	els camins no s'uneixen, el GPS de l'autobús s'hi perd en el joc
+Paths of the way	Camins del recorregut
+Cut before the first stop	Retalla abans de la primera parada
+Cut after the last stop	Retalla després de l'última parada
+path	camí
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Controls propis d'openMapper: la càmera tal com s'ha triat a Càmera, les tecles com a Visualitza > Controls
+The keys as in View > Controls	Les tecles com a Visualitza > Controls
+A copy of its own was made for the script: the original type is unchanged	S'ha fet una còpia pròpia per a l'script: el tipus original no ha canviat
+Trolleybus wire the game cannot use	Cable aeri de troleibús que el joc no pot fer servir
+Rows the game does not show	Fileres que el joc no mostra
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Una filera d'objectes al llarg d'una carretera (fanals, pals, places d'aparcament) comença abans de la carretera on és posada: la seva distància es compta des de l'inici de la cadena de la carretera, i aquesta és més petita que la longitud de la cadena abans de la seva carretera. OMSI 2 i openOMSI no en mostren res, i l'editor tampoc. Torna a posar la filera o dona-li un inici més gran a les seves propietats.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI només fa una agulla on es troben exactament tres segments del cable aeri, i una agulla posada on ja no se'n troben s'omet; un segment en una secció que la xarxa no té no té subestació. Obre Mapa > Cable aeri de troleibús per corregir-ho.
+Trolleybus wire	Cable aeri de troleibús
+Select the next road piece (joined at its end; Shift: add it)	Selecciona el tram de carretera següent (unit al seu final; Maj: afegeix-lo)
+Select the previous road piece (joined at its start; Shift: add it)	Selecciona el tram de carretera anterior (unit al seu inici; Maj: afegeix-lo)
+the up arrow	la fletxa amunt
+the down arrow	la fletxa avall
+the left arrow	la fletxa esquerra
+the right arrow	la fletxa dreta
+Select three objects or more (the two farthest apart stay)	Selecciona tres objectes o més (els dos més allunyats es queden on són)
+Line up	Alinea
+Space evenly	Distribueix uniformement
+Splines laid	Splines posats
+The spline reaches past the map: add tiles there first	L'spline surt del mapa: primer afegeix-hi tessel·les
+Ground painted over areas	Terra pintat per àrees
+Track beds	Balast de les vies
+Ground under surfaces	Terra sota les superfícies
+Form the ground	Modela el terra
+Select a road piece first	Primer selecciona un tram de carretera
+Nothing is joined at its end	No hi ha res unit al seu final
+Nothing is joined at its start	No hi ha res unit al seu inici
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Moure: arrossega una fletxa al llarg de X, Y o Z, un quadrat en el seu pla, el cercle sobre el terra
+Rotate: drag a ring to turn about X, Y or Z	Girar: arrossega un anell per girar al voltant de X, Y o Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Escala: arrossega una fletxa per escalar al llarg d'aquest eix, un quadrat per a dos eixos, el cercle per als tres
+Junctions where the roads meet	Creuaments on es troben les carreteres
+Streets from the street model	Carrers segons el model de carrers
+perimeter	perímetre
+needs	necessita
+built	construït
+signed by	signat per
+not signed: the game loads it with a warning that its author is not known	sense signar: el joc el carrega amb un avís que el seu autor és desconegut
+openOMSI has no such function (the API of version	openOMSI no té aquesta funció (l'API de la versió
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` és només per als scripts del mapa; un script d'objectes només té les funcions omsi
+no such module in the project (modules/…)	no hi ha cap mòdul així al projecte (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	el joc no envia aquest esdeveniment (llevat que un script l'enviï amb omsi.emit)
+a name is needed	cal un nom
+a file of that name is there already	ja hi ha un fitxer amb aquest nom
+Empty module	Mòdul buit
+Test run of	Execució de prova de
+does nothing in the test run (no game): it gives false	no fa res a l'execució de prova (no hi ha joc): retorna false
+has nothing to read in the test run (no game): it gives nil	no té res a llegir a l'execució de prova (no hi ha joc): retorna nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	un objecte de la instal·lació d'OMSI 2 no es modifica mai: primer fes-lo un objecte propi
+Dark	Fosc
+As the system	Com el sistema
+power (current on: branch)	pel corrent (amb corrent: desviació)
+indicator	per l'intermitent
+radio	per ràdio
+to the branch	cap a la desviació
+at random	a l'atzar
+spans meet in one point: the game makes no switch there (a frog is three)	segments es troben en un punt: el joc no hi fa cap agulla (un embrancament són tres)
+Switch	Agulla
+no three spans meet there any more	ja no s'hi troben tres segments
+A span is in section	Un segment és a la secció
+that the network does not have	que la xarxa no té
+the wire spline	l'spline de cable
+the mast	el pal
+the frog	l'embrancament
+the insulator	l'aïllador
+is not there	no hi és
+no wire spline: nothing of the wire is shown on the map	no hi ha spline de cable: no es mostra res del cable al mapa
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	el perfil de l'spline de cable no és un parell de cables prims a més de 3 m: es posa tal qual, i openOMSI no el prendrà per cable aeri sense trolley.txt
+a kit of that name is there already	ja hi ha un kit amb aquest nom
+Renew the wire from its kit	Renova el cable des del seu kit
+Theme	Tema
+Back to the 3D view	Torna a la vista 3D
+The plan view from above, north up	Vista en planta des de dalt, nord amunt
+Put the windows back in their first places	Torna les finestres als seus llocs inicials
+Trolleybus wire…	Cable aeri de troleibús…
+: there are unsaved changes	: hi ha canvis sense desar
+Assets: every object and road type, with pictures	Recursos: tots els objectes i tipus de carretera, amb imatges
+Close the openOMSI session started from here	Tanca la sessió d'openOMSI iniciada des d'aquí
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Tria on començar, el vehicle, l'hora i el temps, i recorre el mapa a openOMSI
+Search commands	Cerca ordres
+Every command of the menus by its name	Qualsevol ordre dels menús pel seu nom
+Right-click the view for what can be done there; Search commands finds the rest	Clic dret a la vista per al que s'hi pot fer; Cerca ordres troba la resta
+Right-click the view: its menu	Clic dret a la vista: el seu menú
+Snap vertex	Ajusta un vèrtex
+Snap edge	Ajusta una vora
+Out of the mix	Treu de la barreja
+more as OMSI 2 is read…	n'hi haurà més mentre es llegeix OMSI 2…
+Reading the content of OMSI 2…	Llegint el contingut d'OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	No s'ha trobat res: prova amb menys lletres, o Tot a Mostra
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	No hi ha res d'aquest tipus: tria Tot a Mostra, o importa recursos (Fitxer > Importa recursos)
+a table of functions	una taula de funcions
+a module	un mòdul
+Next (Enter)	Següent (Retorn)
+Previous (Shift+Enter)	Anterior (Maj+Retorn)
+Match case	Distingeix majúscules
+Replace	Substitueix
+Replace…	Substitueix…
+Click: a breakpoint (F9 on the cursor's line)	Clic: un punt d'interrupció (F9 a la línia del cursor)
+permission	permís
+The light before	El semàfor anterior
+The next light	El semàfor següent
+The phase before	La fase anterior
+The next phase	La fase següent
+to 	a 
+Select the piece joined at its start (,)	Selecciona el tram unit al seu inici (,)
+Select the piece joined at its end (.)	Selecciona el tram unit al seu final (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Fes clic en dos punts per mesurar la distància i el pendent entre ells (U) · Maj + clics: els vèrtexs d'una àrea (la seva superfície i perímetre) · clic dret: desactiva
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Ajusta un vèrtex de l'objecte seleccionat a un vèrtex d'un altre objecte\nMaj: només horitzontal, Esc/Clic dret: Cancel·la
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Alinea una vora de l'objecte seleccionat a una vora o una carretera\nGira i ajusta colineal\nMaj: només horitzontal, Esc/Clic dret: Cancel·la
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	A la línia recta entre els dos més allunyats, a passos iguals (pals, fanals, una filera d'arbres)
+Equal steps between the two farthest apart, each keeping its distance to the side	Passos iguals entre els dos més allunyats, cadascun conservant la seva distància lateral
+height, m	altura, m
+gradient, %	pendent, %
+cant, %	peralt, %
+Rotate, °	Gir, °
+Name, file, IDCode, stop, x, y or tile x y	Nom, fitxer, IDCode, parada, x, y o tessel·la x y
+listed, no file	a la llista, sense fitxer
+The camera over the tile's middle	La càmera sobre el centre de la tessel·la
+its folder	la seva carpeta
+Line up the selected objects	Alinea els objectes seleccionats
+Space the selected objects evenly	Distribueix uniformement els objectes seleccionats
+Next road piece	Tram de carretera següent
+Previous road piece	Tram de carretera anterior
+The run ended	L'execució ha acabat
+installed as	instal·lat com a
+failed	ha fallat
+Run	Executa
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Executa els scripts aquí, a l'editor, amb les funcions del joc (F5 al codi)
+Step in	Entra
+Run and stop at the first line (F11)	Executa i atura't a la primera línia (F11)
+Continue	Continua
+Pause	Pausa
+Stop the clock; a script running stops at its next line	Atura el rellotge; un script en marxa s'atura a la seva línia següent
+Over	Per sobre
+Step over (F10)	Pas per sobre (F10)
+Into	Dins
+Step into (F11)	Pas a dins (F11)
+Out	Fora
+Step out (Shift+F11)	Pas a fora (Maj+F11)
+Restart	Reinicia
+The map's scripts	Els scripts del mapa
+The game's clock in the run	El rellotge del joc a l'execució
+Set the game's clock of the run (sends minute)	Ajusta el rellotge del joc de l'execució (envia minute)
+starts 	inici 
+The hour the run starts at	L'hora en què comença l'execució
+Save all	Desa-ho tot
+Build .oop	Construeix el .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Un sol fitxer amb els scripts del mapa per compartir: compilat i ofuscat, amb els permisos que necessiten (el compilador de les Development Tools)
+API	API
+The game's functions and events	Les funcions i els esdeveniments del joc
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Aquest mapa encara no té scripts. Els seus scripts s'executen a openOMSI mentre s'hi juga: reaccionen al que passa (una parada, una hora, un trajecte), mostren missatges, canvien el trànsit i el temps.
+Start the map's scripts	Comença els scripts del mapa
+Object scripts (Lua)	Scripts d'objectes (Lua)
+No object on the map has a Lua script.	Cap objecte del mapa no té un script Lua.
+Refresh	Actualitza
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Scripts que un objecte d'escenari anomena a [lua_script]: un s'executa per a cada objecte del seu tipus a prop de la càmera (només openOMSI)
+Selected object	Objecte seleccionat
+Select one object on the map to see its scripts.	Selecciona un objecte al mapa per veure'n els scripts.
+No OMSI 2 script (.osc).	No hi ha script d'OMSI 2 (.osc).
+Lua script (openOMSI)	Script Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Un script per a cada objecte d'aquest tipus, al costat del seu .sco i anomenat en ell ([lua_script]); OMSI 2 l'omet. Un objecte de la instal·lació primer passa a ser una còpia pròpia del mapa.
+OMSI 2 script (.osc)	Script d'OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	L'script propi de l'objecte amb la seva llista de variables, executat per OMSI 2 i openOMSI; els seus llums i parts [visible] segueixen les variables que defineix
+Rust plugin	Connector en Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Un connector del mapa escrit en Rust, compilat a WebAssembly dins d'un .oop. Per construir-lo cal Rust (rustup) amb el target wasm32-unknown-unknown.
+Make the Rust plugin	Crea el connector en Rust
+Build and install	Construeix i instal·la
+cargo builds it, the .oop goes into the content folder's plugins	cargo el construeix, el .oop va a plugins de la carpeta de contingut
+Starts with the map	Comença amb el mapa
+Rename…	Canvia el nom…
+Earlier in the order	Abans en l'ordre
+Later in the order	Després en l'ordre
+Delete (into openMapper's bin)	Elimina (a la paperera d'openMapper)
+New script	Script nou
+New module	Mòdul nou
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Cadascun comença quan es juga el mapa, en aquest ordre (clic dret per moure'n un); si un falla, els altres continuen. Fes servir map.on, map.every, map.after: només actuen en aquest mapa.
+Modules	Mòduls
+Code the scripts share: local util = require("modules.util")	Codi que comparteixen els scripts: local util = require("modules.util")
+Data	Dades
+Files the scripts read (data/), pictures and sounds	Fitxers que llegeixen els scripts (data/), imatges i sons
+Made by openMapper	Fet per openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Obre un script a l'esquerra, o crea'n un de nou.\n\nF5 executa els scripts aquí a l'editor, F9 posa un punt d'interrupció, F10 / F11 avancen pas a pas,\nCtrl+Espai completa, Ctrl+F cerca, Ctrl+G va a una línia, Ctrl+/ comenta.
+Read only: a file of the installation or made by openMapper	Només lectura: un fitxer de la instal·lació o fet per openMapper
+Problems	Problemes
+Console	Consola
+Debugger	Depurador
+Events	Esdeveniments
+error	error
+warning	avís
+No problems in the open files.	No hi ha problemes als fitxers oberts.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	El que els scripts imprimeixen i mostren a la pantalla, i els errors que fan, apareixen aquí quan s'executen (Executa, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua per executar als scripts (al marc on s'ha aturat, si està aturat); Amunt i Avall: historial
+Start a run first (Run, F5)	Primer inicia una execució (Executa, F5)
+(empty)	(buit)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	En marxa. Un punt d'interrupció (un clic a l'esquerra d'un número de línia, o F9) hi atura els scripts; Pausa els atura a la seva línia següent.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Aturat. Executa (F5) els scripts; un punt d'interrupció els atura, i aquí hi ha la pila de crides, les variables de cada funció i els valors a vigilar.
+Stopped	Aturat
+Call stack	Pila de crides
+Locals	Locals
+Upvalues	Upvalues
+The console evaluates in this frame: a name, an expression, an assignment.	La consola avalua en aquest marc: un nom, una expressió, una assignació.
+Storage and objects	Emmagatzematge i objectes
+Send	Envia
+As if the game sent it: every handler of it runs	Com si l'enviés el joc: s'executen tots els seus gestors
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Executa els scripts per enviar-los a mà els esdeveniments del joc: una parada assolida, una porta, una hora nova… El rellotge envia per si sol frame, minute i hour.
+Listening	Escoltant
+timers	temporitzadors
+Sign with the key	Signa amb la clau
+a secret key file of oopc keygen (optional)	un fitxer de clau secreta d'oopc keygen (opcional)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Construeix el .oop fa un sol fitxer amb els scripts del mapa per compartir (a la carpeta dist del projecte): compilat, ofuscat, amb els permisos que necessita el seu codi. El joc executa la carpeta dels scripts tal qual; el .oop serveix per donar-los sense el codi font.
+Search functions and events	Cerca funcions i esdeveniments
+since	des de
+for an .oop	per a un .oop
+Double-click puts it into the script at the cursor.	Un doble clic l'insereix a l'script al cursor.
+A stop on this path	Una parada en aquest camí
+branch	desviació
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	El cable aeri sota el qual circulen els troleibusos d'openOMSI (trolley.txt al costat del mapa; OMSI 2 l'ignora). Sense ell, el joc llegeix els splines de cable del mapa.
+Start a wire for this map	Comença un cable aeri per a aquest mapa
+Lay	Posa
+Sections	Seccions
+Spans	Segments
+Switches	Agulles
+Pick in the view	Tria a la vista
+A click in the view picks a span or a switch (yellow dot)	Un clic a la vista tria un segment o una agulla (punt groc)
+The wires over the road surface	Els cables sobre la calçada
+the kerb lane each way	el carril de la vorada en cada sentit
+the way the road runs	en el sentit de la carretera
+against the road's way	en sentit contrari a la carretera
+Section	Secció
+Kit	Kit
+ (every map)	 (tots els mapes)
+none: the wire for the game only	cap: el cable només per al joc
+A new kit	Un kit nou
+My wire	El meu cable
+Change this kit	Canvia aquest kit
+its wire spline	el seu spline de cable
+its masts, every	els seus pals, cada
+The kit names no mast	El kit no anomena cap pal
+Frogs and section insulators are put where the wire has them, as the kit names them.	Els embrancaments i aïlladors de secció es posen on el cable en té, tal com els anomena el kit.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	No es posa res al mapa, el cable és només per al joc. Un kit (+) anomena els teus models propis del cable, dels seus pals, embrancaments i aïlladors.
+Over the selected roads	Sobre les carreteres seleccionades
+Select roads in the view first (double-click: a whole road)	Primer selecciona carreteres a la vista (doble clic: tota una carretera)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Els carrils de l'objecte seleccionat (un creuament): marca aquells per sobre dels quals passa el cable. Tres segments que es troben fan un embrancament.
+It has no street lanes.	No té carrils de circulació.
+lane	carril
+Over the ticked lanes	Sobre els carrils marcats
+Select one junction to lay the wire over its lanes.	Selecciona un creuament per posar el cable sobre els seus carrils.
+Draw a span by hand	Dibuixa un segment a mà
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Fes clic als seus punts a la vista; si comença o acaba a l'extrem d'un segment s'hi uneix, si és al mig d'un segment se'n desvia allà (un embrancament)
+points: click the next in the view	punts: fes clic al següent a la vista
+Finish	Acaba
+Read the map's wire splines	Llegeix els splines de cable del mapa
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Splines dibuixats com un parell de cables (mapes de troleibús fets per a OMSI 2): un segment al llarg de cadascun, tal com els llegeix el joc
+Network	Xarxa
+Voltage	Tensió
+Wire spacing	Separació dels cables
+How uneven the contact wire is: worn or icy wire 0.003 and more	Irregularitat del cable de contacte: cable gastat o glaçat 0.003 i més
+Delete the whole wire	Elimina tot el cable aeri
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt s'elimina en el proper desament; el joc torna a llegir els splines de cable del mapa
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Trams alimentats per una subestació. On se'n troben dos hi ha un tram sense corrent (un aïllador).
+name	nom
+live	amb tensió
+The feeder's resistance: the voltage drops with the current	La resistència de l'alimentador: la tensió baixa amb el corrent
+Power the feeder takes back from a braking bus	Potència que l'alimentador recupera d'un bus que frena
+spans	segments
+Add a section	Afegeix una secció
+Insulators (where sections meet)	Aïlladors (on es troben les seccions)
+ m dead	 m sense corrent
+Span	Segment
+points	punts
+Spacing	Separació
+its own	pròpia
+Drag: the whole span up or down	Arrossega: tot el segment amunt o avall
+The span the other way: the positive wire is on the right of its way	El segment en l'altre sentit: el cable positiu és a la dreta del seu sentit
+Pick a span in the view, or in the list.	Tria un segment a la vista, o a la llista.
+section	secció
+A switch where three spans meet (yellow in the view). Every frog gets one.	Una agulla on es troben tres segments (groc a la vista). Cada embrancament en té una.
+No frogs yet: lay three spans meeting in one point (a branch).	Encara no hi ha embrancaments: posa tres segments que es trobin en un punt (una desviació).
+Spans laid:	Segments posats:
+Wire kit	Kit de cable aeri
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Els teus models propis (fets a Blender o on sigui, posats a la carpeta de contingut) que mostren el cable al mapa: l'spline de cable i els objectes pal, embrancament i aïllador. El kit és un fitxer .cfg que els anomena; canvia'l aquí, com a text, o en qualsevol editor de text.
+As text	Com a text
+The name is the kit's file: make a copy to rename it	El nom és el fitxer del kit: fes-ne una còpia per canviar-li el nom
+For	Per a
+this map	aquest mapa
+every map	tots els mapes
+Take the one selected on the map	Agafa el seleccionat al mapa
+Select a spline of it on the map first	Primer selecciona'n un spline al mapa
+Select such an object on the map first	Primer selecciona un objecte així al mapa
+Choose the file	Tria el fitxer
+The file must lie in the content folder or in OMSI 2's	El fitxer ha de ser a la carpeta de contingut o a la d'OMSI 2
+Not there	No hi és
+Wire spline	Spline de cable
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	Un .sli el perfil del qual posa els cables a la seva altura sobre la carretera; es posa al llarg de cada segment
+Mast	Pal
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	Un .sco: l'origen al peu, el braç estenent-se al llarg del seu -y fins al cable
+Frog	Embrancament
+A .sco hung where the wire branches: its origin on the wire, y along it	Un .sco penjat on el cable es ramifica: l'origen sobre el cable, y al llarg d'ell
+Insulator	Aïllador
+A .sco hung where two sections meet: its origin on the wire, y along it	Un .sco penjat on es troben dues seccions: l'origen sobre el cable, y al llarg d'ell
+Masts	Pals
+every	cada
+From a mast's foot to its wire, across the road	Del peu d'un pal al seu cable, a través de la carretera
+from the wire	del cable
+Mast turned	Gir del pal
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Per a un model el braç del qual no s'estén al llarg del seu -y: 90 si s'estén al llarg de -x, -90 al llarg de +x, 180 al llarg de +y
+arm	braç
+The wire spline's wires	Els cables de l'spline de cable
+high	d'altura
+across its line	del seu eix
+Save and renew the map's wire	Desa i renova el cable del mapa
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Els splines de cable i els pals posats des d'aquest kit agafen els seus fitxers tal com són ara; els embrancaments i aïlladors es tornen a posar
+A new kit from this one (to rename it, or change it apart)	Un kit nou a partir d'aquest (per canviar-li el nom, o modificar-lo a part)
+Show the file	Mostra el fitxer
+Changed to the kit's files:	Canviat als fitxers del kit:
+a display shows the switch of its name	un indicador mostra l'agulla amb aquest nom
+Set by	Controlada per
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Posició quan el joc llegeix el cable (a l'atzar: es tria un cop per partida; recta en un joc en línia)
+Contact plate	Placa de contacte
+ m before the frog	 m abans de l'embrancament
+Power on from	Corrent a partir de
+Invert	Inverteix
+the other way round	a l'inrevés
+Channel	Canal
+any	qualsevol
+Range	Abast
+Route codes	Codis de ruta
+A route code	Un codi de ruta
+Flip	Volteja
+Left to right	D'esquerra a dreta
+Top to bottom	De dalt a baix
+Dark theme	Tema fosc
+Light theme	Tema clar
+Lit	Llum
+Right footway texture	Textura de la vorera dreta
+Left footway texture	Textura de la vorera esquerra
+like the left one	com l'esquerra
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	Els camins dels carrils van com en un mapa de conducció per l'esquerra (una carretera d'un sol sentit conserva el seu sentit)

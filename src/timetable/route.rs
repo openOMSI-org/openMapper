@@ -17,7 +17,7 @@ const WRONG_SIDE: f64 = 25.0;
 /// Lanes a stop is tried on.
 const CANDIDATES: usize = 4;
 /// What changing to the lane beside costs (m).
-const LANE_CHANGE: f64 = 15.0;
+pub(crate) const LANE_CHANGE: f64 = 15.0;
 /// What driving a path against its direction costs: so many times its length and more.
 const AGAINST_FACTOR: f64 = 4.0;
 const AGAINST: f64 = 150.0;
@@ -59,6 +59,9 @@ pub struct Route {
     pub against: Vec<usize>,
     /// What it drives on.
     pub ways: Option<Ways>,
+    /// Its paths were picked by hand: the way runs on all of them, before the first stop
+    /// and after the last as well.
+    pub by_hand: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -69,6 +72,8 @@ pub enum Problem {
     NoRoad(usize),
     /// No way from this stop to the next.
     NoWay(usize),
+    /// The way picked by hand does not pass the stop (after the one before).
+    OffWay(usize),
 }
 
 impl Route {
@@ -83,6 +88,12 @@ impl Route {
     /// The route's line in the world, from the first stop to the last (for the view).
     pub fn polyline(&self, net: &Network) -> Vec<DVec3> {
         let mut out = Vec::new();
+        if self.by_hand {
+            for &l in &self.lanes {
+                out.extend(net.lanes[l].pts.iter().copied());
+            }
+            return out;
+        }
         let (first, last) = match (self.stops.first(), self.stops.last()) {
             (Some(a), Some(b)) => (*a, *b),
             _ => return out,
@@ -430,13 +441,22 @@ fn find_on(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Wa
         }
         if row.iter().all(|x| x.is_none()) {
             r.problems.push(Problem::NoWay(i - 1));
+            // (the way as far as it was found, to pick the rest of it by hand from there)
+            back(net, &mut r, &cands, &best, &ways);
             return r;
         }
         best.push(row);
         ways.push(leg_ways);
     }
+    back(net, &mut r, &cands, &best, &ways);
+    r
+}
+
+/// The way through the stops found so far (`best` and `ways` as far as they reach), back
+/// from the cheapest last of them, put into `r`.
+fn back(net: &Network, r: &mut Route, cands: &[Vec<(StopOn, f64)>], best: &[Vec<Option<(f64, usize, f64)>>], ways: &[HashMap<(usize, usize), Vec<usize>>]) {
     // back from the cheapest last stop
-    let last = cands.len() - 1;
+    let last = best.len() - 1;
     let mut c = (0..best[last].len()).filter(|&c| best[last][c].is_some()).min_by(|&a, &b| best[last][a].unwrap().0.total_cmp(&best[last][b].unwrap().0)).unwrap();
     let mut picks = vec![c; cands.len()];
     let mut legs = vec![0.0; last];
@@ -459,5 +479,4 @@ fn find_on(net: &Network, positions: &[Option<DVec3>], left_hand: bool, ways: Wa
         }
     }
     r.legs = legs;
-    r
 }

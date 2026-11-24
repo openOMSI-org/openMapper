@@ -3,14 +3,15 @@
 //! of the year.
 
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 use omsi_map::global::Season;
 
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
-use crate::ui::{check, prop_row, TEXT_DIM};
+use crate::ui::{check, prop_row};
+use crate::theme::pal;
 
 #[derive(Default)]
 pub struct MapSettings {
@@ -92,14 +93,14 @@ impl MapSettings {
         let before = doc.global.clone();
         let g = &mut doc.global;
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Settings, tr("Map settings", "Настройки карты"))).id(egui::Id::new("map settings")).open(&mut open).default_pos([340.0, 100.0]).default_size([440.0, 520.0]).resizable(true).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Tune, tr("Map settings", "Настройки карты"))).id(egui::Id::new("map settings")).open(&mut open).default_pos([340.0, 100.0]).default_size([440.0, 520.0]).resizable(true).show(ctx, |ui| {
             egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
                 egui::Grid::new("map settings grid").num_columns(2).spacing(Vec2::new(8.0, 6.0)).show(ui, |ui| {
                     prop_row(ui, tr("Money", "Валюта"), |ui| choose(ui, "money", &mut g.money_system, &lists.0));
                     prop_row(ui, tr("Tickets", "Билеты"), |ui| choose(ui, "tickets", &mut g.ticket_pack, &lists.1));
                     prop_row(ui, tr("Depot", "Депо"), |ui| {
                         if lists.2.is_empty() && g.standard_depot.is_empty() {
-                            ui.label(RichText::new(tr("none: the map has no depot group (Traffic and AI)", "нет: у карты нет группы депо (Трафик и ИИ)")).color(TEXT_DIM));
+                            ui.label(RichText::new(tr("none: the map has no depot group (Traffic and AI)", "нет: у карты нет группы депо (Трафик и ИИ)")).color(pal().text_dim));
                         } else {
                             choose(ui, "depot", &mut g.standard_depot, &lists.2);
                         }
@@ -126,7 +127,7 @@ impl MapSettings {
                 });
                 ui.add_space(10.0);
                 ui.label(RichText::new(tr("Seasons", "Времена года")).strong());
-                ui.label(RichText::new(tr("Summer where none is set. The days count from 1 January.", "Где ничего не задано — лето. Дни считаются от 1 января.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Summer where none is set. The days count from 1 January.", "Где ничего не задано — лето. Дни считаются от 1 января.")).small().color(pal().text_dim));
                 let mut remove = None;
                 for (i, s) in g.seasons.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
@@ -138,7 +139,7 @@ impl MapSettings {
                         ui.add(egui::DragValue::new(&mut s.start_day).range(0..=370).custom_formatter(|v, _| day_name(v as i32)));
                         ui.label("–");
                         ui.add(egui::DragValue::new(&mut s.end_day).range(0..=370).custom_formatter(|v, _| day_name(v as i32)));
-                        if ui.small_button(icons::labelled(Icon::Delete, "")).clicked() {
+                        if icons::small(ui, Icon::Delete, tr("Delete", "Удалить")).clicked() {
                             remove = Some(i);
                         }
                     });
@@ -151,7 +152,7 @@ impl MapSettings {
                     g.seasons.push(Season { kind: 3, start_day: start, end_day: (start + 30).min(370) });
                 }
                 if g.seasons.iter().any(|s| s.end_day <= s.start_day) {
-                    ui.label(RichText::new(tr("A season ends before it starts", "Время года кончается раньше, чем начинается")).color(Color32::from_rgb(230, 160, 60)));
+                    ui.label(RichText::new(tr("A season ends before it starts", "Время года кончается раньше, чем начинается")).color(pal().warn));
                 }
             });
         });

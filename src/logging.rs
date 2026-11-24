@@ -8,6 +8,13 @@ use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
 static FILE: OnceLock<Mutex<std::fs::File>> = OnceLock::new();
+/// The program has a window (not `--mcp`, `--check` and the like): a crash is told in a dialog.
+static WINDOWED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The window is about to open: a crash from now on is told to the person at the screen.
+pub fn windowed() {
+    WINDOWED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
 static PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Where the log is.
@@ -61,8 +68,9 @@ pub fn init(filter: &str) {
         let backtrace = std::backtrace::Backtrace::force_capture();
         log::error!("panic in thread '{}' at {place}: {message}\n{backtrace}", thread.name().unwrap_or("?"));
         // (a thread of the program that is caught carries on; only the window's own thread
-        // ending is the end of the program)
-        if thread.name() == Some("main") {
+        // ending is the end of the program. With no window - the MCP server, a check - there is
+        // no one to click the dialog away, and the server hung on it instead of ending)
+        if thread.name() == Some("main") && WINDOWED.load(std::sync::atomic::Ordering::Relaxed) {
             if let Some(p) = path() {
                 rfd::MessageDialog::new()
                     .set_level(rfd::MessageLevel::Error)

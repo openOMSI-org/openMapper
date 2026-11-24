@@ -9,7 +9,10 @@ use glam::DVec2;
 use crate::doc::{tile_origin, Document, Sel};
 use crate::editor::Editor;
 use crate::i18n::tr;
-use crate::ui::{section, Action, TEXT_DIM};
+use crate::icons::Icon;
+use crate::ui::{section, Action};
+use crate::theme::pal;
+use crate::theme;
 
 /// One point along the chain.
 #[derive(Clone, Copy, Debug)]
@@ -104,7 +107,7 @@ pub fn profile_section(ui: &mut egui::Ui, ed: &mut Editor, actions: &mut Vec<Act
         return;
     }
     let js = joints(doc, &chain);
-    section(ui, tr("Height profile", "Профиль высот"));
+    section(ui, Icon::Profile, tr("Height profile", "Профиль высот"));
     let mut set = None;
     egui::Frame::new().inner_margin(egui::Margin::same(8)).show(ui, |ui| {
         set = chart(ui, &pts, &js, actions);
@@ -121,7 +124,7 @@ fn chart(ui: &mut egui::Ui, pts: &[Sample], joints: &[Joint], actions: &mut Vec<
     let w = ui.available_width();
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 120.0), Sense::click_and_drag());
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 2.0, crate::ui::BG_FIELD);
+    p.rect(rect, 2.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let length = pts.last().map(|s| s.at).unwrap_or(1.0).max(1.0);
     let lo = pts.iter().map(|s| s.road.min(s.ground)).fold(f64::MAX, f64::min);
     let hi = pts.iter().map(|s| s.road.max(s.ground)).fold(f64::MIN, f64::max);
@@ -139,23 +142,23 @@ fn chart(ui: &mut egui::Ui, pts: &[Sample], joints: &[Joint], actions: &mut Vec<
     for w2 in pts.windows(2) {
         let (a, b) = (to(w2[0].at, w2[0].ground), to(w2[1].at, w2[1].ground));
         let top = a.y.min(b.y);
-        p.rect_filled(Rect::from_min_max(Pos2::new(a.x, top), Pos2::new(b.x + 0.5, rect.bottom())), 0.0, Color32::from_rgb(70, 60, 45));
-        p.line_segment([a, b], Stroke::new(1.0, Color32::from_rgb(130, 110, 80)));
+        p.rect_filled(Rect::from_min_max(Pos2::new(a.x, top), Pos2::new(b.x + 0.5, rect.bottom())), 0.0, pal().earth);
+        p.line_segment([a, b], Stroke::new(1.0, pal().earth_line));
     }
     // the road, coloured by its gradient
     for w2 in pts.windows(2) {
-        p.line_segment([to(w2[0].at, w2[0].road), to(w2[1].at, w2[1].road)], Stroke::new(2.0, grade_color(w2[0].grade)));
+        p.line_segment([to(w2[0].at, w2[0].road), to(w2[1].at, w2[1].road)], Stroke::new(2.0, theme::readable(grade_color(w2[0].grade))));
     }
     let small = egui::FontId::proportional(10.0);
-    p.text(rect.left_top() + Vec2::new(4.0, 1.0), egui::Align2::LEFT_TOP, format!("{:.1} m", mid + span * 0.5), small.clone(), TEXT_DIM);
-    p.text(rect.left_bottom() + Vec2::new(4.0, -1.0), egui::Align2::LEFT_BOTTOM, format!("{:.1} m", mid - span * 0.5), small.clone(), TEXT_DIM);
-    p.text(rect.right_bottom() + Vec2::new(-4.0, -1.0), egui::Align2::RIGHT_BOTTOM, format!("{:.0} m", length), small.clone(), TEXT_DIM);
+    p.text(rect.left_top() + Vec2::new(4.0, 1.0), egui::Align2::LEFT_TOP, format!("{:.1} m", mid + span * 0.5), small.clone(), pal().text_dim);
+    p.text(rect.left_bottom() + Vec2::new(4.0, -1.0), egui::Align2::LEFT_BOTTOM, format!("{:.1} m", mid - span * 0.5), small.clone(), pal().text_dim);
+    p.text(rect.right_bottom() + Vec2::new(-4.0, -1.0), egui::Align2::RIGHT_BOTTOM, format!("{:.0} m", length), small.clone(), pal().text_dim);
     // the joints, to drag up and down
     let near_joint = |q: Pos2| joints.iter().enumerate().map(|(i, j)| (i, (to(j.at, j.z) - q).length())).filter(|(_, d)| *d < 9.0).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(i, _)| i);
     let hot = held.map(|h| h.0).or_else(|| resp.hover_pos().and_then(near_joint));
     for (i, j) in joints.iter().enumerate() {
         let on = hot == Some(i);
-        p.circle(to(j.at, j.z), if on { 5.0 } else { 3.5 }, if on { crate::ui::ACCENT } else { Color32::from_gray(225) }, Stroke::new(1.0, Color32::from_gray(30)));
+        p.circle(to(j.at, j.z), if on { 5.0 } else { 3.5 }, if on { pal().accent } else { Color32::from_gray(225) }, Stroke::new(1.0, Color32::from_gray(30)));
     }
     let mut set = None;
     if resp.drag_started() {
@@ -171,7 +174,7 @@ fn chart(ui: &mut egui::Ui, pts: &[Sample], joints: &[Joint], actions: &mut Vec<
             if (z - j.z).abs() > 0.004 {
                 set = Some((*j, z));
             }
-            p.text(to(j.at, z) + Vec2::new(8.0, -8.0), egui::Align2::LEFT_BOTTOM, format!("{z:.2} m"), egui::FontId::proportional(11.0), Color32::WHITE);
+            p.text(to(j.at, z) + Vec2::new(8.0, -8.0), egui::Align2::LEFT_BOTTOM, format!("{z:.2} m"), egui::FontId::proportional(11.0), pal().ink);
         }
     }
     if resp.drag_stopped() {
@@ -185,11 +188,11 @@ fn chart(ui: &mut egui::Ui, pts: &[Sample], joints: &[Joint], actions: &mut Vec<
         let at = ((h.x - inner.left()) / inner.width()).clamp(0.0, 1.0) as f64 * length;
         let s = pts.iter().min_by(|a, b| (a.at - at).abs().total_cmp(&(b.at - at).abs())).copied().unwrap();
         let x = to(s.at, 0.0).x;
-        p.line_segment([Pos2::new(x, rect.top()), Pos2::new(x, rect.bottom())], Stroke::new(1.0, Color32::from_gray(200)));
-        p.circle_filled(to(s.at, s.road), 3.0, Color32::WHITE);
+        p.line_segment([Pos2::new(x, rect.top()), Pos2::new(x, rect.bottom())], Stroke::new(1.0, pal().ink_dim));
+        p.circle_filled(to(s.at, s.road), 3.0, pal().ink);
         let over = s.road - s.ground;
         let text = format!("{:.0} m · {:.1} m · {:+.1} % · {} {:+.1} m", s.at, s.road, s.grade, tr("over the ground", "над землёй"), over);
-        p.text(Pos2::new(rect.center().x, rect.top() + 1.0), egui::Align2::CENTER_TOP, text, small, Color32::from_gray(230));
+        p.text(Pos2::new(rect.center().x, rect.top() + 1.0), egui::Align2::CENTER_TOP, text, small, pal().ink);
         if resp.clicked() {
             actions.push(Action::LookAt(s.pos));
         }
@@ -214,14 +217,14 @@ fn facts(ui: &mut egui::Ui, pts: &[Sample]) {
     let under = pts.iter().map(|s| s.ground - s.road).fold(f64::MIN, f64::max);
     egui::Grid::new("profile facts").num_columns(2).spacing(Vec2::new(8.0, 2.0)).show(ui, |ui| {
         let row = |ui: &mut egui::Ui, k: &str, v: String| {
-            ui.label(RichText::new(k).small().color(TEXT_DIM));
+            ui.label(RichText::new(k).small().color(pal().text_dim));
             ui.label(RichText::new(v).small());
             ui.end_row();
         };
         row(ui, tr("Length", "Длина"), format!("{length:.1} m"));
         row(ui, tr("Climbs, falls", "Подъём, спуск"), format!("{up:.1} m, {down:.1} m"));
-        ui.label(RichText::new(tr("Steepest", "Самый крутой")).small().color(TEXT_DIM));
-        ui.label(RichText::new(format!("{:+.1} % {} {:.0} m", steep.grade, tr("at", "на"), steep.at)).small().color(grade_color(steep.grade)));
+        ui.label(RichText::new(tr("Steepest", "Самый крутой")).small().color(pal().text_dim));
+        ui.label(RichText::new(format!("{:+.1} % {} {:.0} m", steep.grade, tr("at", "на"), steep.at)).small().color(theme::readable(grade_color(steep.grade))));
         ui.end_row();
         if over > 0.5 {
             row(ui, tr("Highest over the ground", "Выше всего над землёй"), format!("{over:.1} m"));
@@ -231,7 +234,7 @@ fn facts(ui: &mut egui::Ui, pts: &[Sample]) {
         }
     });
     if steep.grade.abs() >= 8.0 {
-        ui.label(RichText::new(tr("Over 8 % is steep for a bus; over 12 % few streets go", "Больше 8 % круто для автобуса; больше 12 % бывает редко")).small().color(TEXT_DIM));
+        ui.label(RichText::new(tr("Over 8 % is steep for a bus; over 12 % few streets go", "Больше 8 % круто для автобуса; больше 12 % бывает редко")).small().color(pal().text_dim));
     }
 }
 

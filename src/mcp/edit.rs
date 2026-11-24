@@ -78,6 +78,19 @@ fn minutes_of(v: Option<&Value>, default: f32) -> Result<f32, String> {
 }
 
 impl Server {
+    /// The trolleybus wire kit an edit shows the wire with: the one named (`map:<name>`,
+    /// `shared:<name>` or its name), which becomes the wire's, else the wire's own.
+    fn trolley_kit(&self, name: Option<&str>, w: &mut crate::trolley::Wire) -> Result<Option<crate::trolley_kit::KitDef>, String> {
+        let doc = self.ed.doc.as_ref().ok_or("no map")?;
+        if let Some(n) = name {
+            let kits = crate::trolley_kit::list(&self.roots, &doc.dir);
+            let (r, k) = kits.into_iter().find(|(r, k)| r.id() == n || r.stem == n || k.name == n).ok_or_else(|| format!("no trolleybus wire kit {n}: make one with trolley_kit"))?;
+            w.kit = Some(r.id());
+            return Ok(Some(k));
+        }
+        Ok(w.kit.as_deref().and_then(|id| crate::trolley_kit::load(&self.roots, &doc.dir, id)))
+    }
+
     // ---------------------------------------------------------------------------- files
 
     /// A file of the catalogue as the map names it (`spline`: which kind is wanted), else what
@@ -111,7 +124,7 @@ impl Server {
         Err(if like.is_empty() { format!("no file {rel} in the catalogue: search it with `catalogue`") } else { format!("no file {rel} in the catalogue; like it: {}", like.join(", ")) })
     }
 
-    fn wait_spline(&mut self, rel: &str) -> Result<(), String> {
+    pub(super) fn wait_spline(&mut self, rel: &str) -> Result<(), String> {
         self.assets.spline_wait(rel, 15_000).map(|_| ()).ok_or_else(|| format!("{rel} could not be read"))
     }
 
@@ -126,7 +139,7 @@ impl Server {
     }
 
     /// Where an object or spline is, by IDCode.
-    fn sel_of(&self, id: i64) -> Option<Sel> {
+    pub(super) fn sel_of(&self, id: i64) -> Option<Sel> {
         let d = self.ed.doc.as_ref()?;
         for (k, t) in &d.tiles {
             if t.tile.objects.iter().any(|o| o.id == id) {
@@ -299,6 +312,17 @@ impl Server {
 
     pub fn command(&mut self, a: Args) -> Done {
         let name = a.str("name").ok_or("`name` is needed")?.to_lowercase();
+        // (commands that need the selected objects' models: the models read first, as the
+        // window has them by the time a person clicks)
+        if matches!(name.as_str(), "level_under_objects" | "lay_on_ground") {
+            let files: std::collections::BTreeSet<String> = self.ed.selection().iter().filter_map(|s| match *s {
+                Sel::Object(k, id) => self.ed.doc.as_ref().and_then(|d| d.object(k, id)).map(|o| o.file.clone()),
+                _ => None,
+            }).collect();
+            for f in files {
+                let _ = self.wait_object(&f);
+            }
+        }
         let empty = json!({});
         let c = Args(a.get("args").unwrap_or(&empty));
         let lib = &self.lib;
@@ -338,12 +362,16 @@ impl Server {
             "reverse" => e.reverse_selected(),
             "lay_on_ground" => e.lay_selected_on_ground(),
             "even_chain" => e.even_selected_chain(),
+            "complete_to" => e.complete_to(),
+            "next_piece" | "prev_piece" => said = json!(e.select_linked(name == "next_piece", c.bool("add").unwrap_or(false))),
             "continue_spline" => said = json!(e.continue_spline()),
             "parallel_copy" => e.parallel_copy(c.f64("distance").ok_or("`distance` is needed (m, + right)")?),
             "level_under_objects" => said = json!(e.level_under_objects(&mut self.assets)),
             "align_to_roads" => said = json!(e.align_to_roads()),
             "turn_objects" => e.turn_objects(c.bool("random").unwrap_or(true)),
             "lean_objects" => e.lean_objects(c.bool("lean").unwrap_or(true)),
+            "line_up" => said = json!(e.line_up(true)),
+            "space_evenly" => said = json!(e.line_up(false)),
             "replace_objects" | "retype_splines" | "wire_along" => {
                 let spline = name != "replace_objects";
                 let f = self.resolve(c.str("file").ok_or("`file` is needed")?, Some(spline))?;
@@ -369,6 +397,32 @@ impl Server {
                 let Some(Sel::Spline(k, id)) = self.sel_of(id) else { return Err(format!("no spline {id}")) };
                 self.ed.join_with_next(k, id);
             }
+            "link_ends" => {
+                // two free spline ends lying on one another (any angle) linked, as the map check's "Join"
+                let (a, b) = (c.i64("a").ok_or("`a` is needed")?, c.i64("b").ok_or("`b` is needed")?);
+                let (Some(Sel::Spline(ka, a)), Some(Sel::Spline(kb, b))) = (self.sel_of(a), self.sel_of(b)) else { return Err("`a` and `b` must be splines".into()) };
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                let ends = |k: TileKey, id: i64| -> Option<[DVec3; 2]> {
+                    let s = doc.spline(k, id)?;
+                    let cv = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
+                    Some([cv.point_at(0.0), cv.point_at(cv.length)])
+                };
+                let (ea, eb) = (ends(ka, a).ok_or("no spline a")?, ends(kb, b).ok_or("no spline b")?);
+                let mut best: Option<(f64, usize, usize)> = None;
+                for (i, p) in ea.iter().enumerate() {
+                    for (j, q) in eb.iter().enumerate() {
+                        let d = (*p - *q).truncate().length();
+                        if best.map_or(true, |x| d < x.0) {
+                            best = Some((d, i, j));
+                        }
+                    }
+                }
+                let (d, i, j) = best.unwrap();
+                if d > 0.5 {
+                    return Err(format!("the nearest ends are {d:.2} m apart (at most 0.5 m)"));
+                }
+                said = json!(crate::check::apply(&mut self.ed, &crate::check::Fix::Link((ka, a, i == 1), (kb, b, j == 1))));
+            }
             "paint_along" => {
                 e.paint_along = crate::roadpaint::Along { layer: c.usize("layer").ok_or("`layer` is needed")?, width: c.f64("width").unwrap_or(4.0) as _, under: c.bool("under").unwrap_or(false), ..Default::default() };
                 said = json!(e.paint_along_selected(lib));
@@ -376,6 +430,145 @@ impl Server {
             "array" => {
                 let v2 = |k: &str| c.get(k).and_then(|v| v.as_array()).map(|a| DVec2::new(a.first().and_then(|x| x.as_f64()).unwrap_or(0.0), a.get(1).and_then(|x| x.as_f64()).unwrap_or(0.0)));
                 e.array(lib, c.usize("count").unwrap_or(2).clamp(1, 1000), v2("step").unwrap_or(DVec2::new(10.0, 0.0)), c.f64("turn").unwrap_or(0.0), c.usize("rows").unwrap_or(1).clamp(1, 1000), v2("row_step").unwrap_or(DVec2::new(0.0, 10.0)));
+            }
+            "trolley_wire" | "trolley_from_splines" => {
+                // (the wire over the selected roads' kerb lanes, or read off the map's wire splines)
+                let lay = crate::trolley::Lay {
+                    height: c.f64("height").unwrap_or(5.6),
+                    ways: match c.str("ways").unwrap_or("both") { "with" => 1, "against" => 2, _ => 0 },
+                    section: c.i64("section").unwrap_or(1) as i32,
+                    left_hand: e.doc.as_ref().map(|d| d.global.left_hand_traffic).unwrap_or(false),
+                };
+                let sel = e.selection();
+                let from_splines = name == "trolley_from_splines";
+                // (with `lanes`: over those street lanes of the selected objects, junctions)
+                let chosen: Option<Vec<usize>> = c.get("lanes").and_then(|v| v.as_array()).map(|a| a.iter().filter_map(|x| x.as_u64().map(|n| n as usize)).collect());
+                if let Some(d) = self.ed.doc.as_ref() {
+                    for s in &sel {
+                        let f = match *s {
+                            Sel::Spline(k, id) => d.spline(k, id).map(|x| (x.file.clone(), true)),
+                            Sel::Object(k, id) => d.object(k, id).map(|x| (x.file.clone(), false)),
+                            Sel::Attached(..) => None,
+                        };
+                        match f {
+                            Some((f, true)) => drop(self.assets.spline_wait(&f, 3000)),
+                            Some((f, false)) => drop(self.assets.object_wait(&f, 3000)),
+                            None => {}
+                        }
+                    }
+                }
+                let mut lanes_of = Vec::new();
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                let new = if from_splines {
+                    crate::trolley::from_wire_splines(doc, &mut self.assets, lay.section)
+                } else if let Some(ch) = &chosen {
+                    let mut v = Vec::new();
+                    for s in sel.iter().filter(|s| matches!(s, Sel::Object(..))) {
+                        let lanes = crate::trolley::object_lanes(doc, &mut self.assets, *s);
+                        lanes_of.extend(lanes.iter().map(|(i, p)| json!({ "lane": i, "from": [p[0].x, p[0].y], "to": [p[p.len() - 1].x, p[p.len() - 1].y] })));
+                        v.extend(crate::trolley::over_lanes(&lanes, ch, lay));
+                    }
+                    v
+                } else {
+                    crate::trolley::over_roads(doc, &mut self.assets, &sel, lay)
+                };
+                // (on the map: the wire splines and masts of the kit named, or the wire's kit;
+                // none without a kit, and the map's own wire splines show themselves)
+                let mut after = crate::trolley::or_new(doc.traffic.trolley.as_ref());
+                let kit = self.trolley_kit(c.str("kit"), &mut after)?;
+                let added = crate::trolley::add_spans(&mut after, new);
+                let n = added.len();
+                if n > 0 {
+                    let u = kit.as_ref().map(|k| crate::trolley_kit::Use { kit: k, wires: c.bool("wires").unwrap_or(true) && !from_splines, masts: c.bool("masts").unwrap_or(true) && !from_splines });
+                    crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(after), added, u);
+                }
+                let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
+                said = json!({ "spans_laid": n, "spans": w.spans.len(), "switches": w.switches.len(), "lanes_of_selected": lanes_of, "problems": crate::trolley::problems(w).into_iter().map(|(p, t)| json!({ "at": [p.x, p.y], "problem": t })).collect::<Vec<_>>() });
+            }
+            "trolley_span" => {
+                // (a span drawn by hand through points, the wire's height over the ground or road
+                // there; its ends join a span's end or branch off a span's middle)
+                let h = c.f64("height").unwrap_or(5.6);
+                let mut pts = Vec::new();
+                for v in c.get("points").and_then(|v| v.as_array()).ok_or("`points` is needed (two or more)")? {
+                    let p = self.point(v)?;
+                    let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                    pts.push(DVec3::new(p.x, p.y, doc.ground(p) + h));
+                }
+                if pts.len() < 2 {
+                    return Err("`points` needs two or more".into());
+                }
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                let mut after = crate::trolley::or_new(doc.traffic.trolley.as_ref());
+                let kit = self.trolley_kit(c.str("kit"), &mut after)?;
+                let span = crate::trolley::drawn(&mut after, pts, c.i64("section").unwrap_or(1) as i32);
+                let added = crate::trolley::add_spans(&mut after, vec![(span, None)]);
+                let u = kit.as_ref().map(|k| crate::trolley_kit::Use { kit: k, wires: c.bool("wires").unwrap_or(true), masts: false });
+                crate::trolley_kit::apply(&mut self.ed, Some(&self.roots), Some(after), added, u);
+                let w = self.ed.doc.as_ref().and_then(|d| d.traffic.trolley.as_ref()).ok_or("no map")?;
+                said = json!({ "spans": w.spans.len(), "switches": w.switches.len() });
+            }
+            "trolley_kit" => {
+                // (a kit the wire is shown with: listed, or written from its .cfg text)
+                let doc = self.ed.doc.as_ref().ok_or("no map")?;
+                match c.str("cfg") {
+                    None => {
+                        let kits: Vec<Value> = crate::trolley_kit::list(&self.roots, &doc.dir).into_iter().map(|(r, k)| json!({ "kit": r.id(), "name": k.name, "cfg": k.text() })).collect();
+                        said = json!({ "kits": kits, "new_kit_cfg": crate::trolley_kit::KitDef { name: "My net".into(), ..Default::default() }.text() });
+                    }
+                    Some(text) => {
+                        let k = crate::trolley_kit::KitDef::parse(text);
+                        let name = c.str("name").map(str::to_string).unwrap_or_else(|| k.name.clone());
+                        let k = crate::trolley_kit::KitDef { name: name.clone(), ..k };
+                        let scope = if c.str("scope") == Some("shared") { crate::trolley_kit::Scope::Shared } else { crate::trolley_kit::Scope::Map };
+                        let r = crate::trolley_kit::KitRef { scope, stem: crate::trolley_kit::stem_of(&name) };
+                        let old = crate::trolley_kit::load(&self.roots, &doc.dir, &r.id());
+                        crate::trolley_kit::save(&self.roots, &doc.dir, &r, &k).map_err(|e| e.to_string())?;
+                        let n = match (c.bool("renew").unwrap_or(false), old) {
+                            (true, Some(old)) => crate::trolley_kit::renew(&mut self.ed, &self.roots, &old, &k),
+                            _ => 0,
+                        };
+                        said = json!({ "kit": r.id(), "cfg": k.text(), "problems": k.problems(&self.roots), "renewed": n });
+                    }
+                }
+            }
+            "trolley_switch" => {
+                // (the switch of the frog nearest a point set as given)
+                let at = self.point(c.get("at").ok_or("`at` is needed")?)?;
+                let mode = match c.str("mode") {
+                    Some(m) => Some(crate::trolley::Mode::ALL.into_iter().find(|x| format!("{x:?}").eq_ignore_ascii_case(m)).ok_or("`mode` is power, indicator, radio or fixed")?),
+                    None => None,
+                };
+                let initial = match c.str("initial") {
+                    Some(m) => Some(crate::trolley::Initial::ALL.into_iter().find(|x| format!("{x:?}").eq_ignore_ascii_case(m)).ok_or("`initial` is straight, branch or random")?),
+                    None => None,
+                };
+                let mut w = crate::trolley::or_new(self.ed.doc.as_ref().ok_or("no map")?.traffic.trolley.as_ref());
+                let r = (|| -> Result<usize, String> {
+                    let i = (0..w.switches.len()).filter(|i| w.switches[*i].pos.truncate().distance(at) < 10.0).min_by(|a, b| w.switches[*a].pos.truncate().distance(at).total_cmp(&w.switches[*b].pos.truncate().distance(at))).ok_or("no switch within 10 m (a switch is where three spans meet)")?;
+                    let sw = &mut w.switches[i];
+                    if let Some(m) = mode {
+                        sw.mode = m;
+                    }
+                    if let Some(m) = initial {
+                        sw.initial = m;
+                    }
+                    if let Some(n) = c.str("name") {
+                        sw.name = n.to_string();
+                    }
+                    if let Some(ch) = c.i64("channel") {
+                        sw.channel = (ch >= 0).then_some(ch as u32);
+                    }
+                    if let Some(r) = c.f64("range") {
+                        sw.range = r.clamp(1.0, 1000.0);
+                    }
+                    if let Some(routes) = c.get("routes").and_then(|v| v.as_array()) {
+                        sw.routes = routes.iter().filter_map(|r| Some((r.get(0)?.as_u64()? as u32, r.get(1)?.as_str()?.to_lowercase()))).filter(|r| crate::trolley::WAYS.contains(&r.1.as_str())).collect();
+                    }
+                    Ok(i)
+                })()?;
+                crate::trolley::set(&mut self.ed, Some(&self.roots), Some(w));
+                said = json!({ "switch": r });
             }
             "group" => e.group_selection(),
             "ungroup" => e.ungroup_selection(),
@@ -419,6 +612,22 @@ impl Server {
         out
     }
 
+    /// Every object and spline of the map (of the kinds asked) whose file contains `file`.
+    fn matching(&self, objects: bool, splines: bool, file: Option<&str>) -> Vec<Sel> {
+        let Some(d) = self.ed.doc.as_ref() else { return Vec::new() };
+        let ok = |f: &str| file.map(|w| f.to_lowercase().contains(&w.to_lowercase().replace('/', "\\"))).unwrap_or(true);
+        let mut out = Vec::new();
+        for (k, t) in &d.tiles {
+            if objects {
+                out.extend(t.tile.objects.iter().filter(|o| ok(&o.file)).map(|o| Sel::Object(*k, o.id)));
+            }
+            if splines {
+                out.extend(t.tile.splines.iter().filter(|s| !s.deleted && ok(&s.file)).map(|s| Sel::Spline(*k, s.id)));
+            }
+        }
+        out
+    }
+
     pub fn select(&mut self, a: Args) -> Reply {
         self.doc()?;
         let add = a.bool("add").unwrap_or(false);
@@ -428,7 +637,17 @@ impl Server {
             return Ok(json!({ "selected": 0 }).into());
         }
         if a.bool("all").unwrap_or(false) {
-            self.ed.select_all();
+            let kinds = a.strings("kinds");
+            let file = a.str("file");
+            // (everything, unless `kinds` or `file` narrow it: then all that matches them)
+            if kinds.is_empty() && file.is_none() && !add {
+                self.ed.select_all();
+                return Ok(json!({ "selected": self.ed.selection().len() }).into());
+            }
+            let (o, s) = if kinds.is_empty() { (true, true) } else { (kinds.iter().any(|k| k == "objects"), kinds.iter().any(|k| k == "splines")) };
+            v.extend(self.matching(o, s, file));
+            v.dedup();
+            self.ed.set_selection(v);
             return Ok(json!({ "selected": self.ed.selection().len() }).into());
         }
         if let Some(id) = a.i64("alike") {
@@ -472,10 +691,17 @@ impl Server {
                     "auto_switches" => self.ed.auto_switches,
                     "snap_roads" => self.ed.snap_roads,
                     "inherit_type" => self.ed.inherit_type,
-                    _ => return Err(format!("no road option {k}")),
+                    _ => {
+                        self.restore(old);
+                        return Err(format!("no road option {k}"));
+                    }
                 };
                 old.push((k.clone(), json!(was)));
-                self.setting(k, v)?;
+                // (a bad value puts back what this call set before it: else it stays for the calls after)
+                if let Err(e) = self.setting(k, v) {
+                    self.restore(old);
+                    return Err(e);
+                }
             }
         }
         Ok(old)
@@ -496,6 +722,163 @@ impl Server {
         Ok(rel)
     }
 
+    /// `auto_junctions`: Auto-Junction over the roads already on the map (see
+    /// `Editor::auto_junctions_on_map`), in `center` + `radius` or everywhere.
+    pub fn auto_junctions(&mut self, a: Args) -> Done {
+        let area = match (a.get("center"), a.f64("radius")) {
+            (Some(c), Some(r)) => Some((self.point(c)?, r)),
+            _ => None,
+        };
+        let (roads, made) = self.ed.auto_junctions_on_map(&mut self.assets, area);
+        Ok(json!({ "roads": roads, "junctions": made }))
+    }
+
+    pub fn build_streets(&mut self, a: Args) -> Done {
+        let path = a.str("file").ok_or("`file` is needed (an Overpass JSON answer)")?;
+        let body = std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
+        let g = self.georef().ok_or("the map is not placed on the Earth: no latitude / longitude")?;
+        let v: Value = serde_json::from_str(&body).map_err(|e| e.to_string())?;
+        let mut ways = Vec::new();
+        for e in v.get("elements").and_then(|e| e.as_array()).into_iter().flatten() {
+            if e.get("type").and_then(|t| t.as_str()) != Some("way") {
+                continue;
+            }
+            let tags: std::collections::HashMap<String, String> = e.get("tags").and_then(|t| t.as_object()).map(|o| o.iter().map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string())).collect()).unwrap_or_default();
+            if !tags.contains_key("highway") {
+                continue;
+            }
+            let nodes: Vec<i64> = e.get("nodes").and_then(|n| n.as_array()).into_iter().flatten().filter_map(|n| n.as_i64()).collect();
+            let pts: Vec<DVec2> = e.get("geometry").and_then(|g| g.as_array()).into_iter().flatten().filter_map(|p| Some(g.world(p.get("lat")?.as_f64()?, p.get("lon")?.as_f64()?))).collect();
+            if nodes.len() == pts.len() && pts.len() >= 2 {
+                ways.push(crate::street_model::RawWay { id: e.get("id").and_then(|i| i.as_i64()).unwrap_or(0), tags, nodes, pts });
+            }
+        }
+        let mut net = crate::street_model::network(&ways);
+        // the 2018 (or any dated) imagery: widths and offsets of the carriageways measured on it
+        let mut measured = 0usize;
+        if let Some(im) = a.get("imagery") {
+            let url = im.get("url").and_then(|u| u.as_str()).ok_or("imagery.url is needed")?.to_string();
+            // (as `shot` takes it: a zoom past the tiles' 2^z would overflow)
+            let z = im.get("z").and_then(|z| z.as_u64()).unwrap_or(19).clamp(1, 22) as u8;
+            let src = crate::geo::sources::Source { name: format!("street-model {}", url.len()), url, attribution: String::new(), max_zoom: z, kind: Default::default(), needs_key: false, key_link: String::new(), bounds: None, resolution: 0.0, tile_px: 256, ortho: false, builtin: false };
+            let prefs = crate::geo::sources::GeoPrefs::default();
+            let doc = self.ed.doc.as_ref().ok_or("no map")?;
+            let ts = crate::doc::tile_size();
+            let (mut lo, mut hi) = (DVec2::splat(f64::MAX), DVec2::splat(f64::MIN));
+            for k in doc.tiles.keys() {
+                for c in [tile_origin(*k), tile_origin(*k) + DVec2::splat(ts)] {
+                    let m = g.merc(c);
+                    lo = lo.min(m);
+                    hi = hi.max(m);
+                }
+            }
+            let fetch = |z: u8, x: u32, y: u32| crate::geo::fetch::tile(&src, &prefs, z, x, y);
+            let cancel = std::sync::atomic::AtomicBool::new(false);
+            let mosaic = crate::geo::imagery::Mosaic::fetch(z, lo, hi, false, &fetch, &cancel).map_err(|e| format!("imagery: {e}"))?;
+            let inside = |p: DVec2| doc.tiles.contains_key(&crate::doc::tile_of(p));
+            let colour = |p: DVec2| -> Option<[u8; 3]> { inside(p).then(|| mosaic.colour(g.merc(p))) };
+            measured = crate::street_model::apply_imagery(&mut net, &colour).iter().filter(|m| m.is_some()).count();
+        }
+        crate::street_model::smooth_joints(&mut net);
+        net.settle_paths();
+        if a.bool("model_only").unwrap_or(false) {
+            return Ok(json!({ "model": crate::street_model::net_json(&net), "imagery_measured": measured }));
+        }
+        let t = a.get("types").ok_or("`types` is needed")?;
+        let mut choices = Vec::new();
+        for c in t.get("choices").and_then(|c| c.as_array()).into_iter().flatten() {
+            let f = c.get("file").and_then(|f| f.as_str()).ok_or("choices[].file is needed")?;
+            choices.push(crate::street_model::TypeChoice {
+                file: self.resolve(f, Some(true))?,
+                width: c.get("width").and_then(|w| w.as_f64()).ok_or("choices[].width is needed")?,
+                oneway: c.get("oneway").and_then(|w| w.as_bool()).unwrap_or(false),
+                sidewalks: c.get("sidewalks").and_then(|w| w.as_bool()).unwrap_or(true),
+                classes: c.get("classes").and_then(|w| w.as_array()).map(|v| v.iter().filter_map(|x| x.as_u64().map(|x| x as u8)).collect()).unwrap_or(vec![0, 1, 2]),
+            });
+        }
+        // hardstanding: the ground texture laid under it, the car parks of the OSM answer and
+        // the paved areas given
+        let apron = match t.get("apron").and_then(|v| v.as_str()) {
+            Some(tex) => Some(self.ground_texture(tex)?),
+            None => None,
+        };
+        let mut paved: Vec<Vec<DVec2>> = Vec::new();
+        for e in v.get("elements").and_then(|e| e.as_array()).into_iter().flatten() {
+            let tags = e.get("tags");
+            let tag = |k: &str| tags.and_then(|t| t.get(k)).and_then(|x| x.as_str()).unwrap_or("");
+            let parking = tag("amenity") == "parking" && !matches!(tag("parking"), "underground" | "multi-storey" | "rooftop");
+            if !(parking || tag("area:highway") != "" || tag("landuse") == "garages") {
+                continue;
+            }
+            let ring: Vec<DVec2> = e.get("geometry").and_then(|g| g.as_array()).into_iter().flatten().filter_map(|p| Some(g.world(p.get("lat")?.as_f64()?, p.get("lon")?.as_f64()?))).collect();
+            if ring.len() >= 4 {
+                paved.push(ring);
+            }
+        }
+        for area in a.arr("paved").into_iter().flatten() {
+            let ring: Vec<DVec2> = area.as_array().ok_or("paved: a list of outlines")?.iter().map(|q| self.point(q)).collect::<Result<_, _>>()?;
+            if ring.len() >= 3 {
+                paved.push(ring);
+            }
+        }
+        let mut pick = |k: &str, i: usize| -> Result<String, String> {
+            let f = t.get(k).and_then(|x| if x.is_array() { x.get(i) } else { Some(x) }).and_then(|x| x.as_str()).ok_or(format!("types.{k} is needed"))?;
+            self.resolve(f, Some(true))
+        };
+        let types = crate::editor::StreetTypes {
+            road: [(pick("main", 0)?, pick("main", 1)?), (pick("street", 0)?, pick("street", 1)?), (pick("service", 0)?, pick("service", 1)?)],
+            path: pick("path", 0)?,
+            choices,
+            make: match (t.get("make_types").and_then(|v| v.get("roadway")).and_then(|v| v.as_str()), t.get("make_types").and_then(|v| v.get("paving")).and_then(|v| v.as_str())) {
+                (Some(r), Some(p)) => Some((std::path::PathBuf::from(r), std::path::PathBuf::from(p))),
+                _ => None,
+            },
+            apron,
+            paved,
+            // (`heights`: a JSON file of the designed heights, [[[x, y, z], ...], ...], one line
+            // of points per way)
+            heights: match a.str("heights") {
+                Some(f) => {
+                    let body = std::fs::read_to_string(f).map_err(|e| format!("{f}: {e}"))?;
+                    // ([[x, y, z], ...] per way, or {"<osm way id>": [[x, y, z], ...], ...})
+                    let v: Value = serde_json::from_str(&body).map_err(|e| format!("heights: {e}"))?;
+                    let pts = |l: &Value| -> Vec<[f64; 3]> { l.as_array().into_iter().flatten().filter_map(|q| Some([q.get(0)?.as_f64()?, q.get(1)?.as_f64()?, q.get(2)?.as_f64()?])).collect() };
+                    let lines: Vec<(i64, Vec<[f64; 3]>)> = match &v {
+                        Value::Object(m) => m.iter().map(|(k, l)| (k.parse().unwrap_or(0), pts(l))).collect(),
+                        Value::Array(a) => a.iter().map(|l| (0, pts(l))).collect(),
+                        _ => return Err("heights: a list of lines or an object of ways".into()),
+                    };
+                    Some(std::sync::Arc::new(crate::street_model::Heights::of_ways(&lines)))
+                }
+                None => None,
+            },
+        };
+        // (a dry run: the model only, for looking at it)
+        if a.bool("dry_run").unwrap_or(false) {
+            let mut deg = vec![0usize; net.path_nodes.len()];
+            for (_, ab) in &net.path_edges {
+                deg[ab[0]] += 1;
+                deg[ab[1]] += 1;
+            }
+            return Ok(json!({
+                "streets": net.streets.iter().map(|s| json!({"class": s.class, "name": s.name, "width": number(s.width), "median": number(s.median), "oneway": s.oneway, "sidewalk": s.sidewalk, "ends": s.ends, "axis": s.axis.iter().map(|p| p2(*p)).collect::<Vec<_>>()})).collect::<Vec<_>>(),
+                "nodes": net.nodes.iter().map(|p| p2(*p)).collect::<Vec<_>>(),
+                "path_nodes": net.path_nodes.iter().zip(&deg).map(|(p, d)| json!({"at": p2(*p), "degree": d})).collect::<Vec<_>>(),
+                "path_edges": net.path_edges.iter().map(|(pts, ab)| json!({"ends": ab, "points": pts.iter().map(|p| p2(*p)).collect::<Vec<_>>()})).collect::<Vec<_>>(),
+            }));
+        }
+        let rep = self.ed.build_streets(&mut self.assets, &net, &types);
+        let crossings: Vec<Value> = net.crossings.iter().map(|(si, p)| {
+            let ax = &net.streets[*si].axis;
+            let k = ax.windows(2).enumerate().min_by(|x, y| {
+                let d = |w: &[DVec2]| { let m = (w[0] + w[1]) * 0.5; (m - *p).length() };
+                d(x.1).total_cmp(&d(y.1))
+            }).map(|x| x.0).unwrap_or(0);
+            json!({ "at": p2(*p), "street_heading": number(crate::roads::heading_of(ax[k + 1] - ax[k])), "class": net.streets[*si].class })
+        }).collect();
+        Ok(json!({ "report": rep, "model": { "measured": measured, "widths": net.streets.iter().map(|s| number(s.width)).collect::<Vec<_>>(), "streets": net.streets.len(), "paths": net.paths.len(), "sidewalks": net.sidewalks.len(), "divided": net.streets.iter().filter(|s| s.median > 0.0).count() }, "crossings": crossings, "unsaved": true }))
+    }
+
     pub fn draw_road(&mut self, a: Args) -> Done {
         let pts = self.points(a, "points")?;
         if pts.len() < 2 {
@@ -507,6 +890,24 @@ impl Server {
         self.ed.roundabout = false;
         self.ed.bus_pocket = false;
         self.ed.road_type = Some(rel.clone());
+        // `shape: "osm"`: laid as the OpenStreetMap import lays a way: straights, its corners
+        // rounded into arcs (`corner` radius in metres, else the class's: 10 m service, 20 m
+        // street, 60 m main road), the ground following it with Auto-Terrain on
+        if a.str("shape") == Some("osm") {
+            let class = match a.str("class").unwrap_or("service") {
+                "main" => crate::osm::Class::Main,
+                "street" => crate::osm::Class::Street,
+                "rail" => crate::osm::Class::Rail,
+                "tram" => crate::osm::Class::Tram,
+                _ => crate::osm::Class::Service,
+            };
+            let road = crate::osm::Road { class, oneway: false, points: pts.clone() };
+            let keep = std::mem::replace(&mut self.ed.osm_keep_overlaps, a.bool("keep_overlaps").unwrap_or(true));
+            let (n, j) = self.ed.build_osm(&mut self.assets, &[road], &[(class, rel.clone())], None);
+            self.ed.osm_keep_overlaps = keep;
+            self.restore(old);
+            return Ok(json!({ "type": rel, "built": n, "junctions": j }));
+        }
         let keep = std::mem::replace(&mut self.ed.keep_drawing, true);
         if a.bool("separate").unwrap_or(false) {
             for w in pts.windows(2) {
@@ -632,12 +1033,24 @@ impl Server {
             let it = Args(it);
             let r: Result<(), String> = (|| {
                 let file = it.str("file").map(str::to_string).or(default.clone()).ok_or("no `file`")?;
-                let rel = match files.get(&file) {
+                // `scale`: [x, y, z] along the object's own axes (x across, y up, z along), made
+                // as a scaled copy of its type as the Scale handles do
+                // (the copies are made in the editor's frame, as the Scale handles give them:
+                // x across, y along, z up; the call names them as OMSI does: x, y up, z along)
+                let scale = it.get("scale").and_then(|v| v.as_array()).filter(|a| a.len() == 3).map(|a| DVec3::new(a[0].as_f64().unwrap_or(1.0), a[2].as_f64().unwrap_or(1.0), a[1].as_f64().unwrap_or(1.0)));
+                let key = match scale {
+                    Some(s) => format!("{file}|{:.3}_{:.3}_{:.3}", s.x, s.y, s.z),
+                    None => file.clone(),
+                };
+                let rel = match files.get(&key) {
                     Some(r) => r.clone(),
                     None => {
-                        let r = self.resolve(&file, Some(false))?;
+                        let mut r = self.resolve(&file, Some(false))?;
+                        if let Some(s) = scale {
+                            r = crate::scaled::variant(&self.roots, &r, s).map_err(|e| e.to_string())?;
+                        }
                         self.wait_object(&r)?;
-                        files.insert(file.clone(), r.clone());
+                        files.insert(key, r.clone());
                         r
                     }
                 };
@@ -944,7 +1357,7 @@ impl Server {
     }
 
     /// The layer of a ground texture, added to the map if it has it not.
-    fn ground_texture(&mut self, tex: &str) -> Result<usize, String> {
+    pub(super) fn ground_texture(&mut self, tex: &str) -> Result<usize, String> {
         let rel = tex.trim().replace('/', "\\");
         let (content, omsi) = (self.roots.content.clone(), self.roots.omsi.clone());
         let doc = self.ed.doc.as_mut().ok_or("no map is open")?;

@@ -76,6 +76,9 @@ pub struct ObjectModel {
     pub holes: Vec<MeshData>,
     /// Its own lanes (`[path]`: junctions, stops), in its frame.
     pub paths: Vec<omsi_scenery::PathDef>,
+    /// Its `[crossing_heightdeformation]` field: its mesh is draped onto it, and so are its
+    /// paths when they are laid into the world (`object_paths::world_point`).
+    pub deform: Option<Arc<MeshData>>,
     /// Not seen in the game (`[onlyeditor]`, a start point, a car park, a help arrow,
     /// nothing to draw): the editor shows it as a marker that casts no shadow.
     pub technical: bool,
@@ -236,6 +239,8 @@ pub enum Slot<T> {
 
 /// Everything loaded so far, keyed by lower-case paths.
 pub struct Assets {
+    /// How many pictures have arrived so far (one coming in between two looks is still seen).
+    pub textures_arrived: u64,
     tx: mpsc::Sender<Req>,
     rx: mpsc::Receiver<Resp>,
     pub objects: HashMap<String, Slot<ObjectModel>>,
@@ -255,6 +260,11 @@ pub struct Assets {
 
 /// The largest texture side kept (the editor need not hold 4K pictures).
 const MAX_SIDE: u32 = 1024;
+
+#[inline]
+pub(crate) fn norm_asset_key(rel: &str) -> String {
+    rel.replace('\\', "/").to_lowercase()
+}
 
 impl Assets {
     pub fn new(omsi: PathBuf, content: PathBuf) -> Assets {
@@ -282,7 +292,7 @@ impl Assets {
                 }
             });
         }
-        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, omsi, content, map_scope: None, scope_epoch: 0 }
+        Assets { tx, rx, objects: HashMap::new(), splines: HashMap::new(), textures: HashMap::new(), new_textures: Vec::new(), tree_masks: HashMap::new(), pending: 0, textures_arrived: 0, omsi, content, map_scope: None, scope_epoch: 0 }
     }
 
     /// Start a map session; reopening the same directory replaces its dependency mount.
@@ -317,8 +327,10 @@ impl Assets {
     }
 
     pub fn object(&mut self, rel: &str) -> Option<Arc<ObjectModel>> {
-        let key = rel.to_lowercase();
-        match self.objects.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -334,13 +346,48 @@ impl Assets {
     /// [`Assets::object`], waiting for the model when it has to be read first (for what is done
     /// once, on a click, not every frame): None if it cannot be read in `ms` milliseconds.
     pub fn object_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<ObjectModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.object(rel) {
                 return Some(m);
             }
-            if matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.objects.get(&key).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
+            }
+            self.poll();
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    }
+
+    /// Every object and spline model of a map asked for and waited for (at most `ms`): what
+    /// looks at all of them at once (a check) must not take one still loading for none.
+    pub fn load_map_models(&mut self, doc: &crate::doc::Document, ms: u64) {
+        let start = std::time::Instant::now();
+        let mut objects = std::collections::HashSet::new();
+        let mut splines = std::collections::HashSet::new();
+        for t in doc.tiles.values() {
+            for o in &t.tile.objects {
+                objects.insert(o.file.to_lowercase());
+            }
+            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+                splines.insert(s.file.to_lowercase());
+            }
+        }
+        loop {
+            let mut waiting = false;
+            // (a file that is not there is failed under its name with the slashes turned: looked
+            // for under the name as written, it was never seen to have failed, and every map
+            // with a missing model waited the whole time - a minute for the street check)
+            for f in &objects {
+                waiting |= self.object(f).is_none() && !self.object_failed(f);
+            }
+            for f in &splines {
+                waiting |= self.spline(f).is_none() && !self.spline_failed(f);
+            }
+            if !waiting || start.elapsed().as_millis() as u64 > ms {
+                return;
             }
             self.poll();
             std::thread::sleep(std::time::Duration::from_millis(5));
@@ -349,12 +396,14 @@ impl Assets {
 
     /// [`Assets::spline`], waiting for the model (see [`Assets::object_wait`]).
     pub fn spline_wait(&mut self, rel: &str, ms: u64) -> Option<Arc<SplineModel>> {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
         let start = std::time::Instant::now();
         loop {
             if let Some(m) = self.spline(rel) {
                 return Some(m);
             }
-            if matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
+            if matches!(self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed)) || start.elapsed().as_millis() as u64 > ms {
                 return None;
             }
             self.poll();
@@ -363,8 +412,10 @@ impl Assets {
     }
 
     pub fn spline(&mut self, rel: &str) -> Option<Arc<SplineModel>> {
-        let key = rel.to_lowercase();
-        match self.splines.get(&key) {
+        let key = norm_asset_key(rel);
+        let lower = rel.to_lowercase();
+        let slot = self.splines.get(&key).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel));
+        match slot {
             Some(Slot::Ready(m)) => Some(m.clone()),
             Some(_) => None,
             None => {
@@ -447,6 +498,7 @@ impl Assets {
                 }
                 Resp::Texture(p, t, epoch) => {
                     if epoch == self.scope_epoch {
+                        self.textures_arrived += 1;
                         self.textures.insert(p.clone(), t.map(Slot::Ready).unwrap_or(Slot::Failed));
                         self.new_textures.push(p);
                     }
@@ -456,25 +508,55 @@ impl Assets {
         any
     }
 
+    /// Pictures asked for and not arrived yet (diagnostics).
+    pub fn textures_loading(&self) -> Vec<String> {
+        self.textures.iter().filter(|(_, s)| matches!(s, Slot::Loading)).map(|(p, _)| p.display().to_string()).collect()
+    }
+
     /// The picture could not be read (missing, cut short, a format nothing reads).
     pub fn texture_failed(&self, path: &Path) -> bool {
         matches!(self.textures.get(path), Some(Slot::Failed))
     }
 
     pub fn spline_failed(&self, rel: &str) -> bool {
-        matches!(self.splines.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.splines.get(&norm_asset_key(rel)).or_else(|| self.splines.get(&lower)).or_else(|| self.splines.get(rel)), Some(Slot::Failed))
     }
 
     pub fn object_failed(&self, rel: &str) -> bool {
-        matches!(self.objects.get(&rel.to_lowercase()), Some(Slot::Failed))
+        let lower = rel.to_lowercase();
+        matches!(self.objects.get(&norm_asset_key(rel)).or_else(|| self.objects.get(&lower)).or_else(|| self.objects.get(rel)), Some(Slot::Failed))
+    }
+
+    /// Forget one object's model, so it is read again (its file was written anew), under
+    /// whichever spelling of its name it was asked for.
+    pub fn forget_object_model(&mut self, rel: &str) {
+        self.objects.remove(&norm_asset_key(rel));
+        self.objects.remove(&rel.to_lowercase());
+        self.objects.remove(rel);
     }
 
     /// Forget one object's model, and the pictures in its folder, so they are read again
     /// (its files were written anew).
     pub fn forget_object(&mut self, rel: &str, dir: &Path) {
-        self.objects.remove(&rel.to_lowercase());
+        self.forget_object_model(rel);
         self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
         self.tree_masks.retain(|k, _| !k.starts_with(dir));
+    }
+
+    /// Forget one spline type's model, and the pictures in its folder, so they are read
+    /// again (its files were written anew).
+    pub fn forget_spline(&mut self, rel: &str, dir: &Path) {
+        self.splines.remove(&rel.to_lowercase());
+        self.textures.retain(|k, s| matches!(s, Slot::Loading) || !k.starts_with(dir));
+    }
+
+    /// Forget what could not be read (files may have been written since): tried again when
+    /// next asked for.
+    pub fn forget_failed(&mut self) {
+        self.objects.retain(|_, s| !matches!(s, Slot::Failed));
+        self.splines.retain(|_, s| !matches!(s, Slot::Failed));
+        self.textures.retain(|_, s| !matches!(s, Slot::Failed));
     }
 
     /// Forget everything (after an import changed files on disk).
@@ -617,22 +699,15 @@ pub(crate) fn load_object(path: &Path, omsi: &Path, content: &Path) -> Option<Ob
     // a junction plate draped onto its `[crossing_heightdeformation]` field, as openOMSI
     // (and Omsi.exe, as it loads the type) does: its arms meet roads that do not lie at the
     // plate's height, and the file's normals give way to ones made from the faces
-    if let Some(f) = &sco.crossing_height_deformation {
-        let in_model = omsi_cfg::resolve_path(&omsi_cfg::resolve_path(&model_dir, "model"), f);
-        let p = if omsi_cfg::vfs::is_file(&in_model) { in_model } else { omsi_cfg::resolve_path(&model_dir, f) };
-        match omsi_o3d::load_mesh(&p) {
-            Ok(m) => {
-                let field = omsi_geometry::mesh_from_o3d(&m);
-                for part in &mut parts {
-                    for v in part.mesh.positions.iter_mut() {
-                        if let Some(d) = field_height(&field, v.x, v.y) {
-                            v.z += d;
-                        }
-                    }
-                    omsi_geometry::compute_normals_d3d(&mut part.mesh);
+    let deform = crate::object_paths::load_field(&sco, path);
+    if let Some(field) = &deform {
+        for part in &mut parts {
+            for v in part.mesh.positions.iter_mut() {
+                if let Some(d) = crate::object_paths::field_height(field, v.x, v.y) {
+                    v.z += d;
                 }
             }
-            Err(e) => log::warn!("crossing height deformation {}: {e}", p.display()),
+            omsi_geometry::compute_normals_d3d(&mut part.mesh);
         }
     }
     let tree = sco.tree.as_ref().map(|t| {
@@ -693,7 +768,7 @@ pub(crate) fn load_object(path: &Path, omsi: &Path, content: &Path) -> Option<Ob
     }
     // (a tree with an editor-only helper box is seen in the game: only the box is not)
     let technical = (sco.only_editor && tree.is_none()) || sco.is_entry_point || sco.is_car_park || sco.is_help_arrow || (parts.is_empty() && tree.is_none());
-    Some(ObjectModel { parts, lo, hi, abs_height: sco.absolute_height(), tree, helpers, attachments, surface, holes, technical, editor_parts: sco.only_editor, paths: sco.paths.clone(), texts: model.text_textures.clone(), labels: label_names, lights: sco.traffic_lights.clone(), cycle: sco.traffic_lights_group, light_head: sco.is_traffic_light && sco.traffic_lights.is_empty() })
+    Some(ObjectModel { parts, lo, hi, abs_height: sco.absolute_height(), tree, helpers, attachments, surface, holes, technical, editor_parts: sco.only_editor, paths: sco.paths.clone(), deform: deform.map(Arc::new), texts: model.text_textures.clone(), labels: label_names, lights: sco.traffic_lights.clone(), cycle: sco.traffic_lights_group, light_head: sco.is_traffic_light && sco.traffic_lights.is_empty() })
 }
 
 fn load_spline(path: &Path, omsi: &Path, content: &Path) -> Option<SplineModel> {
@@ -792,27 +867,6 @@ pub fn tree_mesh() -> MeshData {
     }
     m.ranges.push((0, m.indices.len() as u32, 0));
     m
-}
-
-/// The height of a `[crossing_heightdeformation]` field over (x, y) in the object's frame,
-/// where the field reaches (the highest face there; openOMSI's `field_height`).
-fn field_height(m: &omsi_geometry::MeshData, x: f32, y: f32) -> Option<f32> {
-    let mut best: Option<f32> = None;
-    for t in m.indices.chunks_exact(3) {
-        let (a, b, c) = (m.positions[t[0] as usize], m.positions[t[1] as usize], m.positions[t[2] as usize]);
-        let det = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-        if det.abs() < 1e-9 {
-            continue;
-        }
-        let l1 = ((b.x - a.x) * (y - a.y) - (x - a.x) * (b.y - a.y)) / det;
-        let l2 = ((x - a.x) * (c.y - a.y) - (c.x - a.x) * (y - a.y)) / det;
-        let l0 = 1.0 - l1 - l2;
-        if l0 >= -1e-4 && l1 >= -1e-4 && l2 >= -1e-4 {
-            let h = l0 * a.z + l2 * b.z + l1 * c.z;
-            best = Some(best.map_or(h, |o: f32| o.max(h)));
-        }
-    }
-    best
 }
 
 /// A script variable that only says the time of year (`sommerhalbjahr`): the meshes it
@@ -947,6 +1001,51 @@ mod tests {
         assert_eq!(lamps, [crate::editable::Lamp::Red, crate::editable::Lamp::Yellow, crate::editable::Lamp::Green]);
         assert_eq!(m.parts.iter().filter(|p| p.visible.is_none()).count(), 1, "the body is not switched");
         assert!(m.light_head, "it takes its state from a crossing");
+    }
+
+    /// Waiting for a map's models ends once the missing ones have failed, not at the time
+    /// given: a model named with backslashes was never seen to fail.
+    #[test]
+    fn a_missing_model_does_not_hold_the_wait_for_the_maps_models() {
+        let dir = std::env::temp_dir().join(format!("om-missing-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let mut doc = crate::selection::tests::flat_map(1);
+        crate::selection::tests::add_spline(&mut doc, (0, 0), 1, 10.0, 10.0, 0.0, 20.0, 0, 0);
+        crate::selection::tests::add_object(&mut doc, (0, 0), 2, 10.0, 10.0);
+        let mut assets = Assets::new(dir.clone(), dir.clone());
+        let t = std::time::Instant::now();
+        assets.load_map_models(&doc, 20_000);
+        assert!(t.elapsed().as_secs() < 10, "waited {:?}", t.elapsed());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A crossing saved in place is read again: its model was kept under its name with the
+    /// slashes turned, and the save forgot it under the name as written, so the map went on
+    /// showing the old paths and lights until a restart.
+    #[test]
+    fn an_object_written_anew_is_read_again() {
+        let dir = std::env::temp_dir().join(format!("om-reread-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(dir.join("Sceneryobjects/X"));
+        let rel = "Sceneryobjects\\X\\Crossing.sco";
+        let write = |cycle: u32| std::fs::write(dir.join("Sceneryobjects/X/Crossing.sco"), format!("[traffic_lights_group]\n{cycle}\n\n[traffic_light]\nMain\n")).unwrap();
+        let mut assets = Assets::new(dir.clone(), dir.clone());
+        let load = |assets: &mut Assets| {
+            let t = std::time::Instant::now();
+            loop {
+                if let Some(m) = assets.object(rel) {
+                    return m.cycle;
+                }
+                assert!(!assets.object_failed(rel) && t.elapsed().as_secs() < 20, "the crossing does not read");
+                assets.poll();
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+        };
+        write(30);
+        assert_eq!(load(&mut assets), Some(30.0));
+        write(45);
+        assets.forget_object_model(rel);
+        assert_eq!(load(&mut assets), Some(45.0), "the file as it is now");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A crossing's program: not only the lights' names but their phases and the cycle, which

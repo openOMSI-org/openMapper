@@ -8,12 +8,12 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver};
 use std::time::Instant;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
 /// The game's checks asked for.
 const CHECKS: [&str; 6] = ["OMSI_CHECK_ROADS", "OMSI_CHECK_SPLINES", "OMSI_CHECK_TRIPS", "OMSI_CHECK_ENTRIES", "OMSI_CHECK_SPIKES", "OMSI_CHECK_WHEELS"];
@@ -181,11 +181,11 @@ impl GameCheck {
         }
         let mut again = false;
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Play, tr("Check in openOMSI", "Проверка в openOMSI"))).id(egui::Id::new("game check")).open(&mut open).default_pos([330.0, 90.0]).default_width(440.0).resizable(true).show(ctx, |ui| {
-            ui.label(RichText::new(tr("The saved map run by the game itself, unseen, with its own checks; the picture is the game's, from your view", "Сохранённая карта, запущенная самой игрой без окна, с её собственными проверками; картинка — игры, с вашего вида")).small().color(TEXT_DIM));
+        egui::Window::new(icons::labelled(Icon::Verified, tr("Check in openOMSI", "Проверка в openOMSI"))).id(egui::Id::new("game check")).open(&mut open).default_pos([330.0, 90.0]).default_width(440.0).resizable(true).show(ctx, |ui| {
+            ui.label(RichText::new(tr("The saved map run by the game itself, unseen, with its own checks; the picture is the game's, from your view", "Сохранённая карта, запущенная самой игрой без окна, с её собственными проверками; картинка — игры, с вашего вида")).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 crate::ui::check(ui, &mut self.whole, tr("Every tile (slower on a big map)", "Все тайлы (дольше на большой карте)"));
-                if ui.add_enabled(self.running.is_none(), egui::Button::new(icons::labelled(Icon::Play, tr("Run again", "Запустить снова")))).clicked() {
+                if ui.add_enabled(self.running.is_none(), egui::Button::new(icons::labelled(Icon::Refresh, tr("Run again", "Запустить снова")))).clicked() {
                     again = true;
                 }
             });
@@ -197,12 +197,12 @@ impl GameCheck {
                 });
             }
             if let Some(e) = &self.error {
-                ui.colored_label(Color32::from_rgb(235, 110, 90), format!("openOMSI: {e}"));
+                ui.colored_label(pal().error, format!("openOMSI: {e}"));
             }
             if let Some(o) = &self.outcome {
                 let problems = o.lines.iter().filter(|l| l.problem && !place_in(&l.text).map(at_edge).unwrap_or(false)).count();
                 let head = if problems == 0 { tr("Nothing wrong found", "Проблем не найдено").to_string() } else { format!("{} {problems}", tr("Problems found:", "Найдено проблем:")) };
-                ui.label(RichText::new(format!("{head} · {:.0} s", o.secs)).strong().color(if problems == 0 { Color32::from_rgb(120, 200, 120) } else { Color32::from_rgb(240, 160, 80) }));
+                ui.label(RichText::new(format!("{head} · {:.0} s", o.secs)).strong().color(if problems == 0 { pal().ok } else { pal().warn }));
                 if let Some(t) = &self.picture {
                     let w = ui.available_width().min(560.0);
                     let size = t.size_vec2() * (w / t.size_vec2().x);
@@ -214,7 +214,7 @@ impl GameCheck {
                         let place = place_in(&l.text);
                         let on_edge = place.map(at_edge).unwrap_or(false);
                         edge += usize::from(on_edge);
-                        let c = if l.problem && !on_edge { Color32::from_rgb(240, 160, 80) } else { Color32::from_gray(if on_edge { 140 } else { 190 }) };
+                        let c = if l.problem && !on_edge { pal().warn } else { if on_edge { pal().text_dim } else { pal().text } };
                         match place {
                             Some(p) => {
                                 if ui.add(egui::Label::new(RichText::new(&l.text).small().color(c).underline()).sense(egui::Sense::click())).on_hover_text(tr("Go there", "Перейти туда")).clicked() {
@@ -227,10 +227,10 @@ impl GameCheck {
                         }
                     }
                     if edge > 0 {
-                        ui.label(RichText::new(format!("{edge} {}", tr("of the places named lie at the map's edge or a road's dead end (greyed): the game measures a lane's last point on the road's very edge, and a bus at the end stands over it; nothing to mend", "из названных мест лежат на краю карты или в тупике дороги (серые): игра меряет последнюю точку полосы на самом краю дороги, а автобус в конце стоит над ним; чинить нечего"))).small().italics().color(TEXT_DIM));
+                        ui.label(RichText::new(format!("{edge} {}", tr("of the places named lie at the map's edge or a road's dead end (greyed): the game measures a lane's last point on the road's very edge, and a bus at the end stands over it; nothing to mend", "из названных мест лежат на краю карты или в тупике дороги (серые): игра меряет последнюю точку полосы на самом краю дороги, а автобус в конце стоит над ним; чинить нечего"))).small().italics().color(pal().text_dim));
                     }
                     if o.lines.is_empty() {
-                        ui.label(RichText::new(tr("The game said nothing about the map", "Игра ничего не сказала о карте")).small().color(TEXT_DIM));
+                        ui.label(RichText::new(tr("The game said nothing about the map", "Игра ничего не сказала о карте")).small().color(pal().text_dim));
                     }
                 });
                 ui.checkbox(&mut self.show_log, tr("The game's whole output", "Весь вывод игры"));

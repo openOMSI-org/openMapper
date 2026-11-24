@@ -13,19 +13,19 @@ use super::{number, p2, Args, Out, Reply, Server};
 use crate::doc::{tile_of, tile_origin, tile_size, Sel};
 use crate::library::Category;
 
-fn paint(r: u8, g: u8, b: u8, a: u8) -> Paint<'static> {
+pub(super) fn paint(r: u8, g: u8, b: u8, a: u8) -> Paint<'static> {
     let mut p = Paint::default();
     p.set_color_rgba8(r, g, b, a);
     p.anti_alias = true;
     p
 }
 
-fn stroke(w: f32, dash: Option<StrokeDash>) -> Stroke {
+pub(super) fn stroke(w: f32, dash: Option<StrokeDash>) -> Stroke {
     Stroke { width: w.max(0.5), line_cap: LineCap::Round, line_join: LineJoin::Round, dash, ..Default::default() }
 }
 
 /// A label with a light halo, its left end at (x, y) (the baseline).
-fn text(pm: &mut Pixmap, s: &str, x: f32, y: f32, px: f32, ink: (u8, u8, u8)) {
+pub(super) fn text(pm: &mut Pixmap, s: &str, x: f32, y: f32, px: f32, ink: (u8, u8, u8)) {
     let Some(f) = crate::osm_map::font() else { return };
     let Some((path, _)) = crate::osm_map::text_path(f, s, px) else { return };
     let t = Transform::from_translate(x, y);

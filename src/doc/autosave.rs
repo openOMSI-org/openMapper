@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{Document, TileKey};
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
+use crate::theme::pal;
 
 /// How often the changes are kept (`OPENMAPPER_AUTOSAVE=<seconds>` for checks).
 fn every() -> Duration {
@@ -40,6 +42,10 @@ pub struct Meta {
     pub descriptions: bool,
     /// Seconds since 1970.
     pub time: u64,
+    /// The map's files were written after the autosave (by OMSI 2's editor say): bringing it
+    /// back puts older tiles over newer ones.
+    #[serde(skip)]
+    pub disk_newer: bool,
 }
 
 impl Meta {
@@ -105,6 +111,7 @@ pub fn snapshot(doc: &Document) -> Snapshot {
         traffic: if doc.traffic.dirty { doc.traffic.clone() } else { Default::default() },
         descriptions: if doc.descriptions.dirty { doc.descriptions.clone() } else { Default::default() },
         groups: Vec::new(),
+        global_extra: doc.global_extra.clone(),
     };
     Snapshot { doc: copy, tiles: doc.tiles.keys().copied().collect(), epoch: *EPOCH.lock().unwrap_or_else(|e| e.into_inner()) }
 }
@@ -155,6 +162,7 @@ fn prepare_from(doc: &Document, known: &std::collections::HashSet<TileKey>, epoc
         traffic: doc.traffic.dirty,
         descriptions: doc.descriptions.dirty,
         time: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+        disk_newer: false,
     };
     Job {
         target,
@@ -191,7 +199,15 @@ impl Job {
 /// The autosave left by a session that did not end normally.
 pub fn pending(content: &Path) -> Option<Meta> {
     let s = std::fs::read_to_string(dir(content).join(META)).ok()?;
-    serde_json::from_str(&s).ok()
+    let mut meta: Meta = serde_json::from_str(&s).ok()?;
+    meta.disk_newer = !meta.fresh && newer_on_disk(&meta);
+    Some(meta)
+}
+
+/// Whether a file of the map was written after the autosave was.
+fn newer_on_disk(meta: &Meta) -> bool {
+    let after = meta.time.saturating_add(1).saturating_mul(1_000_000_000);
+    [Some(meta.dir.clone()), meta.source.clone()].into_iter().flatten().any(|d| super::sync::stamp(&d).files.values().any(|s| s.1 >= after))
 }
 
 /// Nothing to keep any more (saved, or the changes were dropped).
@@ -301,7 +317,7 @@ impl Timer {
 /// drop it.
 pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
     let mut answer = None;
-    egui::Window::new(tr("Unsaved changes found", "Найдены несохранённые изменения")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::Backup, tr("Unsaved changes found", "Найдены несохранённые изменения"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(380.0);
         ui.label(format!(
             "{} «{}» ({}).",
@@ -309,13 +325,17 @@ pub fn offer(ctx: &egui::Context, meta: &Meta) -> Option<bool> {
             meta.name,
             meta.age()
         ));
-        ui.label(egui::RichText::new(tr("The changes kept by the autosave can be brought back. The map itself was not changed.", "Изменения, сохранённые автосохранением, можно вернуть. Сама карта не изменялась.")).small().color(egui::Color32::GRAY));
+        ui.label(egui::RichText::new(tr("The changes kept by the autosave can be brought back. The map itself was not changed.", "Изменения, сохранённые автосохранением, можно вернуть. Сама карта не изменялась.")).small().color(pal().text_dim));
+        if meta.disk_newer {
+            ui.add_space(4.0);
+            ui.colored_label(pal().warn, tr("The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.", "Файлы карты изменены после этого автосохранения (другой программой, например редактором OMSI 2). Восстановление положит старые тайлы из автосохранения поверх этих изменений."));
+        }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-            if ui.button(tr("Restore the changes", "Вернуть изменения")).clicked() {
+            if ui.button(icons::labelled(Icon::Backup, tr("Restore the changes", "Вернуть изменения"))).clicked() {
                 answer = Some(true);
             }
-            if ui.button(tr("Drop them", "Отбросить")).clicked() {
+            if ui.button(icons::labelled(Icon::Delete, tr("Drop them", "Отбросить"))).clicked() {
                 answer = Some(false);
             }
         });
@@ -347,6 +367,7 @@ mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         doc.global.name = "M".into();
         for k in [(0, 0), (1, 0)] {
@@ -362,6 +383,13 @@ mod tests {
         // the tile reads back with what was on it
         let t = omsi_map::Tile::load(&d.join("tile_0_0.map")).unwrap();
         assert_eq!(t.objects.len(), 1);
+        // the map's own files written later: the question says so
+        assert!(!meta.disk_newer);
+        std::fs::create_dir_all(&doc.dir).unwrap();
+        std::fs::write(doc.dir.join("global.cfg"), "[name]\nM\n").unwrap();
+        let mut old = meta.clone();
+        old.time -= 60;
+        assert!(newer_on_disk(&old) && !newer_on_disk(&Meta { time: old.time + 3600, ..old.clone() }));
         clear(&content);
         assert!(pending(&content).is_none());
         let _ = std::fs::remove_dir_all(&content);

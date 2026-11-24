@@ -72,7 +72,7 @@ pub fn patches(dir: &Path, doc: &Document) -> Vec<(TileKey, String, Tile)> {
             continue;
         }
         let key = doc.global.tiles.iter().find(|t| t.file.eq_ignore_ascii_case(&name)).map(|t| (t.x, t.y)).or_else(|| Tile::coords_from_name(&name));
-        if let (Some(k), Ok(mut t)) = (key, Tile::load(&e.path())) {
+        if let (Some(k), Ok(mut t)) = (key, crate::doc::read_tile_file(&e.path())) {
             // (onto the map's grid, as the view has the tile)
             t.fit_to_world_grid(k.1);
             out.push((k, name, t));
@@ -95,7 +95,7 @@ pub enum Part {
 /// when nothing is left in it and it brings no ground of its own.
 pub fn take_out(dir: &Path, file: &str, part: Part) -> anyhow::Result<()> {
     let p = crate::doc::safe::own_path(dir, file);
-    let mut t = Tile::load(&p).map_err(|e| anyhow::anyhow!("{e}"))?;
+    let mut t = crate::doc::read_tile_file(&p).map_err(|e| anyhow::anyhow!("{e}"))?;
     match part {
         Part::Object(id) => {
             t.objects.retain(|o| o.id != id);
@@ -151,7 +151,7 @@ pub fn begin(doc: &mut Document, dir: &Path) -> (Session, usize) {
     let mut patches = Vec::new();
     let mut n = 0;
     for (k, file, _) in patches_of(dir, doc) {
-        let Ok(raw) = Tile::load(&crate::doc::safe::own_path(dir, &file)) else { continue };
+        let Ok(raw) = crate::doc::read_tile_file(&crate::doc::safe::own_path(dir, &file)) else { continue };
         let mut fitted = raw.clone();
         fitted.fit_to_world_grid(k.1);
         let keep = kept(&raw);

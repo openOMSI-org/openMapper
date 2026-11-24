@@ -4,12 +4,14 @@
 use egui::{RichText, Vec2};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::stops::{Side, StopKind, StopSettings};
-use crate::ui::{prop_row, TEXT_DIM};
+use crate::ui::prop_row;
+use crate::theme::pal;
 
 /// The kind of stop the Game logic tool places next.
 pub fn kind_picker(ui: &mut egui::Ui, kind: &mut StopKind) {
-    ui.label(RichText::new(tr("Kind of stop", "Вид остановки")).color(TEXT_DIM));
+    ui.label(RichText::new(tr("Kind of stop", "Вид остановки")).color(pal().text_dim));
     ui.horizontal_wrapped(|ui| {
         for k in StopKind::ALL {
             ui.selectable_value(kind, k, k.label()).on_hover_text(k.hint());
@@ -57,7 +59,7 @@ pub fn settings(ui: &mut egui::Ui, labels: &mut Vec<String>) -> bool {
             s.side = side;
         });
     });
-    ui.label(RichText::new(s.kind.hint()).small().color(TEXT_DIM));
+    ui.label(RichText::new(s.kind.hint()).small().color(pal().text_dim));
     if s == was {
         return false;
     }
@@ -81,8 +83,8 @@ pub fn pair(ui: &mut egui::Ui, stops: &[crate::stops::Found], id: i64) -> Option
     let twins = crate::stops::pair_of(stops, id);
     if !twins.is_empty() {
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(format!("{} {}", crate::icons::Icon::Swap.ch(), tr("Paired with the stop across the road: one name for both", "В паре с остановкой напротив: одно имя на обе"))).small().color(TEXT_DIM));
-            if ui.small_button(tr("Split", "Разделить")).on_hover_text(tr("The stop gets a name of its own (the number is changed in the name box), and renaming one no longer renames the other", "Остановка получает своё имя (число правится в поле имени), и переименование одной больше не переименовывает другую")).clicked() {
+            ui.label(RichText::new(format!("{} {}", crate::icons::Icon::Swap.ch(), tr("Paired with the stop across the road: one name for both", "В паре с остановкой напротив: одно имя на обе"))).small().color(pal().text_dim));
+            if ui.small_button(icons::labelled(Icon::Split, tr("Split", "Разделить"))).on_hover_text(tr("The stop gets a name of its own (the number is changed in the name box), and renaming one no longer renames the other", "Остановка получает своё имя (число правится в поле имени), и переименование одной больше не переименовывает другую")).clicked() {
                 out = Some(PairAction::Split);
             }
         });
@@ -90,8 +92,8 @@ pub fn pair(ui: &mut egui::Ui, stops: &[crate::stops::Found], id: i64) -> Option
     let clashes = crate::stops::clashes(stops, id);
     if !clashes.is_empty() {
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(format!("{} {}", crate::icons::Icon::Warning.ch(), tr("Another stop far from here has this name", "Это имя носит другая остановка вдали отсюда"))).small().color(egui::Color32::from_rgb(230, 170, 100)));
-            if ui.small_button(tr("Make it different", "Сделать другим")).clicked() {
+            ui.label(RichText::new(format!("{} {}", crate::icons::Icon::Warning.ch(), tr("Another stop far from here has this name", "Это имя носит другая остановка вдали отсюда"))).small().color(pal().warn));
+            if ui.small_button(icons::labelled(Icon::Edit, tr("Make it different", "Сделать другим"))).clicked() {
                 out = Some(PairAction::MakeUnique);
             }
         });

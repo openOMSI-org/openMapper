@@ -7,16 +7,15 @@ use crate::collab::{Collab, TunnelState, MIN_PASSWORD};
 use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
-use crate::ui::TEXT_DIM;
+use crate::theme::pal;
 
-const WARN: Color32 = Color32::from_rgb(230, 160, 90);
 
 pub fn window(ctx: &egui::Context, c: &mut Collab, ed: &mut Editor) {
     if !c.open {
         return;
     }
     let mut open = c.open;
-    egui::Window::new(icons::labelled(Icon::Walk, tr("Multiplayer", "Совместная правка"))).id(egui::Id::new("collab window")).open(&mut open).default_pos([380.0, 110.0]).default_width(360.0).resizable(false).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::People, tr("Multiplayer", "Совместная правка"))).id(egui::Id::new("collab window")).open(&mut open).default_pos([380.0, 110.0]).default_width(360.0).resizable(false).show(ctx, |ui| {
         if c.live().is_some() {
             live(ui, c, ed);
         } else if c.joining() {
@@ -31,7 +30,7 @@ pub fn window(ctx: &egui::Context, c: &mut Collab, ed: &mut Editor) {
             start(ui, c, ed);
         }
         if let Some(e) = &c.error {
-            ui.colored_label(WARN, e);
+            ui.colored_label(pal().warn, e);
         }
     });
     c.open = open;
@@ -39,7 +38,7 @@ pub fn window(ctx: &egui::Context, c: &mut Collab, ed: &mut Editor) {
 
 fn start(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
     if let Some(doc) = ed.doc.as_mut() {
-        if ui.button(tr("Recover a conflicting edit…", "Восстановить конфликтующую правку…")).clicked() {
+        if ui.button(icons::labelled(Icon::Backup, tr("Recover a conflicting edit…", "Восстановить конфликтующую правку…"))).clicked() {
             if let Some(path) = rfd::FileDialog::new().set_directory(doc.dir.join("openMapper").join("conflicts")).add_filter("openMapper recovery", &["json"]).pick_file() {
                 match crate::collab::recovery::restore(&path, doc, &mut ed.history) {
                     Ok(()) => {
@@ -53,7 +52,7 @@ fn start(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
             }
         }
     }
-    ui.label(RichText::new(tr("Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.", "Правка одной карты вместе: один открывает её, остальные подключаются. Дороги, объекты, рельеф и покраска передаются сразу; расписание, трафик и описания остаются у хоста, и сохраняет карту хост. У всех должны быть установлены те же объекты и сплайны.")).small().color(TEXT_DIM));
+    ui.label(RichText::new(tr("Edit one map together: one of you hosts it, the others join. Roads, objects, ground and paint are shared as they are made; the timetable, the traffic and the descriptions stay the host's, and the host saves the map. Everybody needs the same objects and splines installed.", "Правка одной карты вместе: один открывает её, остальные подключаются. Дороги, объекты, рельеф и покраска передаются сразу; расписание, трафик и описания остаются у хоста, и сохраняет карту хост. У всех должны быть установлены те же объекты и сплайны.")).small().color(pal().text_dim));
     ui.add_space(4.0);
     egui::Grid::new("collab who").num_columns(2).show(ui, |ui| {
         ui.label(tr("Your name", "Ваше имя"));
@@ -78,16 +77,16 @@ fn start(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
         c.asking_no_password = false;
     }
     if c.internet && c.password.chars().count() < MIN_PASSWORD {
-        ui.colored_label(WARN, format!("{} {MIN_PASSWORD}", tr("Over the internet the password must have at least this many letters:", "Для интернета пароль должен быть не короче, букв:")));
+        ui.colored_label(pal().warn, format!("{} {MIN_PASSWORD}", tr("Over the internet the password must have at least this many letters:", "Для интернета пароль должен быть не короче, букв:")));
     } else if c.password.is_empty() && c.no_password {
-        ui.colored_label(WARN, tr("No password: anybody who reaches this computer's port can join and change the whole map.", "Без пароля: любой, кто достучится до порта этого компьютера, может подключиться и изменить всю карту."));
-        if ui.small_button(tr("Ask for a password after all", "Всё-таки спрашивать пароль")).clicked() {
+        ui.colored_label(pal().warn, tr("No password: anybody who reaches this computer's port can join and change the whole map.", "Без пароля: любой, кто достучится до порта этого компьютера, может подключиться и изменить всю карту."));
+        if ui.small_button(icons::labelled(Icon::Lock, tr("Ask for a password after all", "Всё-таки спрашивать пароль"))).clicked() {
             c.no_password = false;
         }
     } else if c.password.is_empty() && c.asking_no_password {
-        ui.colored_label(WARN, tr("Host without a password? Anybody on this network who finds the port can join and change the whole map.", "Открыть без пароля? Любой в этой сети, кто найдёт порт, сможет подключиться и изменить всю карту."));
+        ui.colored_label(pal().warn, tr("Host without a password? Anybody on this network who finds the port can join and change the whole map.", "Открыть без пароля? Любой в этой сети, кто найдёт порт, сможет подключиться и изменить всю карту."));
         ui.horizontal(|ui| {
-            if ui.button(tr("Yes, without a password", "Да, без пароля")).clicked() {
+            if ui.button(icons::labelled(Icon::Unlock, tr("Yes, without a password", "Да, без пароля"))).clicked() {
                 c.no_password = true;
                 c.asking_no_password = false;
             }
@@ -97,15 +96,15 @@ fn start(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
         });
     } else if c.password.is_empty() {
         ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(tr("Type a password the others will need.", "Введите пароль, который понадобится остальным.")).small().color(TEXT_DIM));
-            if ui.small_button(tr("Host without a password…", "Открыть без пароля…")).clicked() {
+            ui.label(RichText::new(tr("Type a password the others will need.", "Введите пароль, который понадобится остальным.")).small().color(pal().text_dim));
+            if ui.small_button(icons::labelled(Icon::Unlock, tr("Host without a password…", "Открыть без пароля…"))).clicked() {
                 c.asking_no_password = true;
             }
         });
     }
     let password_ok = if c.internet { c.password.chars().count() >= MIN_PASSWORD } else { !c.password.is_empty() || c.no_password };
     let can_host = ed.doc.is_some() && !c.name.trim().is_empty() && (c.lan || c.internet) && password_ok;
-    if ui.add_enabled(can_host, egui::Button::new(icons::labelled(Icon::Play, tr("Host", "Стать хостом")))).on_disabled_hover_text(tr("Open a map, type a name and a password first", "Сначала откройте карту, введите имя и пароль")).clicked() {
+    if ui.add_enabled(can_host, egui::Button::new(icons::labelled(Icon::Public, tr("Host", "Стать хостом")))).on_disabled_hover_text(tr("Open a map, type a name and a password first", "Сначала откройте карту, введите имя и пароль")).clicked() {
         c.host(ed);
     }
     ui.separator();
@@ -113,10 +112,10 @@ fn start(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
     ui.add(egui::TextEdit::singleline(&mut c.address).hint_text("192.168.0.10:27560  /  https://….trycloudflare.com").desired_width(f32::INFINITY));
     let unsaved = ed.doc.as_ref().map(|d| d.is_dirty()).unwrap_or(false);
     if unsaved {
-        ui.colored_label(WARN, tr("The map open now has unsaved changes: joining closes it. Save it first.", "В открытой карте есть несохранённые изменения: подключение закроет её. Сначала сохраните."));
+        ui.colored_label(pal().warn, tr("The map open now has unsaved changes: joining closes it. Save it first.", "В открытой карте есть несохранённые изменения: подключение закроет её. Сначала сохраните."));
     }
     let can_join = !c.address.trim().is_empty() && !c.name.trim().is_empty() && !unsaved;
-    if ui.add_enabled(can_join, egui::Button::new(icons::labelled(Icon::Walk, tr("Join", "Подключиться")))).clicked() {
+    if ui.add_enabled(can_join, egui::Button::new(icons::labelled(Icon::Login, tr("Join", "Подключиться")))).clicked() {
         c.join();
     }
 }
@@ -134,9 +133,9 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
                     copy_row(ui, a, what);
                 }
                 if !h.addrs.is_empty() {
-                    ui.label(RichText::new(tr("On this network the connection is not encrypted: somebody listening in can see the map, and from what they catch try passwords on their own computer. Use a long password, or the internet tunnel (encrypted).", "В локальной сети соединение не шифруется: тот, кто подслушивает, видит карту и по перехваченному может подбирать пароль на своём компьютере. Используйте длинный пароль или туннель через интернет (он шифруется).")).small().color(WARN));
+                    ui.label(RichText::new(tr("On this network the connection is not encrypted: somebody listening in can see the map, and from what they catch try passwords on their own computer. Use a long password, or the internet tunnel (encrypted).", "В локальной сети соединение не шифруется: тот, кто подслушивает, видит карту и по перехваченному может подбирать пароль на своём компьютере. Используйте длинный пароль или туннель через интернет (он шифруется).")).small().color(pal().warn));
                 }
-                ui.label(RichText::new(tr("Everybody who joins can change the whole map.", "Каждый подключившийся может изменить всю карту.")).small().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Everybody who joins can change the whole map.", "Каждый подключившийся может изменить всю карту.")).small().color(pal().text_dim));
                 match &*h.tunnel.lock().unwrap_or_else(|e| e.into_inner()) {
                     TunnelState::Off => {}
                     TunnelState::Starting => {
@@ -155,7 +154,7 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
                         }
                     },
                     TunnelState::Failed => {
-                        ui.colored_label(WARN, tr("The Cloudflare tunnel could not be opened (no cloudflared, or no internet). The LAN addresses still work.", "Не удалось открыть туннель Cloudflare (нет cloudflared или интернета). Адреса в локальной сети работают."));
+                        ui.colored_label(pal().warn, tr("The Cloudflare tunnel could not be opened (no cloudflared, or no internet). The LAN addresses still work.", "Не удалось открыть туннель Cloudflare (нет cloudflared или интернета). Адреса в локальной сети работают."));
                     }
                 }
             }
@@ -163,7 +162,7 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
                 ui.label(tr("You joined this map. The host saves it.", "Вы подключены к этой карте. Сохраняет её хост."));
             }
         }
-        ui.label(RichText::new(if settled { tr("Everything of yours is with the others", "Все ваши правки у остальных") } else { tr("Sending your edits…", "Отправка ваших правок…") }).small().color(TEXT_DIM));
+        ui.label(RichText::new(if settled { tr("Everything of yours is with the others", "Все ваши правки у остальных") } else { tr("Sending your edits…", "Отправка ваших правок…") }).small().color(pal().text_dim));
         ui.separator();
         ui.label(format!("{} ({})", tr("In the session", "В сессии"), l.peers.len()));
         for p in &l.peers {
@@ -182,7 +181,7 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
         egui::ScrollArea::vertical().max_height(140.0).stick_to_bottom(true).show(ui, |ui| {
             for (who, text) in &l.chat {
                 let p = l.peers.iter().find(|p| p.id == *who);
-                let color = p.map(|p| Color32::from_rgb(p.color[0], p.color[1], p.color[2])).unwrap_or(TEXT_DIM);
+                let color = p.map(|p| Color32::from_rgb(p.color[0], p.color[1], p.color[2])).unwrap_or(pal().text_dim);
                 ui.horizontal_wrapped(|ui| {
                     ui.label(RichText::new(p.map(|p| p.name.as_str()).unwrap_or("?")).color(color).strong());
                     ui.label(text);
@@ -196,7 +195,7 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
         r.request_focus();
     }
     ui.separator();
-    if ui.button(tr("Leave", "Выйти")).clicked() {
+    if ui.button(icons::labelled(Icon::Logout, tr("Leave", "Выйти"))).clicked() {
         leave = true;
     }
     if leave {
@@ -207,8 +206,8 @@ fn live(ui: &mut egui::Ui, c: &mut Collab, ed: &mut Editor) {
 fn copy_row(ui: &mut egui::Ui, text: &str, what: &str) {
     ui.horizontal(|ui| {
         ui.monospace(text);
-        ui.label(RichText::new(what).small().color(TEXT_DIM));
-        if ui.small_button(icons::labelled(Icon::Copy, "")).on_hover_text(tr("Copy", "Копировать")).clicked() {
+        ui.label(RichText::new(what).small().color(pal().text_dim));
+        if icons::small(ui, Icon::Copy, tr("Copy", "Копировать")).clicked() {
             ui.ctx().copy_text(text.to_string());
         }
     });

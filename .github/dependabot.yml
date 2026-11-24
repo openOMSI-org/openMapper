@@ -13,6 +13,13 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    ignore:
+      # glam's types go straight into openOMSI's crates (omsi-geometry, omsi-world...): it moves
+      # when openOMSI's own glam does, together with the openOMSI revision, never on its own
+      - dependency-name: glam
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     groups:
       crates:
         update-types:

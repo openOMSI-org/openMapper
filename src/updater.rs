@@ -12,7 +12,9 @@ use egui::RichText;
 use sha2::{Digest, Sha256};
 
 use crate::i18n::tr;
+use crate::icons::{self, Icon};
 use crate::install::Prefs;
+use crate::theme::pal;
 
 const LATEST: &str = "https://api.github.com/repos/openOMSI-org/openMapper/releases/latest";
 const PAGE: &str = "https://github.com/openOMSI-org/openMapper/releases/latest";
@@ -174,7 +176,7 @@ impl Updater {
         let mut set_mode = mode;
         let mut check = false;
         let mut open = true;
-        egui::Window::new(tr("Updates", "Обновления")).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Update, tr("Updates", "Обновления"))).open(&mut open).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
             ui.set_max_width(420.0);
             ui.label(format!("{} {}", tr("This version:", "Эта версия:"), env!("CARGO_PKG_VERSION")));
             match &self.state {
@@ -186,7 +188,7 @@ impl Updater {
                         });
                     }
                     ui.horizontal(|ui| {
-                        if ui.button(tr("Install and restart", "Установить и перезапустить")).clicked() {
+                        if ui.button(icons::labelled(Icon::Update, tr("Install and restart", "Установить и перезапустить"))).clicked() {
                             install = Some(r.clone());
                         }
                         if ui.button(tr("Not now", "Не сейчас")).clicked() {
@@ -204,7 +206,7 @@ impl Updater {
                 State::Installed(v) => {
                     ui.label(format!("{} {v}", tr("Installed version", "Установлена версия")));
                     if unsaved {
-                        ui.label(RichText::new(tr("openMapper restarts when you save the map.", "openMapper перезапустится, когда вы сохраните карту.")).color(crate::ui::TEXT_DIM));
+                        ui.label(RichText::new(tr("openMapper restarts when you save the map.", "openMapper перезапустится, когда вы сохраните карту.")).color(pal().text_dim));
                     }
                 }
                 State::Checking(_) => {
@@ -217,7 +219,7 @@ impl Updater {
                     ui.label(tr("This is the newest version.", "Это самая новая версия."));
                 }
                 State::Failed(e) => {
-                    ui.colored_label(egui::Color32::from_rgb(230, 120, 100), e);
+                    ui.colored_label(pal().error, e);
                     ui.hyperlink_to(tr("Download it from GitHub by hand", "Скачать вручную с GitHub"), PAGE);
                 }
                 State::Idle => {}
@@ -228,12 +230,12 @@ impl Updater {
                 ui.radio_value(&mut set_mode, Mode::Ask, tr("Offer it to me", "Предлагать установить"));
                 ui.radio_value(&mut set_mode, Mode::Auto, tr("Install it and restart by itself", "Ставить и перезапускаться самому"));
                 ui.radio_value(&mut set_mode, Mode::Off, tr("Never look for updates", "Не проверять обновления"));
-                if ui.add_enabled(!matches!(self.state, State::Checking(_) | State::Installing(..) | State::Installed(_)), egui::Button::new(tr("Check now", "Проверить сейчас"))).clicked() {
+                if ui.add_enabled(!matches!(self.state, State::Checking(_) | State::Installing(..) | State::Installed(_)), egui::Button::new(icons::labelled(Icon::Refresh, tr("Check now", "Проверить сейчас")))).clicked() {
                     check = true;
                 }
             } else if offer {
                 ui.separator();
-                if ui.button(tr("Never offer updates again", "Больше не предлагать обновления")).clicked() {
+                if ui.button(icons::labelled(Icon::Block, tr("Never offer updates again", "Больше не предлагать обновления"))).clicked() {
                     set_mode = Mode::Off;
                 }
             }

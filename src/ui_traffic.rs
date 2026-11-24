@@ -11,10 +11,9 @@ use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::traffic::catalogue::{Catalogue, Item};
 use crate::traffic::{self, File};
-use crate::ui::ACCENT;
+use crate::theme::pal;
+use crate::theme;
 
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
-const WARN: Color32 = Color32::from_rgb(230, 170, 100);
 const ROAD: Color32 = Color32::from_rgb(232, 122, 50);
 const PEOPLE: Color32 = Color32::from_rgb(90, 170, 240);
 
@@ -56,14 +55,14 @@ fn check(ui: &mut egui::Ui, on: bool, text: &str) -> bool {
     let size = Vec2::new(24.0 + galley.size().x, galley.size().y.max(20.0));
     let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let vis = ui.style().interact(&resp);
-    let col = if on { ACCENT } else { vis.fg_stroke.color };
+    let col = if on { pal().accent } else { vis.fg_stroke.color };
     icons::paint(ui.painter(), if on { Icon::CheckOn } else { Icon::CheckOff }, egui::pos2(rect.left() + 9.0, rect.center().y), 20.0, col);
     ui.painter().galley(egui::pos2(rect.left() + 24.0, rect.center().y - galley.size().y * 0.5), galley, vis.text_color());
     resp.clicked()
 }
 
 fn hint(ui: &mut egui::Ui, text: &str) {
-    ui.label(RichText::new(text).small().color(TEXT_DIM));
+    ui.label(RichText::new(text).small().color(pal().text_dim));
 }
 
 /// A picker of catalogue items with a search field; the item chosen.
@@ -127,7 +126,7 @@ impl TrafficUi {
         let before = (doc.global.traffic_density_road.clone(), doc.global.traffic_density_passenger.clone(), doc.traffic.clone(), doc.timetable.clone());
         let global_before = (doc.global.clone(), doc.order.clone());
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Traffic, tr("Traffic and AI", "Трафик и ИИ")))
+        egui::Window::new(icons::labelled(Icon::Car, tr("Traffic and AI", "Трафик и ИИ")))
             .id(egui::Id::new("traffic window"))
             .open(&mut open)
             .default_pos([330.0, 90.0])
@@ -178,7 +177,7 @@ impl TrafficUi {
         let missing: Vec<String> = doc.traffic.veh_groups.iter().filter(|(n, _)| !doc.traffic.groups.iter().any(|g| g.name.eq_ignore_ascii_case(n))).map(|(n, _)| n.clone()).collect();
         for name in missing {
             ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(format!("«{name}» {}", tr("is to drive about, but there is no such group.", "должна ездить по дорогам, но такой группы нет."))).color(WARN));
+                ui.label(RichText::new(format!("«{name}» {}", tr("is to drive about, but there is no such group.", "должна ездить по дорогам, но такой группы нет."))).color(pal().warn));
                 if let Some(g) = self.stock_group(&name) {
                     if ui.button(icons::labelled(Icon::Add, tr("Make it with OMSI 2's vehicles", "Создать с машинами OMSI 2"))).on_hover_text(tr("The group of that name from OMSI 2's own maps", "Группа с этим именем из карт OMSI 2")).clicked() {
                         doc.traffic.groups.push(g);
@@ -226,7 +225,7 @@ impl TrafficUi {
             }
                 None => {
                     self.group = None;
-                    ui.label(RichText::new(tr("Pick a group on the left.", "Выберите группу слева.")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("Pick a group on the left.", "Выберите группу слева.")).color(pal().text_dim));
                 }
             });
         });
@@ -369,7 +368,7 @@ impl TrafficUi {
         });
         if let Some(h) = &g.hof {
             if !hofs.is_empty() && !hofs.iter().any(|x| x.eq_ignore_ascii_case(h)) {
-                ui.label(RichText::new(tr("None of its buses has this depot file beside it: they run without their destination signs and fleet data.", "Ни у одного автобуса нет рядом этого файла депо: они поедут без табличек и данных парка.")).small().color(WARN));
+                ui.label(RichText::new(tr("None of its buses has this depot file beside it: they run without their destination signs and fleet data.", "Ни у одного автобуса нет рядом этого файла депо: они поедут без табличек и данных парка.")).small().color(pal().warn));
             }
         }
         hint(ui, tr("The buses it has: a type of bus and the fleet number and plate of each.", "Автобусы депо: тип автобуса, номер и госномер каждого."));
@@ -431,7 +430,7 @@ impl TrafficUi {
 
     fn lists_panel(&mut self, ui: &mut egui::Ui, doc: &mut Document) {
         let Some(c) = &self.catalogue else {
-            ui.label(RichText::new(tr("The lists can't be read without the OMSI 2 folder.", "Без папки OMSI 2 списки не прочитать.")).color(WARN));
+            ui.label(RichText::new(tr("The lists can't be read without the OMSI 2 folder.", "Без папки OMSI 2 списки не прочитать.")).color(pal().warn));
             return;
         };
         let t = &mut doc.traffic;
@@ -441,7 +440,7 @@ impl TrafficUi {
             (2, tr("Drivers", "Водители"), tr("Who drives the AI's buses.", "Кто водит автобусы ИИ."), &c.humans, File::Drivers),
         ] {
             ui.add_space(6.0);
-            ui.label(RichText::new(title).strong().color(Color32::from_gray(225)));
+            ui.label(RichText::new(title).strong().color(pal().text_strong));
             hint(ui, help);
             let list = match what {
                 0 => &mut t.parked,
@@ -546,7 +545,7 @@ fn curve_table(ui: &mut egui::Ui, k: usize, title: &str, color: Color32, curve: 
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         ui.label(RichText::new(title).strong().color(color));
-        ui.menu_button(tr("Typical day…", "Типичный день…"), |ui| {
+        ui.menu_button(icons::labelled(Icon::Schedule, tr("Typical day…", "Типичный день…")), |ui| {
             for (name, c) in [(tr("Quiet village", "Тихая деревня"), QUIET), (tr("Town with rush hours", "Город с часами пик"), TOWN), (tr("The same all day", "Весь день одинаково"), FLAT)] {
                 if ui.button(name).clicked() {
                     *curve = c.to_vec();
@@ -595,22 +594,22 @@ fn plot(ui: &mut egui::Ui, road: &mut [(f32, f32)], people: &mut [(f32, f32)]) -
     let inner = Rect::from_min_max(rect.min + Vec2::new(28.0, 6.0), rect.max - Vec2::new(6.0, 18.0));
     let top = road.iter().chain(people.iter()).map(|p| p.1).fold(2.0f32, f32::max).ceil();
     let p = ui.painter_at(rect);
-    p.rect_filled(rect, 3.0, Color32::from_rgb(24, 25, 28));
+    p.rect(rect, 3.0, pal().canvas, egui::Stroke::new(1.0, pal().separator), egui::StrokeKind::Inside);
     let at = |h: f32, d: f32| Pos2::new(inner.left() + inner.width() * h / 24.0, inner.bottom() - inner.height() * d / top);
     for h in (0..=24).step_by(3) {
         let x = at(h as f32, 0.0).x;
-        p.line_segment([Pos2::new(x, inner.top()), Pos2::new(x, inner.bottom())], Stroke::new(1.0, Color32::from_gray(45)));
-        p.text(Pos2::new(x, inner.bottom() + 2.0), egui::Align2::CENTER_TOP, format!("{h}"), egui::FontId::proportional(10.0), TEXT_DIM);
+        p.line_segment([Pos2::new(x, inner.top()), Pos2::new(x, inner.bottom())], Stroke::new(1.0, pal().grid));
+        p.text(Pos2::new(x, inner.bottom() + 2.0), egui::Align2::CENTER_TOP, format!("{h}"), egui::FontId::proportional(10.0), pal().text_dim);
     }
     for d in 0..=top as i32 {
         let y = at(0.0, d as f32).y;
-        p.line_segment([Pos2::new(inner.left(), y), Pos2::new(inner.right(), y)], Stroke::new(1.0, if d == 1 { Color32::from_gray(70) } else { Color32::from_gray(45) }));
-        p.text(Pos2::new(inner.left() - 4.0, y), egui::Align2::RIGHT_CENTER, format!("{d}"), egui::FontId::proportional(10.0), TEXT_DIM);
+        p.line_segment([Pos2::new(inner.left(), y), Pos2::new(inner.right(), y)], Stroke::new(1.0, if d == 1 { pal().grid_major } else { pal().grid }));
+        p.text(Pos2::new(inner.left() - 4.0, y), egui::Align2::RIGHT_CENTER, format!("{d}"), egui::FontId::proportional(10.0), pal().text_dim);
     }
     for (k, curve, color) in [(0, road, ROAD), (1, people, PEOPLE)] {
         let pts: Vec<Pos2> = curve.iter().map(|q| at(q.0, q.1)).collect();
         if pts.len() >= 2 {
-            p.add(egui::Shape::line(pts.clone(), Stroke::new(2.0, color)));
+            p.add(egui::Shape::line(pts.clone(), Stroke::new(2.0, theme::readable(color))));
         }
         for (j, q) in curve.iter_mut().enumerate() {
             let c = at(q.0, q.1);
@@ -625,7 +624,7 @@ fn plot(ui: &mut egui::Ui, road: &mut [(f32, f32)], people: &mut [(f32, f32)]) -
             p.circle_filled(c, if hot { 5.0 } else { 3.5 }, color);
             if hot {
                 let m = (q.0 * 60.0).round() as i64;
-                p.text(c + Vec2::new(0.0, -8.0), egui::Align2::CENTER_BOTTOM, format!("{}:{:02}  × {:.2}", m / 60, m % 60, q.1), egui::FontId::proportional(11.0), Color32::WHITE);
+                p.text(c + Vec2::new(0.0, -8.0), egui::Align2::CENTER_BOTTOM, format!("{}:{:02}  × {:.2}", m / 60, m % 60, q.1), egui::FontId::proportional(11.0), pal().ink);
             }
         }
     }

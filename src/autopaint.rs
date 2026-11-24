@@ -8,6 +8,7 @@ use glam::DVec2;
 use crate::doc::{mask_size, tile_size, Document};
 use crate::history::History;
 use crate::i18n::tr;
+use crate::theme::pal;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rule {
@@ -148,7 +149,7 @@ pub fn panel(ui: &mut egui::Ui, rule: &mut Rule, ed: &mut crate::editor::Editor)
     use crate::icons::{self, Icon};
     ui.add_space(8.0);
     ui.label(egui::RichText::new(tr("By slope and height", "По уклону и высоте")).strong());
-    ui.label(egui::RichText::new(tr("The chosen layer painted over the whole map where the ground is so steep (and so high)", "Выбранный слой по всей карте там, где земля так крута (и так высока)")).small().color(crate::ui::TEXT_DIM));
+    ui.label(egui::RichText::new(tr("The chosen layer painted over the whole map where the ground is so steep (and so high)", "Выбранный слой по всей карте там, где земля так крута (и так высока)")).small().color(pal().text_dim));
     egui::Grid::new("autopaint").num_columns(2).show(ui, |ui| {
         ui.label(tr("Slope", "Уклон"));
         ui.horizontal(|ui| {

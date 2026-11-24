@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use omsi_cfg::CfgFile;
-use omsi_map::ailists::{AiTypGroup, AiVehicleEntry, UnschedGroup};
+use omsi_map::ailists::{AiTypGroup, UnschedGroup};
 use omsi_map::{AiGroup, DepotEntry};
 
 use crate::doc::safe::Op;
@@ -29,6 +29,8 @@ pub enum File {
     SignalRoutes,
     /// The map's depot files (`*.hof`), all of them.
     Depots,
+    /// The trolleybus wire (`trolley.txt`, openOMSI's).
+    Trolley,
 }
 
 impl File {
@@ -44,6 +46,7 @@ impl File {
             File::Registrations => "registrations.txt",
             File::SignalRoutes => "signalroutes.cfg",
             File::Depots => "*.hof",
+            File::Trolley => "trolley.txt",
         }
     }
 }
@@ -69,6 +72,8 @@ pub struct Traffic {
     /// The depot files in the map's folder (`*.hof`): its destinations, stop names and
     /// IBIS routes.
     pub depots: Vec<crate::hof::Hof>,
+    /// The trolleybus wire openOMSI reads (`trolley.txt`); None: the map has none.
+    pub trolley: Option<crate::trolley::Wire>,
     /// Which of those three the map has (only they are written again on an undo).
     pub has: [bool; 3],
     /// The map has `unsched_vehgroups.txt`: without it the first group drives about.
@@ -89,7 +94,9 @@ impl Traffic {
         let mut t = Traffic::default();
         if let Some(f) = read("ailists.cfg") {
             t.legacy = is_legacy(&f);
-            t.groups = if t.legacy { parse_legacy(&f) } else { omsi_map::AiLists::parse(&f).groups };
+            // (openOMSI's reader takes the first format as Omsi.exe does: a group named
+            // again starts over, OMSI 1's depots and their type groups too)
+            t.groups = omsi_map::AiLists::parse(&f).groups;
         }
         if let Some(f) = read("unsched_vehgroups.txt") {
             t.veh_groups = omsi_map::ailists::parse_unsched_vehgroups(&f);
@@ -120,6 +127,7 @@ impl Traffic {
             t.has[1] = true;
         }
         t.depots = crate::hof::load_dir(dir);
+        t.trolley = std::fs::read(omsi_cfg::resolve_path(dir, "trolley.txt")).ok().map(|b| crate::trolley::parse(&omsi_cfg::decode_text(&b)));
         t
     }
 
@@ -156,6 +164,7 @@ impl Traffic {
             }
         }
         self.changed.insert(File::Depots);
+        self.changed.insert(File::Trolley);
         self.mark();
     }
 
@@ -236,49 +245,6 @@ fn is_legacy(f: &CfgFile) -> bool {
         let l = l.trim().to_ascii_lowercase();
         l == "[ailist]" || l == "[aigroup]"
     })
-}
-
-/// The first format as groups of the second: each `[aigroup]` (name, count, the vehicles'
-/// numbers in `[ailist]`, its depot) with weight 1 per vehicle; with no default group
-/// (-1) the vehicles in no group make "NotInGroup", as OMSI does.
-fn parse_legacy(f: &CfgFile) -> Vec<AiGroup> {
-    let mut r = f.reader().with_rule(omsi_cfg::KeywordRule::AnyCase);
-    let mut list: Vec<String> = Vec::new();
-    let mut default = -1;
-    let mut groups: Vec<AiGroup> = Vec::new();
-    let mut used = BTreeSet::new();
-    while let Some(k) = r.next_keyword() {
-        match k.as_str() {
-            "ailist" => {
-                let _ = r.str();
-                default = r.str().trim().parse::<i32>().unwrap_or(-1);
-                let n = r.str().trim().parse::<usize>().unwrap_or(0).min(10_000);
-                list = (0..n).map(|_| r.str().trim().to_string()).collect();
-            }
-            "aigroup" => {
-                let name = r.str().trim().to_string();
-                let n = r.str().trim().parse::<usize>().unwrap_or(0).min(10_000);
-                let idx: Vec<usize> = (0..n).filter_map(|_| r.str().trim().parse::<usize>().ok()).collect();
-                let hof = r.str().trim().to_string();
-                let vehicles = idx
-                    .iter()
-                    .filter_map(|&i| {
-                        used.insert(i);
-                        list.get(i).map(|f| AiVehicleEntry { file: f.clone(), weight: 1.0, ..Default::default() })
-                    })
-                    .collect();
-                groups.push(AiGroup { name, vehicles, hof: (!hof.is_empty()).then_some(hof), ..Default::default() });
-            }
-            _ => {}
-        }
-    }
-    if default < 0 {
-        let rest: Vec<AiVehicleEntry> = list.iter().enumerate().filter(|(i, f)| !used.contains(i) && !f.is_empty()).map(|(_, f)| AiVehicleEntry { file: f.clone(), weight: 1.0, ..Default::default() }).collect();
-        if !rest.is_empty() {
-            groups.push(AiGroup { name: "NotInGroup".into(), vehicles: rest, ..Default::default() });
-        }
-    }
-    groups
 }
 
 /// A number the way the files have them (whole ones without a point).
@@ -376,9 +342,18 @@ pub fn plan(t: &Traffic, map_dir: &Path) -> Vec<Op> {
     if t.changed.contains(&File::Depots) {
         ops.extend(depot_ops(&t.depots, map_dir));
     }
+    if t.changed.contains(&File::Trolley) {
+        let p = crate::doc::safe::own_path(map_dir, File::Trolley.name());
+        match &t.trolley {
+            Some(w) => ops.push(Op::Write(p, crate::trolley::text(w).into_bytes())),
+            // (the wire taken away: the game reads the map's wire splines again)
+            None if p.exists() => ops.push(Op::Remove(p)),
+            None => {}
+        }
+    }
     ops.extend(t.changed
         .iter()
-        .filter(|f| **f != File::Depots)
+        .filter(|f| !matches!(f, File::Depots | File::Trolley))
         .map(|f| {
             let text = match f {
                 File::AiLists => ailists_text(&t.groups),
@@ -390,7 +365,7 @@ pub fn plan(t: &Traffic, map_dir: &Path) -> Vec<Op> {
                 File::TimeZone => timezone_text(&t.timezone),
                 File::Registrations => list_text(&t.registrations),
                 File::SignalRoutes => crate::signals::text(&t.signal_routes),
-                File::Depots => unreachable!(),
+                File::Depots | File::Trolley => unreachable!(),
             };
             Op::Write(crate::doc::safe::own_path(map_dir, f.name()), encode(&text))
         }));

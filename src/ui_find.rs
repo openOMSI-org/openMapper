@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use egui::{Color32, RichText};
+use egui::RichText;
 use glam::DVec2;
 
 use crate::doc::{tile_origin, Document, Sel, TileKey};
@@ -13,7 +13,8 @@ use crate::editor::Editor;
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::library::Library;
-use crate::ui::{Action, ACCENT, TEXT_DIM};
+use crate::ui::Action;
+use crate::theme::pal;
 
 /// One kind of thing the map uses, and where.
 struct Group {
@@ -118,6 +119,9 @@ impl Find {
             let v: Vec<f64> = q.split([',', ';', ' ']).filter(|x| !x.is_empty()).map(|x| x.parse::<f64>()).collect::<Result<_, _>>().unwrap_or_default();
             (v.len() == 2).then(|| DVec2::new(v[0], v[1]))
         };
+        // a tile by its place in the grid ("tile 3 -2")
+        // a tile by its place in the grid ("tile 3 -2")
+        let tile = tile_query(&q).map(|k| (k, doc.order.iter().position(|o| *o == k), doc.tiles.contains_key(&k)));
         let mut look: Option<DVec2> = None;
         let name_of = |g: &Group| lib.find(&g.file).map(|a| a.name.clone()).filter(|n| !n.is_empty()).unwrap_or_else(|| g.file.rsplit(['\\', '/']).next().unwrap_or(&g.file).to_string());
         let mut open = self.open;
@@ -126,7 +130,7 @@ impl Find {
         let mut go: Option<(Sel, DVec2)> = None;
         let mut replace: Option<(String, bool, String)> = None;
         egui::Window::new(icons::labelled(Icon::Search, tr("Find in map", "Поиск по карте"))).id(egui::Id::new("find in map")).open(&mut open).default_pos([320.0, 100.0]).default_size([440.0, 480.0]).resizable(true).show(ctx, |ui| {
-            let r = ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("Name, file, IDCode, stop or x, y", "Название, файл, IDCode, остановка или x, y")).desired_width(f32::INFINITY));
+            let r = ui.add(egui::TextEdit::singleline(&mut self.query).hint_text(tr("Name, file, IDCode, stop, x, y or tile x y", "Название, файл, IDCode, остановка, x, y или тайл x y")).desired_width(f32::INFINITY));
             if self.focus {
                 r.request_focus();
                 self.focus = false;
@@ -140,12 +144,26 @@ impl Find {
                 });
                 ui.separator();
             }
+            if let Some((k, index, has)) = tile {
+                ui.horizontal(|ui| {
+                    let what = match (index, has) {
+                        (Some(i), true) => format!("{} {}, {} · {} {i}", tr("Tile", "Тайл"), k.0, k.1, tr("number", "номер")),
+                        (Some(i), false) => format!("{} {}, {} · {} {i} · {}", tr("Tile", "Тайл"), k.0, k.1, tr("number", "номер"), tr("listed, no file", "в списке, без файла")),
+                        _ => format!("{} {}, {} · {}", tr("Tile", "Тайл"), k.0, k.1, tr("not on the map", "нет на карте")),
+                    };
+                    ui.label(what);
+                    if ui.button(icons::labelled(Icon::Focus, tr("Go to", "Перейти"))).on_hover_text(tr("The camera over the tile's middle", "Камера над серединой тайла")).clicked() {
+                        look = Some(crate::doc::tile_origin(k) + DVec2::splat(crate::doc::tile_size() * 0.5));
+                    }
+                });
+                ui.separator();
+            }
             if !places.is_empty() {
                 egui::ScrollArea::vertical().id_salt("places").max_height(150.0).show(ui, |ui| {
                     for (name, kind, sel, p) in places.iter().take(50) {
                         ui.horizontal(|ui| {
-                            ui.label(RichText::new(name).color(Color32::WHITE));
-                            ui.label(RichText::new(*kind).small().color(TEXT_DIM));
+                            ui.label(RichText::new(name).color(pal().text_strong));
+                            ui.label(RichText::new(*kind).small().color(pal().text_dim));
                             if ui.small_button(icons::labelled(Icon::Focus, tr("Go to", "Перейти"))).clicked() {
                                 go = Some((*sel, *p));
                             }
@@ -169,29 +187,29 @@ impl Find {
                         });
                     }
                     None => {
-                        ui.label(RichText::new(tr("Nothing on the map has this IDCode.", "На карте нет ничего с таким IDCode.")).color(TEXT_DIM));
+                        ui.label(RichText::new(tr("Nothing on the map has this IDCode.", "На карте нет ничего с таким IDCode.")).color(pal().text_dim));
                     }
                 }
                 ui.separator();
             }
             let shown: Vec<&Group> = self.groups.iter().filter(|g| q.is_empty() || g.file.to_lowercase().contains(&q) || name_of(g).to_lowercase().contains(&q)).collect();
             let total: usize = shown.iter().map(|g| g.at.len()).sum();
-            ui.label(RichText::new(format!("{} {} · {} {total}", tr("kinds", "видов"), shown.len(), tr("on the map", "на карте"))).small().color(TEXT_DIM));
+            ui.label(RichText::new(format!("{} {} · {} {total}", tr("kinds", "видов"), shown.len(), tr("on the map", "на карте"))).small().color(pal().text_dim));
             ui.separator();
             egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
                 for g in shown.iter().take(400) {
                     ui.horizontal(|ui| {
-                        ui.label(RichText::new(format!("{:>5}", g.at.len())).monospace().color(ACCENT));
+                        ui.label(RichText::new(format!("{:>5}", g.at.len())).monospace().color(pal().accent));
                         ui.vertical(|ui| {
-                            ui.label(RichText::new(name_of(g)).color(Color32::WHITE));
-                            crate::ui::long_label(ui, &g.file, egui::TextStyle::Small, TEXT_DIM);
+                            ui.label(RichText::new(name_of(g)).color(pal().text_strong));
+                            crate::ui::long_label(ui, &g.file, egui::TextStyle::Small, pal().text_dim);
                         });
                     });
                     ui.horizontal_wrapped(|ui| {
-                        if ui.small_button(tr("Select all", "Выбрать все")).clicked() {
+                        if ui.small_button(icons::labelled(Icon::SelectAll, tr("Select all", "Выбрать все"))).clicked() {
                             select = Some(g.at.iter().map(|a| a.0).collect());
                         }
-                        if ui.small_button(icons::labelled(Icon::Focus, tr("Next", "Следующий"))).on_hover_text(tr("Select the next one and go there", "Выбрать следующий и перейти к нему")).clicked() {
+                        if ui.small_button(icons::labelled(Icon::Right, tr("Next", "Следующий"))).on_hover_text(tr("Select the next one and go there", "Выбрать следующий и перейти к нему")).clicked() {
                             let n = match &self.walk {
                                 Some((f, i)) if f.eq_ignore_ascii_case(&g.file) => (i + 1) % g.at.len(),
                                 _ => 0,
@@ -211,7 +229,7 @@ impl Find {
                     ui.add_space(4.0);
                 }
                 if shown.len() > 400 {
-                    ui.label(RichText::new(tr("More: type to narrow the list", "Есть ещё: уточните поиск")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("More: type to narrow the list", "Есть ещё: уточните поиск")).color(pal().text_dim));
                 }
             });
         });
@@ -230,5 +248,29 @@ impl Find {
             let n = ed.replace_everywhere(&from, &to, spline);
             ed.toast(format!("{} {n}", tr("Replaced:", "Заменено:")));
         }
+    }
+}
+
+/// A tile asked for by its place in the grid: "tile 3 -2", "tile 3, -2", "t 3 -2", "тайл 3 -2".
+pub fn tile_query(q: &str) -> Option<(i32, i32)> {
+    let q = q.trim().to_lowercase();
+    let rest = ["tile", "тайл", "t"].iter().find_map(|p| q.strip_prefix(p).filter(|r| r.starts_with([' ', ':']) || r.starts_with(|c: char| c == '-' || c.is_ascii_digit())))?;
+    let v: Vec<i32> = rest.split([',', ';', ' ', ':']).filter(|x| !x.is_empty()).map(|x| x.parse::<i32>()).collect::<Result<_, _>>().ok()?;
+    (v.len() == 2).then(|| (v[0], v[1]))
+}
+
+#[cfg(test)]
+mod tile_tests {
+    use super::tile_query;
+
+    #[test]
+    fn a_tile_is_asked_for_in_any_spelling() {
+        assert_eq!(tile_query("tile 3 -2"), Some((3, -2)));
+        assert_eq!(tile_query("Tile: 3, -2"), Some((3, -2)));
+        assert_eq!(tile_query("t-1 0"), Some((-1, 0)));
+        assert_eq!(tile_query("тайл 0 5"), Some((0, 5)));
+        assert_eq!(tile_query("tilestop 3 2"), None);
+        assert_eq!(tile_query("3 2"), None);
+        assert_eq!(tile_query("tile 3"), None);
     }
 }

@@ -261,13 +261,6 @@ impl Path {
         self.v[5] = (rr * 2.0 * half) as f32;
     }
 
-    /// A copy moved sideways by `dx` in the object's frame, so a second lane can be made.
-    pub fn shifted(&self, dx: f64) -> Path {
-        let mut p = self.clone();
-        p.v[0] += dx as f32;
-        p
-    }
-
     /// Turn the path so that it arrives at its end in `end_deg`, its start staying where it
     /// is: the arc that does that (a straight one when the way already is the chord's).
     ///
@@ -465,16 +458,6 @@ pub fn heading_in_frame(local: f64, m: &glam::Mat4) -> f64 {
 /// different kind of mark.
 pub fn end_mark_len(distance: f64) -> f64 {
     (distance * 0.007).clamp(0.32, 1.15)
-}
-
-/// The `direction` a path whose geometry leaves a joint in `heading` should have, given the
-/// heading traffic moves in there (`travel`) and whether the other path is both ways.
-pub fn direction_towards(heading: f64, travel: f64, both: bool) -> i32 {
-    if both {
-        return 2;
-    }
-    let d = norm_deg(heading - travel + 180.0) - 180.0;
-    if d.abs() <= 90.0 { 0 } else { 1 }
 }
 
 /// The `direction` (0 along, 1 against, 2 both) a new path laid outward from a joint of another

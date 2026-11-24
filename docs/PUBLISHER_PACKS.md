@@ -98,7 +98,7 @@ content without an exact playable published output needs that output or a rights
 
 ## Limits and optional fingerprints
 
-See [the shared format](https://github.com/Italian-seasoning/openOMSI/blob/feat/publisher-content-protection/docs/PUBLISHER_PACKS.md)
+See [the shared format](https://github.com/openOMSI-org/openOMSI/blob/5d876e33071bb6367815456197c4c21dc4753b09/docs/PUBLISHER_PACKS.md)
 for canonical signature bytes, published hash lists, path and size limits, authenticated chunk
 layout, and dependency resolution. No policy website or community integration is deployed.
 

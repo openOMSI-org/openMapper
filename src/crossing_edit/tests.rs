@@ -274,7 +274,6 @@ fn a_way_that_would_take_a_circle_is_a_straight_to_the_end() {
     // the same from the start:
     let mut p = Path::default();
     p.v = [0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 0.0, 0.0, 0.0, 3.5, 0.0, 0.0];
-    let end = p.end();
     p.fit_start_tangent(180.0);
     assert!(p.length() <= 40.0 * 4.0 + 8.0, "no loop: {} m", p.length());
     // (the way the path leaves is the one thing a turn must not change: the arc keeps it, and

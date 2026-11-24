@@ -7,6 +7,7 @@ cd "$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 dist="${1:?folder with openmapper.exe}"
 out="${2:-target/package/openMapper-setup.exe}"
 version="${OPENMAPPER_VERSION:-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)}"
+case "$dist" in *arm64*) arch=arm64 ;; *) arch=x64 ;; esac
 mkdir -p "$(dirname "$out")"
-makensis -V2 -NOCD -DDIST="$dist" -DOUT="$out" -DVERSION="$version" tools/windows/installer.nsi
+makensis -V2 -NOCD -DDIST="$dist" -DOUT="$out" -DVERSION="$version" -DARCH="$arch" tools/windows/installer.nsi
 echo "$out"

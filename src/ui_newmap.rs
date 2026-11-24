@@ -8,9 +8,9 @@ use std::collections::HashMap;
 use egui::{Color32, RichText, Sense, Stroke, Vec2};
 
 use crate::i18n::tr;
-use crate::ui::{Action, ACCENT};
-
-const TEXT_DIM: Color32 = Color32::from_rgb(140, 143, 150);
+use crate::icons::{self, Icon};
+use crate::ui::Action;
+use crate::theme::pal;
 
 /// The seasons a new map starts with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,7 +81,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
         f.lists = Some(roots.map(|r| (crate::ui_mapsettings::content_files(r, "Money", "cfg"), crate::ui_mapsettings::content_files(r, "TicketPacks", "cfg"))).unwrap_or_default());
     }
     let mut close = false;
-    egui::Window::new(tr("New map", "Новая карта")).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
+    egui::Window::new(icons::labelled(Icon::NewFile, tr("New map", "Новая карта"))).collapsible(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO).show(ctx, |ui| {
         ui.set_width(480.0);
         let o = &mut f.options;
         egui::ScrollArea::vertical().max_height(ctx.content_rect().height() * 0.75).show(ui, |ui| {
@@ -124,7 +124,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                     ui.add(egui::DragValue::new(&mut o.years.0).range(1900..=2100));
                     ui.label("–");
                     ui.add(egui::DragValue::new(&mut o.years.1).range(1900..=2100));
-                    ui.label(RichText::new(tr("year offset", "сдвиг года")).color(TEXT_DIM));
+                    ui.label(RichText::new(tr("year offset", "сдвиг года")).color(pal().text_dim));
                     ui.add(egui::DragValue::new(&mut o.year_offset).range(-200..=200)).on_hover_text(tr("Added to today's year when the game starts at the real date", "Прибавляется к текущему году, когда игра начинается в реальную дату"));
                 });
                 ui.end_row();
@@ -165,7 +165,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                                 }
                                 None => {
                                     wanted.push(r.clone());
-                                    ui.painter().rect_filled(img, 2.0, Color32::from_gray(40));
+                                    ui.painter().rect_filled(img, 2.0, pal().thumb);
                                 }
                             },
                             None => {
@@ -173,10 +173,10 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                             }
                         }
                         if on || resp.hovered() {
-                            ui.painter().rect_stroke(img, 2.0, Stroke::new(2.0, if on { ACCENT } else { Color32::from_gray(150) }), egui::StrokeKind::Outside);
+                            ui.painter().rect_stroke(img, 2.0, Stroke::new(2.0, if on { pal().accent } else { pal().widget_stroke_hover }), egui::StrokeKind::Outside);
                         }
                         let name = rel.map(|r| r.rsplit('\\').next().unwrap_or(r).to_string()).unwrap_or_else(|| tr("template", "шаблон").to_string());
-                        ui.painter().text(egui::pos2(rect.center().x, rect.max.y - 7.0), egui::Align2::CENTER_CENTER, name.chars().take(12).collect::<String>(), egui::FontId::proportional(10.0), Color32::from_gray(200));
+                        ui.painter().text(egui::pos2(rect.center().x, rect.max.y - 7.0), egui::Align2::CENTER_CENTER, name.chars().take(12).collect::<String>(), egui::FontId::proportional(10.0), pal().text);
                         if resp.clicked() {
                             o.ground = rel.cloned();
                         }
@@ -187,7 +187,7 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                     }
                 });
             });
-            ui.label(RichText::new(tr("More ground layers are painted later (Paint tool); the map's settings can all be changed in Map > Map settings.", "Другие слои земли рисуются позже (инструмент «Покраска»); все настройки карты меняются в «Карта > Настройки карты».")).small().color(TEXT_DIM));
+            ui.label(RichText::new(tr("More ground layers are painted later (Paint tool); the map's settings can all be changed in Map > Map settings.", "Другие слои земли рисуются позже (инструмент «Покраска»); все настройки карты меняются в «Карта > Настройки карты».")).small().color(pal().text_dim));
         });
         ui.separator();
         crate::ui::button_row(ui, |ui| {
@@ -195,9 +195,11 @@ pub fn dialog(ctx: &egui::Context, form: &mut Option<NewMapForm>, roots: Option<
                 close = true;
             }
             let ok = !f.name.trim().is_empty();
-            if ui.add_enabled(ok, egui::Button::new(tr("Create", "Создать"))).clicked() || (ok && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)) {
+            if ui.add_enabled(ok, egui::Button::new(icons::labelled(Icon::NewFile, tr("Create", "Создать")))).clicked() || (ok && ui.input(|i| i.key_pressed(egui::Key::Enter) && !i.modifiers.shift)) {
                 let friendly = f.name.trim().to_string();
-                let folder: String = friendly.chars().map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' { c } else { '_' }).collect::<String>().trim().to_string();
+                // (OMSI 2 opens no map whose folder has a letter outside ASCII)
+                let folder = friendly.split(' ').map(crate::omsi_name::ascii_stem).filter(|w| !w.is_empty()).collect::<Vec<_>>().join(" ");
+                let folder = if folder.is_empty() { "Map".to_string() } else { folder };
                 actions.push(Action::NewMap { folder, friendly, size: f.size, options: f.options.clone() });
                 close = true;
             }

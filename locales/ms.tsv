@@ -2788,3 +2788,445 @@ no track within 15 m	tiada landasan dalam 15 m
 the tracks are not joined, or run the other way (see View > AI lanes)	landasan tidak bercantum, atau menuju arah lain (lihat Lihat > Lorong AI)
 no track beside	tiada landasan di sebelah
 Drives on	Bergerak di
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	Puncak sumber dipilih. Klik bucu sasaran untuk mengambil (Shift: mendatar sahaja, Esc: batal)
+Aim at a vertex of the selected object	Sasarkan pada bucu objek yang dipilih
+Snapped to vertex! (Ctrl+Z to undo)	Tersentap ke puncak! (Ctrl+Z untuk membuat asal)
+Aim at a target vertex or spline endpoint	Sasarkan pada bucu sasaran atau titik akhir spline
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	Tepi sumber dipilih. Klik tepi sasaran atau jalan untuk menjajarkan (Anjakan: mendatar sahaja, Esc: batal)
+Aim at an edge of the selected object	Sasarkan pada tepi objek yang dipilih
+Aligned edge to edge! (Ctrl+Z to undo)	Dijajarkan tepi ke tepi! (Ctrl+Z untuk membuat asal)
+Aim at a target edge or road	Sasar pada tepi sasaran atau jalan
+Target cancelled. Pick a source vertex again	Sasaran dibatalkan. Pilih puncak sumber sekali lagi
+Vertex snap cancelled	Pucuk snap dibatalkan
+Target cancelled. Pick a source edge again	Sasaran dibatalkan. Pilih kelebihan sumber sekali lagi
+Edge snap cancelled	Snap tepi dibatalkan
+Select an object first to snap its vertex	Pilih objek terlebih dahulu untuk mengambil bucunya
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	Pucuk snap: klik puncak sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap vertex to vertex	Snap bucu ke bucu
+Select an object first to align its edge	Pilih objek dahulu untuk menjajarkan tepinya
+Edge snap: click a source edge on the selected object (Esc to cancel)	Snap tepi: klik tepi sumber pada objek yang dipilih (Esc untuk membatalkan)
+Snap edge to edge	Selak tepi ke tepi
+Snap vertex to vertex (V)	Tangkap bucu ke bucu (V)
+Snap edge to edge (L)	Paut tepi ke tepi (L)
+Snap vertex (V)	Bucu snap (V)
+Snap a vertex of this object to another vertex (Shortcut: V)	Tangkap bucu objek ini ke bucu lain (Pintasan: V)
+Snap edge (L)	Snap tepi (L)
+Snap an edge of this object to another edge or road (Shortcut: L)	Tangkap tepi objek ini ke tepi atau jalan lain (Pintasan: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	Tangkap bucu objek yang dipilih ke bucu objek lain (V)\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Jajarkan tepi objek yang dipilih ke tepi atau jalan (L)\nBerpusing dan mengetuk kolinear\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	Titik 1 dijajarkan! Klik titik ke-2 pada objek untuk memutar, atau Esc untuk selesai
+Reference angle set. Click a target point or spline to align (Esc: finish)	Sudut rujukan ditetapkan. Klik titik sasaran atau jalan untuk menjajarkan (Esc: selesai)
+Pick a different vertex on the object	Pilih bucu lain pada objek
+Click a 2nd reference point on the object, or Esc to finish	Klik titik rujukan ke-2 pada objek, atau Esc untuk selesai
+Aligned angle! (Ctrl+Z to undo)	Sudut dijajarkan! (Ctrl+Z untuk membuat asal)
+Vertex snap complete	Lekatan bucu selesai
+Align vertex angle	Jajarkan sudut bucu
+Complete to	Lengkapkan hingga
+Complete to: a new piece between the free ends of the selected splines	Lengkapkan hingga: keping baharu antara hujung bebas spline yang dipilih
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	Keping baharu jenis spline pertama yang dipilih di antara dua hujung bebas spline yang dipilih, bertemu kedua-duanya pada kedudukan, arah dan ketinggian; kedua-duanya tidak diubah. Sekali lagi: dua hujung yang tinggal dicantum, gelang ditutup.
+The two ends already meet	Kedua-dua hujung sudah bertemu
+Select the splines whose free ends are to be joined	Pilih spline yang hujung bebasnya hendak dicantum
+No piece of spline can join these two ends	Tiada keping spline yang dapat mencantum kedua-dua hujung ini
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	Salinan openMapper peta ini dalam folder kandungan dibuka (yang dalam folder OMSI 2 tidak pernah ditulis)
+Read in again, changed on disk by another program:	Dibaca semula, diubah pada cakera oleh program lain:
+Could not bring the changes over	Tidak dapat membawa perubahan
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	Fail peta diubah selepas simpan automatik ini (oleh program lain, contohnya editor OMSI 2). Memulihkan meletakkan jubin lama simpanan di atas perubahan itu.
+tile(s)	jubin
+the global settings	tetapan global
+the timetable	jadual waktu
+the traffic	trafik
+the descriptions	keterangan
+Reload from disk	Muat semula dari cakera
+The map changed on disk	Peta berubah pada cakera
+Another program changed the map's files where it has changes here not saved yet:	Program lain mengubah fail peta di bahagian yang di sini ada perubahan belum disimpan:
+The other changes made on disk were read in already.	Perubahan lain pada cakera sudah dibaca.
+Keep mine	Kekalkan milik saya
+The map changed in OMSI 2's folder	Peta berubah dalam folder OMSI 2
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	Salinan peta ini dalam pemasangan diubah selepas salinan openMapper dalam folder kandungan disimpan, contohnya oleh editor OMSI 2
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	Membawa perubahan menggantikan fail itu dalam salinan openMapper; fail yang diganti disimpan dalam sandaran (Fail > Versi terdahulu).
+Bring the changes over	Bawa perubahan
+Keep openMapper's copy	Kekalkan salinan openMapper
+its way has a gap after path	lorongnya terputus selepas laluan
+its way does not pass	lorongnya tidak melalui
+On demand	Atas permintaan
+Not served (checkpoint)	Tidak dilayan (titik semak)
+Wait for departure time	Tunggu masa bertolak
+Always + wait for departure time	Sentiasa + tunggu masa bertolak
+The bus stops only when somebody waits or wants to get off (the game's default)	Bas berhenti hanya jika ada yang menunggu atau mahu turun (lalai permainan)
+The bus always stops here	Bas sentiasa berhenti di sini
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	Bas melintas tanpa berhenti: perhentian hanya menandakan lorong (titik semak)
+The bus stops only when it is early, and waits there for its departure time	Bas berhenti hanya jika ia awal, dan menunggu di situ hingga masa bertolaknya
+The bus always stops here, and when it is early it waits for its departure time	Bas sentiasa berhenti di sini, dan jika ia awal ia menunggu masa bertolaknya
+All trips	Semua perjalanan
+Every trip of the map, those no tour drives too	Setiap perjalanan peta, termasuk yang tidak dipandu oleh mana-mana giliran
+The line number the trip shows; the line of this number lists it among its trips	Nombor laluan yang ditunjukkan perjalanan; laluan dengan nombor ini menyenaraikannya antara perjalanannya
+Way picked by hand:	Lorong dipilih dengan tangan:
+the paths picked do not pass this stop	laluan yang dipilih tidak melalui perhentian ini
+Other trips	Perjalanan lain
+The time profile this departure runs to	Profil masa yang diikuti perlepasan ini
+Time profile	Profil masa
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	Satu perjalanan boleh ada beberapa profil (waktu puncak, malam…): setiap perlepasan giliran menyatakan profil mana yang diikutinya
+The profile's name	Nama profil
+A new profile, a copy of this one	Profil baharu, salinan profil ini
+Delete this profile (its departures run to the first)	Padam profil ini (perlepasannya mengikut yang pertama)
+Times from stop to stop	Masa dari perhentian ke perhentian
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	Masa dari perhentian sebelumnya boleh ditetapkan di setiap perhentian: masa selepasnya turut beralih, begitu juga masa perjalanan. Masa yang tidak ditetapkan mengikut jarak antara yang tetap; di perhentian tetap, bas yang awal akan menunggu.
+From the stop before	Dari perhentian sebelumnya
+After departure	Selepas bertolak
+Minutes from the stop before to this one	Minit dari perhentian sebelumnya ke perhentian ini
+As in OMSI 2's editor. Hover a choice to see what the bus does.	Seperti dalam editor OMSI 2. Tuding pada pilihan untuk melihat apa yang dilakukan bas.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	Setiap perjalanan peta, tidak kira laluan mana yang menunjukkannya atau giliran mana yang memandunya. Perjalanan yang tidak dipandu oleh mana-mana giliran disimpan, dan boleh diedit, diberi kepada giliran atau dipadam di sini.
+trips	perjalanan
+driven by no tour	tanpa giliran
+no tour	tiada giliran
+departures	perlepasan
+No path there: click a lane of a road (View > AI lanes shows them)	Tiada laluan di situ: klik lorong jalan (Paparan > Lorong AI menunjukkannya)
+Done picking paths	Selesai memilih
+Pick the paths on the map	Pilih laluan pada peta
+Choose the way yourself, path by path, as in OMSI 2's editor	Pilih lorong sendiri, laluan demi laluan, seperti dalam editor OMSI 2
+Find the way automatically	Cari lorong secara automatik
+Forget the paths picked: the way is found along the roads again	Lupakan laluan yang dipilih: lorong dicari semula di sepanjang jalan
+The paths were picked by hand: they are kept when the stops change.	Laluan dipilih dengan tangan: ia kekal apabila perhentian berubah.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	Klik laluan dalam paparan. Laluan selepas hujung atau sebelum permulaan ditambah, bersama laluan ke sana; laluan di sebelah lorong mengambil tempat bahagian yang dikelilinginya (cabang lain di simpang); laluan dalam lorong dikeluarkan. Lorong boleh bermula sebelum perhentian pertama dan diteruskan selepas yang terakhir.
+The way breaks after path	Lorong terputus selepas laluan
+the paths do not join, the bus's GPS loses its way here in the game	laluan tidak bercantum, GPS bas sesat di sini dalam permainan
+Paths of the way	Laluan lorong
+Cut before the first stop	Potong sebelum perhentian pertama
+Cut after the last stop	Potong selepas perhentian terakhir
+path	laluan
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	Kawalan openMapper sendiri: kamera seperti dipilih di Kamera, kekunci seperti dalam Paparan > Kawalan
+The keys as in View > Controls	Kekunci seperti dalam Paparan > Kawalan
+A copy of its own was made for the script: the original type is unchanged	Salinan tersendiri dibuat untuk skrip: jenis asal tidak berubah
+Trolleybus wire the game cannot use	Wayar atas bas troli yang tidak dapat digunakan permainan
+Rows the game does not show	Barisan yang tidak ditunjukkan permainan
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	Barisan objek di sepanjang jalan (lampu, tiang, petak letak kereta) bermula sebelum jalan tempat ia diletakkan: jaraknya dikira dari permulaan rantai jalan, dan di sini ia lebih kecil daripada panjang rantai sebelum jalannya. OMSI 2 dan openOMSI langsung tidak menunjukkannya, begitu juga editor. Letakkan barisan itu semula, atau beri permulaan yang lebih besar dalam sifatnya.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI hanya membuat suis di tempat tepat tiga rentang wayar atas bertemu, dan suis yang diletakkan di tempat yang tiada lagi pertemuan akan ditinggalkan; rentang dalam seksyen yang tiada dalam rangkaian tidak mempunyai pencawang. Buka Peta > Wayar atas bas troli untuk membetulkannya.
+Trolleybus wire	Wayar atas bas troli
+Select the next road piece (joined at its end; Shift: add it)	Pilih bahagian jalan seterusnya (bercantum di hujungnya; Shift: tambahkan)
+Select the previous road piece (joined at its start; Shift: add it)	Pilih bahagian jalan sebelumnya (bercantum di permulaannya; Shift: tambahkan)
+the up arrow	anak panah atas
+the down arrow	anak panah bawah
+the left arrow	anak panah kiri
+the right arrow	anak panah kanan
+Select three objects or more (the two farthest apart stay)	Pilih tiga objek atau lebih (dua yang paling jauh kekal di tempatnya)
+Line up	Susun sebaris
+Space evenly	Jarakkan sama rata
+Splines laid	Splin diletakkan
+The spline reaches past the map: add tiles there first	Splin melepasi peta: tambah jubin di situ dahulu
+Ground painted over areas	Tanah dicat mengikut kawasan
+Track beds	Dasar trek
+Ground under surfaces	Tanah di bawah permukaan
+Form the ground	Bentuk tanah
+Select a road piece first	Pilih bahagian jalan dahulu
+Nothing is joined at its end	Tiada apa-apa bercantum di hujungnya
+Nothing is joined at its start	Tiada apa-apa bercantum di permulaannya
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	Alih: seret anak panah di sepanjang X, Y atau Z, segi empat dalam satahnya, bulatan di atas tanah
+Rotate: drag a ring to turn about X, Y or Z	Putar: seret gelang untuk memutar pada X, Y atau Z
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	Skala: seret anak panah untuk menskala di sepanjang paksi itu, segi empat untuk dua paksi, bulatan untuk ketiga-tiganya
+Junctions where the roads meet	Simpang tempat jalan bertemu
+Streets from the street model	Jalan raya daripada model jalan raya
+perimeter	perimeter
+needs	memerlukan kebenaran
+built	dibina
+signed by	ditandatangani oleh
+not signed: the game loads it with a warning that its author is not known	tidak ditandatangani: permainan memuatkannya dengan amaran bahawa pengarangnya tidak diketahui
+openOMSI has no such function (the API of version	openOMSI tiada fungsi sedemikian (API versi
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` adalah untuk skrip peta; skrip objek hanya mempunyai fungsi omsi
+no such module in the project (modules/…)	tiada modul sedemikian dalam projek (modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	permainan tidak menghantar peristiwa sedemikian (melainkan skrip menghantarnya dengan omsi.emit)
+a name is needed	nama diperlukan
+a file of that name is there already	fail dengan nama itu sudah ada
+Empty module	Modul kosong
+Test run of	Larian ujian
+does nothing in the test run (no game): it gives false	tidak berbuat apa-apa dalam larian ujian (tiada permainan): memberi false
+has nothing to read in the test run (no game): it gives nil	tiada apa untuk dibaca dalam larian ujian (tiada permainan): memberi nil
+an object of the OMSI 2 installation is never changed: make it an object of your own first	objek pemasangan OMSI 2 tidak pernah diubah: jadikannya objek anda sendiri dahulu
+Dark	Gelap
+As the system	Ikut sistem
+power (current on: branch)	arus (arus hidup: cabang)
+indicator	lampu isyarat membelok
+radio	radio
+to the branch	ke cabang
+at random	secara rawak
+spans meet in one point: the game makes no switch there (a frog is three)	rentang bertemu di satu titik: permainan tidak membuat suis di situ (simpang wayar ialah tiga)
+Switch	Suis
+no three spans meet there any more	tiada lagi tiga rentang bertemu di situ
+A span is in section	Satu rentang berada dalam seksyen
+that the network does not have	yang tiada dalam rangkaian
+the wire spline	splin wayar
+the mast	tiang
+the frog	simpang wayar
+the insulator	penebat
+is not there	tiada
+no wire spline: nothing of the wire is shown on the map	tiada splin wayar: wayar itu sendiri tidak ditunjukkan pada peta
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	profil splin wayar bukan sepasang wayar nipis melebihi 3 m: ia diletakkan seadanya, dan openOMSI tidak akan menganggapnya wayar tanpa trolley.txt
+a kit of that name is there already	kit dengan nama itu sudah ada
+Renew the wire from its kit	Baharui wayar daripada kitnya
+Theme	Tema
+Back to the 3D view	Kembali ke paparan 3D
+The plan view from above, north up	Paparan pelan dari atas, utara di atas
+Put the windows back in their first places	Kembalikan tetingkap ke tempat asalnya
+Trolleybus wire…	Wayar atas bas troli…
+: there are unsaved changes	: ada perubahan belum disimpan
+Assets: every object and road type, with pictures	Aset: setiap jenis objek dan jalan, dengan gambar
+Close the openOMSI session started from here	Tutup sesi openOMSI yang dimulakan dari sini
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	Pilih tempat bermula, kenderaan, masa dan cuaca, kemudian pandu peta dalam openOMSI
+Search commands	Cari arahan
+Every command of the menus by its name	Setiap arahan dalam menu mengikut namanya
+Right-click the view for what can be done there; Search commands finds the rest	Klik kanan paparan untuk apa yang boleh dilakukan di situ; Cari arahan menemui selebihnya
+Right-click the view: its menu	Klik kanan paparan: menunya
+Snap vertex	Snap bucu
+Snap edge	Snap tepi
+Out of the mix	Keluarkan daripada campuran
+more as OMSI 2 is read…	lagi semasa OMSI 2 dibaca…
+Reading the content of OMSI 2…	Membaca kandungan OMSI 2…
+Nothing found: try fewer letters, or Everything in Show	Tiada apa-apa ditemui: cuba kurangkan huruf, atau Semua dalam Tunjuk
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	Tiada apa-apa jenis ini: pilih Semua dalam Tunjuk, atau import aset (Fail > Import aset)
+a table of functions	jadual fungsi
+a module	modul
+Next (Enter)	Seterusnya (Enter)
+Previous (Shift+Enter)	Sebelumnya (Shift+Enter)
+Match case	Padankan huruf besar/kecil
+Replace	Ganti
+Replace…	Ganti…
+Click: a breakpoint (F9 on the cursor's line)	Klik: titik henti (F9 pada baris kursor)
+permission	kebenaran
+The light before	Lampu isyarat sebelumnya
+The next light	Lampu isyarat seterusnya
+The phase before	Fasa sebelumnya
+The next phase	Fasa seterusnya
+to 	hingga 
+Select the piece joined at its start (,)	Pilih bahagian yang bercantum di permulaannya (,)
+Select the piece joined at its end (.)	Pilih bahagian yang bercantum di hujungnya (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	Klik dua titik untuk mengukur jarak dan kecerunan di antaranya (U) · Shift + klik: bucu kawasan (saiz dan perimeternya) · klik kanan: mati
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	Snap bucu objek terpilih ke bucu objek lain\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	Jajarkan tepi objek terpilih dengan tepi atau jalan\nMemutar dan snap segaris\nShift: Mendatar sahaja, Esc/Klik kanan: Batal
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	Pada garis lurus antara dua yang paling jauh, dengan langkah sama (tiang, lampu, barisan pokok)
+Equal steps between the two farthest apart, each keeping its distance to the side	Langkah sama antara dua yang paling jauh, setiap satu mengekalkan jaraknya ke tepi
+height, m	tinggi, m
+gradient, %	kecerunan, %
+cant, %	kecondongan, %
+Rotate, °	Putar, °
+Name, file, IDCode, stop, x, y or tile x y	Nama, fail, IDCode, perhentian, x, y atau jubin x y
+listed, no file	tersenarai, tiada fail
+The camera over the tile's middle	Kamera di atas tengah jubin
+its folder	foldernya
+Line up the selected objects	Susun objek terpilih sebaris
+Space the selected objects evenly	Jarakkan objek terpilih sama rata
+Next road piece	Bahagian jalan seterusnya
+Previous road piece	Bahagian jalan sebelumnya
+The run ended	Larian tamat
+installed as	dipasang sebagai
+failed	gagal
+Run	Jalankan
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	Jalankan skrip di sini, dalam editor, dengan fungsi permainan (F5 dalam kod)
+Step in	Mula langkah
+Run and stop at the first line (F11)	Jalankan dan berhenti pada baris pertama (F11)
+Continue	Teruskan
+Pause	Jeda
+Stop the clock; a script running stops at its next line	Hentikan jam; skrip yang sedang berjalan berhenti pada baris seterusnya
+Over	Langkau
+Step over (F10)	Langkau langkah (F10)
+Into	Masuk
+Step into (F11)	Masuk langkah (F11)
+Out	Keluar
+Step out (Shift+F11)	Keluar langkah (Shift+F11)
+Restart	Mula semula
+The map's scripts	Skrip peta
+The game's clock in the run	Jam permainan dalam larian
+Set the game's clock of the run (sends minute)	Tetapkan jam permainan dalam larian (menghantar minute)
+starts 	mula 
+The hour the run starts at	Jam larian bermula
+Save all	Simpan semua
+Build .oop	Bina .oop
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	Satu fail skrip peta untuk dikongsi: dikompil dan dikaburkan, dengan kebenaran yang diperlukan (pengkompil Development Tools)
+API	API
+The game's functions and events	Fungsi dan peristiwa permainan
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	Peta ini belum ada skrip. Skripnya berjalan dalam openOMSI semasa peta dimainkan: ia bertindak balas terhadap apa yang berlaku (perhentian, jam, perjalanan), menunjukkan mesej, mengubah trafik dan cuaca.
+Start the map's scripts	Mulakan skrip peta
+Object scripts (Lua)	Skrip objek (Lua)
+No object on the map has a Lua script.	Tiada objek pada peta yang mempunyai skrip Lua.
+Refresh	Muat semula
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	Skrip yang dinamakan oleh objek pemandangan dalam [lua_script]: satu berjalan untuk setiap objek jenisnya berhampiran kamera (openOMSI sahaja)
+Selected object	Objek terpilih
+Select one object on the map to see its scripts.	Pilih satu objek pada peta untuk melihat skripnya.
+No OMSI 2 script (.osc).	Tiada skrip OMSI 2 (.osc).
+Lua script (openOMSI)	Skrip Lua (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	Skrip untuk setiap objek jenis ini, di sebelah .sco-nya dan dinamakan di dalamnya ([lua_script]); OMSI 2 melangkaunya. Objek pemasangan menjadi salinan peta sendiri dahulu.
+OMSI 2 script (.osc)	Skrip OMSI 2 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	Skrip objek sendiri dengan senarai pemboleh ubahnya, dijalankan oleh OMSI 2 dan openOMSI; lampu dan bahagian [visible]-nya mengikut pemboleh ubah yang ditetapkannya
+Rust plugin	Plugin Rust
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Plugin peta yang ditulis dalam Rust, dikompil ke WebAssembly menjadi .oop. Untuk membinanya perlu Rust (rustup) dengan sasaran wasm32-unknown-unknown.
+Make the Rust plugin	Buat plugin Rust
+Build and install	Bina dan pasang
+cargo builds it, the .oop goes into the content folder's plugins	cargo membinanya, .oop masuk ke plugins folder kandungan
+Starts with the map	Bermula bersama peta
+Rename…	Namakan semula…
+Earlier in the order	Lebih awal dalam susunan
+Later in the order	Lebih lewat dalam susunan
+Delete (into openMapper's bin)	Padam (ke tong sampah openMapper)
+New script	Skrip baharu
+New module	Modul baharu
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	Setiap satu bermula apabila peta dimainkan, mengikut susunan ini (klik kanan untuk memindahkan); yang gagal tidak menghentikan yang lain. Gunakan map.on, map.every, map.after: ia bertindak pada peta ini sahaja.
+Modules	Modul
+Code the scripts share: local util = require("modules.util")	Kod yang dikongsi skrip: local util = require("modules.util")
+Data	Data
+Files the scripts read (data/), pictures and sounds	Fail yang dibaca skrip (data/), gambar dan bunyi
+Made by openMapper	Dibuat oleh openMapper
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	Buka skrip di sebelah kiri, atau buat yang baharu.\n\nF5 menjalankan skrip di sini dalam editor, F9 menetapkan titik henti, F10 / F11 melangkah,\nCtrl+Space melengkapkan, Ctrl+F mencari, Ctrl+G pergi ke baris, Ctrl+/ menjadikan ulasan.
+Read only: a file of the installation or made by openMapper	Baca sahaja: fail pemasangan atau dibuat oleh openMapper
+Problems	Masalah
+Console	Konsol
+Debugger	Penyahpepijat
+Events	Peristiwa
+error	ralat
+warning	amaran
+No problems in the open files.	Tiada masalah dalam fail yang terbuka.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	Apa yang dicetak skrip, yang ditunjukkan pada skrin dan ralatnya muncul di sini apabila ia berjalan (Jalankan, F5).
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	Lua untuk dijalankan dalam skrip (dalam bingkai tempat berhenti, jika berhenti); Atas dan Bawah: sejarah
+Start a run first (Run, F5)	Mulakan larian dahulu (Jalankan, F5)
+(empty)	(kosong)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	Sedang berjalan. Titik henti (klik di kiri nombor baris, atau F9) menghentikan skrip di situ; Jeda menghentikannya pada baris seterusnya.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	Tidak berjalan. Jalankan (F5) skrip; titik henti menghentikannya, dan di sini ada tindanan panggilan, pemboleh ubah setiap fungsi dan nilai untuk dipantau.
+Stopped	Berhenti
+Call stack	Tindanan panggilan
+Locals	Setempat
+Upvalues	Upvalue
+The console evaluates in this frame: a name, an expression, an assignment.	Konsol menilai dalam bingkai ini: nama, ungkapan, umpukan.
+Storage and objects	Storan dan objek
+Send	Hantar
+As if the game sent it: every handler of it runs	Seolah-olah permainan menghantarnya: setiap pengendalinya berjalan
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	Jalankan skrip untuk menghantar peristiwa permainan secara manual: perhentian dicapai, pintu, jam baharu… Jam menghantar frame, minute dan hour sendiri.
+Listening	Mendengar
+timers	pemasa
+Sign with the key	Tandatangan dengan kunci
+a secret key file of oopc keygen (optional)	fail kunci rahsia oopc keygen (pilihan)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	Bina .oop membuat satu fail skrip peta untuk dikongsi (dalam folder dist projek): dikompil, dikaburkan, dengan kebenaran yang diperlukan kodnya. Permainan menjalankan folder skrip seadanya; .oop adalah untuk memberikannya tanpa sumbernya.
+Search functions and events	Cari fungsi dan peristiwa
+since	sejak
+for an .oop	untuk .oop
+Double-click puts it into the script at the cursor.	Klik dua kali memasukkannya ke dalam skrip pada kursor.
+A stop on this path	Perhentian di laluan ini
+branch	cabang
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	Wayar atas yang dilalui bas troli openOMSI (trolley.txt di sebelah peta; OMSI 2 mengabaikannya). Tanpanya permainan membaca splin wayar peta.
+Start a wire for this map	Mulakan wayar untuk peta ini
+Lay	Letak
+Sections	Seksyen
+Spans	Rentang
+Switches	Suis
+Pick in the view	Pilih dalam paparan
+A click in the view picks a span or a switch (yellow dot)	Klik dalam paparan memilih rentang atau suis (titik kuning)
+The wires over the road surface	Wayar di atas permukaan jalan
+the kerb lane each way	lorong tepi di setiap arah
+the way the road runs	mengikut arah jalan
+against the road's way	melawan arah jalan
+Section	Seksyen
+Kit	Kit
+ (every map)	 (semua peta)
+none: the wire for the game only	tiada: wayar untuk permainan sahaja
+A new kit	Kit baharu
+My wire	Wayar saya
+Change this kit	Ubah kit ini
+its wire spline	splin wayarnya
+its masts, every	tiangnya, setiap
+The kit names no mast	Kit tidak menamakan tiang
+Frogs and section insulators are put where the wire has them, as the kit names them.	Simpang wayar dan penebat seksyen diletakkan di tempat wayar memilikinya, seperti yang dinamakan oleh kit.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	Tiada apa-apa diletakkan pada peta, wayar untuk permainan sahaja. Kit (+) menamakan model anda sendiri untuk wayar, tiang, simpang wayar dan penebat.
+Over the selected roads	Di atas jalan terpilih
+Select roads in the view first (double-click: a whole road)	Pilih jalan dalam paparan dahulu (klik dua kali: seluruh jalan)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	Lorong objek terpilih (simpang): tandakan yang dilalui wayar. Tiga rentang yang bertemu membentuk simpang wayar.
+It has no street lanes.	Ia tiada lorong kenderaan.
+lane	lorong
+Over the ticked lanes	Di atas lorong yang ditanda
+Select one junction to lay the wire over its lanes.	Pilih satu simpang untuk meletakkan wayar di atas lorongnya.
+Draw a span by hand	Lukis rentang secara manual
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	Klik titik-titiknya dalam paparan; jika bermula atau berakhir di hujung rentang ia bercantum dengannya, di tengah rentang ia bercabang di situ (simpang wayar)
+points: click the next in the view	titik: klik yang seterusnya dalam paparan
+Finish	Selesai
+Read the map's wire splines	Baca splin wayar peta
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	Splin yang dilukis sebagai sepasang wayar (peta bas troli untuk OMSI 2): satu rentang di sepanjang setiap satu, seperti dibaca permainan
+Network	Rangkaian
+Voltage	Voltan
+Wire spacing	Jarak antara wayar
+How uneven the contact wire is: worn or icy wire 0.003 and more	Betapa tidak rata wayar sentuh: wayar haus atau berais 0.003 ke atas
+Delete the whole wire	Padam seluruh wayar
+trolley.txt goes with the next save; the game reads the map's wire splines again	trolley.txt dipadam pada simpanan seterusnya; permainan membaca splin wayar peta semula
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	Bahagian yang dibekalkan oleh satu pencawang. Di tempat dua bertemu ada bahagian mati (penebat).
+name	nama
+live	berarus
+The feeder's resistance: the voltage drops with the current	Rintangan penyuap: voltan menurun dengan arus
+Power the feeder takes back from a braking bus	Kuasa yang diterima semula penyuap daripada bas yang membrek
+spans	rentang
+Add a section	Tambah seksyen
+Insulators (where sections meet)	Penebat (tempat seksyen bertemu)
+ m dead	 m mati
+Span	Rentang
+points	titik
+Spacing	Jarak antara wayar
+its own	sendiri
+Drag: the whole span up or down	Seret: seluruh rentang ke atas atau ke bawah
+The span the other way: the positive wire is on the right of its way	Rentang ke arah sebaliknya: wayar positif di sebelah kanan arahnya
+Pick a span in the view, or in the list.	Pilih rentang dalam paparan, atau dalam senarai.
+section	seksyen
+A switch where three spans meet (yellow in the view). Every frog gets one.	Suis di tempat tiga rentang bertemu (kuning dalam paparan). Setiap simpang wayar mendapat satu.
+No frogs yet: lay three spans meeting in one point (a branch).	Belum ada simpang wayar: letakkan tiga rentang yang bertemu di satu titik (cabang).
+Spans laid:	Rentang diletakkan:
+Wire kit	Kit wayar
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	Model anda sendiri (dibuat dalam Blender atau di mana-mana, diletakkan dalam folder kandungan) yang menunjukkan wayar pada peta: splin wayar dan objek tiang, simpang wayar dan penebat. Kit ialah fail .cfg yang menamakannya; ubah di sini, sebagai teks, atau dalam mana-mana editor teks.
+As text	Sebagai teks
+The name is the kit's file: make a copy to rename it	Nama ialah fail kit: buat salinan untuk menamakannya semula
+For	Untuk
+this map	peta ini
+every map	semua peta
+Take the one selected on the map	Ambil yang dipilih pada peta
+Select a spline of it on the map first	Pilih splin sedemikian pada peta dahulu
+Select such an object on the map first	Pilih objek sedemikian pada peta dahulu
+Choose the file	Pilih fail
+The file must lie in the content folder or in OMSI 2's	Fail mesti berada dalam folder kandungan atau folder OMSI 2
+Not there	Tiada
+Wire spline	Splin wayar
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	.sli yang profilnya meletakkan wayar pada ketinggiannya di atas jalan; ia diletakkan di sepanjang setiap rentang
+Mast	Tiang
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: titik asalnya di kakinya, lengannya menjulur di sepanjang -y ke wayar
+Frog	Simpang wayar
+A .sco hung where the wire branches: its origin on the wire, y along it	.sco yang digantung di tempat wayar bercabang: titik asalnya pada wayar, y di sepanjangnya
+Insulator	Penebat
+A .sco hung where two sections meet: its origin on the wire, y along it	.sco yang digantung di tempat dua seksyen bertemu: titik asalnya pada wayar, y di sepanjangnya
+Masts	Tiang
+every	setiap
+From a mast's foot to its wire, across the road	Dari kaki tiang ke wayarnya, merentasi jalan
+from the wire	dari wayar
+Mast turned	Putaran tiang
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	Untuk model yang lengannya tidak menjulur di sepanjang -y: 90 jika di sepanjang -x, -90 di sepanjang +x, 180 di sepanjang +y
+arm	lengan
+The wire spline's wires	Wayar pada splin wayar
+high	tinggi
+across its line	dari paksinya
+Save and renew the map's wire	Simpan dan baharui wayar peta
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	Splin wayar dan tiang yang diletakkan daripada kit ini mengambil failnya seperti sekarang; simpang wayar dan penebat diletakkan semula
+A new kit from this one (to rename it, or change it apart)	Kit baharu daripada kit ini (untuk menamakannya semula, atau mengubahnya secara berasingan)
+Show the file	Tunjuk fail
+Changed to the kit's files:	Ditukar kepada fail kit:
+a display shows the switch of its name	paparan menunjukkan suis dengan nama ini
+Set by	Dikawal oleh
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	Kedudukannya apabila permainan membaca wayar (secara rawak: diundi sekali setiap larian; lurus dalam permainan dalam talian)
+Contact plate	Plat sentuh
+ m before the frog	 m sebelum simpang wayar
+Power on from	Arus dari
+Invert	Songsang
+the other way round	sebaliknya
+Channel	Saluran
+any	mana-mana
+Range	Julat
+Route codes	Kod laluan
+A route code	Satu kod laluan
+Flip	Balik
+Left to right	Kiri ke kanan
+Top to bottom	Atas ke bawah
+Dark theme	Tema gelap
+Light theme	Tema cerah
+Lit	Cahaya
+Right footway texture	Tekstur laluan pejalan kaki kanan
+Left footway texture	Tekstur laluan pejalan kaki kiri
+like the left one	seperti yang kiri
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	Laluan lorong berjalan seperti pada peta lalu lintas kiri (jalan sehala kekal arahnya)

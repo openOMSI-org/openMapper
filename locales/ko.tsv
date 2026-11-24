@@ -2788,3 +2788,445 @@ no track within 15 m	15 m 이내에 선로 없음
 the tracks are not joined, or run the other way (see View > AI lanes)	선로가 연결되지 않았거나 반대 방향입니다(보기 > AI 차선 참조)
 no track beside	옆에 선로 없음:
 Drives on	운행 경로
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	소스 정점이 선택되었습니다. 스냅할 대상 정점을 클릭합니다(Shift: 가로만, Esc: 취소).
+Aim at a vertex of the selected object	선택한 개체의 꼭지점을 겨냥합니다.
+Snapped to vertex! (Ctrl+Z to undo)	정점에 스냅되었습니다! (실행 취소하려면 Ctrl+Z)
+Aim at a target vertex or spline endpoint	대상 정점 또는 스플라인 끝점을 조준합니다.
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	소스 가장자리가 선택되었습니다. 정렬할 대상 가장자리나 도로를 클릭합니다(Shift: 수평만, Esc: 취소).
+Aim at an edge of the selected object	선택한 개체의 가장자리를 겨냥합니다.
+Aligned edge to edge! (Ctrl+Z to undo)	가장자리부터 가장자리까지 정렬! (실행 취소하려면 Ctrl+Z)
+Aim at a target edge or road	목표 가장자리나 도로를 겨냥하세요
+Target cancelled. Pick a source vertex again	타겟이 취소되었습니다. 소스 꼭지점을 다시 선택하세요.
+Vertex snap cancelled	정점 스냅이 취소되었습니다.
+Target cancelled. Pick a source edge again	타겟이 취소되었습니다. 소스 가장자리를 다시 선택하세요.
+Edge snap cancelled	가장자리 스냅이 취소되었습니다.
+Select an object first to snap its vertex	정점을 스냅하려면 먼저 객체를 선택하세요.
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	정점 스냅: 선택한 개체의 소스 정점을 클릭합니다(취소하려면 Esc를 누름).
+Snap vertex to vertex	정점을 정점에 스냅
+Select an object first to align its edge	가장자리를 정렬하려면 먼저 개체를 선택하세요.
+Edge snap: click a source edge on the selected object (Esc to cancel)	가장자리 스냅: 선택한 객체의 소스 가장자리를 클릭합니다(취소하려면 Esc를 누름).
+Snap edge to edge	가장자리를 가장자리에 맞춥니다.
+Snap vertex to vertex (V)	정점을 정점에 스냅(V)
+Snap edge to edge (L)	가장자리에서 가장자리로 스냅(L)
+Snap vertex (V)	스냅 정점(V)
+Snap a vertex of this object to another vertex (Shortcut: V)	이 객체의 정점을 다른 정점에 스냅합니다(단축키: V)
+Snap edge (L)	스냅 엣지(L)
+Snap an edge of this object to another edge or road (Shortcut: L)	이 개체의 가장자리를 다른 가장자리나 도로에 스냅합니다(단축키: L).
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 객체의 정점을 다른 객체의 정점에 스냅(V)\nShift: 수평만, Esc/우클릭: 취소
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 개체의 가장자리를 가장자리 또는 도로에 정렬(L)\n동일 선상에 회전하고 스냅합니다.\nShift: 수평만, Esc/오른쪽 클릭: 취소
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	1번 점 정렬 완료! 회전할 개체의 2번째 점을 클릭하거나 Esc 키로 완료하세요
+Reference angle set. Click a target point or spline to align (Esc: finish)	기준 각도 설정됨. 정렬할 대상 점이나 도로를 클릭하세요 (Esc: 완료)
+Pick a different vertex on the object	개체에서 다른 꼭짓점을 선택하세요
+Click a 2nd reference point on the object, or Esc to finish	개체에서 2번째 기준점을 클릭하거나 Esc 키로 완료하세요
+Aligned angle! (Ctrl+Z to undo)	각도 정렬 완료! (Ctrl+Z: 실행 취소)
+Vertex snap complete	꼭짓점 스냅 완료
+Align vertex angle	꼭짓점 각도 정렬
+Complete to	여기까지 완성
+Complete to: a new piece between the free ends of the selected splines	여기까지 완성: 선택한 스플라인의 빈 끝 사이에 새 조각
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	처음 선택한 스플라인의 종류로, 선택한 스플라인의 빈 끝 두 곳 사이에 위치·방향·높이가 모두 맞는 새 조각을 만듭니다. 원래 두 조각은 바뀌지 않습니다. 한 번 더: 남은 두 끝이 이어져 고리가 닫힙니다.
+The two ends already meet	두 끝이 이미 만납니다
+Select the splines whose free ends are to be joined	빈 끝을 이을 스플라인을 선택하세요
+No piece of spline can join these two ends	이 두 끝을 이을 수 있는 스플라인 조각이 없습니다
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	이 맵의 openMapper 사본을 콘텐츠 폴더에서 열었습니다(OMSI 2 폴더의 맵은 절대 기록하지 않음)
+Read in again, changed on disk by another program:	다시 읽음, 다른 프로그램이 디스크에서 변경:
+Could not bring the changes over	변경 사항을 가져오지 못했습니다
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	이 자동 저장 이후 맵 파일이 변경되었습니다(다른 프로그램, 예: OMSI 2 편집기). 복원하면 자동 저장의 오래된 타일이 그 변경 위에 놓입니다.
+tile(s)	타일
+the global settings	전역 설정
+the timetable	시간표
+the traffic	교통
+the descriptions	설명
+Reload from disk	디스크에서 다시 불러오기
+The map changed on disk	디스크에서 맵이 변경됨
+Another program changed the map's files where it has changes here not saved yet:	여기에 저장하지 않은 변경이 있는 부분의 맵 파일을 다른 프로그램이 변경했습니다:
+The other changes made on disk were read in already.	디스크의 나머지 변경 사항은 이미 읽었습니다.
+Keep mine	내 것 유지
+The map changed in OMSI 2's folder	OMSI 2 폴더에서 맵이 변경됨
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	콘텐츠 폴더의 openMapper 사본을 저장한 뒤 설치 폴더의 이 맵이 변경되었습니다(예: OMSI 2 편집기)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	가져오면 openMapper 사본의 해당 파일이 바뀝니다. 바뀐 파일은 백업에 보관됩니다(파일 > 이전 버전).
+Bring the changes over	변경 사항 가져오기
+Keep openMapper's copy	openMapper 사본 유지
+its way has a gap after path	경로가 끊김, 다음 패스 뒤:
+its way does not pass	경로가 지나가지 않는 정류장:
+On demand	요청 시
+Not served (checkpoint)	정차 안 함(체크포인트)
+Wait for departure time	출발 시간까지 대기
+Always + wait for departure time	항상 + 출발 시간까지 대기
+The bus stops only when somebody waits or wants to get off (the game's default)	누군가 기다리거나 내리려 할 때만 정차합니다(게임 기본값)
+The bus always stops here	여기서 항상 정차합니다
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	정차하지 않고 지나갑니다. 정류장은 경로만 표시합니다(체크포인트)
+The bus stops only when it is early, and waits there for its departure time	일찍 도착했을 때만 정차하고, 그곳에서 출발 시간까지 기다립니다
+The bus always stops here, and when it is early it waits for its departure time	여기서 항상 정차하고, 일찍 도착하면 출발 시간까지 기다립니다
+All trips	모든 운행
+Every trip of the map, those no tour drives too	맵의 모든 운행(어떤 운행 순번도 운행하지 않는 것 포함)
+The line number the trip shows; the line of this number lists it among its trips	운행이 표시하는 노선 번호. 이 번호의 노선은 자기 운행 목록에 이 운행을 표시합니다
+Way picked by hand:	직접 고른 경로:
+the paths picked do not pass this stop	고른 패스가 이 정류장을 지나지 않습니다
+Other trips	다른 운행
+The time profile this departure runs to	이 출발이 따르는 시간 프로필
+Time profile	시간 프로필
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	운행에는 여러 프로필(출퇴근 시간, 야간…)이 있을 수 있습니다. 운행 순번의 각 출발이 어느 것을 따르는지 정합니다
+The profile's name	프로필 이름
+A new profile, a copy of this one	새 프로필(이 프로필의 복사본)
+Delete this profile (its departures run to the first)	이 프로필 삭제(그 출발은 첫 번째 프로필을 따릅니다)
+Times from stop to stop	정류장 간 시간
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	각 정류장에서 이전 정류장부터의 시간을 정할 수 있습니다. 이후 시간이 함께 밀리고, 운행 시간도 따라 바뀝니다. 정하지 않은 시간은 고정된 정류장 사이의 거리를 따릅니다. 고정된 정류장에서는 일찍 도착한 버스가 기다립니다.
+From the stop before	이전 정류장부터
+After departure	출발 후
+Minutes from the stop before to this one	이전 정류장부터 여기까지의 분
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2 에디터와 같습니다. 항목에 마우스를 올리면 버스가 어떻게 하는지 보입니다.
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	맵의 모든 운행(어느 노선이 표시하든, 어느 운행 순번이 운행하든). 어떤 운행 순번도 운행하지 않는 운행도 유지되며, 여기서 편집하거나 운행 순번에 넣거나 삭제할 수 있습니다.
+trips	운행
+driven by no tour	운행 순번 없음
+no tour	운행 순번 없음
+departures	출발
+No path there: click a lane of a road (View > AI lanes shows them)	여기에는 패스가 없습니다. 도로의 차선을 클릭하세요(보기 > AI 차선에서 표시)
+Done picking paths	선택 완료
+Pick the paths on the map	맵에서 패스 선택
+Choose the way yourself, path by path, as in OMSI 2's editor	OMSI 2 에디터처럼 패스를 하나씩 골라 경로를 직접 정합니다
+Find the way automatically	경로 자동 찾기
+Forget the paths picked: the way is found along the roads again	고른 패스 잊기: 경로를 다시 도로를 따라 찾습니다
+The paths were picked by hand: they are kept when the stops change.	패스를 직접 골랐습니다. 정류장이 바뀌어도 유지됩니다.
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	보기에서 패스를 클릭하세요. 끝 다음이나 시작 앞의 패스는 그곳까지의 패스와 함께 추가됩니다. 경로 옆의 패스는 그것이 돌아가는 구간을 대신합니다(교차로의 다른 갈래). 경로에 있는 패스는 빠집니다. 경로는 첫 정류장 앞에서 시작하고 마지막 정류장 뒤까지 이어질 수 있습니다.
+The way breaks after path	경로가 끊어짐, 다음 패스 뒤:
+the paths do not join, the bus's GPS loses its way here in the game	패스가 이어지지 않아, 게임에서 버스의 GPS가 여기서 경로를 잃습니다
+Paths of the way	경로의 패스
+Cut before the first stop	첫 정류장 앞 자르기
+Cut after the last stop	마지막 정류장 뒤 자르기
+path	패스
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMapper 자체 조작: 카메라는 '카메라'에서 고른 대로, 키는 '보기 > 조작'에 따름
+The keys as in View > Controls	키는 '보기 > 조작'에 따름
+A copy of its own was made for the script: the original type is unchanged	스크립트용 사본을 따로 만들었습니다. 원래 유형은 바뀌지 않았습니다
+Trolleybus wire the game cannot use	게임이 사용할 수 없는 트롤리버스 가선
+Rows the game does not show	게임에 표시되지 않는 줄
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	도로를 따라 놓인 오브젝트 줄(가로등, 기둥, 주차 칸)이 놓인 도로보다 앞에서 시작합니다. 그 거리는 도로 체인의 시작점부터 세는데, 여기서는 이 도로 앞까지의 체인 길이보다 작습니다. OMSI 2와 openOMSI는 이 줄을 전혀 표시하지 않으며, 편집기도 마찬가지입니다. 줄을 다시 놓거나 속성에서 시작 값을 늘리세요.
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSI는 가선 스팬이 정확히 세 개 만나는 곳에만 전환기를 만들고, 더 이상 만나지 않는 곳에 설정된 전환기는 건너뜁니다. 네트워크에 없는 섹션의 스팬에는 변전소가 없습니다. 지도 > 트롤리버스 가선을 열어 바로잡으세요.
+Trolleybus wire	트롤리버스 가선
+Select the next road piece (joined at its end; Shift: add it)	다음 도로 조각 선택(끝에서 연결된 것, Shift: 추가)
+Select the previous road piece (joined at its start; Shift: add it)	이전 도로 조각 선택(시작에서 연결된 것, Shift: 추가)
+the up arrow	위쪽 화살표
+the down arrow	아래쪽 화살표
+the left arrow	왼쪽 화살표
+the right arrow	오른쪽 화살표
+Select three objects or more (the two farthest apart stay)	오브젝트를 세 개 이상 선택하세요(가장 멀리 떨어진 두 개는 그대로 있습니다)
+Line up	일렬로 정렬
+Space evenly	균등 배치
+Splines laid	스플라인을 놓았습니다
+The spline reaches past the map: add tiles there first	스플라인이 맵 밖으로 나갑니다. 먼저 그곳에 타일을 추가하세요
+Ground painted over areas	영역에 지면을 칠했습니다
+Track beds	선로 도상
+Ground under surfaces	포장면 아래 지면
+Form the ground	포장면에 맞춰 지형 만들기
+Select a road piece first	먼저 도로 조각을 선택하세요
+Nothing is joined at its end	끝에 연결된 것이 없습니다
+Nothing is joined at its start	시작에 연결된 것이 없습니다
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	이동: 화살표를 끌면 X, Y, Z 방향으로, 사각형은 그 평면에서, 원은 지면을 따라 이동
+Rotate: drag a ring to turn about X, Y or Z	회전: 고리를 끌어 X, Y, Z 축을 중심으로 회전
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	크기: 화살표를 끌면 그 축 방향으로, 사각형은 두 축, 원은 세 축 모두
+Junctions where the roads meet	도로가 만나는 교차로
+Streets from the street model	거리 모델에 따른 거리
+perimeter	둘레
+needs	필요 권한
+built	빌드 완료
+signed by	서명자
+not signed: the game loads it with a warning that its author is not known	서명 없음: 게임이 작성자를 알 수 없다는 경고와 함께 불러옵니다
+openOMSI has no such function (the API of version	openOMSI에 이런 함수가 없습니다(API 버전
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map`은 맵 스크립트 전용입니다. 오브젝트 스크립트에는 omsi 함수만 있습니다
+no such module in the project (modules/…)	프로젝트에 이런 모듈이 없습니다(modules/…)
+the game sends no such event (unless a script sends it with omsi.emit)	게임은 이런 이벤트를 보내지 않습니다(스크립트가 omsi.emit으로 보내는 경우 제외)
+a name is needed	이름이 필요합니다
+a file of that name is there already	같은 이름의 파일이 이미 있습니다
+Empty module	빈 모듈
+Test run of	테스트 실행
+does nothing in the test run (no game): it gives false	테스트 실행에서는 아무것도 하지 않습니다(게임 없음). false를 반환합니다
+has nothing to read in the test run (no game): it gives nil	테스트 실행에서는 읽을 것이 없습니다(게임 없음). nil을 반환합니다
+an object of the OMSI 2 installation is never changed: make it an object of your own first	OMSI 2 설치본의 오브젝트는 바뀌지 않습니다. 먼저 내 오브젝트로 만드세요
+Dark	다크
+As the system	시스템 설정에 따름
+power (current on: branch)	전류(전류 있음: 분기)
+indicator	방향 지시등
+radio	무선
+to the branch	분기 쪽으로
+at random	무작위
+spans meet in one point: the game makes no switch there (a frog is three)	개의 스팬이 한 점에서 만납니다. 게임은 여기에 전환기를 만들지 않습니다(분기는 세 개)
+Switch	전환기
+no three spans meet there any more	이곳에서 더 이상 세 스팬이 만나지 않습니다
+A span is in section	스팬이 섹션
+that the network does not have	에 있지만, 네트워크에 그 섹션이 없습니다
+the wire spline	가선 스플라인
+the mast	지주
+the frog	분기 장치
+the insulator	절연기
+is not there	없음
+no wire spline: nothing of the wire is shown on the map	가선 스플라인 없음: 가선 자체는 맵에 표시되지 않습니다
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	가선 스플라인의 프로필이 3 m 위의 가는 전선 두 가닥이 아닙니다. 그대로 놓이지만, trolley.txt가 없으면 openOMSI는 이를 가선으로 인식하지 않습니다
+a kit of that name is there already	같은 이름의 키트가 이미 있습니다
+Renew the wire from its kit	키트로 가선 갱신
+Theme	테마
+Back to the 3D view	3D 보기로 돌아가기
+The plan view from above, north up	위에서 본 평면도, 북쪽이 위
+Put the windows back in their first places	창을 처음 위치로 되돌리기
+Trolleybus wire…	트롤리버스 가선…
+: there are unsaved changes	: 저장하지 않은 변경 사항이 있습니다
+Assets: every object and road type, with pictures	에셋: 모든 오브젝트와 도로 유형(이미지 포함)
+Close the openOMSI session started from here	여기서 시작한 openOMSI 세션 닫기
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	시작 위치, 차량, 시간, 날씨를 고르고 openOMSI에서 맵 주행
+Search commands	명령 검색
+Every command of the menus by its name	메뉴의 모든 명령을 이름으로
+Right-click the view for what can be done there; Search commands finds the rest	보기를 오른쪽 클릭하면 그곳에서 할 수 있는 작업이 나오고, 나머지는 '명령 검색'으로 찾습니다
+Right-click the view: its menu	보기 오른쪽 클릭: 해당 메뉴
+Snap vertex	꼭짓점 스냅
+Snap edge	모서리 스냅
+Out of the mix	혼합에서 빼기
+more as OMSI 2 is read…	OMSI 2를 읽는 동안 더 늘어납니다…
+Reading the content of OMSI 2…	OMSI 2 콘텐츠를 읽는 중…
+Nothing found: try fewer letters, or Everything in Show	찾은 것이 없습니다. 글자를 줄이거나 '표시'에서 '모두'를 고르세요
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	이 종류는 없습니다. '표시'에서 '모두'를 고르거나 에셋을 가져오세요(파일 > 에셋 가져오기)
+a table of functions	함수 테이블
+a module	모듈
+Next (Enter)	다음 (Enter)
+Previous (Shift+Enter)	이전 (Shift+Enter)
+Match case	대소문자 구분
+Replace	바꾸기
+Replace…	바꾸기…
+Click: a breakpoint (F9 on the cursor's line)	클릭: 중단점(커서 줄에서 F9)
+permission	권한
+The light before	이전 신호등
+The next light	다음 신호등
+The phase before	이전 단계
+The next phase	다음 단계
+to 	~ 
+Select the piece joined at its start (,)	시작에 연결된 조각 선택 (,)
+Select the piece joined at its end (.)	끝에 연결된 조각 선택 (.)
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	두 점을 클릭하면 사이의 거리와 경사를 잽니다 (U) · Shift + 클릭: 영역의 꼭짓점(면적과 둘레) · 오른쪽 클릭: 끄기
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 오브젝트의 꼭짓점을 다른 오브젝트의 꼭짓점에 스냅\nShift: 수평으로만, Esc/오른쪽 클릭: 취소
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	선택한 오브젝트의 모서리를 다른 모서리나 도로에 맞춤\n회전하여 일직선으로 스냅\nShift: 수평으로만, Esc/오른쪽 클릭: 취소
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	가장 멀리 떨어진 두 개 사이의 직선 위에 같은 간격으로(기둥, 가로등, 가로수)
+Equal steps between the two farthest apart, each keeping its distance to the side	가장 멀리 떨어진 두 개 사이에 같은 간격으로, 각각 옆으로의 거리는 유지
+height, m	높이, m
+gradient, %	경사, %
+cant, %	캔트, %
+Rotate, °	회전, °
+Name, file, IDCode, stop, x, y or tile x y	이름, 파일, IDCode, 정류장, x, y 또는 타일 x y
+listed, no file	목록에 있음, 파일 없음
+The camera over the tile's middle	카메라를 타일 가운데 위로
+its folder	해당 폴더
+Line up the selected objects	선택한 오브젝트를 일렬로 정렬
+Space the selected objects evenly	선택한 오브젝트를 균등 배치
+Next road piece	다음 도로 조각
+Previous road piece	이전 도로 조각
+The run ended	실행이 끝났습니다
+installed as	설치 위치
+failed	실패
+Run	실행
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	게임 함수를 사용해 여기 편집기 안에서 스크립트 실행 (코드에서 F5)
+Step in	단계 시작
+Run and stop at the first line (F11)	실행하고 첫 줄에서 멈춤 (F11)
+Continue	계속
+Pause	일시 정지
+Stop the clock; a script running stops at its next line	시계를 멈춥니다. 실행 중인 스크립트는 다음 줄에서 멈춥니다
+Over	넘기기
+Step over (F10)	한 줄씩 넘기기 (F10)
+Into	들어가기
+Step into (F11)	함수 안으로 들어가기 (F11)
+Out	나가기
+Step out (Shift+F11)	함수 밖으로 나가기 (Shift+F11)
+Restart	다시 시작
+The map's scripts	맵 스크립트
+The game's clock in the run	실행 중 게임 시계
+Set the game's clock of the run (sends minute)	실행 중 게임 시계 설정 (minute 전송)
+starts 	시작 
+The hour the run starts at	실행이 시작되는 시각
+Save all	모두 저장
+Build .oop	.oop 빌드
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	공유용 맵 스크립트 파일 하나: 컴파일 및 난독화되고 필요한 권한 포함 (Development Tools 컴파일러)
+API	API
+The game's functions and events	게임 함수와 이벤트
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	이 맵에는 아직 스크립트가 없습니다. 스크립트는 맵을 플레이하는 동안 openOMSI에서 실행되어 일어나는 일(정류장, 시각, 운행)에 반응하고, 메시지를 표시하고, 교통과 날씨를 바꿉니다.
+Start the map's scripts	맵 스크립트 시작하기
+Object scripts (Lua)	오브젝트 스크립트 (Lua)
+No object on the map has a Lua script.	맵에 Lua 스크립트가 있는 오브젝트가 없습니다.
+Refresh	새로 고침
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	경관 오브젝트의 [lua_script]에 지정된 스크립트: 카메라 근처에 있는 같은 유형의 모든 오브젝트에 대해 하나가 실행됩니다 (openOMSI 전용)
+Selected object	선택한 오브젝트
+Select one object on the map to see its scripts.	스크립트를 보려면 맵에서 오브젝트를 하나 선택하세요.
+No OMSI 2 script (.osc).	OMSI 2 스크립트(.osc)가 없습니다.
+Lua script (openOMSI)	Lua 스크립트 (openOMSI)
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	이 유형의 모든 오브젝트용 스크립트로, .sco 옆에 있고 그 안에 지정됩니다([lua_script]). OMSI 2는 이를 건너뜁니다. 설치본의 오브젝트는 먼저 맵 전용 사본이 됩니다.
+OMSI 2 script (.osc)	OMSI 2 스크립트 (.osc)
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	변수 목록이 있는 오브젝트 자체 스크립트로, OMSI 2와 openOMSI가 실행합니다. 램프와 [visible] 부분은 이 스크립트가 설정하는 변수를 따릅니다
+Rust plugin	Rust 플러그인
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Rust로 작성하고 WebAssembly로 컴파일해 .oop에 담은 맵 플러그인입니다. 빌드하려면 wasm32-unknown-unknown 타깃이 있는 Rust(rustup)가 필요합니다.
+Make the Rust plugin	Rust 플러그인 만들기
+Build and install	빌드 및 설치
+cargo builds it, the .oop goes into the content folder's plugins	cargo가 빌드하고, .oop는 콘텐츠 폴더의 plugins에 들어갑니다
+Starts with the map	맵과 함께 시작
+Rename…	이름 바꾸기…
+Earlier in the order	순서 앞으로
+Later in the order	순서 뒤로
+Delete (into openMapper's bin)	삭제 (openMapper 휴지통으로)
+New script	새 스크립트
+New module	새 모듈
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	맵을 플레이하면 각각 이 순서대로 시작합니다(오른쪽 클릭으로 이동). 하나가 실패해도 나머지는 계속 실행됩니다. map.on, map.every, map.after를 쓰세요. 이들은 이 맵에서만 동작합니다.
+Modules	모듈
+Code the scripts share: local util = require("modules.util")	스크립트가 공유하는 코드: local util = require("modules.util")
+Data	데이터
+Files the scripts read (data/), pictures and sounds	스크립트가 읽는 파일(data/), 이미지와 소리
+Made by openMapper	openMapper가 만듦
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	왼쪽에서 스크립트를 열거나 새로 만드세요.\n\nF5는 여기 편집기에서 스크립트 실행, F9는 중단점 설정, F10 / F11은 단계 실행,\nCtrl+Space는 자동 완성, Ctrl+F는 찾기, Ctrl+G는 줄로 이동, Ctrl+/는 주석 처리.
+Read only: a file of the installation or made by openMapper	읽기 전용: 설치본의 파일이거나 openMapper가 만든 파일
+Problems	문제
+Console	콘솔
+Debugger	디버거
+Events	이벤트
+error	오류
+warning	경고
+No problems in the open files.	열린 파일에 문제가 없습니다.
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	스크립트를 실행하면(실행, F5) 스크립트가 출력하거나 화면에 표시하는 내용과 오류가 여기에 나타납니다.
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	스크립트 안에서 실행할 Lua(멈춘 경우 멈춘 프레임에서). 위/아래 화살표: 기록
+Start a run first (Run, F5)	먼저 실행을 시작하세요 (실행, F5)
+(empty)	(비어 있음)
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	실행 중. 중단점(줄 번호 왼쪽 클릭 또는 F9)에서 스크립트가 멈추고, 일시 정지하면 다음 줄에서 멈춥니다.
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	실행 중이 아닙니다. 스크립트를 실행(F5)하면 중단점에서 멈추고, 여기에 호출 스택, 각 함수의 변수, 조사식 값이 표시됩니다.
+Stopped	멈춤
+Call stack	호출 스택
+Locals	지역 변수
+Upvalues	업밸류
+The console evaluates in this frame: a name, an expression, an assignment.	콘솔은 이 프레임에서 평가합니다: 이름, 식, 대입.
+Storage and objects	저장소와 오브젝트
+Send	보내기
+As if the game sent it: every handler of it runs	게임이 보낸 것처럼: 해당 핸들러가 모두 실행됩니다
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	스크립트를 실행하면 게임 이벤트를 직접 보낼 수 있습니다: 정류장 도착, 문, 새 시각… frame, minute, hour는 시계가 알아서 보냅니다.
+Listening	수신 중
+timers	타이머
+Sign with the key	키로 서명
+a secret key file of oopc keygen (optional)	oopc keygen의 비밀 키 파일 (선택 사항)
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	'.oop 빌드'는 공유용으로 맵 스크립트를 파일 하나로 만듭니다(프로젝트의 dist 폴더): 컴파일 및 난독화되고 코드에 필요한 권한이 포함됩니다. 게임은 스크립트 폴더를 그대로 실행하며, .oop는 소스 없이 배포하기 위한 것입니다.
+Search functions and events	함수와 이벤트 검색
+since	도입 버전
+for an .oop	.oop용
+Double-click puts it into the script at the cursor.	더블 클릭하면 스크립트의 커서 위치에 넣습니다.
+A stop on this path	이 경로의 정류장
+branch	분기
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	openOMSI 트롤리버스가 그 아래로 달리는 가선(맵 옆의 trolley.txt, OMSI 2는 무시함). 이것이 없으면 게임은 맵의 가선 스플라인을 읽습니다.
+Start a wire for this map	이 맵의 가선 시작하기
+Lay	부설
+Sections	섹션
+Spans	스팬
+Switches	전환기
+Pick in the view	보기에서 선택
+A click in the view picks a span or a switch (yellow dot)	보기에서 클릭하면 스팬이나 전환기(노란 점)를 선택합니다
+The wires over the road surface	노면 위 가선 높이
+the kerb lane each way	양방향 가장자리 차선
+the way the road runs	도로 진행 방향
+against the road's way	도로 진행 방향의 반대
+Section	섹션
+Kit	키트
+ (every map)	 (모든 맵)
+none: the wire for the game only	없음: 게임 전용 가선
+A new kit	새 키트
+My wire	내 가선
+Change this kit	이 키트 변경
+its wire spline	해당 가선 스플라인
+its masts, every	해당 지주, 간격
+The kit names no mast	키트에 지주가 지정되지 않았습니다
+Frogs and section insulators are put where the wire has them, as the kit names them.	분기 장치와 섹션 절연기는 가선에 있는 위치에, 키트가 지정한 것으로 놓입니다.
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	맵에는 아무것도 놓이지 않으며, 가선은 게임 전용입니다. 키트(+)는 가선, 지주, 분기 장치, 절연기의 내 모델을 지정합니다.
+Over the selected roads	선택한 도로 위에
+Select roads in the view first (double-click: a whole road)	먼저 보기에서 도로를 선택하세요 (더블 클릭: 도로 전체)
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	선택한 오브젝트(교차로)의 차선: 가선이 지나갈 차선에 체크하세요. 세 스팬이 만나면 분기 장치가 됩니다.
+It has no street lanes.	차도 차선이 없습니다.
+lane	차선
+Over the ticked lanes	체크한 차선 위에
+Select one junction to lay the wire over its lanes.	교차로를 하나 선택하면 그 차선 위에 가선을 놓습니다.
+Draw a span by hand	스팬 직접 그리기
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	보기에서 점을 클릭하세요. 스팬의 끝에서 시작하거나 끝내면 거기에 이어지고, 스팬 중간이면 그곳에서 분기합니다(분기 장치)
+points: click the next in the view	개 점: 보기에서 다음 점을 클릭
+Finish	완료
+Read the map's wire splines	맵의 가선 스플라인 읽기
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	가선 두 가닥으로 그려진 스플라인(OMSI 2용 트롤리버스 맵): 게임이 읽는 대로 각 스플라인을 따라 스팬 하나
+Network	네트워크
+Voltage	전압
+Wire spacing	가선 간격
+How uneven the contact wire is: worn or icy wire 0.003 and more	접촉선의 울퉁불퉁함: 마모되거나 얼어붙은 선은 0.003 이상
+Delete the whole wire	가선 전체 삭제
+trolley.txt goes with the next save; the game reads the map's wire splines again	다음 저장 때 trolley.txt가 삭제되고, 게임은 다시 맵의 가선 스플라인을 읽습니다
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	변전소 하나가 급전하는 구간. 두 구간이 만나는 곳은 무전 구간(절연기)입니다.
+name	이름
+live	통전
+The feeder's resistance: the voltage drops with the current	급전선 저항: 전류에 따라 전압이 떨어집니다
+Power the feeder takes back from a braking bus	제동 중인 버스로부터 급전선이 회생하는 전력
+spans	스팬
+Add a section	섹션 추가
+Insulators (where sections meet)	절연기 (섹션 경계)
+ m dead	 m 무전 구간
+Span	스팬
+points	점
+Spacing	가선 간격
+its own	개별
+Drag: the whole span up or down	끌기: 스팬 전체를 위아래로
+The span the other way: the positive wire is on the right of its way	스팬 방향 반대로: 양극선이 진행 방향 오른쪽에 있습니다
+Pick a span in the view, or in the list.	보기나 목록에서 스팬을 고르세요.
+section	섹션
+A switch where three spans meet (yellow in the view). Every frog gets one.	세 스팬이 만나는 곳의 전환기(보기에서 노란색). 분기 장치마다 하나씩 있습니다.
+No frogs yet: lay three spans meeting in one point (a branch).	아직 분기 장치가 없습니다: 한 점에서 만나는 세 스팬(분기)을 놓으세요.
+Spans laid:	놓은 스팬:
+Wire kit	가선 키트
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	맵에 가선을 보여 주는 내 모델(Blender 등으로 만들어 콘텐츠 폴더에 넣은 것): 가선 스플라인과 지주, 분기 장치, 절연기 오브젝트. 키트는 이를 지정하는 .cfg 파일이며, 여기서 또는 텍스트로, 아니면 아무 텍스트 편집기에서나 바꿀 수 있습니다.
+As text	텍스트로
+The name is the kit's file: make a copy to rename it	이름은 키트의 파일입니다. 이름을 바꾸려면 사본을 만드세요
+For	대상
+this map	이 맵
+every map	모든 맵
+Take the one selected on the map	맵에서 선택한 것 가져오기
+Select a spline of it on the map first	먼저 맵에서 그런 스플라인을 선택하세요
+Select such an object on the map first	먼저 맵에서 그런 오브젝트를 선택하세요
+Choose the file	파일 선택
+The file must lie in the content folder or in OMSI 2's	파일은 콘텐츠 폴더나 OMSI 2 폴더에 있어야 합니다
+Not there	없음
+Wire spline	가선 스플라인
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	프로필이 가선을 도로 위 높이에 두는 .sli. 각 스팬을 따라 놓입니다
+Mast	지주
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco: 원점은 밑동, 암은 -y 방향으로 가선까지 뻗음
+Frog	분기 장치
+A .sco hung where the wire branches: its origin on the wire, y along it	가선이 갈라지는 곳에 매다는 .sco: 원점은 가선 위, y는 가선 방향
+Insulator	절연기
+A .sco hung where two sections meet: its origin on the wire, y along it	두 섹션이 만나는 곳에 매다는 .sco: 원점은 가선 위, y는 가선 방향
+Masts	지주
+every	간격
+From a mast's foot to its wire, across the road	지주 밑동에서 가선까지, 도로를 가로질러
+from the wire	가선에서
+Mast turned	지주 회전
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	암이 -y 방향으로 뻗지 않는 모델용: -x 방향이면 90, +x면 -90, +y면 180
+arm	암
+The wire spline's wires	가선 스플라인의 전선
+high	높이
+across its line	중심선에서
+Save and renew the map's wire	저장하고 맵 가선 갱신
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	이 키트로 놓은 가선 스플라인과 지주는 키트의 현재 파일을 쓰고, 분기 장치와 절연기는 다시 놓입니다
+A new kit from this one (to rename it, or change it apart)	이 키트로 새 키트 만들기(이름을 바꾸거나 따로 변경하려면)
+Show the file	파일 보기
+Changed to the kit's files:	키트 파일로 바뀜:
+a display shows the switch of its name	표시기가 이 이름의 전환기를 표시합니다
+Set by	제어 방식
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	게임이 가선을 읽을 때의 위치(무작위: 실행마다 한 번 추첨, 온라인 게임에서는 직진)
+Contact plate	접촉판
+ m before the frog	 m (분기 장치 앞)
+Power on from	통전 기준 전류
+Invert	반전
+the other way round	반대로
+Channel	채널
+any	아무거나
+Range	도달 거리
+Route codes	노선 코드
+A route code	노선 코드
+Flip	뒤집기
+Left to right	좌우
+Top to bottom	상하
+Dark theme	어두운 테마
+Light theme	밝은 테마
+Lit	조명
+Right footway texture	오른쪽 인도 텍스처
+Left footway texture	왼쪽 인도 텍스처
+like the left one	왼쪽과 같게
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	차선 경로가 좌측통행 지도처럼 진행합니다(일방통행 도로는 방향 유지)

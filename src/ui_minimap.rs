@@ -7,6 +7,7 @@ use glam::DVec2;
 use crate::doc::{tile_origin, tile_size, Document};
 use crate::i18n::tr;
 use crate::library::{Category, Library};
+use crate::theme::pal;
 
 /// What the camera shows, for the marker.
 #[derive(Clone, Copy)]
@@ -31,6 +32,8 @@ pub struct Minimap {
     pub open: bool,
     pub large: bool,
     key: u64,
+    /// The part of `key` that is the map's own (the rest is the catalogue, read as it grows).
+    map_key: u64,
     tiles: Vec<DVec2>,
     /// Satellite or own pictures laid on tiles: a tile's corner, a small copy, its opacity
     /// (`ui_geo::GeoUi::minimap_tiles`).
@@ -88,7 +91,31 @@ fn dot(img: &mut egui::ColorImage, x: f32, y: f32, r: f32, c: Color32) {
 /// A line between two places in the picture, a dot each pixel of it (a stroke's own way, without
 /// the tessellator's): the later lines lie over the earlier ones, as the shapes did.
 fn line_into(img: &mut egui::ColorImage, x0: f32, y0: f32, x1: f32, y1: f32, r: f32, c: Color32) {
+    // (only the part over the picture is drawn: a broken spline of a map file, one end 10^22 m
+    // out, made billions of dots - the window hung - and overflowed the pixel numbers)
+    if ![x0, y0, x1, y1].iter().all(|v| v.is_finite()) {
+        return;
+    }
     let (dx, dy) = (x1 - x0, y1 - y0);
+    let m = r + 1.0;
+    let (w, h) = (img.size[0] as f32, img.size[1] as f32);
+    let (mut t0, mut t1) = (0.0f32, 1.0f32);
+    for (p, q) in [(-dx, x0 + m), (dx, w + m - x0), (-dy, y0 + m), (dy, h + m - y0)] {
+        if p == 0.0 {
+            if q < 0.0 {
+                return;
+            }
+        } else if p < 0.0 {
+            t0 = t0.max(q / p);
+        } else {
+            t1 = t1.min(q / p);
+        }
+    }
+    if t0 > t1 {
+        return;
+    }
+    let (x0, y0) = (x0 + dx * t0, y0 + dy * t0);
+    let (dx, dy) = (dx * (t1 - t0), dy * (t1 - t0));
     let steps = dx.abs().max(dy.abs()).ceil().max(1.0) as i32;
     for i in 0..=steps {
         let t = i as f32 / steps as f32;
@@ -102,10 +129,17 @@ impl Minimap {
     }
 
     fn rebuild(&mut self, doc: &Document, lib: &Library, moving: bool) {
-        let key = doc.tiles.iter().fold(doc.tiles.len() as u64, |h, (k, t)| {
+        let map_key = doc.tiles.iter().fold(doc.tiles.len() as u64, |h, (k, t)| {
             h.wrapping_mul(31).wrapping_add(t.content_rev).wrapping_add((k.0 as u64) << 20 ^ k.1 as u64)
-        }) ^ (lib.assets.len() as u64) << 40;
+        });
+        let key = map_key ^ (lib.assets.len() as u64) << 40;
         if key == self.key && !self.tiles.is_empty() {
+            return;
+        }
+        // (the catalogue being read only tells more lines what kind they are: on a city it
+        // grows for minutes, and the thumbnail made again three times a second for it took a
+        // good part of every frame)
+        if map_key == self.map_key && self.built.is_some_and(|at| at.elapsed() < std::time::Duration::from_secs(2)) {
             return;
         }
         // (while things are being moved the thumbnail is left as it was, and made again once
@@ -121,7 +155,9 @@ impl Minimap {
             }
         }
         self.built = Some(std::time::Instant::now());
+        let t_rebuild = std::time::Instant::now();
         self.key = key;
+        self.map_key = map_key;
         self.tiles.clear();
         let mut lines: Vec<(Line, Vec<DVec2>)> = Vec::new();
         let ts = tile_size();
@@ -190,6 +226,7 @@ impl Minimap {
         }
         self.min = min;
         self.max = max;
+        crate::render::profile::log_time("minimap", t_rebuild);
     }
 
     /// What the lines' picture was made for: the map as built, where the map lies on the
@@ -249,7 +286,7 @@ impl Minimap {
 
         let resp = ui.interact(rect.expand(4.0), ui.id().with("minimap"), Sense::click_and_drag());
         let painter = ui.painter_at(rect.expand(6.0));
-        painter.rect_filled(rect.expand(4.0), CornerRadius::same(3), Color32::from_rgba_unmultiplied(20, 21, 24, 220));
+        painter.rect_filled(rect.expand(4.0), CornerRadius::same(3), pal().overlay);
         let ts = tile_size();
         for &o in &self.tiles {
             let r = Rect::from_two_pos(to_screen(o), to_screen(o + DVec2::splat(ts)));
@@ -280,7 +317,7 @@ impl Minimap {
         let accent = Color32::from_rgb(232, 120, 40);
         painter.add(Shape::convex_polygon(vec![at, at + fwd * reach + side_v, at + fwd * reach - side_v], Color32::from_rgba_unmultiplied(232, 120, 40, 50), Stroke::new(1.0, accent)));
         painter.circle_filled(at, 3.5, accent);
-        painter.rect_stroke(rect.expand(4.0), CornerRadius::same(3), Stroke::new(1.0, Color32::from_rgb(60, 62, 68)), egui::StrokeKind::Inside);
+        painter.rect_stroke(rect.expand(4.0), CornerRadius::same(3), Stroke::new(1.0, pal().border), egui::StrokeKind::Inside);
         let resp = resp.on_hover_text(tr("Overview: click or drag to move there · double-click: larger / smaller · M: hide", "Обзор: клик или перетаскивание: переместиться · двойной клик: крупнее / мельче · M: скрыть"));
         if resp.double_clicked() {
             self.large = !self.large;
@@ -290,5 +327,52 @@ impl Minimap {
             return resp.interact_pointer_pos().map(to_world);
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::library::{Asset, Kind};
+    use crate::selection::tests::{add_spline, flat_map};
+
+    /// A line running far off the picture draws its part over the picture, and quickly: one
+    /// end of a broken spline of Solnechnogorsk_2024 lies 10^22 m out, and the overview
+    /// overflowed the pixel numbers (or, built for speed, drew billions of dots and hung).
+    #[test]
+    fn a_line_far_off_the_picture_draws_its_part_over_it() {
+        let mut img = egui::ColorImage { size: [16, 16], pixels: vec![Color32::TRANSPARENT; 256], source_size: egui::Vec2::new(16.0, 16.0) };
+        let t = std::time::Instant::now();
+        line_into(&mut img, 2.0, 2.0, 1e20, 1e20, 0.5, Color32::WHITE);
+        line_into(&mut img, 2.0, 12.0, f32::INFINITY, 12.0, 0.5, Color32::WHITE);
+        assert!(t.elapsed().as_millis() < 100, "{:?}", t.elapsed());
+        assert_eq!(img.pixels[5 * 16 + 5], Color32::WHITE, "the diagonal over the picture is drawn");
+        assert_eq!(img.pixels[15 * 16 + 15], Color32::WHITE, "to its edge");
+        assert_eq!(img.pixels[12 * 16 + 8], Color32::TRANSPARENT, "a line to nowhere is not");
+        // (one wholly within it as before)
+        line_into(&mut img, 0.0, 8.0, 15.0, 8.0, 0.5, Color32::RED);
+        assert!((0..16).all(|x| img.pixels[8 * 16 + x] == Color32::RED));
+    }
+
+    /// The catalogue growing while it is read does not make the thumbnail again more than
+    /// every two seconds (on a city that was three times a second for minutes, a good part of
+    /// every frame); the map changing does, as before.
+    #[test]
+    fn the_catalogue_being_read_does_not_rebuild_the_thumbnail_each_time_it_grows() {
+        let mut doc = flat_map(1);
+        add_spline(&mut doc, (0, 0), 1, 100.0, 100.0, 0.0, 50.0, 0, 0);
+        let mut lib = Library::default();
+        let mut m = Minimap::new();
+        m.rebuild(&doc, &lib, false);
+        let a_while_ago = || Some(std::time::Instant::now() - std::time::Duration::from_millis(500));
+        m.built = a_while_ago();
+        let first = m.key;
+        lib.assets.push(Asset { kind: Kind::Spline, rel: "Splines\\road.sli".into(), name: "road".into(), dir: String::new(), category: Category::Roads, haystack: String::new(), from_content: false, is_bus_stop: false, is_entry_point: false, is_car_park: false, abs_height: false, lamp: false, light_head: false, light_program: false, helpers: Vec::new(), paths: 0, half_width: 0.0, lanes: (0, 0, 0) });
+        lib.reindex_for_tests();
+        m.rebuild(&doc, &lib, false);
+        assert_eq!(m.key, first, "not made again for the catalogue alone");
+        doc.tiles.get_mut(&(0, 0)).unwrap().touch_content();
+        m.rebuild(&doc, &lib, false);
+        assert_ne!(m.key, first, "made again for the map");
     }
 }

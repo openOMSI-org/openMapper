@@ -74,6 +74,37 @@ fn the_first_format_is_converted() {
     let _ = std::fs::remove_dir_all(&out);
 }
 
+/// An OMSI 1 list (OMSI 1 Velbert's kind) is read as Omsi.exe reads it: a car group named
+/// again starts over, and its depot with the old type group (a place in `[ailist]`, then
+/// number and repaint pairs) is kept, and written again in the second format.
+#[test]
+fn an_omsi_1_list_keeps_its_depots() {
+    let dir = scratch("omsi1");
+    std::fs::write(
+        dir.join("ailists.cfg"),
+        "[ailist]\n0\n-1\n3\nvehicles\\Kombi\\kombi.ovh\nvehicles\\Coach\\coach.bus\nvehicles\\Van\\van.ovh\n\n\
+[aigroup]\nStadtverkehr\n1\n0\n\n\
+[aigroup]\nstadtverkehr\n1\n2\n\n\
+[aigroup_depot]\nLinienbusse\nHof Waldbach\n\
+[aigroup_depot_typgroup]\n1\n101\nrot\n102\nblau\n[end]\n",
+    )
+    .unwrap();
+    let mut t = Traffic::load(&dir);
+    assert!(t.legacy);
+    let names: Vec<&str> = t.groups.iter().map(|g| g.name.as_str()).collect();
+    assert_eq!(names, ["stadtverkehr", "Linienbusse", "NotInGroup"]);
+    let depot = &t.groups[1];
+    assert!(depot.is_depot);
+    assert_eq!(depot.typgroups[0].file, "vehicles\\Coach\\coach.bus");
+    assert_eq!(depot.typgroups[0].entries.iter().map(|e| (e.number.as_str(), e.paint.as_str())).collect::<Vec<_>>(), [("101", "rot"), ("102", "blau")]);
+    let out = scratch("omsi1-out");
+    t.touch(File::AiLists);
+    save_to(&mut t, &out).unwrap();
+    assert_eq!(omsi_map::AiLists::load(&out.join("ailists.cfg")).unwrap().groups, t.groups);
+    let _ = std::fs::remove_dir_all(&dir);
+    let _ = std::fs::remove_dir_all(&out);
+}
+
 #[test]
 fn unscheduled_traffic_and_renames() {
     let mut t = Traffic { groups: vec![car_group("Cars")], ..Default::default() };

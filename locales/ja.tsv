@@ -2788,3 +2788,445 @@ no track within 15 m	15 m以内に線路がありません
 the tracks are not joined, or run the other way (see View > AI lanes)	線路が接続されていないか、逆向きです（表示 > AI車線を参照）
 no track beside	線路なし：
 Drives on	走行
+Source vertex chosen. Click a target vertex to snap (Shift: horizontal only, Esc: cancel)	ソース頂点が選択されました。スナップする対象の頂点をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at a vertex of the selected object	選択したオブジェクトの頂点を狙う
+Snapped to vertex! (Ctrl+Z to undo)	頂点にスナップされました! (元に戻すには Ctrl+Z)
+Aim at a target vertex or spline endpoint	ターゲットの頂点またはスプラインの終点を目指します
+Source edge chosen. Click a target edge or road to align (Shift: horizontal only, Esc: cancel)	ソースエッジが選択されました。整列する対象のエッジまたは道路をクリックします (Shift: 水平のみ、Esc: キャンセル)
+Aim at an edge of the selected object	選択したオブジェクトの端を狙う
+Aligned edge to edge! (Ctrl+Z to undo)	端から端まで揃っています！ (元に戻すには Ctrl+Z)
+Aim at a target edge or road	ターゲットのエッジまたは道路を狙う
+Target cancelled. Pick a source vertex again	ターゲットはキャンセルされました。ソース頂点を再度選択します
+Vertex snap cancelled	頂点スナップがキャンセルされました
+Target cancelled. Pick a source edge again	ターゲットはキャンセルされました。ソースエッジを再度選択します
+Edge snap cancelled	エッジスナップがキャンセルされました
+Select an object first to snap its vertex	最初にオブジェクトを選択して、その頂点をスナップします
+Vertex snap: click a source vertex on the selected object (Esc to cancel)	頂点スナップ: 選択したオブジェクト上のソース頂点をクリックします(キャンセルするにはEsc)
+Snap vertex to vertex	頂点を頂点にスナップ
+Select an object first to align its edge	まずオブジェクトを選択してエッジを揃えます
+Edge snap: click a source edge on the selected object (Esc to cancel)	エッジ スナップ: 選択したオブジェクトのソース エッジをクリックします (キャンセルするには Esc)
+Snap edge to edge	端から端までスナップ
+Snap vertex to vertex (V)	頂点を頂点にスナップ(V)
+Snap edge to edge (L)	端から端までスナップ (L)
+Snap vertex (V)	頂点スナップ(V)
+Snap a vertex of this object to another vertex (Shortcut: V)	このオブジェクトの頂点を別の頂点にスナップします(ショートカット: V)
+Snap edge (L)	スナップエッジ(L)
+Snap an edge of this object to another edge or road (Shortcut: L)	このオブジェクトのエッジを別のエッジまたは道路にスナップします (ショートカット: L)
+Snap a vertex of the selected object to a vertex of another object (V)\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの頂点を別のオブジェクトの頂点にスナップします (V)\nShift: 水平方向のみ、Esc/右クリック: キャンセル
+Align an edge of the selected object to an edge or road (L)\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトのエッジをエッジまたは道路に位置合わせします (L)\n回転して同一線上にスナップします\nShift: 水平のみ、Esc/右クリック: キャンセル
+Point 1 aligned! Click a 2nd point on object to rotate, or Esc to finish	ポイント1を配置しました！オブジェクト上の2点目をクリックして回転、またはEscで完了
+Reference angle set. Click a target point or spline to align (Esc: finish)	基準角度を設定しました。位置合わせ先の頂点または道路をクリックしてください（Esc：完了）
+Pick a different vertex on the object	オブジェクトの別の頂点を選択してください
+Click a 2nd reference point on the object, or Esc to finish	オブジェクト上の2点目の基準点をクリック、またはEscで完了
+Aligned angle! (Ctrl+Z to undo)	角度を合わせました！（Ctrl+Z で元に戻す）
+Vertex snap complete	頂点吸着完了
+Align vertex angle	頂点の角度を合わせる
+Complete to	ここまで補完
+Complete to: a new piece between the free ends of the selected splines	ここまで補完：選択したスプラインの空いた端の間に新しい部品
+A new piece of the first selected spline's type between two free ends of the selected splines, meeting both in place, direction and height; the two are not changed. Again: the two ends left are joined, closing the ring.	最初に選択したスプラインの種類で、選択したスプラインの空いた二つの端の間に新しい部品を作り、両方と位置・向き・高さを合わせます。元の二つは変わりません。もう一度押すと、残る二つの端がつながり、輪が閉じます。
+The two ends already meet	この二つの端はもうつながっています
+Select the splines whose free ends are to be joined	空いた端をつなぐスプラインを選択してください
+No piece of spline can join these two ends	この二つの端をつなげるスプラインの部品がありません
+Opened openMapper's copy of this map in the content folder (the OMSI 2 folder's own is never written)	このマップの openMapper のコピーをコンテンツフォルダで開きました(OMSI 2 フォルダのものは書き換えません)
+Read in again, changed on disk by another program:	読み直しました。別のプログラムがディスク上で変更:
+Could not bring the changes over	変更を取り込めませんでした
+The map's files were changed after this autosave (by another program, OMSI 2's editor say). Restoring puts the autosaved, older tiles over those changes.	この自動保存の後にマップのファイルが変更されています(別のプログラム、例えば OMSI 2 のエディタによる)。復元すると、自動保存の古いタイルがその変更の上に置かれます。
+tile(s)	タイル
+the global settings	全体設定
+the timetable	時刻表
+the traffic	交通
+the descriptions	説明
+Reload from disk	ディスクから再読み込み
+The map changed on disk	マップがディスク上で変更されました
+Another program changed the map's files where it has changes here not saved yet:	ここに未保存の変更がある部分のマップファイルを、別のプログラムが変更しました:
+The other changes made on disk were read in already.	ディスク上のその他の変更は読み込み済みです。
+Keep mine	自分の変更を残す
+The map changed in OMSI 2's folder	OMSI 2 フォルダでマップが変更されました
+The installation's own copy of this map was changed after openMapper's copy in the content folder was saved, by OMSI 2's editor say	コンテンツフォルダの openMapper のコピーを保存した後に、インストール先のこのマップが変更されました(例えば OMSI 2 のエディタで)
+Bringing the changes over replaces those files of openMapper's copy; the files replaced are kept in a backup (File > Earlier versions).	取り込むと openMapper のコピーのそれらのファイルが置き換わります。置き換えられたファイルはバックアップに残ります(ファイル > 以前のバージョン)。
+Bring the changes over	変更を取り込む
+Keep openMapper's copy	openMapper のコピーを残す
+its way has a gap after path	経路に途切れがあります。この後のパス：
+its way does not pass	経路が通らない停留所：
+On demand	要求時
+Not served (checkpoint)	通過（チェックポイント）
+Wait for departure time	発車時刻まで待つ
+Always + wait for departure time	常に + 発車時刻まで待つ
+The bus stops only when somebody waits or wants to get off (the game's default)	誰かが待っているか降りたい時だけ停車します（ゲームの既定）
+The bus always stops here	ここでは常に停車します
+The bus drives past without stopping: the stop only marks the way (a checkpoint)	停車せずに通過します：停留所は経路を示すだけです（チェックポイント）
+The bus stops only when it is early, and waits there for its departure time	早着した時だけ停車し、発車時刻まで待ちます
+The bus always stops here, and when it is early it waits for its departure time	ここでは常に停車し、早着した時は発車時刻まで待ちます
+All trips	すべての便
+Every trip of the map, those no tour drives too	マップのすべての便（どの行路も走らない便も含む）
+The line number the trip shows; the line of this number lists it among its trips	便が表示する系統番号。この番号の系統は自分の便の中にこの便を表示します
+Way picked by hand:	手動で選んだ経路：
+the paths picked do not pass this stop	選んだパスがこの停留所を通りません
+Other trips	その他の便
+The time profile this departure runs to	この出発が従う時間プロファイル
+Time profile	時間プロファイル
+A trip can have several profiles (rush hour, night…): each tour's departure says which one it runs to	便は複数のプロファイル（ラッシュ時、夜間…）を持てます。行路の各出発がどれに従うかを指定します
+The profile's name	プロファイル名
+A new profile, a copy of this one	新しいプロファイル（これのコピー）
+Delete this profile (its departures run to the first)	このプロファイルを削除（その出発は最初のプロファイルに従います）
+Times from stop to stop	停留所間の時間
+The time from the stop before can be set at each stop: the times after it move along, the trip's time with them. Times not set follow the distance between the fixed ones; at a fixed stop a bus that is early waits.	各停留所で前の停留所からの時間を設定できます。以降の時間はずれ、便の所要時間も一緒に変わります。設定していない時間は固定した停留所間の距離に従います。固定した停留所では、早着したバスが待ちます。
+From the stop before	前の停留所から
+After departure	出発後
+Minutes from the stop before to this one	前の停留所からここまでの分
+As in OMSI 2's editor. Hover a choice to see what the bus does.	OMSI 2のエディタと同じです。選択肢にマウスを重ねると、バスの動きが表示されます。
+Every trip of the map, whichever line shows it or tour drives it. A trip no tour drives is kept, and can be edited, given to a tour or deleted here.	マップのすべての便（どの系統が表示し、どの行路が走るかを問わず）。どの行路も走らない便も残り、ここで編集したり、行路に割り当てたり、削除したりできます。
+trips	便
+driven by no tour	行路なし
+no tour	行路なし
+departures	出発
+No path there: click a lane of a road (View > AI lanes shows them)	ここにパスはありません：道路の車線をクリックしてください（表示 > AI車線 で表示）
+Done picking paths	選択完了
+Pick the paths on the map	マップでパスを選択
+Choose the way yourself, path by path, as in OMSI 2's editor	OMSI 2のエディタと同じく、パスを一つずつ選んで経路を自分で決めます
+Find the way automatically	経路を自動で探す
+Forget the paths picked: the way is found along the roads again	選んだパスを破棄：経路は再び道路に沿って探されます
+The paths were picked by hand: they are kept when the stops change.	パスは手動で選ばれました：停留所が変わってもそのまま残ります。
+Click paths in the view. One after the end or before the start is added, with the paths to it; one beside the way takes the place of the part it goes round (another branch at a junction); a path of the way is taken out. The way may run on before the first stop and after the last.	ビューでパスをクリックします。終点の後や始点の前のパスは、そこまでのパスと一緒に追加されます。経路の脇のパスは、それが迂回する区間と置き換わります（交差点の別の分岐）。経路上のパスは外されます。経路は最初の停留所より前から始まり、最後の停留所より後まで続けられます。
+The way breaks after path	経路が途切れています。この後のパス：
+the paths do not join, the bus's GPS loses its way here in the game	パスがつながっていないため、ゲーム内でバスのGPSがここで経路を見失います
+Paths of the way	経路のパス
+Cut before the first stop	最初の停留所より前を切る
+Cut after the last stop	最後の停留所より後を切る
+path	パス
+openMapper's own controls: the camera as chosen under Camera, the keys as in View > Controls	openMapper独自の操作：カメラは「カメラ」で選んだもの、キーは「表示 > 操作」のとおり
+The keys as in View > Controls	キーは「表示 > 操作」のとおり
+A copy of its own was made for the script: the original type is unchanged	スクリプト用に専用のコピーを作成しました。元のタイプは変更されていません
+Trolleybus wire the game cannot use	ゲームで使えないトロリーバス架線
+Rows the game does not show	ゲームに表示されない列
+A row of objects along a road (lamps, posts, parking bays) starts before the road it is laid on: its distance counts from the start of the road's chain, and this one is smaller than the length of the chain before its road. OMSI 2 and openOMSI show none of it, and neither does the editor. Lay the row again, or give it a larger start in its properties.	道路沿いのオブジェクト列（街灯、ポール、駐車枠）が、載っている道路より前から始まっています。その距離は道路のチェーンの始点から数えますが、この値はその道路までのチェーンの長さより小さくなっています。OMSI 2 も openOMSI も、エディタもこれを一切表示しません。列を敷き直すか、プロパティで開始位置を大きくしてください。
+openOMSI makes a switch only where exactly three spans of the overhead wire meet, and a switch set where none meet any more is left out; a span in a section the network lacks has no substation. Open Map > Trolleybus wire to put it right.	openOMSIは架線のスパンがちょうど3本集まる場所にだけポイントを作り、もう集まっていない場所に設定されたポイントは省きます。ネットワークにないセクションのスパンには変電所がありません。マップ > トロリーバス架線 を開いて修正してください。
+Trolleybus wire	トロリーバス架線
+Select the next road piece (joined at its end; Shift: add it)	次の道路部分を選択（終点でつながるもの、Shift：追加）
+Select the previous road piece (joined at its start; Shift: add it)	前の道路部分を選択（始点でつながるもの、Shift：追加）
+the up arrow	上矢印キー
+the down arrow	下矢印キー
+the left arrow	左矢印キー
+the right arrow	右矢印キー
+Select three objects or more (the two farthest apart stay)	3つ以上のオブジェクトを選択してください（最も離れた2つは動きません）
+Line up	一直線に並べる
+Space evenly	等間隔に配置
+Splines laid	スプラインを敷設しました
+The spline reaches past the map: add tiles there first	スプラインがマップの外に出ています。先にそこへタイルを追加してください
+Ground painted over areas	範囲に地面を塗りました
+Track beds	線路の道床
+Ground under surfaces	舗装面の下の地面
+Form the ground	舗装面に合わせて地形を整形
+Select a road piece first	先に道路部分を選択してください
+Nothing is joined at its end	終点には何もつながっていません
+Nothing is joined at its start	始点には何もつながっていません
+Move: drag an arrow along X, Y or Z, a square in its plane, the circle over the ground	移動：矢印をドラッグでX・Y・Z方向へ、四角でその平面内、円で地面に沿って
+Rotate: drag a ring to turn about X, Y or Z	回転：リングをドラッグでX・Y・Z軸まわりに回転
+Scale: drag an arrow to scale along that axis, a square for two, the circle for all three	拡大縮小：矢印をドラッグでその軸方向、四角で2軸、円で3軸すべて
+Junctions where the roads meet	道路が交わる交差点
+Streets from the street model	街路モデルによる街路
+perimeter	周長
+needs	必要な権限
+built	ビルド完了
+signed by	署名者
+not signed: the game loads it with a warning that its author is not known	署名なし：ゲームは作者不明の警告付きで読み込みます
+openOMSI has no such function (the API of version	openOMSIにそのような関数はありません（APIバージョン
+`map` is for the map's scripts; a script of objects has the omsi functions only	`map` はマップのスクリプト専用です。オブジェクトのスクリプトには omsi 関数しかありません
+no such module in the project (modules/…)	プロジェクトにそのようなモジュールはありません（modules/…）
+the game sends no such event (unless a script sends it with omsi.emit)	ゲームはそのようなイベントを送りません（スクリプトが omsi.emit で送る場合を除く）
+a name is needed	名前が必要です
+a file of that name is there already	その名前のファイルは既にあります
+Empty module	空のモジュール
+Test run of	テスト実行
+does nothing in the test run (no game): it gives false	テスト実行では何もしません（ゲームなし）：false を返します
+has nothing to read in the test run (no game): it gives nil	テスト実行では読み取るものがありません（ゲームなし）：nil を返します
+an object of the OMSI 2 installation is never changed: make it an object of your own first	OMSI 2 インストールのオブジェクトは変更されません。先に自分のオブジェクトにしてください
+Dark	ダーク
+As the system	システムに合わせる
+power (current on: branch)	電流（通電時：分岐）
+indicator	方向指示器
+radio	無線
+to the branch	分岐側へ
+at random	ランダム
+spans meet in one point: the game makes no switch there (a frog is three)	本のスパンが1点に集まっています：ゲームはここにポイントを作りません（分岐は3本）
+Switch	ポイント
+no three spans meet there any more	ここではもう3本のスパンが集まっていません
+A span is in section	スパンがセクション
+that the network does not have	に属していますが、そのセクションはネットワークにありません
+the wire spline	架線スプライン
+the mast	支柱
+the frog	分岐金具
+the insulator	絶縁器
+is not there	が見つかりません
+no wire spline: nothing of the wire is shown on the map	架線スプラインなし：架線自体はマップに表示されません
+the wire spline's profile is no pair of thin wires over 3 m: it is laid as it is, and openOMSI will not take it for the wire without trolley.txt	架線スプラインのプロファイルが3 mより上の細い2本の線になっていません。そのまま敷設されますが、trolley.txt がないと openOMSI はこれを架線とみなしません
+a kit of that name is there already	その名前のキットは既にあります
+Renew the wire from its kit	キットから架線を更新
+Theme	テーマ
+Back to the 3D view	3Dビューに戻る
+The plan view from above, north up	真上からの平面図（北が上）
+Put the windows back in their first places	ウィンドウを最初の位置に戻す
+Trolleybus wire…	トロリーバス架線…
+: there are unsaved changes	：未保存の変更があります
+Assets: every object and road type, with pictures	アセット：画像付きのすべてのオブジェクトと道路タイプ
+Close the openOMSI session started from here	ここから起動したopenOMSIセッションを閉じる
+Choose where to start, the vehicle, the time and the weather, then drive the map in openOMSI	開始地点、車両、時刻、天候を選び、openOMSIでマップを走行
+Search commands	コマンドを検索
+Every command of the menus by its name	メニューのすべてのコマンドを名前で
+Right-click the view for what can be done there; Search commands finds the rest	ビューを右クリックするとそこでできる操作を表示。それ以外は「コマンドを検索」で
+Right-click the view: its menu	ビューを右クリック：そのメニュー
+Snap vertex	頂点にスナップ
+Snap edge	辺にスナップ
+Out of the mix	ミックスから外す
+more as OMSI 2 is read…	OMSI 2の読み込み中、さらに増えます…
+Reading the content of OMSI 2…	OMSI 2のコンテンツを読み込み中…
+Nothing found: try fewer letters, or Everything in Show	見つかりません：文字数を減らすか、「表示する」で「すべて」を選んでください
+Nothing of this kind: choose Everything in Show, or import assets (File > Import assets)	この種類のものはありません：「表示する」で「すべて」を選ぶか、アセットをインポートしてください（ファイル > アセットをインポート）
+a table of functions	関数テーブル
+a module	モジュール
+Next (Enter)	次へ（Enter）
+Previous (Shift+Enter)	前へ（Shift+Enter）
+Match case	大文字と小文字を区別
+Replace	置換
+Replace…	置換…
+Click: a breakpoint (F9 on the cursor's line)	クリック：ブレークポイント（カーソル行でF9）
+permission	権限
+The light before	前の信号
+The next light	次の信号
+The phase before	前のフェーズ
+The next phase	次のフェーズ
+to 	～ 
+Select the piece joined at its start (,)	始点でつながる部分を選択（,）
+Select the piece joined at its end (.)	終点でつながる部分を選択（.）
+Click two points to measure the distance and gradient between them (U) · Shift + clicks: the corners of an area (its size and perimeter) · right-click: off	2点をクリックして間の距離と勾配を測定（U） · Shift + クリック：範囲の角（面積と周長） · 右クリック：オフ
+Snap a vertex of the selected object to a vertex of another object\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの頂点を別のオブジェクトの頂点にスナップ\nShift：水平のみ、Esc/右クリック：キャンセル
+Align an edge of the selected object to an edge or road\nRotates and snaps collinear\nShift: Horizontal only, Esc/Right-click: Cancel	選択したオブジェクトの辺を辺または道路に合わせる\n回転して同一直線上にスナップ\nShift：水平のみ、Esc/右クリック：キャンセル
+On the straight line between the two farthest apart, at equal steps (posts, lamps, a row of trees)	最も離れた2つを結ぶ直線上に等間隔で（ポール、街灯、並木）
+Equal steps between the two farthest apart, each keeping its distance to the side	最も離れた2つの間を等間隔に、それぞれ横方向の距離は保持
+height, m	高さ（m）
+gradient, %	勾配（%）
+cant, %	カント（%）
+Rotate, °	回転（°）
+Name, file, IDCode, stop, x, y or tile x y	名前、ファイル、IDCode、停留所、x, y またはタイル x y
+listed, no file	リストにあり、ファイルなし
+The camera over the tile's middle	カメラをタイル中央の上空へ
+its folder	そのフォルダ
+Line up the selected objects	選択したオブジェクトを一直線に並べる
+Space the selected objects evenly	選択したオブジェクトを等間隔に配置
+Next road piece	次の道路部分
+Previous road piece	前の道路部分
+The run ended	実行が終了しました
+installed as	インストール先
+failed	失敗
+Run	実行
+Run the scripts here, in the editor, with the game's functions (F5 in the code)	ゲームの関数を使って、ここエディタ内でスクリプトを実行（コード内でF5）
+Step in	ステップイン
+Run and stop at the first line (F11)	実行して最初の行で停止（F11）
+Continue	続行
+Pause	一時停止
+Stop the clock; a script running stops at its next line	時計を止めます。実行中のスクリプトは次の行で停止します
+Over	オーバー
+Step over (F10)	ステップオーバー（F10）
+Into	イン
+Step into (F11)	ステップイン（F11）
+Out	アウト
+Step out (Shift+F11)	ステップアウト（Shift+F11）
+Restart	最初から
+The map's scripts	マップのスクリプト
+The game's clock in the run	実行中のゲーム時計
+Set the game's clock of the run (sends minute)	実行中のゲーム時計を設定（minute を送信）
+starts 	開始 
+The hour the run starts at	実行を開始する時刻
+Save all	すべて保存
+Build .oop	.oopをビルド
+One file of the map's scripts to share: compiled and obfuscated, with the permissions they need (the Development Tools' compiler)	共有用のマップスクリプト1ファイル：コンパイル・難読化済み、必要な権限付き（Development Toolsのコンパイラ）
+API	API
+The game's functions and events	ゲームの関数とイベント
+This map has no scripts yet. Its scripts run in openOMSI while it is played: they react to what happens (a stop, an hour, a trip), show messages, change the traffic and the weather.	このマップにはまだスクリプトがありません。スクリプトはプレイ中にopenOMSIで実行され、出来事（停留所、時刻、運行）に反応し、メッセージを表示し、交通や天候を変えます。
+Start the map's scripts	マップのスクリプトを始める
+Object scripts (Lua)	オブジェクトスクリプト（Lua）
+No object on the map has a Lua script.	マップ上にLuaスクリプトを持つオブジェクトはありません。
+Refresh	更新
+Scripts a scenery object names in [lua_script]: one runs for every object of its type near the camera (openOMSI only)	景観オブジェクトの [lua_script] で指定されたスクリプト：1つのスクリプトが、カメラ付近にあるそのタイプのすべてのオブジェクトに対して動作します（openOMSIのみ）
+Selected object	選択中のオブジェクト
+Select one object on the map to see its scripts.	スクリプトを見るには、マップ上でオブジェクトを1つ選択してください。
+No OMSI 2 script (.osc).	OMSI 2スクリプト（.osc）はありません。
+Lua script (openOMSI)	Luaスクリプト（openOMSI）
+A script for every object of this type, beside its .sco and named in it ([lua_script]); OMSI 2 skips it. An object of the installation becomes the map's own copy first.	このタイプのすべてのオブジェクト用のスクリプト。.sco の隣に置かれ、その中で指定されます（[lua_script]）。OMSI 2 はこれを無視します。インストールのオブジェクトは、まずマップ専用のコピーになります。
+OMSI 2 script (.osc)	OMSI 2スクリプト（.osc）
+The object's own script with its variable list, run by OMSI 2 and openOMSI; its lamps and [visible] parts follow the variables it sets	変数リスト付きのオブジェクト独自のスクリプト。OMSI 2とopenOMSIが実行し、ランプや [visible] パーツはそれが設定する変数に従います
+Rust plugin	Rustプラグイン
+A plugin of the map written in Rust, compiled to WebAssembly into an .oop. Building it needs Rust (rustup) with the wasm32-unknown-unknown target.	Rustで書かれたマップのプラグイン。WebAssemblyにコンパイルされ .oop になります。ビルドには wasm32-unknown-unknown ターゲット付きのRust（rustup）が必要です。
+Make the Rust plugin	Rustプラグインを作成
+Build and install	ビルドしてインストール
+cargo builds it, the .oop goes into the content folder's plugins	cargo でビルドし、.oop はコンテンツフォルダの plugins に入ります
+Starts with the map	マップと一緒に開始
+Rename…	名前を変更…
+Earlier in the order	順番を前へ
+Later in the order	順番を後ろへ
+Delete (into openMapper's bin)	削除（openMapperのごみ箱へ）
+New script	新しいスクリプト
+New module	新しいモジュール
+Each starts when the map is played, in this order (right-click to move one); one that fails leaves the others running. Use map.on, map.every, map.after: they act on this map only.	マップのプレイ時に、この順番で1つずつ開始します（右クリックで移動）。失敗したものがあっても他は動き続けます。map.on、map.every、map.after を使ってください。これらはこのマップでのみ動作します。
+Modules	モジュール
+Code the scripts share: local util = require("modules.util")	スクリプト間で共有するコード：local util = require("modules.util")
+Data	データ
+Files the scripts read (data/), pictures and sounds	スクリプトが読むファイル（data/）、画像、サウンド
+Made by openMapper	openMapperで作成
+Open a script on the left, or make a new one.\n\nF5 runs the scripts here in the editor, F9 sets a breakpoint, F10 / F11 step,\nCtrl+Space completes, Ctrl+F finds, Ctrl+G goes to a line, Ctrl+/ comments out.	左でスクリプトを開くか、新しく作成してください。\n\nF5でここエディタ内でスクリプトを実行、F9でブレークポイントを設定、F10 / F11でステップ実行、\nCtrl+Spaceで補完、Ctrl+Fで検索、Ctrl+Gで行へ移動、Ctrl+/でコメントアウト。
+Read only: a file of the installation or made by openMapper	読み取り専用：インストールのファイル、またはopenMapperが作成したファイル
+Problems	問題
+Console	コンソール
+Debugger	デバッガ
+Events	イベント
+error	エラー
+warning	警告
+No problems in the open files.	開いているファイルに問題はありません。
+What the scripts print, show on the screen and the errors they make appear here when they run (Run, F5).	スクリプトの実行中（実行、F5）、スクリプトの出力、画面表示、エラーがここに表示されます。
+Lua to run in the scripts (in the frame stopped at, if stopped); Up and Down: history	スクリプト内で実行するLua（停止中は停止したフレーム内で）。上下キー：履歴
+Start a run first (Run, F5)	先に実行を開始してください（実行、F5）
+(empty)	（空）
+Running. A breakpoint (a click left of a line number, or F9) stops the scripts there; Pause stops them at their next line.	実行中。ブレークポイント（行番号の左をクリック、またはF9）でスクリプトはそこで停止し、一時停止で次の行で停止します。
+Not running. Run (F5) the scripts; a breakpoint stops them, and here are the call stack, the variables of each function and the values to watch.	実行していません。スクリプトを実行（F5）すると、ブレークポイントで停止し、ここにコールスタック、各関数の変数、ウォッチする値が表示されます。
+Stopped	停止中
+Call stack	コールスタック
+Locals	ローカル
+Upvalues	アップバリュー
+The console evaluates in this frame: a name, an expression, an assignment.	コンソールはこのフレーム内で評価します：名前、式、代入。
+Storage and objects	ストレージとオブジェクト
+Send	送信
+As if the game sent it: every handler of it runs	ゲームが送ったかのように：そのハンドラがすべて実行されます
+Run the scripts to send them the game's events by hand: a stop reached, a door, a new hour… The clock sends frame, minute and hour by itself.	スクリプトを実行すると、ゲームのイベントを手動で送れます：停留所到着、ドア、新しい時刻… frame、minute、hour は時計が自動で送ります。
+Listening	待機中
+timers	タイマー
+Sign with the key	鍵で署名
+a secret key file of oopc keygen (optional)	oopc keygen の秘密鍵ファイル（任意）
+Build .oop makes one file of the map's scripts for sharing (in the project's dist folder): compiled, obfuscated, with the permissions its code needs. The game runs the scripts' folder as it is; the .oop is for giving them away without their sources.	「.oopをビルド」は、共有用にマップのスクリプトを1つのファイルにまとめます（プロジェクトの dist フォルダ内）：コンパイル・難読化済みで、コードに必要な権限付き。ゲームはスクリプトフォルダをそのまま実行します。.oop はソースなしで配布するためのものです。
+Search functions and events	関数とイベントを検索
+since	導入バージョン
+for an .oop	.oop用
+Double-click puts it into the script at the cursor.	ダブルクリックでカーソル位置のスクリプトに挿入します。
+A stop on this path	この経路上の停留所
+branch	分岐
+The overhead wire openOMSI's trolleybuses run under (trolley.txt beside the map; OMSI 2 ignores it). Without it the game reads the map's wire splines.	openOMSIのトロリーバスが下を走る架線（マップの隣の trolley.txt。OMSI 2 は無視します）。これがない場合、ゲームはマップの架線スプラインを読み込みます。
+Start a wire for this map	このマップの架線を始める
+Lay	敷設
+Sections	セクション
+Spans	スパン
+Switches	ポイント
+Pick in the view	ビューで選択
+A click in the view picks a span or a switch (yellow dot)	ビューをクリックしてスパンまたはポイント（黄色の点）を選択
+The wires over the road surface	路面上の架線の高さ
+the kerb lane each way	両方向の縁石側車線
+the way the road runs	道路の進行方向
+against the road's way	道路の進行方向と逆
+Section	セクション
+Kit	キット
+ (every map)	 （全マップ）
+none: the wire for the game only	なし：ゲーム専用の架線
+A new kit	新しいキット
+My wire	マイ架線
+Change this kit	このキットを変更
+its wire spline	その架線スプライン
+its masts, every	支柱、間隔
+The kit names no mast	キットに支柱が指定されていません
+Frogs and section insulators are put where the wire has them, as the kit names them.	分岐金具とセクション絶縁器は、架線上のその場所に、キットで指定されたものが置かれます。
+Nothing is laid on the map, the wire is for the game only. A kit (+) names your own models of the wire, its masts, frogs and insulators.	マップには何も敷設されず、架線はゲーム専用です。キット（+）で、架線、支柱、分岐金具、絶縁器の自作モデルを指定します。
+Over the selected roads	選択した道路の上に
+Select roads in the view first (double-click: a whole road)	先にビューで道路を選択してください（ダブルクリック：道路全体）
+The selected object's lanes (a junction): tick those the wire goes over. Three spans meeting make a frog.	選択したオブジェクト（交差点）の車線：架線を通す車線にチェックしてください。3本のスパンが集まると分岐金具になります。
+It has no street lanes.	車道の車線がありません。
+lane	車線
+Over the ticked lanes	チェックした車線の上に
+Select one junction to lay the wire over its lanes.	交差点を1つ選択すると、その車線の上に架線を敷設します。
+Draw a span by hand	スパンを手で描く
+Click its points in the view; started or ended on a span's end it joins it, on a span's middle it branches off there (a frog)	ビューで点をクリックします。スパンの端で始めるか終えるとそれに接続し、スパンの途中ではそこから分岐します（分岐金具）
+points: click the next in the view	点：ビューで次の点をクリック
+Finish	完了
+Read the map's wire splines	マップの架線スプラインを読み込む
+Splines drawn as a pair of wires (trolleybus maps made for OMSI 2): a span along each, as the game reads them	2本の架線として描かれたスプライン（OMSI 2用のトロリーバスマップ）：ゲームが読むのと同じく、それぞれに沿ってスパンを作ります
+Network	ネットワーク
+Voltage	電圧
+Wire spacing	架線間隔
+How uneven the contact wire is: worn or icy wire 0.003 and more	トロリー線の凹凸：摩耗または着氷した線は0.003以上
+Delete the whole wire	架線全体を削除
+trolley.txt goes with the next save; the game reads the map's wire splines again	次の保存で trolley.txt が削除され、ゲームは再びマップの架線スプラインを読み込みます
+Stretches fed by one substation. Where two meet there is a dead stretch (an insulator).	1つの変電所から給電される区間。2つが接する場所は無電区間（絶縁器）です。
+name	名前
+live	通電
+The feeder's resistance: the voltage drops with the current	き電線の抵抗：電流に応じて電圧が下がります
+Power the feeder takes back from a braking bus	ブレーキ中のバスからき電線が回生する電力
+spans	スパン
+Add a section	セクションを追加
+Insulators (where sections meet)	絶縁器（セクションの境目）
+ m dead	 m 無電区間
+Span	スパン
+points	点
+Spacing	架線間隔
+its own	個別
+Drag: the whole span up or down	ドラッグ：スパン全体を上下に
+The span the other way: the positive wire is on the right of its way	スパンを逆向きに：プラス線は進行方向の右側になります
+Pick a span in the view, or in the list.	ビューまたはリストでスパンを選んでください。
+section	セクション
+A switch where three spans meet (yellow in the view). Every frog gets one.	3本のスパンが集まる場所のポイント（ビューで黄色）。分岐金具ごとに1つあります。
+No frogs yet: lay three spans meeting in one point (a branch).	分岐金具はまだありません：1点に集まる3本のスパン（分岐）を敷設してください。
+Spans laid:	敷設したスパン：
+Wire kit	架線キット
+Your own models (made in Blender or anywhere, put into the content folder) that show the wire on the map: the wire spline and the mast, frog and insulator objects. The kit is a .cfg file naming them; change it here, as text, or in any text editor.	マップ上に架線を表示する自作モデル（Blenderなどで作り、コンテンツフォルダに置いたもの）：架線スプラインと、支柱・分岐金具・絶縁器のオブジェクト。キットはそれらを指定する .cfg ファイルです。ここで、テキストとして、または任意のテキストエディタで変更できます。
+As text	テキストとして
+The name is the kit's file: make a copy to rename it	名前はキットのファイル名です：名前を変えるにはコピーを作成してください
+For	対象
+this map	このマップ
+every map	全マップ
+Take the one selected on the map	マップで選択中のものを使う
+Select a spline of it on the map first	先にマップ上でそのスプラインを選択してください
+Select such an object on the map first	先にマップ上でそのようなオブジェクトを選択してください
+Choose the file	ファイルを選択
+The file must lie in the content folder or in OMSI 2's	ファイルはコンテンツフォルダかOMSI 2のフォルダにある必要があります
+Not there	見つかりません
+Wire spline	架線スプライン
+A .sli whose profile puts the wires at their height over the road; it is laid along every span	プロファイルで架線を道路上の高さに置く .sli。各スパンに沿って敷設されます
+Mast	支柱
+A .sco: its origin at its foot, its arm reaching along its -y to the wire	.sco：原点は根元、アームは -y 方向に架線へ伸びる
+Frog	分岐金具
+A .sco hung where the wire branches: its origin on the wire, y along it	架線の分岐点に吊るす .sco：原点は架線上、y は架線方向
+Insulator	絶縁器
+A .sco hung where two sections meet: its origin on the wire, y along it	2つのセクションの境目に吊るす .sco：原点は架線上、y は架線方向
+Masts	支柱
+every	間隔
+From a mast's foot to its wire, across the road	支柱の根元から架線まで、道路を横切る方向
+from the wire	架線から
+Mast turned	支柱の向き
+For a model whose arm does not reach along its -y: 90 when it reaches along -x, -90 along +x, 180 along +y	アームが -y 方向に伸びていないモデル用：-x 方向なら 90、+x なら -90、+y なら 180
+arm	アーム
+The wire spline's wires	架線スプラインの線
+high	の高さ
+across its line	中心線から
+Save and renew the map's wire	保存してマップの架線を更新
+The wire splines and masts laid from this kit take its files as they now are; frogs and insulators are put again	このキットで敷設した架線スプラインと支柱は現在のファイルを使い、分岐金具と絶縁器は置き直されます
+A new kit from this one (to rename it, or change it apart)	このキットから新しいキットを作成（名前を変える、または別に変更するため）
+Show the file	ファイルを表示
+Changed to the kit's files:	キットのファイルに変更：
+a display shows the switch of its name	表示器がこの名前のポイントを表示します
+Set by	制御方式
+Where it stands when the game reads the wire (at random: drawn once a run; straight in an online game)	ゲームが架線を読み込んだときの位置（ランダム：実行ごとに1回抽選、オンラインゲームでは直進）
+Contact plate	接触板
+ m before the frog	 m（分岐金具の手前）
+Power on from	通電判定電流
+Invert	反転
+the other way round	逆にする
+Channel	チャンネル
+any	任意
+Range	到達距離
+Route codes	ルートコード
+A route code	ルートコード
+Flip	反転
+Left to right	左右
+Top to bottom	上下
+Dark theme	ダークテーマ
+Light theme	ライトテーマ
+Lit	点灯
+Right footway texture	右側の歩道のテクスチャ
+Left footway texture	左側の歩道のテクスチャ
+like the left one	左と同じ
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	レーンのパスは左側通行のマップと同じ向きになります(一方通行の道路は向きそのまま)

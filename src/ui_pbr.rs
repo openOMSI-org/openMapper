@@ -3,13 +3,14 @@
 
 use std::path::{Path, PathBuf};
 
-use egui::{Color32, RichText, Vec2};
+use egui::{RichText, Vec2};
 
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
 use crate::install::Roots;
 use crate::pbr_maker::{self, PbrParams};
 use crate::ui::Action;
+use crate::theme::pal;
 
 const PREVIEW: u32 = 192;
 
@@ -68,7 +69,7 @@ impl PbrWindow {
         }
         let Some(roots) = roots else { return };
         let mut open = self.open;
-        egui::Window::new(icons::labelled(Icon::Layers, tr("PBR material", "PBR-материал"))).open(&mut open).resizable(false).default_width(640.0).show(ctx, |ui| {
+        egui::Window::new(icons::labelled(Icon::Texture, tr("PBR material", "PBR-материал"))).open(&mut open).resizable(false).default_width(640.0).show(ctx, |ui| {
             // which texture
             ui.horizontal(|ui| {
                 let name = |p: &Path| p.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
@@ -96,7 +97,7 @@ impl PbrWindow {
                 return;
             };
             if let Some(e) = &self.error {
-                ui.colored_label(Color32::from_rgb(240, 120, 100), e);
+                ui.colored_label(pal().error, e);
                 return;
             }
             // the previews follow the sliders
@@ -146,14 +147,14 @@ impl PbrWindow {
                 ui.add(egui::Slider::new(&mut p.occlusion, 0.0..=1.0));
                 ui.end_row();
             });
-            if ui.small_button(tr("Back to the defaults", "Вернуть по умолчанию")).clicked() {
+            if ui.small_button(icons::labelled(Icon::Restart, tr("Back to the defaults", "Вернуть по умолчанию"))).clicked() {
                 self.params = PbrParams::default();
             }
             if self.foreign {
-                ui.label(RichText::new(tr("This texture has PBR maps of its own already: new ones made here are taken instead of them.", "У этой текстуры уже есть свои PBR-карты: сделанные здесь будут использоваться вместо них.")).small().color(Color32::from_rgb(230, 170, 100)));
+                ui.label(RichText::new(tr("This texture has PBR maps of its own already: new ones made here are taken instead of them.", "У этой текстуры уже есть свои PBR-карты: сделанные здесь будут использоваться вместо них.")).small().color(pal().warn));
             }
             let [nn, orm, _] = pbr_maker::files(&tex, &roots.omsi, &roots.content);
-            ui.label(RichText::new(format!("{}\n{}\n{}", tr("Written as:", "Записывается как:"), nn.display(), orm.display())).small().color(Color32::from_gray(140)));
+            ui.label(RichText::new(format!("{}\n{}\n{}", tr("Written as:", "Записывается как:"), nn.display(), orm.display())).small().color(pal().text_dim));
             ui.horizontal(|ui| {
                 let label = if self.made { tr("Apply", "Применить") } else { tr("Create PBR", "Создать PBR") };
                 if ui.button(icons::labelled(Icon::CheckCircle, label)).clicked() {

@@ -38,8 +38,8 @@ struct VsOut {
     @location(3) tint: vec4<f32>,
 };
 
-@vertex
-fn vs(v: VsIn) -> VsOut {
+// `pull_roads`: road surfaces drawn nearer the eye (the camera's view, not the sun's).
+fn place(v: VsIn, pull_roads: bool) -> VsOut {
     var o: VsOut;
     let m = mat4x4<f32>(v.m0, v.m1, v.m2, v.m3);
     // (the translation is taken apart so the origin is subtracted before precision is lost)
@@ -51,7 +51,7 @@ fn vs(v: VsIn) -> VsOut {
     // openOMSI's vs_main does: 0.3 % of the way, a little more for objects on the road).
     var cp = rel;
     let surf = v.params.x;
-    if (surf > 0.9) {
+    if (pull_roads && surf > 0.9) {
         let to = rel - g.eye.xyz;
         let d = length(to);
         let decal = select(0.0, 0.01 + 0.001 * d, surf > 1.1 && surf < 1.5);
@@ -63,6 +63,19 @@ fn vs(v: VsIn) -> VsOut {
     o.uv = v.uv;
     o.tint = v.tint;
     return o;
+}
+
+@vertex
+fn vs(v: VsIn) -> VsOut {
+    return place(v, true);
+}
+
+// The sun's view: everything where it is. Pulled towards the sun, a road was nearer it in
+// the shadow map than its own surface and lay in its own shadow (the tracks darker than the
+// switches beside them, with the same picture).
+@vertex
+fn vs_shadow(v: VsIn) -> VsOut {
+    return place(v, false);
 }
 
 // A tangent frame from the screen-space derivatives: no tangents needed in the mesh

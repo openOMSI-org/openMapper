@@ -49,14 +49,15 @@ pub fn attachment(doc: &Document, k: TileKey, id: i64) -> Option<&omsi_map::Spli
 pub fn attachment_first(doc: &Document, k: TileKey, id: i64) -> Option<crate::place::RowObject> {
     let t = doc.tiles.get(&k)?;
     let a = t.tile.spline_attachments.iter().find(|a| a.id == id)?;
-    crate::place::row_objects(a, &t.tile.splines, tile_origin(k)).into_iter().min_by_key(|o| o.index)
+    crate::place::row_objects(a, &t.tile.splines, tile_origin(k), &crate::place::row_index(doc)).into_iter().min_by_key(|o| o.index)
 }
 
-/// Every copy a record places (where it is drawn, for picking).
+/// The copies a record places, for a caller that has no index of the whole map to hand.
+#[cfg(test)]
 pub fn attachment_copies(doc: &Document, k: TileKey, id: i64) -> Vec<crate::place::RowObject> {
     let Some(t) = doc.tiles.get(&k) else { return Vec::new() };
     let Some(a) = t.tile.spline_attachments.iter().find(|a| a.id == id) else { return Vec::new() };
-    crate::place::row_objects(a, &t.tile.splines, tile_origin(k))
+    crate::place::row_objects(a, &t.tile.splines, tile_origin(k), &crate::place::row_index(doc))
 }
 
 /// The record as a map object, standing where its first copy does, so the properties panel can
@@ -93,7 +94,7 @@ fn road_heading(doc: &Document, k: TileKey, a: &omsi_map::SplineAttachment) -> f
     let Some(t) = doc.tiles.get(&k) else { return 0.0 };
     let Some(s) = t.tile.splines.get(a.spline_index.max(0) as usize).filter(|s| !s.deleted) else { return 0.0 };
     let curve = omsi_geometry::SplineCurve::from_map(s, tile_origin(k));
-    let u = (a.offset[2] - s.map_chain_offset.unwrap_or(0.0)).clamp(0.0, s.length.max(0.0));
+    let u = (a.offset[2] - crate::place::chain_offset_of(doc, s)).clamp(0.0, s.length.max(0.0));
     curve.heading_at(u)
 }
 
@@ -166,7 +167,7 @@ pub fn move_attachment(doc: &mut Document, k: TileKey, id: i64, to: DVec2) -> bo
     let Some(a) = t.tile.spline_attachments.iter().find(|a| a.id == id) else { return false };
     let Some(s) = t.tile.splines.get(a.spline_index.max(0) as usize).filter(|s| !s.deleted) else { return false };
     let Some((along, beside)) = on_spline(s, tile_origin(k), to) else { return false };
-    let chain = s.map_chain_offset.unwrap_or(0.0);
+    let chain = crate::place::chain_offset_of(doc, s);
     let (along, beside) = (chain + along, beside);
     let t = doc.tiles.get_mut(&k).unwrap();
     if let Some(a) = t.tile.spline_attachments.iter_mut().find(|a| a.id == id) {
@@ -494,6 +495,9 @@ pub fn unlink_outside(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
 /// Delete everything selected.
 pub fn delete(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
     hist.touch_global(doc);
+    // (where every spline is, read once when splines go: each one's links were else looked for
+    // across the whole map, twice to keep their tiles and twice to unlink them)
+    let w = sels.iter().any(|s| matches!(s, Sel::Spline(..))).then(|| SplineWhere::of(doc));
     for s in sels {
         match *s {
             Sel::Object(k, id) => {
@@ -505,8 +509,9 @@ pub fn delete(doc: &mut Document, hist: &mut History, sels: &[Sel]) {
                 }
             }
             Sel::Spline(k, id) => {
-                touch_spline(hist, doc, k, id);
-                doc.delete_spline(k, id);
+                let Some(w) = &w else { continue };
+                touch_spline_where(hist, doc, w, k, id);
+                doc.delete_spline_known(k, id, &|o| w.map.get(&o).map(|e| e.0));
             }
             Sel::Attached(k, id) => {
                 hist.touch_tile(doc, k);
@@ -753,6 +758,7 @@ pub mod tests {
             traffic: Default::default(),
             descriptions: Default::default(),
             groups: Vec::new(),
+            global_extra: Vec::new(),
         };
         for x in 0..n {
             doc.tiles.insert((x, 0), TileDoc::new_flat(0.0));
@@ -800,7 +806,7 @@ pub mod tests {
         assert!((a.offset[1] - 1.0).abs() < 1e-6, "the height above the road is kept: {:?}", a.offset);
         // every copy of the row is on the road still, 7 m to its right, 1 m above it
         let t = &doc.tiles[&(0, 0)].tile;
-        let copies = crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)));
+        let copies = crate::place::row_objects(&t.spline_attachments[0], &t.splines, tile_origin((0, 0)), &crate::place::row_index(&doc));
         assert_eq!(copies.len(), 3);
         for c in &copies {
             assert!((c.pose.pos.x - 107.0).abs() < 1e-6 && (c.pose.pos.z - 1.0).abs() < 1e-6, "{:?}", c.pose.pos);
@@ -808,6 +814,26 @@ pub mod tests {
         // (the whole move is one step)
         hist.undo(&mut doc);
         assert!((doc.attachment((0, 0), 5).unwrap().offset[0] + 2.0).abs() < 1e-6);
+    }
+
+    /// Deleting pieces of a road unlinks what they were linked to wherever it lies, with each
+    /// link's tile known from one read of the map, and undo brings the links back.
+    #[test]
+    fn deleting_a_piece_unlinks_its_neighbours_on_other_tiles() {
+        let mut doc = flat_map(3);
+        add_spline(&mut doc, (0, 0), 1, 20.0, 20.0, 0.0, 100.0, 0, 2);
+        add_spline(&mut doc, (1, 0), 2, 20.0, 20.0, 0.0, 100.0, 1, 3);
+        add_spline(&mut doc, (2, 0), 3, 20.0, 20.0, 0.0, 100.0, 2, 4);
+        add_spline(&mut doc, (2, 0), 4, 20.0, 120.0, 0.0, 100.0, 3, 0);
+        let mut hist = History::default();
+        hist.begin("delete");
+        delete(&mut doc, &mut hist, &[Sel::Spline((1, 0), 2), Sel::Spline((2, 0), 4)]);
+        hist.commit();
+        assert_eq!(doc.spline((0, 0), 1).unwrap().next_id, 0);
+        assert_eq!((doc.spline((2, 0), 3).unwrap().prev_id, doc.spline((2, 0), 3).unwrap().next_id), (0, 0));
+        hist.undo(&mut doc);
+        assert_eq!(doc.spline((0, 0), 1).unwrap().next_id, 2);
+        assert_eq!((doc.spline((2, 0), 3).unwrap().prev_id, doc.spline((2, 0), 3).unwrap().next_id), (2, 4));
     }
 
     /// A move of many pieces keeps the tiles of the links they have outside it, as a move of
@@ -830,8 +856,12 @@ pub mod tests {
         let w = SplineWhere::of(&many);
         touch_spline_where(&mut h2, &many, &w, (0, 0), 1);
         h2.commit();
-        let a = h1.take_changed().tiles;
-        let b = h2.take_changed().tiles;
+        // (a step tells only the tiles it did change)
+        for doc in [&mut one, &mut many] {
+            doc.tiles.values_mut().for_each(|t| t.touch_content());
+        }
+        let a = h1.take_changed(&one).tiles;
+        let b = h2.take_changed(&many).tiles;
         assert!(a.contains(&(1, 0)), "the link's tile is kept: {a:?}");
         assert_eq!(a, b);
     }

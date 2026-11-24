@@ -4,6 +4,8 @@
 use egui::text::LayoutJob;
 use egui::{FontId, RichText, TextFormat, Ui};
 
+use crate::icons::Icon;
+
 /// One run of an inline line.
 #[derive(Debug, PartialEq)]
 enum Span {
@@ -204,7 +206,7 @@ pub fn show(ui: &mut Ui, src: &str) {
             let depth = (l.len() - t.len()) / 2;
             ui.horizontal_top(|ui| {
                 ui.add_space(6.0 + depth as f32 * 14.0);
-                ui.label(RichText::new(item.0).size(base));
+                ui.label(item.0.size(base));
                 ui.vertical(|ui| line(ui, item.1, base, false));
             });
         } else {
@@ -220,22 +222,23 @@ pub fn show(ui: &mut Ui, src: &str) {
     }
 }
 
-/// A list item: its marker and the text after it.
-fn bullet(t: &str) -> Option<(String, &str)> {
+/// A list item: its marker (a task's box a Material Symbol: the text font has none) and the
+/// text after it.
+fn bullet(t: &str) -> Option<(RichText, &str)> {
     for m in ["- ", "* ", "+ "] {
         if let Some(r) = t.strip_prefix(m) {
             let r = r.trim_start();
             return Some(match r.strip_prefix("[ ] ") {
-                Some(x) => ("☐".to_string(), x),
+                Some(x) => (Icon::CheckOff.text(13.0), x),
                 None => match r.strip_prefix("[x] ").or_else(|| r.strip_prefix("[X] ")) {
-                    Some(x) => ("☑".to_string(), x),
-                    None => ("•".to_string(), r),
+                    Some(x) => (Icon::CheckOn.text(13.0), x),
+                    None => (RichText::new("•"), r),
                 },
             });
         }
     }
     let n = t.chars().take_while(|c| c.is_ascii_digit()).count();
-    (n > 0 && n < 4).then(|| t[n..].strip_prefix(". ").map(|r| (format!("{}.", &t[..n]), r.trim_start()))).flatten()
+    (n > 0 && n < 4).then(|| t[n..].strip_prefix(". ").map(|r| (RichText::new(format!("{}.", &t[..n])), r.trim_start()))).flatten()
 }
 
 #[cfg(test)]
@@ -254,9 +257,9 @@ mod tests {
 
     #[test]
     fn list_markers() {
-        assert_eq!(bullet("- a").unwrap().0, "•");
-        assert_eq!(bullet("12. a").unwrap().0, "12.");
-        assert_eq!(bullet("- [x] a").unwrap().0, "☑");
+        assert_eq!(bullet("- a").unwrap().0.text(), "•");
+        assert_eq!(bullet("12. a").unwrap().0.text(), "12.");
+        assert_eq!(bullet("- [x] a").unwrap().0.text(), Icon::CheckOn.ch().to_string());
         assert!(bullet("text").is_none());
     }
 }

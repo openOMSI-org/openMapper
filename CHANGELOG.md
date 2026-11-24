@@ -4,6 +4,99 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.2.3 - 2026-11-23
+
+### Added
+- **The right footway can have a texture of its own** (#139): in the road maker, with "a different one on the right" ticked, a second selector gives the right footway its own picture (grass, gravel), the left one keeps the first, and both previews show them. Left as "like the left one" it runs on as before.
+- **Left-hand roads** (#138): the road maker has a Traffic choice, keeps right or keeps left, which sets the way the lanes' paths run (a one-way road keeps its way); a new road type starts on the map's own side. On a left-hand map every new road whose lanes keep right and which is drawn as wide on one side as on the other is now laid mirrored, so its lanes run the left-hand way, and the roundabout ring with it: no path to flip by hand. A road drawn on from another of the same type goes on as that one is.
+
+## 0.2.2 - 2026-11-22
+
+### Changed
+- **A road's length, radius or end heading can be changed with roads joined on after it** (#136): those pieces move and turn with the new end and keep their own length, radius and gradients, where the edit was refused before or the next piece was bent to keep its far end. R on one spline turns the chain after it with it, still joined, and mitres the joint with the piece before it as OMSI does.
+
+### Fixed
+- **Lines: picking a trip's paths by hand no longer loops back to the start of the line** (#135, #130): a path clicked past the end of the way was put in as a way round between the line's first paths wherever it led back to them round the block. It now goes where it adds the least driving; a way round must replace part of the way or mend a gap. A trip whose way is found only part of the way keeps that part, so picking by hand goes on from where it stops instead of from nothing. The list of the way's paths opens while picking and shows more of them.
+- **Aerial imagery stays sharp on maps with more than 64 tiles of pictures** (#134): every tile went up at 512 pixels. The tile under the camera now goes up at 4096, the eight round it at 2048 and the sixteen round those at 1024.
+- **An object marked Solid (collides) stops the bus** (#128): its `.sco` lacked `[fixed]`, without which OMSI 2 gives vehicles no collision.
+- **Objects put on a road drawn on from another road's end show** (#131): the new road's chain distance started at 0, so the game and the editor dropped objects within the old road's length of its start.
+
+## 0.2.1 - 2026-11-20
+
+### Changed
+- **Picking under the cursor is fast on city-sized maps**: on a map of 485 tiles, moving the mouse over the view took one to two seconds per pick, now a few milliseconds. While the view is still moving the cursor follows the ground, and what stands under it is looked for once the view settles, or at once when you click.
+- **The whole interface is translated again in all 26 languages**: the trolleybus wire, the script editor and debugger, and the newer checks and hints showed in English.
+
+### Fixed
+- The light theme was called "traffic light" in every language but English and Russian (and the mesh editor's light setting too).
+- Hungarian: a road's cant is *túlemelés*.
+- Updated crates: rfd 0.18 (file dialogs), zip 9.5, ureq.
+
+## 0.2.0 - 2026-11-18
+
+### Added
+- **The map's scripts as a project, with an editor and a debugger** (Map > Scripts): scripts that start in a chosen order when the map is played (each can be switched off; one that fails leaves the others running), modules they share (`require("modules.util")`) and data files, as an openOMSI folder plugin. A small IDE: tabs, Lua and Rust in colour, line numbers, indenting that follows the code, completion of the game's whole API with its help, find and replace, go to a line, mistakes found as one types. **Run and debug the scripts in the editor** (`F5`) with the game's `omsi` API: a clock at a chosen time and speed, the game's events sent by hand, breakpoints (`F9`), pause, step over / into / out (`F10`, `F11`, `Shift+F11`), the call stack, every frame's variables and a console that evaluates in the frame stopped at. Any object gets a script of its own (Lua or OMSI 2's `.osc`; an object of the installation becomes the map's own copy first); Lua scripts of scenery objects are listed and run against their objects on the map. **Build .oop** packs the scripts into one file to share (obfuscated, with the permissions they need, signed when a key is given), and a **Rust plugin** of the map is made, edited and built with `cargo`. A map's old one-file script becomes its first script. The ready-made "light switched by a script" and the ready-made scripts are gone: any object, any script, started from an empty one.
+- **A light theme** beside the dark one, and one that follows the system (View > Theme, the settings, the welcome screen). Every panel, window, chart and editor reads in both; the map drawings of the crossing, complex junction, mark and UV editors stay dark so their lane colours mean the same.
+- **Trolleybus overhead wire** (Map > Trolleybus wire…): laid over the kerb lane of selected roads, over the lanes of a junction, drawn by hand span by span, or read from the map's wire splines; sections, insulators and a switch at every frog (power, indicator, radio with route codes or fixed; starting straight, branched or at random), written as openOMSI's `trolley.txt`. What shows it on the map is the map maker's own content (made in Blender or anywhere), named in a **kit**: a `.cfg` for this map or for every map, written by hand or in its window, giving the wire spline, the mast, frog and section insulator objects, how far apart masts stand, how far from the wire and how they are turned. openMapper ships no wire or mast models and makes none: it lays the kit's files, and a changed kit puts its new files in place on what is laid. The map check covers the wire.
+- **Next / previous road piece** (`.` / `,`, `Shift` adds to the selection), as in OMSI 2's editor.
+- **Line up / Space evenly** for three or more selected objects.
+- **The ruler measures areas**: `Shift`+click the corners of an outline for its area and perimeter.
+- **Go to a tile** from Find in map (`tile 3 -2`).
+- Windows keep their places and sizes from one start to the next (View > Put the windows back in their first places); panels keep their widths.
+- **Material Symbols for every action**, the same icon wherever it shows: every menu entry, panel, window, button and command of the search has one, and no symbol is drawn as text any more (they showed as empty boxes).
+- A command search box in the toolbar, with commands it lacked. Empty lists say what to do. Every key the interface shows is the one set in the controls.
+- The MCP server: `shot` (the map in 3D without a window, with labels and imagery to compare), `raster`, the street model (`build_streets`, `auto_junctions`, `street_check`), authoring by hand (`road_type`, `plate`, `lay_spline`, `complex_junction`), the ground formed from what lies on it (`form_ground`, `track_beds`, `paint_area`, `ground_under`), the trolleybus wire, and the scripts project (`script`, which also runs the scripts).
+
+### Changed
+- **openMapper reads maps with openOMSI's newest readers** (5455 commits of the game later): `.x` models, textures, `[visible]` blocks, the terrain fitted round aligned splines, and more, as the game reads them.
+- **Rows of objects along roads are placed by the game's own code**: an object on a tile border is drawn once and not lost, a row's last object stands at the chain's end, old tiles count rows along the chain; rows the game hides are named in the map check.
+- Vertex and edge snapping are on `Shift+V` and `Shift+L` (`V` and `L` were already the move handles and the Lines window, so they never worked).
+- The interface is faster on big maps: on a city of 4214 tiles a frame takes 7–11 ms instead of 10–60, the map's numbers and the overview are no longer worked out several times a second while the catalogue is read, and double-click selects a long road at once.
+
+### Fixed
+- **Undoing a road no longer rewrites every tile on the next save** (and deletes their light maps); a step keeps only the tiles it changed, so a big map no longer holds a copy of itself per step.
+- **Blocks of `global.cfg` openMapper does not know are kept** where they were, instead of being lost on the first save.
+- **Maps from OMSI 1**: linked splines go on from the one before (they all sat in a tile's corner), a map without start points takes its tiles' entry objects, rows keep their places after a save, and the AI lists' depots are no longer lost.
+- Tunnel mouths no longer get a curtain of grass, a terrain cutter deep under the ground cuts nothing, and an aligned road in a trough gets ground fitted to it instead of a hole.
+- The crossing editor: saving in place shows the new paths and lights at once; leaving the map asks about unsaved crossing edits; opening the crossing being edited again keeps the edits; opening another one starts afresh.
+- Undo after a junction rebuild, a removed AI-path point, Put on a road and several MCP edits puts everything back, also on other tiles.
+- Opening Solnechnogorsk and maps with splines far off their tiles no longer crashes or hangs the overview and the check.
+- The street check puts a step between two joined roads right instead of swapping it.
+- The Roads tool's panel no longer widens itself; the status bar's hint is never cut off.
+- A sign hung on another whose pole is on the next tile is written after its parent, so OMSI 2 no longer drops it.
+- In multiplayer, two editors no longer hand out the same IDCodes.
+- The crossing editor fits a 1366×768 screen at 150 %, and turning a path's end after Connect the roads no longer undoes the link.
+- The street check also checks roads joined start to start.
+- A missing model no longer holds the street check, road ends, `raster` and `shot` for a minute each.
+- Saving and forming the ground on maps with broken splines far off their tiles (Solnechnogorsk) no longer panics or loops; the MCP server exits after a crash instead of hanging on a dialog.
+- An idle frame no longer walks every spline in view and looks for the water texture on disk; deleting a big selection and every MCP edit no longer look the whole map through.
+
+## 0.1.25 - 2026-11-15
+
+### Added
+- **Pick a trip's paths by hand** (Lines and timetable > a trip > Pick the paths on the map): a click adds a path and the ones leading to it, a path beside the route takes the place of the branch it goes round, a path of the route is taken out; the way may run on before the first stop and after the last. A gap in a trip's way is shown in the trip, on the map and in the map check (#122, #71).
+- **All trips** in one list, those no timetable uses too, to open, edit or delete; a tour's departure can take any trip of the map, and a trip's line can be changed (#71).
+- **Time from stop to stop**: a trip's time profiles are edited one stop at a time, added, renamed and deleted, and each departure picks its own (#116).
+- All five ways OMSI 2 serves a stop, named plainly: Always, Wait for departure time, Not served (checkpoint), On demand, Always + wait for departure time (#71).
+- **Complete to** (`J`): a new piece of spline between two free ends of the selected splines, the two left as they are; pressed again, it closes the loop (#113).
+- **Snap scenery objects** vertex to vertex (`V`) and edge to edge (`L`), also along a road (#123).
+- **The open map follows changes made to it by other programs** (OMSI 2's editor among them), and File > Reload from disk reads it again; changes made to the OMSI 2 folder's map since openMapper's copy was saved can be brought over (#119).
+
+### Changed
+- The ends of kerbs, walls and fences are caught at the middle of their profile, where they are drawn (#55).
+- The invisible AI-path splines are no longer drawn under openMapper's own lane lines (#66).
+- The crossing editor shows the lanes and joints round even the largest junctions (#121).
+
+### Fixed
+- **Maps saved by openMapper open in original OMSI 2 again**: the files it makes have names OMSI 2 reads (a scaled object's copy was `name~s1.8_1.4_1.8.sco`; old ones are renamed when the map is opened), objects hung on others are written after them, and the editor camera stays on a tile the map has (#100, #73, #63).
+- AI paths of road objects follow the object's height field, as its mesh does, and lanes link up to 3 m apart in height (#120).
+- A trip's way drives the short pieces of a junction in place of jumping over them, so the game's GPS keeps to the line (#122).
+- A road type named in Cyrillic keeps its painted markings (#104).
+- The camera no longer moves by itself after Alt + Tab (#115).
+- Picking an object made in openMapper no longer widens the panel and shifts the view (#51).
+- Running out of graphics memory no longer closes the editor (#62).
+- The installer says when it is the package for another processor, in place of Windows' "This app can't run on your PC" (#102).
+
 ## 0.1.24 - 2026-11-09
 
 ### Added

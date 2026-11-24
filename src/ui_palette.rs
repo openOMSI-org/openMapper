@@ -3,12 +3,13 @@
 //! height profile, a junction's lights) a note that says how to get to it. Typing filters,
 //! the arrows choose, `Enter` runs it.
 
-use egui::{Color32, Key, Modifiers, RichText, Sense, Vec2};
+use egui::{Key, Modifiers, RichText, Sense, Vec2};
 
 use crate::editor::{Editor, LogicMode, Tool};
 use crate::i18n::tr;
 use crate::icons::{self, Icon};
-use crate::ui::{Action, UiState, TEXT_DIM};
+use crate::ui::{Action, UiState};
+use crate::theme::pal;
 
 type Run = fn(&mut UiState, &mut Editor, &mut Vec<Action>);
 
@@ -29,8 +30,14 @@ macro_rules! cmd {
 
 macro_rules! lang_cmd {
     ($l:ident, $name:literal, $words:literal) => {
-        Command { icon: Icon::Settings, name: $name, words: concat!("language interface язык интерфейс ", $words), key: "", run: |_, _, a| a.push(Action::SetLang(crate::i18n::Lang::$l)) }
+        Command { icon: Icon::Translate, name: $name, words: concat!("language interface язык интерфейс ", $words), key: "", run: |_, _, a| a.push(Action::SetLang(crate::i18n::Lang::$l)) }
     };
+}
+
+/// A command's key as the user has it: the list names the default keys, and one the user
+/// moved is shown where it is now.
+fn shown_key(default: &str) -> String {
+    crate::controls::ALL.iter().find(|c| c.default().text() == default).map(|c| crate::controls::key_text(*c)).unwrap_or_else(|| default.to_string())
 }
 
 fn commands() -> Vec<Command> {
@@ -39,20 +46,25 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::NewFile, "New map…", "Новая карта…", "create make start", "", |st, _, _| st.new_map = Some(Default::default())),
         cmd!(Icon::Open, "Open map…", "Открыть карту…", "load", "", |_, _, a| a.push(Action::OpenDialog)),
         cmd!(Icon::Save, "Save", "Сохранить", "write", "Ctrl+S", |_, _, a| a.push(Action::Save)),
-        cmd!(Icon::Copy, "Export map for sharing…", "Экспорт карты для обмена…", "zip share publish upload экспорт поделиться", "", |_, _, a| a.push(Action::Export)),
-        cmd!(Icon::Map, "Export a plan of the map…", "Экспорт плана карты…", "svg picture print network scheme картинка печать схема", "", |_, _, a| a.push(Action::ExportPlan)),
+        cmd!(Icon::Share, "Export map for sharing…", "Экспорт карты для обмена…", "zip share publish upload экспорт поделиться", "", |_, _, a| a.push(Action::Export)),
+        cmd!(Icon::UploadFile, "Export a plan of the map…", "Экспорт плана карты…", "svg picture print network scheme картинка печать схема", "", |_, _, a| a.push(Action::ExportPlan)),
         cmd!(Icon::Import, "Import assets…", "Импорт ассетов…", "model obj fbx gltf blender mod zip модель мод", "", |_, _, a| a.push(Action::Import)),
-        cmd!(Icon::History, "Earlier versions…", "Прошлые версии…", "backup restore бэкап восстановить", "", |st, _, _| st.versions_open = true),
+        cmd!(Icon::Backup, "Earlier versions…", "Прошлые версии…", "backup restore бэкап восстановить", "", |st, _, _| st.versions_open = true),
+        cmd!(Icon::People, "Multiplayer…", "Совместная правка…", "collaborate together network host join вместе сеть", "", |_, _, a| a.push(Action::Multiplayer)),
+        cmd!(Icon::Settings, "Settings…", "Настройки…", "preferences options параметры", "Ctrl+,", |st, _, _| st.help_open = true),
+        cmd!(Icon::Close, "Close map", "Закрыть карту", "", "", |_, _, a| a.push(Action::Close)),
         // Edit
         cmd!(Icon::Undo, "Undo", "Отменить", "back", "Ctrl+Z", |_, _, a| a.push(Action::Undo)),
         cmd!(Icon::Redo, "Redo", "Повторить", "", "Ctrl+Shift+Z", |_, _, a| a.push(Action::Redo)),
         cmd!(Icon::Copy, "Copy", "Копировать", "", "Ctrl+C", |_, _, a| a.push(Action::Copy)),
+        cmd!(Icon::Cut, "Cut", "Вырезать", "", "Ctrl+X", |_, _, a| a.push(Action::Cut)),
         cmd!(Icon::Paste, "Paste", "Вставить", "", "Ctrl+V", |_, _, a| a.push(Action::Paste)),
-        cmd!(Icon::Copy, "Duplicate", "Дублировать", "clone", "Ctrl+D", |_, _, a| a.push(Action::Duplicate)),
+        cmd!(Icon::Duplicate, "Duplicate", "Дублировать", "clone", "Ctrl+D", |_, _, a| a.push(Action::Duplicate)),
         cmd!(Icon::SelectAll, "Select all", "Выбрать всё", "", "Ctrl+A", |_, _, a| a.push(Action::SelectAll)),
+        cmd!(Icon::Delete, "Delete", "Удалить", "remove erase убрать стереть", "Del", |_, ed, _| ed.delete_selected()),
         cmd!(Icon::History, "Edit history…", "История правок…", "undo steps шаги", "", |st, _, _| st.history_open = true),
-        cmd!(Icon::Objects, "Groups…", "Группы…", "prefab template шаблон", "", |st, _, _| st.groups.open = true),
-        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop найти заменить остановка", "Ctrl+F", |st, _, _| st.find.show()),
+        cmd!(Icon::Inventory, "Groups…", "Группы…", "prefab template шаблон", "", |st, _, _| st.groups.open = true),
+        cmd!(Icon::Search, "Find in map…", "Поиск по карте…", "search replace stop tile go to найти заменить остановка тайл перейти", "Ctrl+F", |st, _, _| st.find.show()),
         cmd!(Icon::Junction, "Make the junctions again", "Перестроить перекрёстки", "junction plate rebuild asphalt texture перекрёсток плита асфальт текстура", "", |_, ed, _| {
             let n = ed.remake_all_junctions();
             ed.toast(format!("{} {n}", tr("Junctions made again:", "Перекрёстков перестроено:")));
@@ -70,47 +82,77 @@ fn commands() -> Vec<Command> {
         cmd!(Icon::Paint, "Paint", "Покраска", "tool ground texture инструмент текстура земли", "6", |_, ed, _| ed.set_tool(Tool::Paint)),
         cmd!(Icon::Tiles, "Tiles", "Тайлы", "tool add remove grow инструмент добавить удалить", "7", |_, ed, _| ed.set_tool(Tool::Tiles)),
         cmd!(Icon::Road, "Road types and junctions…", "Типы дорог и перекрёстки…", "road maker lanes width полосы ширина", "", |_, _, a| a.push(Action::RoadTypes)),
+        cmd!(Icon::Crossing, "Crossing editor…", "Редактор перекрёстков…", "crossing paths lights blocks object перекрёсток пути светофор блокировки объект", "", |_, _, a| a.push(Action::CrossingPaths)),
         cmd!(Icon::Junction, "Complex junction editor…", "Редактор сложных перекрёстков…", "custom junction top view splines markings кастомный перекрёсток вид сверху разметка", "", |_, _, a| a.push(Action::ComplexJunctions)),
-        cmd!(Icon::Layers, "PBR maps for a picture…", "PBR-карты для картинки…", "normal roughness нормали", "", |_, _, a| a.push(Action::PbrMaker)),
-        cmd!(Icon::Road, "Knife: cut roads", "Нож: разрезать дороги", "cut split knife road spline разрезать разделить дорогу сплайн", "K", |_, ed, _| ed.toggle_cutting()),
-        cmd!(Icon::Flag, "Ruler", "Линейка", "measure distance gradient измерить расстояние уклон", "U", |_, ed, _| ed.toggle_ruler()),
+        cmd!(Icon::Texture, "PBR maps for a picture…", "PBR-карты для картинки…", "normal roughness нормали", "", |_, _, a| a.push(Action::PbrMaker)),
+        cmd!(Icon::Cut, "Knife: cut roads", "Нож: разрезать дороги", "cut split knife road spline разрезать разделить дорогу сплайн", "K", |_, ed, _| ed.toggle_cutting()),
+        cmd!(Icon::LineUp, "Line up the selected objects", "Выстроить выбранные объекты в линию", "align straight row equal spacing distribute выровнять ряд прямая равный шаг", "", |_, ed, _| {
+            ed.line_up(true);
+        }),
+        cmd!(Icon::Spread, "Space the selected objects evenly", "Расставить выбранные объекты поровну", "distribute equal spacing spread step распределить равный шаг интервал", "", |_, ed, _| {
+            ed.line_up(false);
+        }),
+        cmd!(Icon::ChevronRight, "Next road piece", "Следующий кусок дороги", "next spline linked chain walk along следующий сплайн связанный цепочка", ".", |_, ed, _| {
+            ed.select_linked(true, false);
+        }),
+        cmd!(Icon::ChevronLeft, "Previous road piece", "Предыдущий кусок дороги", "previous spline linked chain walk back предыдущий сплайн связанный цепочка", ",", |_, ed, _| {
+            ed.select_linked(false, false);
+        }),
+        cmd!(Icon::Snap, "Snap vertex to vertex", "Привязать вершину к вершине", "snap vertex align object привязка вершина", "Shift+V", |_, ed, _| {
+            if ed.vertex_snap.is_some() {
+                ed.cancel_vertex_snap();
+            } else {
+                ed.start_vertex_snap();
+            }
+        }),
+        cmd!(Icon::Line, "Snap edge to edge", "Привязать ребро к ребру", "snap edge align line object привязка ребро линия", "Shift+L", |_, ed, _| {
+            if ed.edge_snap.is_some() {
+                ed.cancel_edge_snap();
+            } else {
+                ed.start_edge_snap();
+            }
+        }),
+        cmd!(Icon::Straighten, "Ruler", "Линейка", "measure distance gradient area perimeter square metres hectares измерить расстояние уклон площадь периметр гектар", "U", |_, ed, _| ed.toggle_ruler()),
         // Map
-        cmd!(Icon::Settings, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
+        cmd!(Icon::Tune, "Map settings…", "Настройки карты…", "money tickets depot years seasons деньги билеты депо годы", "", |_, _, a| a.push(Action::MapSettings)),
         cmd!(Icon::Code, "Scripts…", "Скрипты…", "lua osc script code plugin скрипт код плагин программа", "", |_, _, a| a.push(Action::Scripts)),
-        cmd!(Icon::Schedule, "Calendar and place…", "Календарь и место…", "holidays time zone summer number plates праздники часовой пояс номера", "", |_, _, a| a.push(Action::Calendar)),
+        cmd!(Icon::Calendar, "Calendar and place…", "Календарь и место…", "holidays time zone summer number plates праздники часовой пояс номера", "", |_, _, a| a.push(Action::Calendar)),
+        cmd!(Icon::Cable, "Trolleybus wire…", "Контактная сеть троллейбуса…", "trolley overhead catenary frog switch insulator section substation trolley.txt троллейбус провод контактная сеть стрелка изолятор секция подстанция", "", |_, _, a| a.push(Action::Trolley)),
         cmd!(Icon::Traffic, "Signal routes…", "Маршруты сигналов…", "railway signal железная дорога светофор", "", |_, _, a| a.push(Action::SignalRoutes)),
-        cmd!(Icon::History, "Chrono scenarios…", "Хроно-сценарии…", "years history годы", "", |_, _, a| a.push(Action::Chrono)),
-        cmd!(Icon::CheckCircle, "Check map…", "Проверить карту…", "errors problems validate ошибки проблемы", "", |st, _, _| {
+        cmd!(Icon::Chrono, "Chrono scenarios…", "Хроно-сценарии…", "years history годы", "", |_, _, a| a.push(Action::Chrono)),
+        cmd!(Icon::FactCheck, "Check map…", "Проверить карту…", "errors problems validate ошибки проблемы", "", |st, _, _| {
             st.check.open = true;
             st.check.issues = None;
         }),
         cmd!(Icon::Bus, "Lines and timetable…", "Линии и расписание…", "route trips tours schedule bus line маршрут рейсы туры автобус", "L", |_, _, a| a.push(Action::Timetable)),
-        cmd!(Icon::Traffic, "Traffic and AI…", "Трафик и ИИ…", "cars density ailists depot машины плотность", "T", |_, _, a| a.push(Action::Traffic)),
-        cmd!(Icon::Flag, "Depot files (destinations)…", "Файлы депо (конечные)…", "hof destinations ibis routes terminus signs конечные указатели маршруты", "", |_, _, a| a.push(Action::Depots)),
-        cmd!(Icon::Layers, "Satellite and terrain…", "Спутник и рельеф…", "imagery aerial photo heights place world спутник снимок высоты место", "I", |_, _, a| a.push(Action::Geo)),
-        cmd!(Icon::Road, "From OpenStreetMap…", "Из OpenStreetMap…", "osm real place streets buildings реальное место улицы здания", "", |_, _, a| a.push(Action::Osm)),
-        cmd!(Icon::Route, "GPS tracks to trace…", "GPS-треки для обводки…", "gpx kml geojson trace route recorded phone трек маршрут телефон", "", |_, _, a| a.push(Action::Trace)),
-        cmd!(Icon::Add, "Draw a polygon", "Нарисовать многоугольник", "fill area shape island sheet slab многоугольник площадь", "Shift+P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonDraw))),
-        cmd!(Icon::Add, "From the selected splines", "По выделенным сплайнам", "polygon fill outline kerb island многоугольник контур", "P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines))),
-        cmd!(Icon::Tiles, "Tiles from another map…", "Тайлы из другой карты…", "merge join import combine объединить соединить импорт", "", |_, _, a| a.push(Action::MergeTiles)),
-        cmd!(Icon::CheckCircle, "Check in openOMSI…", "Проверка в openOMSI…", "game verify validate offscreen игра проверить", "", |_, _, a| a.push(Action::GameCheck)),
+        cmd!(Icon::Car, "Traffic and AI…", "Трафик и ИИ…", "cars density ailists depot машины плотность", "T", |_, _, a| a.push(Action::Traffic)),
+        cmd!(Icon::Signpost, "Depot files (destinations)…", "Файлы депо (конечные)…", "hof destinations ibis routes terminus signs конечные указатели маршруты", "", |_, _, a| a.push(Action::Depots)),
+        cmd!(Icon::Satellite, "Satellite and terrain…", "Спутник и рельеф…", "imagery aerial photo heights place world спутник снимок высоты место", "I", |_, _, a| a.push(Action::Geo)),
+        cmd!(Icon::Public, "From OpenStreetMap…", "Из OpenStreetMap…", "osm real place streets buildings реальное место улицы здания", "", |_, _, a| a.push(Action::Osm)),
+        cmd!(Icon::Gps, "GPS tracks to trace…", "GPS-треки для обводки…", "gpx kml geojson trace route recorded phone трек маршрут телефон", "", |_, _, a| a.push(Action::Trace)),
+        cmd!(Icon::Polygon, "Draw a polygon", "Нарисовать многоугольник", "fill area shape island sheet slab многоугольник площадь", "Shift+P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonDraw))),
+        cmd!(Icon::Line, "From the selected splines", "По выделенным сплайнам", "polygon fill outline kerb island многоугольник контур", "P", |_, _, a| a.push(Action::Mesh(crate::ui_mesh::MeshAction::PolygonFromSplines))),
+        cmd!(Icon::Merge, "Tiles from another map…", "Тайлы из другой карты…", "merge join import combine объединить соединить импорт", "", |_, _, a| a.push(Action::MergeTiles)),
+        cmd!(Icon::Verified, "Check in openOMSI…", "Проверка в openOMSI…", "game verify validate offscreen игра проверить", "", |_, _, a| a.push(Action::GameCheck)),
         cmd!(Icon::Play, "Test drive in openOMSI", "Тест-драйв в openOMSI", "play run game drive играть запустить", "F5", |_, _, a| a.push(Action::Play)),
         cmd!(Icon::Play, "Test drive in OMSI 2 (the original)", "Тест-драйв в оригинальном OMSI 2", "play omsi original game drive оригинал игра запустить", "", |_, _, a| a.push(Action::PlayOriginal)),
         cmd!(Icon::Flag, "Test drive from the start point nearest the view", "Тест-драйв с ближайшей к виду точки старта", "play here entry start drive играть отсюда старт", "Shift+F5", |_, _, a| a.push(Action::PlayHere(false))),
         cmd!(Icon::Visible, "See this view in openOMSI", "Посмотреть этот вид в openOMSI", "free camera look game свободная камера игра вид", "", |_, _, a| a.push(Action::PlayHere(true))),
         // View
-        cmd!(Icon::Flag, "Saved views…", "Сохранённые виды…", "bookmark camera закладка камера", "Ctrl+1…9", |st, _, _| st.views.open = true),
+        cmd!(Icon::Bookmark, "Saved views…", "Сохранённые виды…", "bookmark camera закладка камера", "Ctrl+1…9", |st, _, _| st.views.open = true),
         cmd!(Icon::Focus, "Go to selection", "К выделенному", "focus фокус", "F", |_, _, a| a.push(Action::FocusSelection)),
         cmd!(Icon::Map, "Overview map", "Обзорная карта", "minimap миникарта", "M", |st, _, _| st.minimap.open = !st.minimap.open),
         cmd!(Icon::Objects, "Assets", "Ассеты", "catalogue browser каталог", "B", |st, _, _| st.assets.open = !st.assets.open),
         cmd!(Icon::Tiles, "Tile grid", "Сетка тайлов", "show показать", "G / Shift+G", |_, ed, _| ed.show_grid = !ed.show_grid),
         cmd!(Icon::Visible, "What the game does not show", "То, чего не видно в игре", "technical helpers invisible технические помощники", "", |_, ed, _| ed.show_technical = !ed.show_technical),
         cmd!(Icon::Route, "AI lanes", "Полосы ИИ", "paths arrows пути стрелки", "", |_, ed, _| ed.show_lanes = !ed.show_lanes),
-        cmd!(Icon::Save, "Save a picture of the view", "Сохранить картинку вида", "screenshot скриншот", "F12", |_, _, a| a.push(Action::ViewPicture)),
+        cmd!(Icon::Camera, "Save a picture of the view", "Сохранить картинку вида", "screenshot скриншот", "F12", |_, _, a| a.push(Action::ViewPicture)),
         cmd!(Icon::Import, "Import the map's thumbnail", "Импорт картинки карты", "picture.jpg thumbnail превью", "", |_, _, a| a.push(Action::ImportMapPicture)),
         // Help
-        cmd!(Icon::CheckCircle, "Getting started", "С чего начать", "guide tutorial help учебник помощь", "", |_, _, a| a.push(Action::Guide)),
-        cmd!(Icon::Help, "Controls", "Управление", "keys mouse shortcuts клавиши мышь", "", |st, _, _| st.help_open = true),
+        cmd!(Icon::School, "Getting started", "С чего начать", "guide tutorial help учебник помощь", "", |_, _, a| a.push(Action::Guide)),
+        cmd!(Icon::Keyboard, "Controls", "Управление", "keys mouse shortcuts клавиши мышь", "", |st, _, _| st.help_open = true),
+        cmd!(Icon::Update, "Updates…", "Обновления…", "new version upgrade новая версия", "", |_, _, a| a.push(Action::Updates)),
+        cmd!(Icon::Info, "About openMapper", "О программе", "version licence версия лицензия", "", |st, _, _| st.about_open = true),
         // (a language is named in itself: the list does not change with the one chosen)
         lang_cmd!(En, "English", "english"),
         lang_cmd!(De, "Deutsch", "german"),
@@ -169,12 +211,12 @@ fn commands() -> Vec<Command> {
             ed.plant_area = true;
             ed.toast(tr("Pick a tree in the catalogue, then click round the area", "Выберите дерево в каталоге и обведите участок кликами"));
         }),
-        cmd!(Icon::Road, "Roundabout", "Кольцо", "circle ring круговое движение", "", |_, ed, _| {
+        cmd!(Icon::Roundabout, "Roundabout", "Кольцо", "circle ring круговое движение", "", |_, ed, _| {
             ed.set_tool(Tool::Roads);
             ed.roundabout = true;
             ed.toast(tr("Pick a road type, click the centre, then the ring", "Выберите тип дороги, кликните центр, потом кольцо"));
         }),
-        cmd!(Icon::Terrain, "Height profile of a road", "Профиль высот дороги", "gradient slope elevation chart уклон высота график", "", |_, ed, _| {
+        cmd!(Icon::Profile, "Height profile of a road", "Профиль высот дороги", "gradient slope elevation chart уклон высота график", "", |_, ed, _| {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a road (double-click: all of it): its properties show its height profile", "Выберите дорогу (двойной клик: всю): в её свойствах профиль высот"));
         }),
@@ -182,7 +224,7 @@ fn commands() -> Vec<Command> {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select one of openMapper's junctions: its properties have Traffic lights and crossings", "Выберите перекрёсток openMapper: в его свойствах светофоры и переходы"));
         }),
-        cmd!(Icon::Traffic, "Link a signal head to its crossing", "Связать светофор с перекрёстком", "varparent link parent signal head display связь родитель табло головка", "", |_, ed, _| {
+        cmd!(Icon::Link, "Link a signal head to its crossing", "Связать светофор с перекрёстком", "varparent link parent signal head display связь родитель табло головка", "", |_, ed, _| {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select the signal head (or a display): Linked objects in its properties, then click its crossing", "Выберите головку светофора (или табло): «Связанные объекты» в свойствах, затем щёлкните перекрёсток"));
         }),
@@ -190,11 +232,12 @@ fn commands() -> Vec<Command> {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a road, pick an object in the Objects catalogue: Objects along the road in its properties", "Выберите дорогу и объект в каталоге: «Объекты вдоль дороги» в её свойствах"));
         }),
-        cmd!(Icon::Tram, "Overhead wire along a track", "Контактный провод вдоль пути", "tram catenary fahrdraht oberleitung трамвай контактная сеть", "", |_, ed, _| {
+        cmd!(Icon::Cable, "Overhead wire along a track", "Контактный провод вдоль пути", "tram catenary fahrdraht oberleitung трамвай контактная сеть", "", |_, ed, _| {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a track (double-click: all of it): Overhead wire under Parallel copy in its properties", "Выберите путь (двойной клик: весь): «Контактный провод» под «Параллельной копией» в свойствах"));
         }),
-        cmd!(Icon::Road, "Parallel copy of a road", "Параллельная копия дороги", "second track carriageway второй путь проезжая часть", "", |_, ed, _| {
+        cmd!(Icon::Complete, "Complete to", "Достроить до", "join connect close ring loop gap fill splines kerb соединить замкнуть кольцо разрыв сплайны бордюр", "J", |_, ed, _| ed.complete_to()),
+        cmd!(Icon::Duplicate, "Parallel copy of a road", "Параллельная копия дороги", "second track carriageway второй путь проезжая часть", "", |_, ed, _| {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a road or a chain: Parallel copy in its properties", "Выберите дорогу или цепочку: «Параллельная копия» в свойствах"));
         }),
@@ -202,11 +245,11 @@ fn commands() -> Vec<Command> {
             ed.set_tool(Tool::Select);
             ed.toast(tr("Select a road (double-click: all of it): Paint the ground along it in its properties", "Выберите дорогу (двойной клик: всю): «Покрасить землю вдоль» в её свойствах"));
         }),
-        cmd!(Icon::Tiles, "Water, lake, river", "Вода, озеро, река", "sea pond море пруд", "", |_, ed, _| {
+        cmd!(Icon::Water, "Water, lake, river", "Вода, озеро, река", "sea pond море пруд", "", |_, ed, _| {
             ed.set_tool(Tool::Tiles);
             ed.toast(tr("Click a tile: its water is in the panel; lower the ground under it with the Terrain tool", "Кликните тайл: вода в панели; опустите землю инструментом «Рельеф»"));
         }),
-        cmd!(Icon::Route, "Ramp in the ground", "Пандус в земле", "embankment slope level bed насыпь склон уклон полотно", "", |_, ed, _| {
+        cmd!(Icon::Slope, "Ramp in the ground", "Пандус в земле", "embankment slope level bed насыпь склон уклон полотно", "", |_, ed, _| {
             ed.set_tool(Tool::Terrain);
             ed.terrain_mode = crate::editor::TerrainMode::Ramp;
         }),
@@ -218,7 +261,7 @@ fn commands() -> Vec<Command> {
             ed.set_tool(Tool::Paint);
             ed.toast(tr("By slope and height: at the end of the Paint panel", "По уклону и высоте: в конце панели «Покраска»"));
         }),
-        cmd!(Icon::Schedule, "Time of day and season", "Время суток и года", "night winter snow autumn ночь зима снег осень", "", |_, ed, _| {
+        cmd!(Icon::Sun, "Time of day and season", "Время суток и года", "night winter snow autumn ночь зима снег осень", "", |_, ed, _| {
             ed.toast(tr("View menu: Time of day, Season", "Меню «Вид»: время суток, время года"));
         }),
     ]
@@ -322,24 +365,24 @@ pub fn window(ctx: &egui::Context, st: &mut UiState, ed: &mut Editor, actions: &
             }
             ui.add_space(4.0);
             if list.is_empty() {
-                ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).italics().color(TEXT_DIM));
+                ui.label(RichText::new(tr("Nothing found", "Ничего не найдено")).italics().color(pal().text_dim));
             }
             egui::ScrollArea::vertical().max_height(380.0).show(ui, |ui| {
                 for (i, c) in list.iter().enumerate() {
                     let on = i == p.chosen;
                     let (rect, resp) = ui.allocate_exact_size(Vec2::new(width, 24.0), Sense::click());
                     if on {
-                        ui.painter().rect_filled(rect, 3.0, crate::ui::SELECT);
+                        ui.painter().rect_filled(rect, 3.0, pal().selection);
                         if down || up {
                             ui.scroll_to_rect(rect, None);
                         }
                     } else if resp.hovered() {
-                        ui.painter().rect_filled(rect, 3.0, Color32::from_gray(45));
+                        ui.painter().rect_filled(rect, 3.0, pal().hover);
                     }
-                    icons::paint(ui.painter(), c.icon, rect.left_center() + Vec2::new(12.0, 0.0), 15.0, Color32::from_gray(210));
-                    ui.painter().text(rect.left_center() + Vec2::new(28.0, 0.0), egui::Align2::LEFT_CENTER, c.name, egui::FontId::proportional(13.5), Color32::from_gray(235));
+                    icons::paint(ui.painter(), c.icon, rect.left_center() + Vec2::new(12.0, 0.0), 15.0, if on { pal().selection_text } else { pal().text });
+                    ui.painter().text(rect.left_center() + Vec2::new(28.0, 0.0), egui::Align2::LEFT_CENTER, c.name, egui::FontId::proportional(13.5), pal().row_text(on));
                     if !c.key.is_empty() {
-                        ui.painter().text(rect.right_center() - Vec2::new(8.0, 0.0), egui::Align2::RIGHT_CENTER, c.key, egui::FontId::proportional(11.5), TEXT_DIM);
+                        ui.painter().text(rect.right_center() - Vec2::new(8.0, 0.0), egui::Align2::RIGHT_CENTER, shown_key(c.key), egui::FontId::proportional(11.5), pal().text_dim);
                     }
                     if resp.clicked() {
                         run = Some(i);

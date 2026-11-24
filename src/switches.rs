@@ -35,7 +35,14 @@ pub fn catalogue(lib: &crate::library::Library) -> Vec<Candidate> {
         .filter(|a| a.helpers.iter().any(|h| (roads::norm_deg(h.heading as f64) - 180.0).abs() < 30.0))
         .filter_map(|a| {
             let side = a.helpers.iter().max_by(|p, q| p.x.abs().total_cmp(&q.x.abs()))?;
-            (side.x.abs() > 0.5 && side.x.abs() < 6.0).then(|| Candidate { rel: a.rel.clone(), left: side.x < 0.0 })
+            // (the toe is the helper farthest from the diverging heel; the branch goes off to
+            // the left of the way from the toe into the body, which runs to +z on the stock
+            // switches and to -z on others)
+            let dist = |h: &omsi_scenery::sco::SplineHelper| (h.x - side.x).hypot(h.z - side.z);
+            let toe = a.helpers.iter().max_by(|p, q| dist(p).total_cmp(&dist(q)))?;
+            let off = side.x - toe.x;
+            let left = if side.z >= toe.z { off < 0.0 } else { off > 0.0 };
+            (off.abs() > 0.5 && off.abs() < 6.0).then(|| Candidate { rel: a.rel.clone(), left })
         })
         .collect()
 }
@@ -70,23 +77,64 @@ pub struct Shape {
     pub toe: [f32; 4],
     pub straight: [f32; 4],
     pub branch: [f32; 4],
+    /// The model's body runs to -forward (its helpers are given here turned half round, so
+    /// the heels lie ahead of the toe): the object stands turned by 180° more.
+    pub turned: bool,
 }
 
 impl Shape {
-    /// From the model's spline helpers: the toe points back (heading near 180), the straight
-    /// heel runs on along the middle, the branch is the other one.
+    /// From the model's spline helpers: the two heels lie side by side at the far end, the
+    /// toe alone at the other (pointing back, heading near 180); the straight heel runs on
+    /// along the middle, the branch is the other one. A model built the other way round (its
+    /// body towards -forward) is turned half round first.
     pub fn of(m: &ObjectModel) -> Option<Shape> {
         let hs: Vec<[f32; 4]> = m.helpers.iter().map(|h| h.0).collect();
-        if hs.len() < 3 {
+        // (each helper is listed at both its ends, once with each heading: the places where
+        // tracks meet, each once)
+        let d = |a: &[f32; 4], b: &[f32; 4]| (a[0] - b[0]).hypot(a[1] - b[1]);
+        let mut places: Vec<[f32; 4]> = Vec::new();
+        for h in &hs {
+            if !places.iter().any(|p| d(p, h) < 0.05) {
+                places.push(*h);
+            }
+        }
+        if places.len() < 3 {
             return None;
         }
-        let back = |h: &[f32; 4]| (roads::norm_deg(h[3] as f64) - 180.0).abs() < 30.0;
-        let toe = *hs.iter().find(|h| back(h))?;
-        // (each helper is listed at both its ends, heading out: the heels lie away from the toe)
-        let far = |h: &[f32; 4]| (h[0] - toe[0]).hypot(h[1] - toe[1]) > 1.0;
-        let mut heels: Vec<[f32; 4]> = hs.iter().filter(|h| !back(h) && far(h)).copied().collect();
-        if heels.len() < 2 {
+        // the heels lie side by side, the toe alone at the other end
+        let mut pair = (0, 1);
+        for i in 0..places.len() {
+            for j in i + 1..places.len() {
+                if d(&places[i], &places[j]) < d(&places[pair.0], &places[pair.1]) {
+                    pair = (i, j);
+                }
+            }
+        }
+        let (h1, h2) = (places[pair.0], places[pair.1]);
+        let toe_place = *places.iter().max_by(|a, b| d(a, &h1).min(d(a, &h2)).total_cmp(&d(b, &h1).min(d(b, &h2))))?;
+        if d(&toe_place, &h1) < 1.0 {
             return None;
+        }
+        // each with the heading that leads out of the switch there: away from the other end
+        let out = |at: [f32; 4], from: [f32; 4]| -> Option<[f32; 4]> {
+            let away = DVec2::new((at[0] - from[0]) as f64, (at[1] - from[1]) as f64);
+            hs.iter().filter(|h| d(h, &at) < 0.05).copied().max_by(|a, b| roads::dir(a[3] as f64).dot(away).total_cmp(&roads::dir(b[3] as f64).dot(away)))
+        };
+        let mid = [(h1[0] + h2[0]) * 0.5, (h1[1] + h2[1]) * 0.5, 0.0, 0.0];
+        let mut toe = out(toe_place, mid)?;
+        let mut heels = vec![out(h1, toe_place)?, out(h2, toe_place)?];
+        // (a model whose body runs to -forward: turned half round, so the heels lie ahead)
+        let turned = mid[1] < toe[1];
+        if turned {
+            let half = |h: &mut [f32; 4]| {
+                h[0] = -h[0];
+                h[1] = -h[1];
+                h[3] = roads::norm_deg(h[3] as f64 + 180.0) as f32;
+            };
+            half(&mut toe);
+            for h in heels.iter_mut() {
+                half(h);
+            }
         }
         heels.sort_by(|a, b| (a[0] - toe[0]).abs().total_cmp(&(b[0] - toe[0]).abs()));
         let (straight, mut branch) = (heels[0], heels[1]);
@@ -95,7 +143,7 @@ impl Shape {
         let turn = (roads::norm_deg((branch[3] - straight[3]) as f64 + 180.0) - 180.0).abs();
         let side = if branch[0] > straight[0] { 1.0 } else { -1.0 };
         branch[3] = roads::norm_deg(straight[3] as f64 + side * turn) as f32;
-        Some(Shape { toe, straight, branch })
+        Some(Shape { toe, straight, branch, turned })
     }
 
     /// From toe to straight heel (m).
@@ -128,6 +176,8 @@ pub struct Plan {
     pub heading: f64,
     pub length: f64,
     pub origin: DVec3,
+    /// The object stands turned half round from `heading` (its body runs to -forward).
+    pub turned: bool,
 }
 
 /// The point of a spline nearest to `p` within `within` m (tile, id, distance along it).
@@ -174,7 +224,7 @@ pub fn lay(doc: &mut Document, plan: &Plan) -> Option<Laid> {
     let new = doc.new_id();
     let org = tile_origin(ok);
     let t = doc.tiles.get_mut(&ok)?;
-    t.tile.objects.push(MapObject { file: plan.rel.clone(), id: new, pos: [plan.origin.x - org.x, plan.origin.y - org.y, 0.0], rot: [plan.heading, 0.0, 0.0], ..Default::default() });
+    t.tile.objects.push(MapObject { file: plan.rel.clone(), id: new, pos: [plan.origin.x - org.x, plan.origin.y - org.y, 0.0], rot: [if plan.turned { roads::norm_deg(plan.heading + 180.0) } else { plan.heading }, 0.0, 0.0], ..Default::default() });
     t.touch_content();
     Some(Laid { rejoin })
 }

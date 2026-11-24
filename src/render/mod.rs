@@ -174,6 +174,9 @@ pub struct FrameExtras {
     pub highlight_tile: Option<TileKey>,
     /// Draw what the game does not show (start points, car parks, AI paths, helpers).
     pub show_technical: bool,
+    /// openMapper draws the AI's lanes as lines (the Logic tool, View > lanes): the strips of
+    /// the invisible AI-path splines would only double them, so they are left out (#66).
+    pub lanes_drawn: bool,
     /// Layers left out of the view: trees, other objects, splines (View menu).
     pub hide: [bool; 3],
     /// Objects drawn at another size along their own axes (a scale being dragged); zero
@@ -211,6 +214,9 @@ struct GpuTile {
     /// The ground's walls down from the rims of its holes to the roads' edges (vertices,
     /// indices, index count; openOMSI's `terrain_hole_walls`).
     walls: Option<(wgpu::Buffer, wgpu::Buffer, u32)>,
+    /// Its ground fitted to the aligned splines lying in troughs, drawn instead of the grid
+    /// (the same).
+    fitted: Option<(wgpu::Buffer, wgpu::Buffer, u32)>,
     /// What its uniform holds now.
     uniform_now: [f32; 8],
     /// Its paint masks' and ground cut's views (the bind group is made again with them
@@ -333,6 +339,8 @@ struct SplineEntry {
     outlines: Vec<Vec<DVec2>>,
     /// The same with the heights of the road's edge (world), for the ground's walls.
     rims: Vec<Vec<DVec3>>,
+    /// The ground fitted under it where it lies in a trough (openOMSI's), instead of its hole.
+    trough: Option<Arc<build::Trough>>,
     materials: Vec<Material>,
     instance: u32,
     /// Drawn as part of its tile's chunk (then it has no mesh of its own on the GPU).
@@ -454,6 +462,7 @@ pub struct Renderer {
     /// Materials may be missing (new things to draw, textures still coming).
     warm_pending: bool,
     warm_seen_pending: usize,
+    warm_seen_arrived: u64,
     /// The point everything is drawn relative to (a tile corner of the map).
     anchor: DVec3,
     anchor_for: u64,
@@ -478,13 +487,29 @@ pub struct Renderer {
     /// The scene's materials, once each, and the scene they were collected for.
     warm_mats: Vec<Material>,
     warm_for: u64,
+    /// Counts spline meshes come in with a material the view has not put up yet, and the count
+    /// the list was collected at: they come from the builder's threads after the scene's key
+    /// has settled (a map whose files are read quickly is keyed, and its list collected, before
+    /// its roads are built), and a list collected before them left their materials out - the
+    /// tile's chunk was drawn without them, the roads missing from the view.
+    spline_mats_rev: u64,
+    warm_spline_rev: u64,
     /// How far the walk over them has gone.
     warm_done: usize,
     /// Whether the last walk met one that could not be put up yet (its picture still loading).
     warm_missing: bool,
+    /// Whether the last sync left every tile's splines, cuts and objects up to date.
+    pub scene_complete: bool,
     /// When the list was last collected.
     warm_collect_at: Option<std::time::Instant>,
     chunks: HashMap<TileKey, Chunk>,
+    /// What the splines' instances were made for (`splines_stamp`), the instances, and whether
+    /// every spline was built then.
+    splines_quiet: Option<(u64, Vec<Instance>, bool)>,
+    /// What the ground cut was last found up to date for.
+    cut_quiet: Option<u64>,
+    /// The map's water picture, and the map it was looked for in.
+    water_tex: Option<((std::path::PathBuf, u64), Option<std::path::PathBuf>)>,
     /// `[onlyeditor]` splines of a tile in one mesh. Drawn with the roads when "what the game
     /// does not show" is on, and never into the shadow map.
     editor_chunks: HashMap<TileKey, Chunk>,
@@ -802,7 +827,7 @@ impl Renderer {
         let shadow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("shadow"),
             layout: Some(&mesh_layout),
-            vertex: wgpu::VertexState { module: &mesh_sh, entry_point: Some("vs"), compilation_options: Default::default(), buffers: &mesh_layouts() },
+            vertex: wgpu::VertexState { module: &mesh_sh, entry_point: Some("vs_shadow"), compilation_options: Default::default(), buffers: &mesh_layouts() },
             primitive: wgpu::PrimitiveState { cull_mode: None, ..Default::default() },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH,
@@ -1012,6 +1037,8 @@ impl Renderer {
             blank: Instance::new(Mat4::IDENTITY, [0.0; 4]),
             warm_pending: true,
             warm_seen_pending: 0,
+            warm_seen_arrived: 0,
+            scene_complete: false,
             anchor: DVec3::ZERO,
             anchor_for: 0,
             anchored: false,
@@ -1027,10 +1054,15 @@ impl Renderer {
             spline_hashes: HashMap::new(),
             warm_mats: Vec::new(),
             warm_for: 0,
+            spline_mats_rev: 0,
+            warm_spline_rev: 0,
             warm_done: 0,
             warm_missing: false,
             warm_collect_at: None,
             chunks: HashMap::new(),
+            splines_quiet: None,
+            cut_quiet: None,
+            water_tex: None,
             editor_chunks: HashMap::new(),
             builder: build::Builder::new(),
             ghost_spline_meshes: Vec::new(),
@@ -1053,6 +1085,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.scene_key = 0;
         self.tile_groups.clear();
         self.textures.clear();
@@ -1070,6 +1104,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.display.clear();
         self.anchor = DVec3::ZERO;
         self.anchored = false;
@@ -1106,6 +1142,8 @@ impl Renderer {
         self.chunks.clear();
         self.editor_chunks.clear();
         self.builder.reset();
+        self.splines_quiet = None;
+        self.cut_quiet = None;
         self.scene_key = 0;
         self.tile_groups.clear();
     }
@@ -1322,6 +1360,7 @@ impl Renderer {
     /// clock runs the programs).
     fn gather_heads(&mut self, device: &wgpu::Device, doc: &Document, assets: &mut Assets, disp: &[(TileKey, Arc<omsi_map::Tile>)], extras: &FrameExtras, anchor: DVec3) -> Vec<Head> {
         let mut heads = Vec::new();
+        let rows = crate::place::row_index(doc);
         for (k, t) in disp {
             let mut parents: HashMap<i64, (Pose, Arc<ObjectModel>)> = HashMap::new();
             for o in &t.objects {
@@ -1340,7 +1379,7 @@ impl Renderer {
                     continue;
                 }
                 let o = omsi_map::MapObject { file: a.file.clone(), id: a.id, extra: a.strings.clone(), var_parent: a.var_parent, ..Default::default() };
-                for ro in crate::place::row_objects(a, &t.splines, org) {
+                for ro in crate::place::row_objects(a, &t.splines, org, &rows) {
                     if let Some(mut h) = self.head_of(device, doc, assets, *k, &o, ro.pose.matrix_from(anchor), model.clone(), extras) {
                         h.sel = Sel::Attached(*k, a.id);
                         heads.push(h);
@@ -1405,6 +1444,8 @@ impl Renderer {
                     self.chunks.clear();
                     self.editor_chunks.clear();
                     self.builder.reset();
+                    self.splines_quiet = None;
+                    self.cut_quiet = None;
                     self.scene_key = 0;
                     self.tile_groups.clear();
                 }
@@ -1429,7 +1470,7 @@ impl Renderer {
                 let views = [self.zero_mask.clone(), self.zero_mask.clone(), self.uncut.clone()];
                 let bind = tile_bind(device, &self.tile_layout, &uniform, &views, &self.mask_sampler, &self.imagery, k);
                 let imagery_rev = self.imagery.view(k).1;
-                self.tiles.insert(k, GpuTile { vb, uniform, masks: None, cut: None, cut_key: 0, bind, terrain_rev: 0, mask_rev: 0, walls: None, uniform_now: [f32::NAN; 8], views, imagery_rev, bbox: Aabb::ALL });
+                self.tiles.insert(k, GpuTile { vb, uniform, masks: None, cut: None, cut_key: 0, bind, terrain_rev: 0, mask_rev: 0, walls: None, fitted: None, uniform_now: [f32::NAN; 8], views, imagery_rev, bbox: Aabb::ALL });
             }
             let gt = self.tiles.get_mut(&k).unwrap();
             if gt.imagery_rev != self.imagery.view(k).1 {
@@ -1527,6 +1568,7 @@ impl Renderer {
         let mut key_parts: Vec<u64> = doc.tiles.iter().filter(|(k, _)| is_live(k)).flat_map(|(_, t)| [t.content_rev, t.terrain_rev]).collect();
         key_parts.push(self.live_rev);
         key_parts.push(extras.show_technical as u64);
+        key_parts.push(extras.lanes_drawn as u64);
         key_parts.extend(extras.hide.map(|h| h as u64));
         self.hide_splines = extras.hide[2];
         key_parts.push(self.asset_epoch);
@@ -1535,9 +1577,11 @@ impl Renderer {
             self.scene_key = key;
             // each tile's instances are kept, and made again only when it changed
             self.tile_groups.retain(|k, _| doc.tiles.contains_key(k) && is_live(k));
+            let rows = crate::place::row_index(doc);
             for (k, t) in &disp {
                 let Some(td) = doc.tiles.get(k) else { continue };
-                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64]);
+                // (its rows run on into the tiles around: laid out again when their chains change)
+                let tkey = hash_of(&[td.content_rev, td.terrain_rev, extras.show_technical as u64, self.asset_epoch, extras.hide[0] as u64, extras.hide[1] as u64, crate::place::rows_beyond(doc, *k)]);
                 if self.tile_groups.get(k).map(|g| g.0 == tkey).unwrap_or(false) {
                     continue;
                 }
@@ -1567,7 +1611,7 @@ impl Renderer {
                 for a in t.spline_attachments.iter().filter(|_| !extras.hide[1]) {
                     let Some(model) = assets.object(&a.file) else { continue };
                     let rel_key = self.model_with_labels(device, &a.file.to_lowercase(), &model, &a.strings, assets);
-                    let objs = crate::place::row_objects(a, &t.splines, org);
+                    let objs = crate::place::row_objects(a, &t.splines, org, &rows);
                     let first = objs.iter().map(|o| o.index).min();
                     // (each record is a thing of its own: clicking one of its copies picks it,
                     // and they take its tint - selected or hovered - as an object does)
@@ -1685,104 +1729,136 @@ impl Renderer {
         t = std::time::Instant::now();
 
         // splines
-        let mut alive: Vec<(TileKey, i64)> = Vec::new();
-        let mut complete = assets.pending == 0;
-        for (key, e) in self.builder.take() {
-            self.splines.insert(key, e);
-            self.warm_pending = true;
-        }
-        let start = std::time::Instant::now();
-        let mut spline_instances: Vec<Instance> = Vec::new();
-        // (each tile's splines' hashes, made again only when the tile changed)
-        for (k, t) in &disp {
-            let rev = self.display.get(k).map(|d| d.0).unwrap_or(0);
-            if self.spline_hashes.get(k).map(|(r, _)| *r != rev).unwrap_or(true) {
-                let org = tile_origin(*k);
-                let v: Vec<u64> = t.splines.iter().map(|s| spline_hash(s, org)).collect();
-                self.spline_hashes.insert(*k, (rev, std::sync::Arc::new(v)));
-            }
-        }
-        self.spline_hashes.retain(|k, _| self.display.contains_key(k));
-        for (k, t) in &disp {
-            let org = tile_origin(*k);
-            let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
-            let hashes = self.spline_hashes.get(k).map(|(_, v)| v.clone()).unwrap_or_default();
-            for (i, s) in t.splines.iter().enumerate().filter(|(_, s)| !s.deleted && !s.file.trim().is_empty()) {
-                alive.push((*k, s.id));
-                let h = hashes.get(i).copied().unwrap_or_else(|| spline_hash(s, org));
-                let sel = Some(Sel::Spline(*k, s.id));
-                let tint = if extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
-                    SELECTED
-                } else if extras.hover == sel {
-                    HOVERED
-                } else {
-                    [0.0; 4]
-                };
-                let entry_ok = self.splines.get(&(*k, s.id)).map(|e| e.hash == h).unwrap_or(false);
-                if !entry_ok {
-                    let Some(model) = assets.spline(&s.file) else { continue };
-                    // (what is being edited is built at once, so it follows the mouse; the
-                    // rest on the builder's threads)
-                    let editing = extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id));
-                    if editing && start.elapsed().as_millis() < 25 {
-                        self.builder.forget(&(*k, s.id));
-                        self.splines.insert((*k, s.id), build::make_entry(&model, s, org, corner, h));
-                        self.warm_pending = true;
-                    } else {
-                        self.builder.request((*k, s.id), h, model, s, org, corner);
-                        complete = false;
-                    }
-                }
-                if let Some(e) = self.splines.get_mut(&(*k, s.id)) {
-                    e.hidden = spline_hidden(e.technical, extras);
-                    e.instance = spline_instances.len() as u32;
-                    spline_instances.push(Instance::new(Mat4::from_translation(corner), tint).surface(SURF_SPLINE));
-                }
-            }
-        }
-        // each tile's water: one quad at its four corner heights, blended over the ground
-        // (an ordinary instance, not a surface: openOMSI's reason, the banks must win)
-        let water_tex = ["texture/water.tga", "Texture/water.tga"].iter().map(|r| doc.dir.join(r)).chain(doc.source.iter().map(|s| s.join("texture").join("water.tga"))).find(|p| p.is_file());
-        for (k, td) in doc.tiles.iter().filter(|(k, _)| is_live(k)) {
-            let Some(w) = td.water else { continue };
-            let key = (*k, WATER);
-            alive.push(key);
-            let org = tile_origin(*k);
-            let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
-            let h = hash_of(&(w.map(f32::to_bits), org.x.to_bits(), org.y.to_bits(), &water_tex));
-            if self.splines.get(&key).map(|e| e.hash != h).unwrap_or(true) {
-                let t = tile_size() as f32;
-                let mut m = MeshData::default();
-                for (i, (x, y)) in [(0.0, 0.0), (t, 0.0), (0.0, t), (t, t)].into_iter().enumerate() {
-                    m.positions.push(Vec3::new(x, y, w[i]));
-                    m.normals.push(Vec3::Z);
-                    m.uvs.push(glam::Vec2::new(x / 40.0, y / 40.0));
-                }
-                m.indices.extend_from_slice(&[0, 1, 2, 2, 1, 3]);
-                m.ranges.push((0, 6, 0));
-                let mut bbox = Aabb::EMPTY;
-                m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
-                let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
-                let mesh = Some(upload_mesh(device, &m));
-                self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), materials: vec![material], instance: 0, in_chunk: false });
+        // (nothing they hang on changed since the last frame - the map in view, the selection,
+        // what was built and what came in - and the last frame's instances are this one's: the
+        // walk over every spline in view, and the look round every tile for its ground cut, took
+        // a third of an idle frame on a city)
+        let taken = self.builder.take();
+        let picked = extras.selected_more.iter().fold(extras.selected_more.len() as u64, |a, s| a.wrapping_add(hash_of(s)));
+        let stamp = self.splines_stamp(extras, assets, picked, anchor);
+        let quiet = taken.is_empty() && self.builder.busy() == 0 && self.splines_quiet.as_ref().is_some_and(|q| q.0 == stamp);
+        let (spline_instances, mut complete) = if let (true, Some(q)) = (quiet, &self.splines_quiet) {
+            (q.1.clone(), q.2)
+        } else {
+            let mut alive: Vec<(TileKey, i64)> = Vec::new();
+            let mut complete = assets.pending == 0;
+            for (key, e) in taken {
+                self.note_spline_materials(&e.materials);
+                self.splines.insert(key, e);
                 self.warm_pending = true;
             }
-            if let Some(e) = self.splines.get_mut(&key) {
-                e.instance = spline_instances.len() as u32;
-                spline_instances.push(Instance::new(Mat4::from_translation(corner), [0.0; 4]));
+            let start = std::time::Instant::now();
+            let mut spline_instances: Vec<Instance> = Vec::new();
+            // (each tile's splines' hashes, made again only when the tile changed)
+            for (k, t) in &disp {
+                let rev = self.display.get(k).map(|d| d.0).unwrap_or(0);
+                if self.spline_hashes.get(k).map(|(r, _)| *r != rev).unwrap_or(true) {
+                    let org = tile_origin(*k);
+                    let v: Vec<u64> = t.splines.iter().map(|s| spline_hash(s, org)).collect();
+                    self.spline_hashes.insert(*k, (rev, std::sync::Arc::new(v)));
+                }
             }
-        }
-        if self.splines.len() > alive.len() {
-            let set: std::collections::HashSet<_> = alive.into_iter().collect();
-            self.splines.retain(|k, _| set.contains(k));
-        }
-        complete &= self.builder.busy() == 0;
-        self.profile.count("splines building", self.builder.busy() as u32);
-        self.sync_chunks(device, &disp, extras, &mut spline_instances, anchor);
+            self.spline_hashes.retain(|k, _| self.display.contains_key(k));
+            for (k, t) in &disp {
+                let org = tile_origin(*k);
+                let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
+                let hashes = self.spline_hashes.get(k).map(|(_, v)| v.clone()).unwrap_or_default();
+                for (i, s) in t.splines.iter().enumerate().filter(|(_, s)| !s.deleted && !s.file.trim().is_empty()) {
+                    alive.push((*k, s.id));
+                    let h = hashes.get(i).copied().unwrap_or_else(|| spline_hash(s, org));
+                    let sel = Some(Sel::Spline(*k, s.id));
+                    let tint = if extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id)) {
+                        SELECTED
+                    } else if extras.hover == sel {
+                        HOVERED
+                    } else {
+                        [0.0; 4]
+                    };
+                    let entry_ok = self.splines.get(&(*k, s.id)).map(|e| e.hash == h).unwrap_or(false);
+                    if !entry_ok {
+                        let Some(model) = assets.spline(&s.file) else { continue };
+                        // (what is being edited is built at once, so it follows the mouse; the
+                        // rest on the builder's threads)
+                        let editing = extras.selected == sel || extras.selected_more.contains(&Sel::Spline(*k, s.id));
+                        if editing && start.elapsed().as_millis() < 25 {
+                            self.builder.forget(&(*k, s.id));
+                            let e = build::make_entry(&model, s, org, corner, h);
+                            self.note_spline_materials(&e.materials);
+                            self.splines.insert((*k, s.id), e);
+                            self.warm_pending = true;
+                        } else {
+                            self.builder.request((*k, s.id), h, model, s, org, corner);
+                            complete = false;
+                        }
+                    }
+                    if let Some(e) = self.splines.get_mut(&(*k, s.id)) {
+                        e.hidden = spline_hidden(e.technical, extras);
+                        e.instance = spline_instances.len() as u32;
+                        spline_instances.push(Instance::new(Mat4::from_translation(corner), tint).surface(SURF_SPLINE));
+                    }
+                }
+            }
+            // each tile's water: one quad at its four corner heights, blended over the ground
+            // (an ordinary instance, not a surface: openOMSI's reason, the banks must win)
+            // (looked for on disk once for the map, not in every frame)
+            let water_key = (doc.dir.clone(), doc.global_rev);
+            if self.water_tex.as_ref().is_none_or(|w| w.0 != water_key) {
+                let found = ["texture/water.tga", "Texture/water.tga"].iter().map(|r| doc.dir.join(r)).chain(doc.source.iter().map(|s| s.join("texture").join("water.tga"))).find(|p| p.is_file());
+                self.water_tex = Some((water_key, found));
+            }
+            let water_tex = self.water_tex.as_ref().and_then(|w| w.1.clone());
+            for (k, td) in doc.tiles.iter().filter(|(k, _)| is_live(k)) {
+                let Some(w) = td.water else { continue };
+                let key = (*k, WATER);
+                alive.push(key);
+                let org = tile_origin(*k);
+                let corner = Vec3::new((org.x - anchor.x) as f32, (org.y - anchor.y) as f32, 0.0);
+                let h = hash_of(&(w.map(f32::to_bits), org.x.to_bits(), org.y.to_bits(), &water_tex));
+                if self.splines.get(&key).map(|e| e.hash != h).unwrap_or(true) {
+                    let t = tile_size() as f32;
+                    let mut m = MeshData::default();
+                    for (i, (x, y)) in [(0.0, 0.0), (t, 0.0), (0.0, t), (t, t)].into_iter().enumerate() {
+                        m.positions.push(Vec3::new(x, y, w[i]));
+                        m.normals.push(Vec3::Z);
+                        m.uvs.push(glam::Vec2::new(x / 40.0, y / 40.0));
+                    }
+                    m.indices.extend_from_slice(&[0, 1, 2, 2, 1, 3]);
+                    m.ranges.push((0, 6, 0));
+                    let mut bbox = Aabb::EMPTY;
+                    m.positions.iter().for_each(|p| bbox.add_sphere(*p + corner, 0.0));
+                    let material = Material { texture: water_tex.clone(), color: [0.22, 0.38, 0.45, 0.72], alpha: Alpha::Blend, glow: None };
+                    let mesh = Some(upload_mesh(device, &m));
+                    self.splines.insert(key, SplineEntry { hash: h, mesh, cpu: None, bounds: [0.0, 0.0, t, t], bbox, cuts: false, drivable: false, technical: true, hidden: false, outlines: Vec::new(), rims: Vec::new(), trough: None, materials: vec![material], instance: 0, in_chunk: false });
+                    self.warm_pending = true;
+                }
+                if let Some(e) = self.splines.get_mut(&key) {
+                    e.instance = spline_instances.len() as u32;
+                    spline_instances.push(Instance::new(Mat4::from_translation(corner), [0.0; 4]));
+                }
+            }
+            if self.splines.len() > alive.len() {
+                let set: std::collections::HashSet<_> = alive.into_iter().collect();
+                self.splines.retain(|k, _| set.contains(k));
+            }
+            complete &= self.builder.busy() == 0;
+            self.profile.count("splines building", self.builder.busy() as u32);
+            self.sync_chunks(device, &disp, extras, &mut spline_instances, anchor);
+            let stamp = self.splines_stamp(extras, assets, picked, anchor);
+            self.splines_quiet = Some((stamp, spline_instances.clone(), complete));
+            (spline_instances, complete)
+        };
 
         self.profile.add("sync.splines", profile::ms(t));
         t = std::time::Instant::now();
-        complete &= self.cut_ground(gpu, doc, assets, &disp);
+        // (the cut is looked at again only when something it hangs on may have changed, or the
+        // last look left one to make)
+        let cut_stamp = hash_of(&(stamp, doc.content_rev(), assets.objects.len(), assets.pending, self.tiles.len()));
+        if !(quiet && self.cut_quiet == Some(cut_stamp)) {
+            let done = self.cut_ground(gpu, doc, assets, &disp);
+            self.cut_quiet = done.then_some(cut_stamp);
+            complete &= done;
+        }
+        self.scene_complete = complete;
         if complete {
             self.profile.ready();
         }
@@ -1913,8 +1989,11 @@ impl Renderer {
         self.profile.add("sync.upload", profile::ms(t));
         t = std::time::Instant::now();
         // materials of everything that will be drawn (when something new is there to draw)
-        if self.warm_pending || assets.pending != self.warm_seen_pending {
+        // (again when pictures arrived since a walk that missed some: one may come in between
+        // two frames, leaving the number still loading as it was)
+        if self.warm_pending || assets.pending != self.warm_seen_pending || (self.warm_missing && assets.textures_arrived != self.warm_seen_arrived) {
             self.warm_seen_pending = assets.pending;
+            self.warm_seen_arrived = assets.textures_arrived;
             self.warm_pending = self.warm_materials(device, queue, assets);
         }
         self.profile.add("sync.materials", profile::ms(t));
@@ -1999,6 +2078,12 @@ impl Renderer {
         chunks.insert(key, Chunk { members, mesh, materials, bbox, instance: 0 });
     }
 
+    /// What the splines' instances hang on, besides the scene's key: the selection (`picked`
+    /// is the extra picks' hash), what is built and loaded, where the map is anchored.
+    fn splines_stamp(&self, extras: &FrameExtras, assets: &Assets, picked: u64, anchor: DVec3) -> u64 {
+        hash_of(&(self.scene_key, extras.selected, extras.hover, picked, self.splines.len(), self.chunks.len(), self.editor_chunks.len(), assets.splines.len(), assets.pending, anchor.x.to_bits(), anchor.y.to_bits()))
+    }
+
     /// The ground cut of the tiles whose roads, surfaces or ground changed, made on the
     /// builder's threads. Whether every tile's cut is up to date.
     fn cut_ground(&mut self, gpu: &Gpu, doc: &Document, assets: &mut Assets, disp: &[(TileKey, Arc<omsi_map::Tile>)]) -> bool {
@@ -2039,7 +2124,8 @@ impl Renderer {
             let (x0, y0) = (key.0 as f64 * ts, key.1 as f64 * ts);
             let (x1, y1) = (x0 + ts, y0 + ts);
             let outside = |b: [f64; 4]| b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1;
-            let mut input = build::CutInput { key, hash: h, splines: Vec::new(), objects: Vec::new(), terrain: doc.tiles.get(&key).map(|t| t.terrain.clone()) };
+            let neighbours = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)].into_iter().filter_map(|(dx, dy)| doc.tiles.get(&(key.0 + dx, key.1 + dy)).map(|t| (t.terrain.clone(), DVec2::new(dx as f64 * ts, dy as f64 * ts)))).collect();
+            let mut input = build::CutInput { key, hash: h, splines: Vec::new(), objects: Vec::new(), terrain: doc.tiles.get(&key).map(|t| t.terrain.clone()), neighbours };
             for dy in -1..=1 {
                 for dx in -1..=1 {
                     let n = (key.0 + dx, key.1 + dy);
@@ -2052,7 +2138,7 @@ impl Renderer {
                         if !e.cuts || outside(b) {
                             continue;
                         }
-                        input.splines.push((m.clone(), org, e.drivable, e.outlines.clone(), e.rims.clone()));
+                        input.splines.push(build::CutSpline { mesh: m.clone(), org, drivable: e.drivable, outlines: e.outlines.clone(), rims: e.rims.clone(), trough: e.trough.clone() });
                     }
                     // surface objects (junction plates, car parks) and [terrainhole] cutters
                     for o in &t.objects {
@@ -2065,7 +2151,9 @@ impl Renderer {
                         if outside([pose.pos.x - r, pose.pos.y - r, pose.pos.x + r, pose.pos.y + r]) {
                             continue;
                         }
-                        input.objects.push((model, pose));
+                        let ground = |x: f64, y: f64| doc.height_at(DVec2::new(x, y)).map(f64::from);
+                        let buried = model.holes.iter().map(|h| build::hole_is_buried(h, &pose, ground)).collect();
+                        input.objects.push((model, pose, buried));
                     }
                 }
             }
@@ -2074,12 +2162,14 @@ impl Renderer {
         // the cuts that are done
         for (key, h, cut) in self.builder.take_cuts() {
             let Some(g) = self.tiles.get_mut(&key) else { continue };
-            g.walls = cut.walls.map(|m| {
+            let upload = |m: MeshData, label: &str| {
                 let verts: Vec<TerrainVertex> = m.positions.iter().zip(&m.normals).map(|(p, n)| TerrainVertex { pos: p.to_array(), normal: n.to_array() }).collect();
-                let vb = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("walls vb"), contents: bytemuck::cast_slice(&verts), usage: wgpu::BufferUsages::VERTEX });
-                let ib = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("walls ib"), contents: bytemuck::cast_slice(&m.indices), usage: wgpu::BufferUsages::INDEX });
+                let vb = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents: bytemuck::cast_slice(&verts), usage: wgpu::BufferUsages::VERTEX });
+                let ib = gpu.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents: bytemuck::cast_slice(&m.indices), usage: wgpu::BufferUsages::INDEX });
                 (vb, ib, m.indices.len() as u32)
-            });
+            };
+            g.walls = cut.walls.map(|m| upload(m, "walls"));
+            g.fitted = cut.fitted.filter(|m| !m.indices.is_empty()).map(|m| upload(m, "fitted ground"));
             g.cut_key = h;
             // (nothing cut: the shared uncut ground; a texture of its own only where roads
             // or plates take the ground away)
@@ -2124,8 +2214,9 @@ impl Renderer {
     /// frame, for ever.
     fn warm_materials(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, assets: &mut Assets) -> bool {
         // (a map still streaming in gives a new scene key nearly every frame: collected again
-        // that often, the list itself cost more than uploading what was in it)
-        let stale = self.warm_for != self.scene_key;
+        // that often, the list itself cost more than uploading what was in it. Spline meshes
+        // bringing materials not put up yet make it stale too: they do not change the key)
+        let stale = warm_list_stale((self.warm_for, self.warm_spline_rev), (self.scene_key, self.spline_mats_rev));
         let waited = self.warm_collect_at.map(|t| t.elapsed().as_millis() > 500).unwrap_or(true);
         // (collected again only once the walk through the list has finished: starting it over
         // half way threw away the work, and a map that is still streaming gives a new scene key
@@ -2134,6 +2225,7 @@ impl Renderer {
         if self.warm_mats.is_empty() || (stale && finished && waited) {
             self.warm_mats = self.scene_materials();
             self.warm_for = self.scene_key;
+            self.warm_spline_rev = self.spline_mats_rev;
             self.warm_collect_at = Some(std::time::Instant::now());
             self.warm_done = 0;
             self.warm_missing = false;
@@ -2157,7 +2249,15 @@ impl Renderer {
         self.warm_mats = mats;
         self.warm_done = i;
         // (a scene changed since the list was made is asked about again until it is collected)
-        more || self.warm_for != self.scene_key
+        more || warm_list_stale((self.warm_for, self.warm_spline_rev), (self.scene_key, self.spline_mats_rev))
+    }
+
+    /// A spline mesh is coming in: if it brings a material the view has not put up yet, the
+    /// materials' list is to be collected again (see `spline_mats_rev`).
+    fn note_spline_materials(&mut self, mats: &[Material]) {
+        if brings_new_material(&self.materials, &self.picture_alpha, mats) {
+            self.spline_mats_rev += 1;
+        }
     }
 
     /// Every material the scene draws, once each.
@@ -2284,9 +2384,6 @@ impl Renderer {
     fn draw_shadows(&self, gpu: &Gpu, encoder: &mut wgpu::CommandEncoder, gl: &Globals, eye: Vec3) -> u32 {
         let mut sg = *gl;
         sg.view_proj = gl.light_vp;
-        // (the eye far off towards the sun: the roads' pull towards it is then a slight bias)
-        let sun = Vec3::new(gl.sun_dir[0], gl.sun_dir[1], gl.sun_dir[2]);
-        sg.eye = [sun.x * 1e5, sun.y * 1e5, sun.z * 1e5, gl.eye[3]];
         gpu.queue.write_buffer(&self.shadow_globals, 0, bytemuck::bytes_of(&sg));
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("shadow"),
@@ -2340,6 +2437,17 @@ impl Renderer {
 
     /// Draw the map into the frame.
     /// `vp`: the 3D view's rectangle in pixels (x, y, width, height).
+    /// What is still being put up (the MCP `shot`'s answer, when it is not complete).
+    pub fn progress(&self) -> serde_json::Value {
+        serde_json::json!({ "splines_built": self.splines.len(), "building": self.builder.busy(), "scene_complete": self.scene_complete, "materials_pending": self.warm_pending, "pictures_missing": self.warm_missing, "materials": self.materials.len(), "textures": self.textures.len() })
+    }
+
+    /// Whether a picture taken now shows everything: the scene cut, the models and their
+    /// textures put up (the MCP `shot` waits for it).
+    pub fn settled(&self, assets: &crate::assets::Assets) -> bool {
+        self.scene_complete && !self.warm_pending && !self.warm_missing && assets.pending == 0
+    }
+
     pub fn draw(&mut self, gpu: &Gpu, encoder: &mut wgpu::CommandEncoder, target: &wgpu::TextureView, cam: &Camera, extras: &FrameExtras, vp: [f32; 4]) {
         let aspect = vp[2] / vp[3].max(1.0);
         let gl = self.globals_for(cam, aspect, extras, self.anchor);
@@ -2380,8 +2488,18 @@ impl Renderer {
             pass.set_index_buffer(self.terrain_index.slice(..), wgpu::IndexFormat::Uint32);
             for t in self.tiles.values().filter(|t| f.sees(&t.bbox) && in_reach(&t.bbox)) {
                 pass.set_bind_group(1, &t.bind, &[]);
-                pass.set_vertex_buffer(0, t.vb.slice(..));
-                pass.draw_indexed(0..self.terrain_index_count, 0, 0..1);
+                match &t.fitted {
+                    Some((vb, ib, n)) => {
+                        pass.set_vertex_buffer(0, vb.slice(..));
+                        pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint32);
+                        pass.draw_indexed(0..*n, 0, 0..1);
+                        pass.set_index_buffer(self.terrain_index.slice(..), wgpu::IndexFormat::Uint32);
+                    }
+                    None => {
+                        pass.set_vertex_buffer(0, t.vb.slice(..));
+                        pass.draw_indexed(0..self.terrain_index_count, 0, 0..1);
+                    }
+                }
                 calls += 1;
             }
             for t in self.tiles.values().filter(|t| f.sees(&t.bbox) && in_reach(&t.bbox)) {
@@ -2397,7 +2515,7 @@ impl Renderer {
         let (Some(dynamic), Some(scene)) = (&self.instances, &self.scene_buf) else { return };
         // what is in view, the same for both layers
         let mut splines: Vec<(&GpuMesh, &Vec<Material>, u32)> = self.chunks.values().filter(|c| !self.hide_splines && f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))).collect();
-        if extras.show_technical && !self.hide_splines {
+        if editor_splines_shown(extras) && !self.hide_splines {
             splines.extend(self.editor_chunks.values().filter(|c| f.sees(&c.bbox) && in_reach(&c.bbox)).filter_map(|c| c.mesh.as_ref().map(|m| (m, &c.materials, c.instance))));
         }
         splines.extend(self.splines.values().filter(|e| !e.hidden && !e.in_chunk && f.sees(&e.bbox) && in_reach(&e.bbox)).filter_map(|e| e.mesh.as_ref().map(|m| (m, &e.materials, e.instance))));
@@ -2705,6 +2823,17 @@ impl Renderer {
 
 /// Draw a mesh's parts whose material is ready (`blend`: only the blended ones, or only the
 /// others; None: all), once for each range of instances. Returns the draw calls made.
+/// Whether the scene's materials' list, collected for (scene key, spline materials count), is
+/// to be collected again now that they are what the second pair says.
+fn warm_list_stale(collected: (u64, u64), now: (u64, u64)) -> bool {
+    collected != now
+}
+
+/// Whether any of `mats` has no bind group in `have` yet (keyed by the mode it is drawn with).
+fn brings_new_material<V>(have: &HashMap<MatKey, V>, pictures: &HashMap<PathBuf, Alpha>, mats: &[Material]) -> bool {
+    mats.iter().any(|m| !have.contains_key(&mat_key_with(m, effective_alpha(m, pictures))))
+}
+
 fn draw_mesh(pass: &mut wgpu::RenderPass, materials: &HashMap<MatKey, wgpu::BindGroup>, mesh: &GpuMesh, mats: &[Material], blend: Option<bool>, ranges: &[std::ops::Range<u32>], pictures: &HashMap<PathBuf, Alpha>) -> u32 {
     let mut calls = 0;
     let mut bound = false;
@@ -2873,7 +3002,13 @@ pub fn hidden_layer(model: &ObjectModel, extras: &FrameExtras) -> bool {
 /// road once that switch is on: `invis_street.sli` has a profile (a 3 m strip of
 /// `helper_path_cars_1.bmp`), and exactly that strip is what the editor shows.
 pub fn spline_hidden(technical: bool, extras: &FrameExtras) -> bool {
-    technical && !extras.show_technical || extras.hide[2]
+    technical && !editor_splines_shown(extras) || extras.hide[2]
+}
+
+/// The `[onlyeditor]` splines' strips are drawn: what the game does not show is on, and the
+/// lanes are not drawn as lines already.
+pub fn editor_splines_shown(extras: &FrameExtras) -> bool {
+    extras.show_technical && !extras.lanes_drawn
 }
 
 /// Which merged mesh a spline belongs in.
@@ -3073,6 +3208,26 @@ mod tests {
         Material { texture: texture.map(PathBuf::from), color: [1.0; 4], alpha, glow: None }
     }
 
+    /// Roads built on the builder's threads after the scene's key settled (a map whose files
+    /// are read quickly) brought materials the list collected before them did not hold: their
+    /// tile's chunk was drawn without bind groups for them, and the roads were not there. A
+    /// mesh bringing a material not put up yet makes the list stale, though the key is the same.
+    #[test]
+    fn a_spline_bringing_a_new_material_makes_the_materials_list_stale() {
+        let pictures = HashMap::new();
+        let (yard, street) = (a_material(Alpha::Opaque, Some("texture/Dvor2.jpg")), a_material(Alpha::Opaque, Some("texture/Doroga4.jpg")));
+        let mut have: HashMap<MatKey, ()> = HashMap::new();
+        have.insert(mat_key_with(&street, Alpha::Opaque), ());
+        assert!(!brings_new_material(&have, &pictures, std::slice::from_ref(&street)));
+        assert!(brings_new_material(&have, &pictures, &[street.clone(), yard.clone()]));
+        // (collected for scene 7 with none such; a yard drive's mesh comes in: the key stays 7)
+        assert!(!warm_list_stale((7, 0), (7, 0)));
+        assert!(warm_list_stale((7, 0), (7, 1)));
+        assert!(warm_list_stale((7, 1), (8, 1)));
+        have.insert(mat_key_with(&yard, Alpha::Opaque), ());
+        assert!(!brings_new_material(&have, &pictures, &[street, yard]));
+    }
+
     #[test]
     fn a_tinted_slot_keeps_blending() {
         let mut pictures = HashMap::new();
@@ -3180,6 +3335,9 @@ mod tests {
         assert!(spline_hidden(true, &extras), "an invisible street is out of the view by default");
         extras.show_technical = true;
         assert!(!spline_hidden(true, &extras), "and is drawn with the editor's switch on");
+        let lanes = FrameExtras { show_technical: true, lanes_drawn: true, ..Default::default() };
+        assert!(spline_hidden(true, &lanes), "but not under the lanes drawn as lines (#66)");
+        assert!(!spline_hidden(false, &lanes));
         // (the roads' own layer still takes it away, as it takes every spline)
         extras.hide[2] = true;
         assert!(spline_hidden(true, &extras));

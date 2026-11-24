@@ -65,7 +65,7 @@ impl Sync {
         if !self.host && (ch.timetable || ch.traffic || ch.descriptions) {
             // (those are kept by the host alone: a guest's change would never reach it)
             history.undo(doc);
-            let back = history.take_changed();
+            let back = history.take_changed(doc);
             self.mark(&back);
             return Some(Note::HostOnly);
         }
@@ -192,7 +192,9 @@ impl Sync {
                 None => log::error!("multiplayer: the IDCodes of this editor ran out before the next block came"),
             }
         }
-        if self.spare.is_none() && !self.asked && *next >= self.ids.0 + (self.ids.1 - self.ids.0) / 2 {
+        doc.own_next_id();
+        let next = doc.global.next_id_code;
+        if self.spare.is_none() && !self.asked && next >= self.ids.0 + (self.ids.1 - self.ids.0) / 2 {
             self.asked = true;
             return Some(Msg::NeedIds);
         }
