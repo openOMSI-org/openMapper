@@ -974,11 +974,6 @@ impl Sheet {
         }
         out
     }
-
-    /// Whether anything the editor owns was found in the file at all.
-    pub fn has_paths(&self) -> bool {
-        !self.crossing.paths.is_empty()
-    }
 }
 
 /// Encode `text` the way the file it comes from was encoded: its byte-order mark, or the
@@ -1020,18 +1015,16 @@ pub fn open(roots: &crate::install::Roots, rel: &str) -> anyhow::Result<(PathBuf
     Ok((path, bytes, Sheet::parse(&text)))
 }
 
-/// Why this object cannot be edited here, if it cannot.
+/// Why this object cannot be edited here, if it cannot. An object with no path of its own is
+/// fine: the editor is where its first one is drawn.
 pub fn why_not(roots: &crate::install::Roots, rel: &str) -> Option<&'static str> {
+    // (`[paths]`: the paths live in a file of their own, which openMapper does not read)
     let path = find(roots, rel)?;
     let text = omsi_cfg::decode_text(&std::fs::read(path).ok()?);
-    if Sheet::parse(&text).has_paths() {
-        return None;
-    }
-    // `[paths]`: the paths live in a file of their own, which openMapper does not read
     if omsi_cfg::split_lines(&text).iter().any(|l| omsi_cfg::keyword_of(l).map(|k| k.eq_ignore_ascii_case("paths")).unwrap_or(false)) {
         return Some(crate::i18n::tr("its paths are in a file of their own (`[paths]`), which this editor does not read", "его пути в отдельном файле (`[paths]`), который этот редактор не читает"));
     }
-    Some(crate::i18n::tr("it has no path", "у него нет путей"))
+    None
 }
 
 /// `..` taken out of a path by its words alone.

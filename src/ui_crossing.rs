@@ -2751,7 +2751,9 @@ impl CrossingPaths {
         self.open_on(ed, roots, k, id)
     }
 
-    /// Read the object's `.sco` for editing. False (and a message) when it has no paths.
+    /// Read the object's `.sco` for editing. False (and a message) when it cannot be read, or
+    /// when its paths are in a file of their own. An object with no path at all opens with an
+    /// empty list: the first one is drawn or started there.
     fn open_on(&mut self, ed: &Editor, roots: &Roots, k: (i32, i32), id: i64) -> bool {
         let Some(doc) = ed.doc.as_ref() else { return false };
         let Some(o) = doc.object(k, id) else { return false };
