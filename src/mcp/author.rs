@@ -55,9 +55,9 @@ impl Server {
     /// `road_type`: a road type of one's own (road maker): lanes, widths, footways, kerb,
     /// median, textures and painted lines. Written to `Splines\openMapper\<name>.sli`.
     pub fn road_type_make(&mut self, a: Args) -> Done {
-        let mut spec_v = a.get("spec").cloned().ok_or("`spec` is needed: {name, lanes_fwd, lanes_back, lane_width, median, median_raised, footway, footway_right, kerb, pocket, roadway_tex, footway_tex, median_tex, marked, markings: [{x, style, color, width, dash, gap}]}")?;
+        let mut spec_v = a.get("spec").cloned().ok_or("`spec` is needed: {name, lanes_fwd, lanes_back, lane_width, median, median_raised, footway, footway_right, left_hand, kerb, pocket, roadway_tex, footway_tex, footway_right_tex, median_tex, marked, markings: [{x, style, color, width, dash, gap}]}")?;
         // (textures: names found in the content folder or the installation)
-        for k in ["roadway_tex", "footway_tex", "median_tex"] {
+        for k in ["roadway_tex", "footway_tex", "footway_right_tex", "median_tex"] {
             if let Some(t) = spec_v.get(k).and_then(|t| t.as_str()).filter(|t| !t.is_empty()).map(str::to_string) {
                 spec_v[k] = json!(self.texture_file(&t)?);
             }

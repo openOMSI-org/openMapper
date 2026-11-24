@@ -229,7 +229,7 @@ impl Server {
                 "center": { "description": "[x, y] world metres" }, "radius": { "type": "number" }
             }), &[], false),
             tool("road_type", "Make a road type of one's own with the road maker (written to Splines\\openMapper\\<name>.sli and usable at once by draw_road, lay_spline, edit_spline): lanes each way, lane width, median (raised or level, its own texture), footways each side, kerb height, bus pocket, textures (names in the content folder or installation; plain asphalt by default) and painted lines (`markings`: [{x: across from the roadway's middle, m, right positive; style: Solid | Dashed | Double | SolidDashed; color: [r, g, b]; width; dash; gap}], or `standard_markings`).", json!({
-                "spec": { "type": "object", "description": "{name, lanes_fwd, lanes_back, lane_width, median, median_raised, footway, footway_right, kerb, pocket, roadway_tex, footway_tex, median_tex, marked, markings}" },
+                "spec": { "type": "object", "description": "{name, lanes_fwd, lanes_back, lane_width, median, median_raised, footway, footway_right, left_hand, kerb, pocket, roadway_tex, footway_tex, footway_right_tex, median_tex, marked, markings}" },
                 "standard_markings": { "type": "boolean" }
             }), &["spec"], false),
             tool("plate", "A junction plate (3+ ends) or a joint (2 ends: linked when in line and of one width, else a short plate tapering between them) from road ends named one by one. The roads are cut back for the corners unless `cut_back` says how far (0: they already end where the plate begins; a list: each end its own, in order). `crossings`: indices of the ends that get a zebra; `lights`: traffic lights.", json!({

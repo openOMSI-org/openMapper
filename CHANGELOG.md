@@ -4,6 +4,12 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.2.3 - 2026-11-23
+
+### Added
+- **The right footway can have a texture of its own** (#139): in the road maker, with "a different one on the right" ticked, a second selector gives the right footway its own picture (grass, gravel), the left one keeps the first, and both previews show them. Left as "like the left one" it runs on as before.
+- **Left-hand roads** (#138): the road maker has a Traffic choice, keeps right or keeps left, which sets the way the lanes' paths run (a one-way road keeps its way); a new road type starts on the map's own side. On a left-hand map every new road whose lanes keep right and which is drawn as wide on one side as on the other is now laid mirrored, so its lanes run the left-hand way, and the roundabout ring with it: no path to flip by hand. A road drawn on from another of the same type goes on as that one is.
+
 ## 0.2.2 - 2026-11-22
 
 ### Changed

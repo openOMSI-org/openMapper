@@ -2883,7 +2883,7 @@ dependencies = [
 
 [[package]]
 name = "openmapper"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "ab_glyph",
  "anyhow",

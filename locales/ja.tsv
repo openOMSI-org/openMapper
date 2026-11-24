@@ -3223,3 +3223,7 @@ Top to bottom	上下
 Dark theme	ダークテーマ
 Light theme	ライトテーマ
 Lit	点灯
+Right footway texture	右側の歩道のテクスチャ
+Left footway texture	左側の歩道のテクスチャ
+like the left one	左と同じ
+The lanes' paths run the way a left-hand map has them (a one-way road keeps its way)	レーンのパスは左側通行のマップと同じ向きになります(一方通行の道路は向きそのまま)

@@ -4688,6 +4688,13 @@ impl Editor {
                 self.road_heights(assets, doc, &pieces, z0, z1)
             }
         };
+        // (on a left-hand map a road whose lanes keep right is laid mirrored, which turns its
+        // lanes round; drawn on from a road of the same type it goes on as that one is)
+        let keeps_left_map = self.doc.as_ref().map(|d| d.global.left_hand_traffic).unwrap_or(false);
+        let mirror = {
+            let from_start = start.spline.and_then(|(k, id, _)| self.doc.as_ref()?.spline(k, id)).filter(|s| s.file.eq_ignore_ascii_case(rel)).map(|s| s.mirror);
+            from_start.unwrap_or_else(|| keeps_left_map && assets.spline(rel).map(|m| keeps_right(&m) && symmetric(&m)).unwrap_or(false))
+        };
         let doc = self.doc.as_mut()?;
         let mut made: Vec<(TileKey, i64)> = Vec::new();
         let ids: Vec<i64> = pieces.iter().map(|_| doc.new_id()).collect();
@@ -4713,6 +4720,7 @@ impl Editor {
                 // (textures run on across the joints)
                 tex_offset: chain,
                 map_chain_offset: Some(chain),
+                mirror,
                 ..sp
             };
             chain += p.length;
@@ -11775,6 +11783,22 @@ fn set_path_link(doc: &mut Document, k: TileKey, id: i64, next: Option<i64>, pre
         }
         t.touch_content();
     }
+}
+
+/// A road type whose car lanes keep right: the lanes that run with the road lie right of
+/// those that run against it.
+fn keeps_right(m: &crate::assets::SplineModel) -> bool {
+    let mean = |dir: i32| {
+        let xs: Vec<f64> = m.def.paths.iter().filter(|p| p.kind == 0 && p.direction == dir).map(|p| p.start[0] as f64).collect();
+        (!xs.is_empty()).then(|| xs.iter().sum::<f64>() / xs.len() as f64)
+    };
+    matches!((mean(0), mean(1)), (Some(with), Some(against)) if with > against)
+}
+
+/// What a road type draws lies as far left of its middle as right (so laying it mirrored
+/// changes nothing but its lanes' ways).
+fn symmetric(m: &crate::assets::SplineModel) -> bool {
+    crate::pocket::extent(m).map(|(lo, hi)| (lo + hi).abs() < 0.3).unwrap_or(true)
 }
 
 fn piece_spline(rel: &str, p: &Seg, profile: &[(f64, f64)], i: usize, org: DVec2) -> MapSpline {
