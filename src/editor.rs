@@ -755,6 +755,9 @@ pub struct Editor {
     pub picked: Option<(Option<Sel>, Option<DVec3>)>,
     /// An object waiting for the one it takes its state from (`[varparent]`) to be clicked.
     pub link_pick: Option<(TileKey, i64)>,
+    /// Every object of a selection waiting for the one they all take their state from: the
+    /// same click as `link_pick`, once for the whole selection.
+    pub link_pick_many: Option<Vec<(TileKey, i64)>>,
     /// The next click reads an asset off the map, or puts an object onto the spline clicked.
     pub sample: Option<Sample>,
     /// Free objects waiting for the spline they should stand on (`Sample::Attach`).
@@ -948,6 +951,7 @@ impl Default for Editor {
             pick_mode: false,
             picked: None,
             link_pick: None,
+            link_pick_many: None,
             sample: None,
             attach_to: Vec::new(),
             sample_browser: false,
@@ -1500,6 +1504,7 @@ impl Editor {
         self.ramp_start = None;
         self.water_pts.clear();
         self.link_pick = None;
+        self.link_pick_many = None;
         self.sample = None;
         self.attach_to.clear();
         self.sample_browser = false;
@@ -2626,6 +2631,14 @@ impl Editor {
             self.link_pick = None;
             match self.hover {
                 Some(Sel::Object(_, p) | Sel::Attached(_, p)) if p != id => self.link_to(k, id, p),
+                _ => self.toast(tr("No object clicked: nothing linked", "Объект не выбран: ничего не связано")),
+            }
+            return;
+        }
+        // (several at once: the same click, and every one of them takes its state from it)
+        if let (Some(many), Tool::Select) = (self.link_pick_many.take(), self.tool) {
+            match self.hover {
+                Some(Sel::Object(_, p) | Sel::Attached(_, p)) => self.link_many_to(&many, p),
                 _ => self.toast(tr("No object clicked: nothing linked", "Объект не выбран: ничего не связано")),
             }
             return;
@@ -9891,20 +9904,80 @@ impl Editor {
     /// The object clicked while linking: `id` takes its state from it, unless that would
     /// close a ring (it takes its own state, through others, from `id`).
     fn link_to(&mut self, k: TileKey, id: i64, parent: i64) {
-        let Some(doc) = self.doc.as_ref() else { return };
+        if self.link_rings(id, parent) {
+            self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
+            return;
+        }
+        self.set_var_parent(k, id, Some(parent));
+        self.toast(tr("Linked", "Связано"));
+    }
+
+    /// Whether `id` taking its state from `parent` would close a ring: `parent` already takes
+    /// its state, through others, from `id`.
+    fn link_rings(&self, id: i64, parent: i64) -> bool {
+        let Some(doc) = self.doc.as_ref() else { return false };
         let mut at = Some(parent);
         for _ in 0..64 {
             match at {
-                Some(p) if p == id => {
-                    self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
-                    return;
-                }
+                Some(p) if p == id => return true,
                 Some(p) => at = selection::var_parent_of(doc, p),
                 None => break,
             }
         }
-        self.set_var_parent(k, id, Some(parent));
-        self.toast(tr("Linked", "Связано"));
+        false
+    }
+
+    /// Every one of these takes its state from `parent` (`[varparent]`), as one step: a
+    /// selection of signal heads on one crossing, of stop displays on one stop. The ones the
+    /// link would close a ring on, and `parent` itself, are left as they are.
+    pub fn link_many_to(&mut self, many: &[(TileKey, i64)], parent: i64) {
+        let take: Vec<(TileKey, i64)> = many.iter().copied().filter(|(_, id)| *id != parent && !self.link_rings(*id, parent)).collect();
+        if take.is_empty() {
+            self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let n = take.len();
+        self.history.begin(tr("Link to an object", "Связать с объектом"));
+        for (k, id) in take {
+            self.history.touch_tile(doc, k);
+            if let Some(o) = selection::any_object_mut(doc, k, id) {
+                o.var_parent = Some(parent);
+            } else if let Some(a) = doc.attachment_mut(k, id) {
+                a.var_parent = Some(parent);
+            }
+            if let Some(t) = doc.tiles.get_mut(&k) {
+                t.touch_content();
+            }
+        }
+        self.history.commit();
+        self.toast(format!("{} {n}", tr("Linked", "Связано")));
+    }
+
+    /// Every one of these forgets the object it takes its state from (`[varparent]`), as one
+    /// step.
+    pub fn unlink_many(&mut self, many: &[(TileKey, i64)]) {
+        let linked: Vec<(TileKey, i64)> = match self.doc.as_ref() {
+            Some(doc) => many.iter().copied().filter(|(k, id)| crate::selection::state_holder(doc, *k, *id).and_then(|(_, p, _)| p).is_some()).collect(),
+            None => return,
+        };
+        if linked.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        self.history.begin(tr("Unlink", "Отвязать"));
+        for (k, id) in linked {
+            self.history.touch_tile(doc, k);
+            if let Some(o) = selection::any_object_mut(doc, k, id) {
+                o.var_parent = None;
+            } else if let Some(a) = doc.attachment_mut(k, id) {
+                a.var_parent = None;
+            }
+            if let Some(t) = doc.tiles.get_mut(&k) {
+                t.touch_content();
+            }
+        }
+        self.history.commit();
     }
 
     /// Which light of its parent's program a signal head shows (its first label).
@@ -14725,6 +14798,60 @@ mod tests {
         let d = ed.doc.as_ref().unwrap();
         assert_eq!(d.attachment((0, 0), 2).unwrap().strings, vec!["5".to_string()]);
         assert_eq!(d.attachment((0, 0), 3).unwrap().strings, vec!["5".to_string()]);
+    }
+
+    /// Several objects take their state from one object at once, in one step; a link that
+    /// would close a ring, and the parent itself, are left out; unlinking them is one step too.
+    #[test]
+    fn a_whole_selection_takes_its_state_from_one_object() {
+        let mut doc = flat_map(1);
+        for (id, x) in [(1, 100.0), (2, 110.0), (3, 120.0), (4, 130.0)] {
+            add_object(&mut doc, (0, 0), id, x, 100.0);
+        }
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let sels = [((0, 0), 2), ((0, 0), 3), ((0, 0), 4)];
+        ed.set_selection(sels.iter().map(|(k, id)| Sel::Object(*k, *id)).collect());
+        ed.link_many_to(&sels, 1);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            for (_, id) in sels {
+                assert_eq!(crate::selection::var_parent_of(d, id), Some(1), "object {id}");
+            }
+            assert_eq!(crate::selection::var_parent_of(d, 1), None, "the parent takes its state from nothing");
+        }
+        // (the whole lot is one step)
+        ed.undo();
+        {
+            let d = ed.doc.as_ref().unwrap();
+            for (_, id) in sels {
+                assert_eq!(crate::selection::var_parent_of(d, id), None, "object {id} undone");
+            }
+        }
+        // (the parent among the picked ones is not linked to itself)
+        ed.link_many_to(&[((0, 0), 1), ((0, 0), 2)], 1);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 1), None);
+            assert_eq!(crate::selection::var_parent_of(d, 2), Some(1));
+        }
+        // (3 takes its state from 1: 1 taking it from 3 would close a ring, and is left out)
+        ed.link_many_to(&[((0, 0), 3)], 1);
+        ed.link_many_to(&[((0, 0), 1)], 3);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 3), Some(1));
+            assert_eq!(crate::selection::var_parent_of(d, 1), None, "no ring");
+        }
+        // (and forgetting it, for several at once)
+        ed.unlink_many(&[((0, 0), 2), ((0, 0), 3)]);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 2), None);
+            assert_eq!(crate::selection::var_parent_of(d, 3), None);
+        }
+        ed.undo();
+        assert_eq!(ed.doc.as_ref().and_then(|d| crate::selection::var_parent_of(d, 3)), Some(1), "one step back");
     }
 
     #[test]
