@@ -325,15 +325,28 @@ pub struct RotGrab {
     /// The splines linked on after a single selected spline, where they stood when the turn
     /// began. They swing with it and are not themselves selected.
     tail: Vec<Origin>,
+    /// Pitch and bank of each object when the turn began. X adds to the pitch, Y to the bank;
+    /// with no axis held, or with Z, only the heading changes, as before.
+    tilt: Vec<(Sel, f64, f64)>,
+    /// 0: X (pitch), 1: Y (bank), 2: Z (heading). None is Z.
+    axis: Option<u8>,
+    /// Pitch or bank was written during this turn, so going back to Z has to put them back.
+    tilted: bool,
 }
 
 impl RotGrab {
     /// The turn as it is written: "12.3°", with what was typed after it.
     pub fn readout(&self) -> String {
+        let axis = match self.axis {
+            Some(0) => "X ",
+            Some(1) => "Y ",
+            Some(2) => "Z ",
+            _ => "",
+        };
         if self.typed.is_empty() {
-            format!("{:.1}°", self.done)
+            format!("{axis}{:.1}°", self.done)
         } else {
-            format!("{:.1}° ({})", self.done, self.typed)
+            format!("{axis}{:.1}° ({})", self.done, self.typed)
         }
     }
 }
@@ -3030,7 +3043,8 @@ impl Editor {
         self.history.begin(tr("Rotate", "Поворот"));
         let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
         let tail = self.doc.as_ref().map(|d| spline_tail(d, &sels)).unwrap_or_default();
-        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail });
+        let tilt = self.doc.as_ref().map(|d| object_tilt(d, &sels)).unwrap_or_default();
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail, tilt, axis: None, tilted: false });
         self.xform_value = 0.0;
         true
     }
@@ -3118,6 +3132,15 @@ impl Editor {
         self.rot_follow(mouse, false);
     }
 
+    /// Turn about X (pitch), Y (bank) or Z (heading). The same key again goes back to Z, which
+    /// is also what R does when no axis has been pressed.
+    pub fn rot_axis(&mut self, axis: u8) {
+        let Some(g) = self.rot.as_mut() else { return };
+        g.axis = if g.axis == Some(axis) { None } else { Some(axis) };
+        g.typed.clear();
+        g.asked = f64::NAN;
+    }
+
     /// Keep the turn where it stands.
     pub fn rot_confirm(&mut self) -> bool {
         let Some(g) = self.rot.take() else { return false };
@@ -3160,6 +3183,9 @@ impl Editor {
                 selection::transform_known(doc, &mut self.history, &tail, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
             }
             self.set_selection_unique(now);
+            if self.rot.as_ref().is_some_and(|g| g.tilted || matches!(g.axis, Some(0) | Some(1))) {
+                self.apply_tilt(0.0);
+            }
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
                 g.tail = tail;
@@ -3170,6 +3196,8 @@ impl Editor {
         }
         let Some(g) = self.rot.as_mut() else { return };
         let pivot = g.pivot;
+        let flat = matches!(g.axis, Some(0) | Some(1));
+        let turn = if flat { 0.0 } else { deg };
         let mut from = std::mem::take(&mut g.from);
         let mut tail = std::mem::take(&mut g.tail);
         let mut arms = std::mem::take(&mut g.arms);
@@ -3182,19 +3210,78 @@ impl Editor {
             }
             return;
         };
-        let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        let now = selection::transform_known(doc, &mut self.history, &from, pivot, turn, DVec2::ZERO, links);
         if !tail.is_empty() {
-            selection::transform_known(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO, links);
+            selection::transform_known(doc, &mut self.history, &tail, pivot, turn, DVec2::ZERO, links);
         }
         self.set_selection_unique(now);
-        self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
-        self.miter_if_one_spline();
+        self.carry(&arms, pivot, turn, DVec2::ZERO, 0.0);
+        if flat {
+            self.apply_tilt(deg);
+        } else {
+            if self.rot.as_ref().is_some_and(|g| g.tilted) {
+                self.apply_tilt(0.0);
+            }
+            self.miter_if_one_spline();
+        }
         self.xform_value = deg;
         if let Some(g) = self.rot.as_mut() {
             g.from = std::mem::take(&mut from);
             g.tail = std::mem::take(&mut tail);
             g.arms = std::mem::take(&mut arms);
             g.done = deg;
+        }
+    }
+
+    /// Set each object's pitch and bank from where the turn began. X adds `deg` to the pitch,
+    /// Y to the bank; any other axis puts both back, so a heading turn does not keep a tilt
+    /// from a moment ago.
+    fn apply_tilt(&mut self, deg: f64) {
+        let Some(g) = self.rot.as_ref() else { return };
+        let axis = g.axis;
+        let tilt = g.tilt.clone();
+        if tilt.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        for (sel, pitch, bank) in tilt {
+            let (p, b) = match axis {
+                Some(0) => (pitch + deg, bank),
+                Some(1) => (pitch, bank + deg),
+                _ => (pitch, bank),
+            };
+            match sel {
+                Sel::Object(k, id) => {
+                    let cur = if doc.object(k, id).is_some() {
+                        Some(k)
+                    } else {
+                        doc.tiles.iter().find(|(_, t)| t.tile.objects.iter().any(|o| o.id == id)).map(|(kk, _)| *kk)
+                    };
+                    let Some(cur) = cur else { continue };
+                    self.history.touch_tile(doc, cur);
+                    if let Some(o) = doc.object_mut(cur, id) {
+                        o.rot[1] = p;
+                        o.rot[2] = b;
+                    }
+                    if let Some(t) = doc.tiles.get_mut(&cur) {
+                        t.touch_content();
+                    }
+                }
+                Sel::Attached(k, id) => {
+                    self.history.touch_tile(doc, k);
+                    if let Some(a) = doc.attachment_mut(k, id) {
+                        a.rot[1] = p;
+                        a.rot[2] = b;
+                    }
+                    if let Some(t) = doc.tiles.get_mut(&k) {
+                        t.touch_content();
+                    }
+                }
+                Sel::Spline(_, _) => {}
+            }
+        }
+        if let Some(g) = self.rot.as_mut() {
+            g.tilted = matches!(axis, Some(0) | Some(1));
         }
     }
 
@@ -11944,6 +12031,17 @@ fn spline_tail(doc: &Document, sels: &[Sel]) -> Vec<Origin> {
     reshape::chain_after(doc, id).into_iter().filter_map(|(k, sid)| selection::origin_of(doc, Sel::Spline(k, sid))).collect()
 }
 
+/// Pitch and bank of the objects in a selection, as they stand when R takes hold.
+fn object_tilt(doc: &Document, sels: &[Sel]) -> Vec<(Sel, f64, f64)> {
+    sels.iter()
+        .filter_map(|s| match *s {
+            Sel::Object(k, id) => doc.object(k, id).map(|o| (*s, o.rot[1], o.rot[2])),
+            Sel::Attached(k, id) => doc.attachment(k, id).map(|a| (*s, a.rot[1], a.rot[2])),
+            Sel::Spline(_, _) => None,
+        })
+        .collect()
+}
+
 /// The highest the ground sample at `p` may lie without its triangles showing through a
 /// road beside it (see `conform_ground`), if a road is that near.
 fn ground_cap(roads: &[(DVec2, f64, f64)], p: DVec2, cell: f64) -> Option<f64> {
@@ -15076,6 +15174,40 @@ mod tests {
         assert!((heading(&ed) - was).abs() > 1.0, "it had turned");
         assert!(ed.rot_cancel());
         assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "back to the kept turn: {}", heading(&ed) - was);
+    }
+
+    /// R on an object turns its heading (Z). X turns the pitch, Y the bank, and Z (or no key)
+    /// is the heading again. The object stays where it stands when the axis is X or Y.
+    #[test]
+    fn r_on_an_object_turns_the_axis_pressed() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.set_selection(vec![Sel::Object((0, 0), 1)]);
+        let o = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        let (h, p, b, x, y) = (o.rot[0], o.rot[1], o.rot[2], o.pos[0], o.pos[1]);
+        assert!(ed.rot_begin((10.0, 10.0)));
+        ed.rot_follow((30.0, 10.0), false);
+        let z = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((z.rot[0] - h - 10.0).abs() < 1e-4, "no axis is the heading: {}", z.rot[0] - h);
+        assert!((z.rot[1] - p).abs() < 1e-6 && (z.rot[2] - b).abs() < 1e-6);
+        ed.rot_axis(0);
+        ed.rot_follow((30.0, 10.0), false);
+        let xed = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((xed.rot[1] - p - 10.0).abs() < 1e-4, "X is the pitch: {}", xed.rot[1] - p);
+        assert!((xed.rot[0] - h).abs() < 1e-4 && (xed.rot[2] - b).abs() < 1e-6);
+        assert!((xed.pos[0] - x).abs() < 1e-6 && (xed.pos[1] - y).abs() < 1e-6, "it does not move");
+        ed.rot_axis(1);
+        ed.rot_follow((30.0, 10.0), false);
+        let yed = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((yed.rot[2] - b - 10.0).abs() < 1e-4, "Y is the bank: {}", yed.rot[2] - b);
+        assert!((yed.rot[0] - h).abs() < 1e-4 && (yed.rot[1] - p).abs() < 1e-6);
+        ed.rot_axis(2);
+        ed.rot_follow((30.0, 10.0), false);
+        let again = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((again.rot[0] - h - 10.0).abs() < 1e-4, "Z is the heading again");
+        assert!((again.rot[1] - p).abs() < 1e-6 && (again.rot[2] - b).abs() < 1e-6);
+        assert!(ed.rot_confirm());
     }
 
     /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.
