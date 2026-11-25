@@ -3136,6 +3136,10 @@ impl Editor {
     /// is also what R does when no axis has been pressed.
     pub fn rot_axis(&mut self, axis: u8) {
         let Some(g) = self.rot.as_mut() else { return };
+        // (only objects tilt: splines alone keep turning about Z)
+        if axis < 2 && g.tilt.is_empty() {
+            return;
+        }
         g.axis = if g.axis == Some(axis) { None } else { Some(axis) };
         g.typed.clear();
         g.asked = f64::NAN;
