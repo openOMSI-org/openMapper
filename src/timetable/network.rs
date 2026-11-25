@@ -188,11 +188,15 @@ impl Network {
     pub fn build(doc: &Document, files: &mut Files) -> Network {
         let mut net = Network::default();
         let rows = crate::place::row_index(doc);
-        for (k, t) in &doc.tiles {
+        for (k, td) in &doc.tiles {
             let org = tile_origin(*k);
+            // (the tile as the game drives it: the chrono scenarios active today laid over,
+            // as the view draws it. A junction a scenario puts in had no lanes here, and a
+            // way could not be picked through it, #147)
+            let t = td.display(k.1);
             // OMSI numbers a tile's paths through its splines, then its objects
             let mut internal = 0;
-            for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+            for s in t.splines.iter().filter(|s| !s.deleted) {
                 let Some(info) = files.get(&s.file) else {
                     net.missing_files += 1;
                     continue;
@@ -216,15 +220,15 @@ impl Network {
                 internal += info.paths.len();
             }
             // (a stop standing on a spline is an attachment, not an object of the tile)
-            for a in t.tile.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
+            for a in t.spline_attachments.iter().filter(|a| a.repeater.is_none()) {
                 if !files.get(&a.file).map(|i| i.is_bus_stop).unwrap_or(false) {
                     continue;
                 }
-                if let Some(first) = crate::place::row_objects(a, &t.tile.splines, org, &rows).first() {
+                if let Some(first) = crate::place::row_objects(a, &t.splines, org, &rows).first() {
                     net.stops.push((*k, a.id, first.pose.pos));
                 }
             }
-            for o in &t.tile.objects {
+            for o in &t.objects {
                 let Some(info) = files.get(&o.file) else {
                     net.missing_files += 1;
                     continue;

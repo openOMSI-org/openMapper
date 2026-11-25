@@ -215,7 +215,9 @@ pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
         if (org + DVec2::splat(crate::doc::tile_size() * 0.5) - centre).length() > radius + crate::doc::tile_size() {
             continue;
         }
-        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+        // (as the view draws the tile: with today's chrono scenarios laid over)
+        let t = t.display(k.1);
+        for s in t.splines.iter().filter(|s| !s.deleted) {
             let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
             if (start - centre).length() > s.length + radius + 40.0 {
                 continue;
@@ -243,7 +245,7 @@ pub fn tips_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                 push(&mut tips, b0, b0 - b1, true, direction, p.kind);
             }
         }
-        for o in &t.tile.objects {
+        for o in &t.objects {
             if skip == Some((*k, o.id)) {
                 continue;
             }
@@ -292,7 +294,10 @@ pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
         if (org + DVec2::splat(crate::doc::tile_size() * 0.5) - centre).length() > radius + crate::doc::tile_size() {
             continue;
         }
-        for s in t.tile.splines.iter().filter(|s| !s.deleted) {
+        // (with the chrono scenarios active today laid over, as the view draws the tile: a
+        // junction one puts in showed no lanes, #147)
+        let t = t.display(k.1);
+        for s in t.splines.iter().filter(|s| !s.deleted) {
             let start = DVec2::new(org.x + s.pos[0], org.y + s.pos[1]);
             // (a lane sits a few metres off the centre line, so the line's own reach is
             // not quite enough)
@@ -321,7 +326,7 @@ pub fn near_skipping(doc: &Document, assets: &mut Assets, centre: DVec2, radius:
                 lanes.push(Lane { pts, kind: p.kind, direction, spline: Some((*k, s.id, s.length)), object: None, index });
             }
         }
-        for o in &t.tile.objects {
+        for o in &t.objects {
             if skip == Some((*k, o.id)) {
                 continue;
             }

@@ -771,3 +771,23 @@ fn every_way_a_stop_is_served_has_a_name() {
     assert_eq!(names.len(), 5);
     assert!(crate::stops::StopKind::SERVE.contains(&2));
 }
+
+/// A junction a chrono scenario puts onto the map (active today, so the view draws it) is in
+/// the network, and its lanes are drawn: a way could not be picked through it (#147).
+#[test]
+fn a_junction_put_in_by_a_chrono_scenario_has_lanes() {
+    let root = scratch("chrono-lanes");
+    let sco = omsi_cfg::resolve_path(&root, "Sceneryobjects\\Test\\junction.sco");
+    std::fs::create_dir_all(sco.parent().unwrap()).unwrap();
+    // one car lane, 10 m straight on
+    std::fs::write(&sco, "[friendlyname]\njunction\n\n[path]\n0\n0\n0\n0\n0\n10\n0\n0\n0\n3\n0\n0\n").unwrap();
+    let mut doc = crate::selection::tests::flat_map(1);
+    let obj = omsi_map::MapObject { file: "Sceneryobjects\\Test\\junction.sco".into(), id: 7, pos: [100.0, 100.0, 0.0], ..Default::default() };
+    let key = PathKey { tile: (0, 0), id: 7, path: 0 };
+    assert!(!Network::build(&doc, &mut Files::new(vec![root.clone()])).by_key.contains_key(&key));
+    doc.tiles.get_mut(&(0, 0)).unwrap().chrono.push(omsi_map::Tile { objects: vec![obj], ..Default::default() });
+    let net = Network::build(&doc, &mut Files::new(vec![root.clone()]));
+    let lane = net.by_key.get(&key).and_then(|l| l.first()).map(|&i| &net.lanes[i]).expect("the chrono junction's lane");
+    assert!((lane.length() - 10.0).abs() < 0.1, "{}", lane.length());
+    let _ = std::fs::remove_dir_all(&root);
+}
