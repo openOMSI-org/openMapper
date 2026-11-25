@@ -362,10 +362,10 @@ fn a_utf8_file_keeps_its_bytes() {
 }
 
 #[test]
-fn an_object_without_paths_is_not_offered() {
+fn an_object_without_paths_is_read_and_written_back_as_it_was() {
     let text = "[friendlyname]\nHouse\n[mesh]\nhouse.o3d\n";
     let s = Sheet::parse(text);
-    assert!(!s.has_paths());
+    assert!(s.crossing.paths.is_empty());
     // and a sheet with nothing owned leaves the file as it was
     assert_eq!(s.text(), text);
 }
@@ -421,6 +421,22 @@ fn scratch_roots(name: &str) -> crate::install::Roots {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("content")).unwrap();
     crate::install::Roots { omsi: dir.join("omsi"), content: dir.join("content") }
+}
+
+/// An object with no path of its own opens in the editor all the same: that is where its first
+/// one is drawn. One whose paths live in a `[paths]` file of their own is still out of reach.
+#[test]
+fn an_object_with_no_path_of_its_own_is_still_the_editors() {
+    let roots = scratch_roots("nopath");
+    let dir = roots.content.join("Sceneryobjects").join("Test");
+    std::fs::create_dir_all(&dir).unwrap();
+    let rel = "Sceneryobjects\\Test\\plain.sco";
+    std::fs::write(omsi_cfg::resolve_path(&roots.content, rel), "[friendlyname]\nplain\n\n[model]\nmodel\\plain.x\n").unwrap();
+    assert_eq!(why_not(&roots, rel), None, "no path yet, and the editor is where one is drawn");
+    let spread = "Sceneryobjects\\Test\\spread.sco";
+    std::fs::write(omsi_cfg::resolve_path(&roots.content, spread), "[friendlyname]\nspread\n\n[paths]\npaths\\spread.apf\n").unwrap();
+    assert!(why_not(&roots, spread).is_some(), "its paths are in a file this editor does not read");
+    let _ = std::fs::remove_dir_all(roots.content.parent().unwrap());
 }
 
 /// Writing into the object's own file keeps the file as it stood beside it as a `.bak`, and

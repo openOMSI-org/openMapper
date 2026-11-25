@@ -119,9 +119,11 @@ fn delete_object(ed: &mut Editor, k: TileKey, id: i64) {
     doc.delete_object(k, id);
 }
 
-/// The selected object made an openMapper object of its own (a copy of its type): what its
-/// mesh, materials and lamps are can then be edited. Its file, or the new one.
-pub fn make_editable(ed: &mut Editor, roots: &Roots, lib: &Library, sel: Sel) -> anyhow::Result<String> {
+/// The selected object's editable source: the file it has when it is an openMapper object
+/// already, or a copy of its type made beside the map's own objects. The map object keeps the
+/// file it had: [`point_at`] is what hands it the copy, so a Tab pressed by mistake can be
+/// taken back with [`discard_copy`] and leave neither a copy nor a changed map.
+pub fn copy_for_edit(ed: &mut Editor, roots: &Roots, lib: &Library, sel: Sel) -> anyhow::Result<String> {
     let p = placed(ed, lib, sel).ok_or_else(|| anyhow::anyhow!("{}", tr("select an object first", "сначала выделите объект")))?;
     if editable::is_editable(roots, &p.obj.file) {
         return Ok(p.obj.file);
@@ -129,9 +131,37 @@ pub fn make_editable(ed: &mut Editor, roots: &Roots, lib: &Library, sel: Sel) ->
     let (rel, dir) = new_for(roots, ed, &p.obj.file, "");
     let src = editable::source_of(roots, &p.obj.file, &dir)?;
     editable::save(roots, &rel, &src)?;
+    // (the catalogue need not be read again, and the models need not be dropped, for a copy
+    // made only to be edited: a Tab pressed by mistake should cost nothing at all)
+    crate::hot::own_change();
+    Ok(rel)
+}
+
+/// The map object pointed at `rel`, one of openMapper's own (one undo step).
+pub fn point_at(ed: &mut Editor, sel: Sel, rel: &str) {
+    let Sel::Object(k, id) = sel else { return };
     ed.history.begin(tr("Make editable", "Сделать редактируемым"));
-    set_file(ed, p.k, p.obj.id, &rel);
+    set_file(ed, k, id, rel);
     ed.history.commit();
+}
+
+/// A copy made only to read an object's mesh, and left as it was: its folder goes. Nothing
+/// points at it, so nothing else changes.
+pub fn discard_copy(roots: &Roots, rel: &str) {
+    let (dir, _) = editable::folder_of(roots, rel);
+    let _ = std::fs::remove_dir_all(dir);
+    // (its going is not the catalogue's news either)
+    crate::hot::own_change();
+}
+
+/// The selected object made an openMapper object of its own (a copy of its type): what its
+/// mesh, materials and lamps are can then be edited. Its file, or the new one.
+pub fn make_editable(ed: &mut Editor, roots: &Roots, lib: &Library, sel: Sel) -> anyhow::Result<String> {
+    let was = placed(ed, lib, sel).map(|p| p.obj.file);
+    let rel = copy_for_edit(ed, roots, lib, sel)?;
+    if !was.as_deref().map(|w| w.eq_ignore_ascii_case(&rel)).unwrap_or(false) {
+        point_at(ed, sel, &rel);
+    }
     Ok(rel)
 }
 
@@ -364,4 +394,79 @@ pub fn boolean(ed: &mut Editor, roots: &Roots, lib: &Library, op: Bool, keep: bo
     ed.history.commit();
     ed.set_selection(out.clone());
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::selection::tests::{add_object, flat_map};
+
+    fn roots(tag: &str) -> (std::path::PathBuf, Roots) {
+        let dir = std::env::temp_dir().join(format!("om-meshops-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("content")).unwrap();
+        std::fs::create_dir_all(dir.join("omsi")).unwrap();
+        (dir.clone(), Roots { omsi: dir.join("omsi"), content: dir.join("content") })
+    }
+
+    /// An object of the installation: its `.sco` and its meshes, and no openMapper source
+    /// beside it.
+    fn an_installed_object(roots: &Roots) -> String {
+        let rel = "Sceneryobjects\\Test\\Lamp\\Lamp.sco".to_string();
+        let src = crate::editable::primitive_source(openmapper_mesh::primitives::Primitive::Cube { size: Vec3::splat(1.0) });
+        crate::editable::save(roots, &rel, &src).unwrap();
+        let (dir, _) = crate::editable::folder_of(roots, &rel);
+        for e in std::fs::read_dir(&dir).unwrap().flatten() {
+            if e.path().extension().map(|x| x == "json").unwrap_or(false) {
+                let _ = std::fs::remove_file(e.path());
+            }
+        }
+        assert!(!crate::editable::is_editable(roots, &rel));
+        rel
+    }
+
+    /// A Tab on an object that is not openMapper's reads a copy of its own, but the map object
+    /// keeps the file it had: taken back, nothing is left and nothing has to be undone.
+    #[test]
+    fn a_copy_for_reading_a_mesh_leaves_the_map_alone_until_it_is_wanted() {
+        let (dir, roots) = roots("stray");
+        let rel = an_installed_object(&roots);
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = rel.clone();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let lib = Library::default();
+        let sel = Sel::Object((0, 0), 1);
+        let copy = copy_for_edit(&mut ed, &roots, &lib, sel).unwrap();
+        assert!(!copy.eq_ignore_ascii_case(&rel), "a copy of its own: {copy}");
+        assert!(crate::editable::is_editable(&roots, &copy));
+        assert_eq!(ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().file, rel, "the map still names the object it had");
+        assert!(!ed.history.can_undo(), "reading the mesh is not a change of the map");
+        // (a Tab and a Tab back: the copy goes, and nothing else does)
+        discard_copy(&roots, &copy);
+        assert!(!crate::editable::folder_of(&roots, &copy).0.exists(), "no folder left behind");
+        assert_eq!(ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().file, rel);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The first change hands the map object the copy, in one step that can be undone.
+    #[test]
+    fn pointing_at_the_copy_is_one_step_of_the_map() {
+        let (dir, roots) = roots("point");
+        let rel = an_installed_object(&roots);
+        let mut doc = flat_map(1);
+        add_object(&mut doc, (0, 0), 1, 100.0, 100.0);
+        doc.tiles.get_mut(&(0, 0)).unwrap().tile.objects[0].file = rel.clone();
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let lib = Library::default();
+        let sel = Sel::Object((0, 0), 1);
+        let copy = copy_for_edit(&mut ed, &roots, &lib, sel).unwrap();
+        point_at(&mut ed, sel, &copy);
+        assert_eq!(ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().file, copy);
+        ed.undo();
+        assert_eq!(ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap().file, rel, "one step back");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

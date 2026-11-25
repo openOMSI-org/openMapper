@@ -325,15 +325,28 @@ pub struct RotGrab {
     /// The splines linked on after a single selected spline, where they stood when the turn
     /// began. They swing with it and are not themselves selected.
     tail: Vec<Origin>,
+    /// Pitch and bank of each object when the turn began. X adds to the pitch, Y to the bank;
+    /// with no axis held, or with Z, only the heading changes, as before.
+    tilt: Vec<(Sel, f64, f64)>,
+    /// 0: X (pitch), 1: Y (bank), 2: Z (heading). None is Z.
+    axis: Option<u8>,
+    /// Pitch or bank was written during this turn, so going back to Z has to put them back.
+    tilted: bool,
 }
 
 impl RotGrab {
     /// The turn as it is written: "12.3°", with what was typed after it.
     pub fn readout(&self) -> String {
+        let axis = match self.axis {
+            Some(0) => "X ",
+            Some(1) => "Y ",
+            Some(2) => "Z ",
+            _ => "",
+        };
         if self.typed.is_empty() {
-            format!("{:.1}°", self.done)
+            format!("{axis}{:.1}°", self.done)
         } else {
-            format!("{:.1}° ({})", self.done, self.typed)
+            format!("{axis}{:.1}° ({})", self.done, self.typed)
         }
     }
 }
@@ -755,6 +768,9 @@ pub struct Editor {
     pub picked: Option<(Option<Sel>, Option<DVec3>)>,
     /// An object waiting for the one it takes its state from (`[varparent]`) to be clicked.
     pub link_pick: Option<(TileKey, i64)>,
+    /// Every object of a selection waiting for the one they all take their state from: the
+    /// same click as `link_pick`, once for the whole selection.
+    pub link_pick_many: Option<Vec<(TileKey, i64)>>,
     /// The next click reads an asset off the map, or puts an object onto the spline clicked.
     pub sample: Option<Sample>,
     /// Free objects waiting for the spline they should stand on (`Sample::Attach`).
@@ -948,6 +964,7 @@ impl Default for Editor {
             pick_mode: false,
             picked: None,
             link_pick: None,
+            link_pick_many: None,
             sample: None,
             attach_to: Vec::new(),
             sample_browser: false,
@@ -1500,6 +1517,7 @@ impl Editor {
         self.ramp_start = None;
         self.water_pts.clear();
         self.link_pick = None;
+        self.link_pick_many = None;
         self.sample = None;
         self.attach_to.clear();
         self.sample_browser = false;
@@ -2630,6 +2648,14 @@ impl Editor {
             }
             return;
         }
+        // (several at once: the same click, and every one of them takes its state from it)
+        if let (Some(many), Tool::Select) = (self.link_pick_many.take(), self.tool) {
+            match self.hover {
+                Some(Sel::Object(_, p) | Sel::Attached(_, p)) => self.link_many_to(&many, p),
+                _ => self.toast(tr("No object clicked: nothing linked", "Объект не выбран: ничего не связано")),
+            }
+            return;
+        }
         if self.pick_mode && self.tool == Tool::Select {
             self.picked = Some((self.hover, self.cursor));
             return;
@@ -3030,7 +3056,8 @@ impl Editor {
         self.history.begin(tr("Rotate", "Поворот"));
         let start_angle = pivot_px.map(|q| screen_angle(q, mouse)).unwrap_or(0.0);
         let tail = self.doc.as_ref().map(|d| spline_tail(d, &sels)).unwrap_or_default();
-        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail });
+        let tilt = self.doc.as_ref().map(|d| object_tilt(d, &sels)).unwrap_or_default();
+        self.rot = Some(RotGrab { from, arms, pivot, pivot_px, start_angle, start_mouse: mouse, typed: String::new(), done: 0.0, asked: f64::NAN, links, tail, tilt, axis: None, tilted: false });
         self.xform_value = 0.0;
         true
     }
@@ -3118,6 +3145,19 @@ impl Editor {
         self.rot_follow(mouse, false);
     }
 
+    /// Turn about X (pitch), Y (bank) or Z (heading). The same key again goes back to Z, which
+    /// is also what R does when no axis has been pressed.
+    pub fn rot_axis(&mut self, axis: u8) {
+        let Some(g) = self.rot.as_mut() else { return };
+        // (only objects tilt: splines alone keep turning about Z)
+        if axis < 2 && g.tilt.is_empty() {
+            return;
+        }
+        g.axis = if g.axis == Some(axis) { None } else { Some(axis) };
+        g.typed.clear();
+        g.asked = f64::NAN;
+    }
+
     /// Keep the turn where it stands.
     pub fn rot_confirm(&mut self) -> bool {
         let Some(g) = self.rot.take() else { return false };
@@ -3160,6 +3200,9 @@ impl Editor {
                 selection::transform_known(doc, &mut self.history, &tail, g.pivot, 0.0, DVec2::ZERO, g.links.as_ref());
             }
             self.set_selection_unique(now);
+            if self.rot.as_ref().is_some_and(|g| g.tilted || matches!(g.axis, Some(0) | Some(1))) {
+                self.apply_tilt(0.0);
+            }
             if let Some(g) = self.rot.as_mut() {
                 g.from = from;
                 g.tail = tail;
@@ -3170,6 +3213,8 @@ impl Editor {
         }
         let Some(g) = self.rot.as_mut() else { return };
         let pivot = g.pivot;
+        let flat = matches!(g.axis, Some(0) | Some(1));
+        let turn = if flat { 0.0 } else { deg };
         let mut from = std::mem::take(&mut g.from);
         let mut tail = std::mem::take(&mut g.tail);
         let mut arms = std::mem::take(&mut g.arms);
@@ -3182,19 +3227,78 @@ impl Editor {
             }
             return;
         };
-        let now = selection::transform_known(doc, &mut self.history, &from, pivot, deg, DVec2::ZERO, links);
+        let now = selection::transform_known(doc, &mut self.history, &from, pivot, turn, DVec2::ZERO, links);
         if !tail.is_empty() {
-            selection::transform_known(doc, &mut self.history, &tail, pivot, deg, DVec2::ZERO, links);
+            selection::transform_known(doc, &mut self.history, &tail, pivot, turn, DVec2::ZERO, links);
         }
         self.set_selection_unique(now);
-        self.carry(&arms, pivot, deg, DVec2::ZERO, 0.0);
-        self.miter_if_one_spline();
+        self.carry(&arms, pivot, turn, DVec2::ZERO, 0.0);
+        if flat {
+            self.apply_tilt(deg);
+        } else {
+            if self.rot.as_ref().is_some_and(|g| g.tilted) {
+                self.apply_tilt(0.0);
+            }
+            self.miter_if_one_spline();
+        }
         self.xform_value = deg;
         if let Some(g) = self.rot.as_mut() {
             g.from = std::mem::take(&mut from);
             g.tail = std::mem::take(&mut tail);
             g.arms = std::mem::take(&mut arms);
             g.done = deg;
+        }
+    }
+
+    /// Set each object's pitch and bank from where the turn began. X adds `deg` to the pitch,
+    /// Y to the bank; any other axis puts both back, so a heading turn does not keep a tilt
+    /// from a moment ago.
+    fn apply_tilt(&mut self, deg: f64) {
+        let Some(g) = self.rot.as_ref() else { return };
+        let axis = g.axis;
+        let tilt = g.tilt.clone();
+        if tilt.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        for (sel, pitch, bank) in tilt {
+            let (p, b) = match axis {
+                Some(0) => (pitch + deg, bank),
+                Some(1) => (pitch, bank + deg),
+                _ => (pitch, bank),
+            };
+            match sel {
+                Sel::Object(k, id) => {
+                    let cur = if doc.object(k, id).is_some() {
+                        Some(k)
+                    } else {
+                        doc.tiles.iter().find(|(_, t)| t.tile.objects.iter().any(|o| o.id == id)).map(|(kk, _)| *kk)
+                    };
+                    let Some(cur) = cur else { continue };
+                    self.history.touch_tile(doc, cur);
+                    if let Some(o) = doc.object_mut(cur, id) {
+                        o.rot[1] = p;
+                        o.rot[2] = b;
+                    }
+                    if let Some(t) = doc.tiles.get_mut(&cur) {
+                        t.touch_content();
+                    }
+                }
+                Sel::Attached(k, id) => {
+                    self.history.touch_tile(doc, k);
+                    if let Some(a) = doc.attachment_mut(k, id) {
+                        a.rot[1] = p;
+                        a.rot[2] = b;
+                    }
+                    if let Some(t) = doc.tiles.get_mut(&k) {
+                        t.touch_content();
+                    }
+                }
+                Sel::Spline(_, _) => {}
+            }
+        }
+        if let Some(g) = self.rot.as_mut() {
+            g.tilted = matches!(axis, Some(0) | Some(1));
         }
     }
 
@@ -4393,11 +4497,14 @@ impl Editor {
             target = start.pos.truncate() + roads::dir(snap_deg(roads::heading_of(d), self.angle_step)) * d.length();
         }
         let mut end_anchor = if laid_on.is_some() { None } else { snap };
-        // into a junction plate: to its centre (it is cut back to the edge and becomes an arm)
+        // into a junction plate: it is cut back to the edge and becomes an arm. Aimed at the
+        // middle, to its centre; aimed a few metres beside it, straight on where it is aimed,
+        // an arm of its own off the middle: streets that meet a road a little apart are not
+        // bent round into one crossing (#142)
         self.road_plate_end = None;
         if snap.is_none() && !self.drawing_paths() && joins {
             if let Some(p) = self.plate_at(assets, c.truncate()) {
-                target = p.1.truncate();
+                target = plate_entry(start.pos.truncate(), c.truncate(), p.1.truncate(), p.2);
                 self.road_plate_end = Some(p);
             }
         }
@@ -9891,20 +9998,80 @@ impl Editor {
     /// The object clicked while linking: `id` takes its state from it, unless that would
     /// close a ring (it takes its own state, through others, from `id`).
     fn link_to(&mut self, k: TileKey, id: i64, parent: i64) {
-        let Some(doc) = self.doc.as_ref() else { return };
+        if self.link_rings(id, parent) {
+            self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
+            return;
+        }
+        self.set_var_parent(k, id, Some(parent));
+        self.toast(tr("Linked", "Связано"));
+    }
+
+    /// Whether `id` taking its state from `parent` would close a ring: `parent` already takes
+    /// its state, through others, from `id`.
+    fn link_rings(&self, id: i64, parent: i64) -> bool {
+        let Some(doc) = self.doc.as_ref() else { return false };
         let mut at = Some(parent);
         for _ in 0..64 {
             match at {
-                Some(p) if p == id => {
-                    self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
-                    return;
-                }
+                Some(p) if p == id => return true,
                 Some(p) => at = selection::var_parent_of(doc, p),
                 None => break,
             }
         }
-        self.set_var_parent(k, id, Some(parent));
-        self.toast(tr("Linked", "Связано"));
+        false
+    }
+
+    /// Every one of these takes its state from `parent` (`[varparent]`), as one step: a
+    /// selection of signal heads on one crossing, of stop displays on one stop. The ones the
+    /// link would close a ring on, and `parent` itself, are left as they are.
+    pub fn link_many_to(&mut self, many: &[(TileKey, i64)], parent: i64) {
+        let take: Vec<(TileKey, i64)> = many.iter().copied().filter(|(_, id)| *id != parent && !self.link_rings(*id, parent)).collect();
+        if take.is_empty() {
+            self.toast(tr("That object already takes its state from this one", "Тот объект сам берёт состояние от этого"));
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        let n = take.len();
+        self.history.begin(tr("Link to an object", "Связать с объектом"));
+        for (k, id) in take {
+            self.history.touch_tile(doc, k);
+            if let Some(o) = selection::any_object_mut(doc, k, id) {
+                o.var_parent = Some(parent);
+            } else if let Some(a) = doc.attachment_mut(k, id) {
+                a.var_parent = Some(parent);
+            }
+            if let Some(t) = doc.tiles.get_mut(&k) {
+                t.touch_content();
+            }
+        }
+        self.history.commit();
+        self.toast(format!("{} {n}", tr("Linked", "Связано")));
+    }
+
+    /// Every one of these forgets the object it takes its state from (`[varparent]`), as one
+    /// step.
+    pub fn unlink_many(&mut self, many: &[(TileKey, i64)]) {
+        let linked: Vec<(TileKey, i64)> = match self.doc.as_ref() {
+            Some(doc) => many.iter().copied().filter(|(k, id)| crate::selection::state_holder(doc, *k, *id).and_then(|(_, p, _)| p).is_some()).collect(),
+            None => return,
+        };
+        if linked.is_empty() {
+            return;
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
+        self.history.begin(tr("Unlink", "Отвязать"));
+        for (k, id) in linked {
+            self.history.touch_tile(doc, k);
+            if let Some(o) = selection::any_object_mut(doc, k, id) {
+                o.var_parent = None;
+            } else if let Some(a) = doc.attachment_mut(k, id) {
+                a.var_parent = None;
+            }
+            if let Some(t) = doc.tiles.get_mut(&k) {
+                t.touch_content();
+            }
+        }
+        self.history.commit();
     }
 
     /// Which light of its parent's program a signal head shows (its first label).
@@ -11939,9 +12106,39 @@ fn relink_start(doc: &mut Document, hist: &mut crate::history::History, pk: Tile
 }
 
 /// The splines linked on after the one spline in `sels`, where they stand now.
+/// Where a road drawn from `from` towards `to` runs into a junction plate round `centre`
+/// (its arms reach `r`): the centre when the road is aimed at it, else the point of the road's
+/// line nearest the centre, so the road comes in straight, an arm a few metres off the middle.
+/// A line that only grazes the plate still goes to the centre.
+fn plate_entry(from: DVec2, to: DVec2, centre: DVec2, r: f64) -> DVec2 {
+    let d = to - from;
+    let len2 = d.length_squared();
+    if len2 < 1e-6 {
+        return centre;
+    }
+    let foot = from + d * ((centre - from).dot(d) / len2).max(0.0);
+    let off = (foot - centre).length();
+    if off < 1.5 || off > r {
+        centre
+    } else {
+        foot
+    }
+}
+
 fn spline_tail(doc: &Document, sels: &[Sel]) -> Vec<Origin> {
     let Sel::Spline(_, id) = (if sels.len() == 1 { sels[0] } else { return Vec::new() }) else { return Vec::new() };
     reshape::chain_after(doc, id).into_iter().filter_map(|(k, sid)| selection::origin_of(doc, Sel::Spline(k, sid))).collect()
+}
+
+/// Pitch and bank of the objects in a selection, as they stand when R takes hold.
+fn object_tilt(doc: &Document, sels: &[Sel]) -> Vec<(Sel, f64, f64)> {
+    sels.iter()
+        .filter_map(|s| match *s {
+            Sel::Object(k, id) => doc.object(k, id).map(|o| (*s, o.rot[1], o.rot[2])),
+            Sel::Attached(k, id) => doc.attachment(k, id).map(|a| (*s, a.rot[1], a.rot[2])),
+            Sel::Spline(_, _) => None,
+        })
+        .collect()
 }
 
 /// The highest the ground sample at `p` may lie without its triangles showing through a
@@ -14727,6 +14924,60 @@ mod tests {
         assert_eq!(d.attachment((0, 0), 3).unwrap().strings, vec!["5".to_string()]);
     }
 
+    /// Several objects take their state from one object at once, in one step; a link that
+    /// would close a ring, and the parent itself, are left out; unlinking them is one step too.
+    #[test]
+    fn a_whole_selection_takes_its_state_from_one_object() {
+        let mut doc = flat_map(1);
+        for (id, x) in [(1, 100.0), (2, 110.0), (3, 120.0), (4, 130.0)] {
+            add_object(&mut doc, (0, 0), id, x, 100.0);
+        }
+        let mut ed = Editor::default();
+        ed.open(doc);
+        let sels = [((0, 0), 2), ((0, 0), 3), ((0, 0), 4)];
+        ed.set_selection(sels.iter().map(|(k, id)| Sel::Object(*k, *id)).collect());
+        ed.link_many_to(&sels, 1);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            for (_, id) in sels {
+                assert_eq!(crate::selection::var_parent_of(d, id), Some(1), "object {id}");
+            }
+            assert_eq!(crate::selection::var_parent_of(d, 1), None, "the parent takes its state from nothing");
+        }
+        // (the whole lot is one step)
+        ed.undo();
+        {
+            let d = ed.doc.as_ref().unwrap();
+            for (_, id) in sels {
+                assert_eq!(crate::selection::var_parent_of(d, id), None, "object {id} undone");
+            }
+        }
+        // (the parent among the picked ones is not linked to itself)
+        ed.link_many_to(&[((0, 0), 1), ((0, 0), 2)], 1);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 1), None);
+            assert_eq!(crate::selection::var_parent_of(d, 2), Some(1));
+        }
+        // (3 takes its state from 1: 1 taking it from 3 would close a ring, and is left out)
+        ed.link_many_to(&[((0, 0), 3)], 1);
+        ed.link_many_to(&[((0, 0), 1)], 3);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 3), Some(1));
+            assert_eq!(crate::selection::var_parent_of(d, 1), None, "no ring");
+        }
+        // (and forgetting it, for several at once)
+        ed.unlink_many(&[((0, 0), 2), ((0, 0), 3)]);
+        {
+            let d = ed.doc.as_ref().unwrap();
+            assert_eq!(crate::selection::var_parent_of(d, 2), None);
+            assert_eq!(crate::selection::var_parent_of(d, 3), None);
+        }
+        ed.undo();
+        assert_eq!(ed.doc.as_ref().and_then(|d| crate::selection::var_parent_of(d, 3)), Some(1), "one step back");
+    }
+
     #[test]
     fn omsis_n_puts_the_chosen_object_at_the_cursor_and_takes_it() {
         let lib = Library::default();
@@ -15076,6 +15327,40 @@ mod tests {
         assert!((heading(&ed) - was).abs() > 1.0, "it had turned");
         assert!(ed.rot_cancel());
         assert!((heading(&ed) - was - 7.5).abs() < 1e-4, "back to the kept turn: {}", heading(&ed) - was);
+    }
+
+    /// R on an object turns its heading (Z). X turns the pitch, Y the bank, and Z (or no key)
+    /// is the heading again. The object stays where it stands when the axis is X or Y.
+    #[test]
+    fn r_on_an_object_turns_the_axis_pressed() {
+        let mut ed = editor();
+        ed.set_tool(Tool::Select);
+        ed.snap_angle = false;
+        ed.set_selection(vec![Sel::Object((0, 0), 1)]);
+        let o = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        let (h, p, b, x, y) = (o.rot[0], o.rot[1], o.rot[2], o.pos[0], o.pos[1]);
+        assert!(ed.rot_begin((10.0, 10.0)));
+        ed.rot_follow((30.0, 10.0), false);
+        let z = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((z.rot[0] - h - 10.0).abs() < 1e-4, "no axis is the heading: {}", z.rot[0] - h);
+        assert!((z.rot[1] - p).abs() < 1e-6 && (z.rot[2] - b).abs() < 1e-6);
+        ed.rot_axis(0);
+        ed.rot_follow((30.0, 10.0), false);
+        let xed = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((xed.rot[1] - p - 10.0).abs() < 1e-4, "X is the pitch: {}", xed.rot[1] - p);
+        assert!((xed.rot[0] - h).abs() < 1e-4 && (xed.rot[2] - b).abs() < 1e-6);
+        assert!((xed.pos[0] - x).abs() < 1e-6 && (xed.pos[1] - y).abs() < 1e-6, "it does not move");
+        ed.rot_axis(1);
+        ed.rot_follow((30.0, 10.0), false);
+        let yed = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((yed.rot[2] - b - 10.0).abs() < 1e-4, "Y is the bank: {}", yed.rot[2] - b);
+        assert!((yed.rot[0] - h).abs() < 1e-4 && (yed.rot[1] - p).abs() < 1e-6);
+        ed.rot_axis(2);
+        ed.rot_follow((30.0, 10.0), false);
+        let again = ed.doc.as_ref().unwrap().object((0, 0), 1).unwrap();
+        assert!((again.rot[0] - h - 10.0).abs() < 1e-4, "Z is the heading again");
+        assert!((again.rot[1] - p).abs() < 1e-6 && (again.rot[2] - b).abs() < 1e-6);
+        assert!(ed.rot_confirm());
     }
 
     /// A radius well under 3 m is kept as typed: a thin wall's pillar has one of 0.3 m.
@@ -17188,6 +17473,75 @@ mod tests {
             eprintln!("to {to}: {j} junctions, {ends} free ends, {} splines", doc.tiles[&(0, 0)].tile.splines.len());
             assert_eq!(j, 1);
             assert_eq!(ends, 4, "a fourth arm");
+            ed.undo();
+        }
+        let _ = std::fs::remove_dir_all(content);
+    }
+
+    /// A street drawn into a T junction's open side a few metres off its middle (the street
+    /// across is offset, as in many towns) runs in straight as an arm of its own, not bent
+    /// round to the junction's centre (#142).
+    #[test]
+    fn a_road_meeting_a_junction_off_its_middle_comes_in_straight() {
+        let road = "Splines\\Marcel\\str_3spur_12m_Stresowstr2.sli";
+        let Some(omsi) = crate::install::find_omsi_root(&Default::default()) else { return };
+        let content = std::env::temp_dir().join(format!("om-tjoff-{}", std::process::id()));
+        std::fs::create_dir_all(&content).unwrap();
+        let mut assets = Assets::new(omsi, content.clone());
+        for _ in 0..500 { if assets.spline(road).is_some() { break; } assets.poll(); std::thread::sleep(std::time::Duration::from_millis(10)); }
+        if assets.spline(road).is_none() { return }
+        let mut doc = flat_map(1);
+        doc.dir = content.join("maps").join("TJOFF");
+        let mut ed = Editor::default();
+        ed.content_dir = Some(content.clone());
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        ed.road_type = Some(road.into());
+        ed.snap_angle = false;
+        let lib = Library::default();
+        let click = |ed: &mut Editor, a: &mut Assets, x: f64, y: f64| {
+            ed.cursor = Some(DVec3::new(x, y, 0.0));
+            ed.plan_road(a);
+            ed.road_click(a, &lib);
+            ed.tick(a, 0.0, false);
+        };
+        click(&mut ed, &mut assets, 52.6, 150.0);
+        click(&mut ed, &mut assets, 247.4, 150.0);
+        ed.right_click();
+        click(&mut ed, &mut assets, 150.0, 265.2);
+        click(&mut ed, &mut assets, 150.0, 150.0);
+        ed.right_click();
+        for _ in 0..50 { assets.poll(); ed.tick(&mut assets, 0.0, false); std::thread::sleep(std::time::Duration::from_millis(10)); }
+        let centre = {
+            let doc = ed.doc.as_ref().unwrap();
+            let o = doc.tiles[&(0, 0)].tile.objects.iter().find(|o| o.file.contains("junction_")).expect("a junction");
+            DVec2::new(o.pos[0], o.pos[1])
+        };
+        let r = {
+            let mut r = None;
+            for _ in 0..500 { assets.poll(); ed.tick(&mut assets, 0.0, false); r = ed.plate_at(&mut assets, centre).map(|p| p.2); if r.is_some() { break; } std::thread::sleep(std::time::Duration::from_millis(10)); }
+            r.expect("the plate")
+        };
+        eprintln!("plate at {centre:?} r {r}");
+        for dx in [4.0, 7.0, 10.0] {
+            // (from the south, straight north, aimed at the road across beside the junction)
+            click(&mut ed, &mut assets, centre.x + dx, centre.y - 90.0);
+            click(&mut ed, &mut assets, centre.x + dx, centre.y - 2.0);
+            ed.right_click();
+            for _ in 0..50 { assets.poll(); ed.tick(&mut assets, 0.0, false); std::thread::sleep(std::time::Duration::from_millis(10)); }
+            let doc = ed.doc.as_ref().unwrap();
+            let j = doc.tiles[&(0, 0)].tile.objects.iter().filter(|o| o.file.contains("junction_")).count();
+            let ends = crate::selection::tests::free_ends_near(doc, centre, r + 15.0);
+            // the new street: straight north all the way, where it was drawn
+            let new: Vec<(f64, f64)> = doc.tiles[&(0, 0)].tile.splines.iter().filter(|s| !s.deleted && s.pos[1] < centre.y - 1.0).map(|s| (s.pos[0], s.heading)).collect();
+            eprintln!("dx {dx}: {j} junctions, {ends} free ends, new street {new:?}");
+            assert_eq!(j, 1, "one junction");
+            assert_eq!(ends, 4, "a fourth arm");
+            assert!(!new.is_empty());
+            for (x, h) in new {
+                assert!((x - (centre.x + dx)).abs() < 0.5, "drawn where it was aimed: x {x}");
+                assert!(crate::roads::norm_deg(h).min(360.0 - crate::roads::norm_deg(h)) < 1.0, "straight north, not bent round: {h}");
+            }
             ed.undo();
         }
         let _ = std::fs::remove_dir_all(content);

@@ -2303,7 +2303,7 @@ impl App {
                 self.ed.cancel_edge_snap();
             } else if std::mem::take(&mut self.ed.cutting) {
                 // (only the knife goes, the selection stays)
-            } else if self.ed.link_pick.take().is_some() {
+            } else if self.ed.link_pick.take().is_some() | self.ed.link_pick_many.take().is_some() {
                 // (only the linking is called off, the object stays selected)
             } else if self.ed.take_path_connect() {
                 // (only the path connect is called off, the point stays picked)
@@ -2377,6 +2377,9 @@ impl App {
             KeyCode::Enter | KeyCode::NumpadEnter => {
                 self.ed.rot_confirm();
             }
+            KeyCode::KeyX => self.ed.rot_axis(0),
+            KeyCode::KeyY => self.ed.rot_axis(1),
+            KeyCode::KeyZ => self.ed.rot_axis(2),
             KeyCode::Backspace => self.ed.rot_backspace(),
             KeyCode::Minus | KeyCode::NumpadSubtract => self.ed.rot_type('-'),
             KeyCode::Period | KeyCode::Comma | KeyCode::NumpadDecimal => self.ed.rot_type('.'),

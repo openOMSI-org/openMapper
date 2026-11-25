@@ -48,9 +48,7 @@ impl App {
             _ => false,
         };
         if !keep {
-            if let Some(mut m) = self.ed.mesh.take() {
-                self.write_mesh(&mut m, true);
-            }
+            self.drop_mesh_session(false);
             if let Some((rel, s)) = want {
                 self.ed.mesh = Session::open(&roots, &rel, s);
             }
@@ -142,6 +140,15 @@ impl App {
     /// Write the session's object if it changed (at once with `now`), and have its model read
     /// and drawn again.
     pub(super) fn write_mesh(&mut self, m: &mut Session, now: bool) {
+        // (the first change is what hands the map object the copy of its own: until then a Tab
+        // and a Tab back leaves neither a copy nor a changed map, see `toggle_edit_mode`)
+        if m.dirty {
+            if let Some(rel) = m.made.take() {
+                crate::meshops::point_at(&mut self.ed, m.inst, &rel);
+                self.mesh_known = Some((rel, true));
+                self.ed.toast(tr("A copy of its own was made: the original type is unchanged", "Создана собственная копия: исходный тип не изменён"));
+            }
+        }
         let Some(roots) = self.roots.clone() else { return };
         // (what follows the ground follows it where this object stands)
         let place = m.place;
@@ -178,17 +185,36 @@ impl App {
         }
     }
 
-    /// Into the edit mode of the selected object (made an openMapper object of its own first
-    /// if it is not one), or out of it.
+    /// Let the edit session go: what was changed is written, and if nothing was changed the
+    /// copy of its own made only to read the mesh is taken away again. (Leaving is not itself a
+    /// change: marking it dirty rewrote the object and dropped its model, so the mesh vanished
+    /// until the files were read again.)
+    /// `stay`: the session is kept (out of the edit mode) when it was written, as a Tab out of
+    /// the edit mode keeps the object's mesh at hand; else it is let go.
+    fn drop_mesh_session(&mut self, stay: bool) {
+        let Some(mut m) = self.ed.mesh.take() else { return };
+        if let (Some(rel), false) = (m.made.clone(), m.dirty) {
+            // (the map object never pointed at that copy, so there is nothing to undo either)
+            if let Some(roots) = self.roots.clone() {
+                crate::meshops::discard_copy(&roots, &rel);
+            }
+            self.mesh_known = None;
+            return;
+        }
+        self.write_mesh(&mut m, true);
+        if stay {
+            self.ed.mesh = Some(m);
+        }
+    }
+
+    /// Into the edit mode of the selected object (reading a copy of its own if it is not one of
+    /// openMapper's yet), or out of it. A Tab pressed by mistake leaves nothing behind: the map
+    /// object is handed the copy at the first change, and the copy goes if there was none.
     pub(super) fn toggle_edit_mode(&mut self) {
         if let Some(m) = self.ed.mesh.as_mut().filter(|m| m.editing) {
             m.cancel();
             m.editing = false;
-            // (leaving is not itself a change: marking it dirty rewrote the object and dropped
-            // its model, so the mesh vanished until the files were read again)
-            let mut m = self.ed.mesh.take().unwrap();
-            self.write_mesh(&mut m, true);
-            self.ed.mesh = Some(m);
+            self.drop_mesh_session(true);
             return;
         }
         let Some(sel @ Sel::Object(..)) = self.ed.selected else {
@@ -197,11 +223,18 @@ impl App {
         };
         if self.ed.mesh.is_none() {
             let Some(roots) = self.roots.clone() else { return };
-            match crate::meshops::make_editable(&mut self.ed, &roots, &self.lib, sel) {
+            let was = self.ed.doc.as_ref().and_then(|d| match sel {
+                Sel::Object(k, id) => d.object(k, id).map(|o| o.file.clone()),
+                _ => None,
+            });
+            match crate::meshops::copy_for_edit(&mut self.ed, &roots, &self.lib, sel) {
                 Ok(rel) => {
                     self.mesh_known = Some((rel.clone(), true));
-                    self.ed.mesh = Session::open(&roots, &rel, sel);
-                    self.ed.toast(tr("A copy of its own was made: the original type is unchanged", "Создана собственная копия: исходный тип не изменён"));
+                    let Some(mut m) = Session::open(&roots, &rel, sel) else { return };
+                    if !was.as_deref().map(|w| w.eq_ignore_ascii_case(&rel)).unwrap_or(false) {
+                        m.made = Some(rel.clone());
+                    }
+                    self.ed.mesh = Some(m);
                 }
                 Err(e) => {
                     self.ed.error(format!("{}: {e}", tr("Cannot edit this object", "Этот объект нельзя редактировать")));

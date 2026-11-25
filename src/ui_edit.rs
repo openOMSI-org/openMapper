@@ -538,6 +538,7 @@ pub fn group_properties(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, paren
             }
         });
     });
+    link_group_section(ui, ed, lib);
     array_section(ui, ed, lib);
     parallel_section(ui, ed, lib);
     rows_section(ui, ed, lib);
@@ -1347,6 +1348,103 @@ pub fn link_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library, k: TileKe
         ed.link_pick = None;
     } else if pick {
         ed.link_pick = Some((k, id));
+        ed.toast(tr("Click the object it takes its state from", "Щёлкните объект, от которого брать состояние"));
+    }
+}
+
+/// The same link (`[varparent]`) for a whole selection: every object in it takes its state
+/// from the object clicked next, or forgets the one it takes it from, as one step. A row of
+/// signal heads on one crossing, or of stop displays on one stop, is set at once.
+pub fn link_group_section(ui: &mut egui::Ui, ed: &mut Editor, lib: &Library) {
+    let records: Vec<(TileKey, i64)> = ed
+        .selection()
+        .iter()
+        .filter_map(|s| match s {
+            Sel::Object(k, id) | Sel::Attached(k, id) => Some((*k, *id)),
+            Sel::Spline(..) => None,
+        })
+        .collect();
+    if records.is_empty() {
+        return;
+    }
+    let parents: Vec<Option<i64>> = {
+        let Some(doc) = ed.doc.as_ref() else { return };
+        records.iter().map(|(k, id)| crate::selection::state_holder(doc, *k, *id).and_then(|(_, p, _)| p)).collect()
+    };
+    let linked = parents.iter().filter(|p| p.is_some()).count();
+    // (what they all take their state from, when it is the same one: else the row is blank)
+    let first = parents.first().copied().flatten();
+    let common = first.filter(|p| parents.iter().all(|q| *q == Some(*p)));
+    let parent = common.map(|pid| {
+        let at = ed.links_of(records[0].1, Some(pid)).0.map(|(k, _)| k);
+        let name = ed
+            .doc
+            .as_ref()
+            .and_then(|d| crate::selection::file_by_id(d, pid))
+            .map(|f| lib.find(&f).map(|a| a.name.clone()).unwrap_or_else(|| f.rsplit('\\').next().unwrap_or(&f).to_string()))
+            .unwrap_or_default();
+        (pid, at, name)
+    });
+    let picking = ed.link_pick_many.is_some();
+    let mut go: Option<Sel> = None;
+    let mut start = false;
+    let mut stop = false;
+    let mut unlink = false;
+    section(ui, Icon::Link, &format!("{} ({linked})", tr("Linked objects", "Связанные объекты")));
+    egui::Frame::new().inner_margin(Margin::same(8)).show(ui, |ui| {
+        ui.label(RichText::new(tr("An object can take its state from another ([varparent]): a signal head shows a light of its crossing's program, a stop's display its stop.", "Объект может брать состояние от другого ([varparent]): светофор показывает сигнал программы своего перекрёстка, табло остановки — свою остановку.")).small().color(pal().text_dim));
+        match (&parent, linked) {
+            (Some((pid, at, name)), _) => {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(pal().text_dim));
+                    let r = ui.link(name).on_hover_text(format!("{} {pid}", tr("Select it: IDCode", "Выбрать его: IDCode")));
+                    if r.clicked() {
+                        if let (Some(doc), Some(k)) = (ed.doc.as_ref(), *at) {
+                            go = Some(crate::selection::as_sel(doc, k, *pid));
+                        }
+                    }
+                });
+            }
+            (None, 0) => {
+                ui.label(RichText::new(tr("Takes its state from nothing", "Ни от чего не берёт состояние")).color(pal().text_dim));
+            }
+            (None, _) => {
+                // (from different ones: each object's own panel names its own)
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(RichText::new(tr("Takes its state from", "Берёт состояние от")).color(pal().text_dim));
+                    ui.label(RichText::new("—").color(pal().text_dim));
+                });
+            }
+        }
+        ui.horizontal_wrapped(|ui| {
+            let label = if picking {
+                tr("Click the object in the view… (Esc)", "Щёлкните объект в виде… (Esc)")
+            } else if linked > 0 {
+                tr("Link to another…", "Связать с другим…")
+            } else {
+                tr("Link to an object…", "Связать с объектом…")
+            };
+            if ui.add(egui::Button::new(icons::labelled(Icon::Traffic, label)).selected(picking)).on_hover_text(tr("Then click the object it is to take its state from (a crossing for a signal head)", "Затем щёлкните объект, от которого брать состояние (перекрёсток для светофора)")).clicked() {
+                if picking {
+                    stop = true;
+                } else {
+                    start = true;
+                }
+            }
+            if linked > 0 && ui.button(icons::labelled(Icon::LinkOff, tr("Unlink", "Отвязать"))).clicked() {
+                unlink = true;
+            }
+        });
+    });
+    if let Some(s) = go {
+        ed.select(Some(s));
+    } else if unlink {
+        ed.unlink_many(&records);
+    } else if stop {
+        ed.link_pick_many = None;
+    } else if start {
+        ed.link_pick = None;
+        ed.link_pick_many = Some(records);
         ed.toast(tr("Click the object it takes its state from", "Щёлкните объект, от которого брать состояние"));
     }
 }
