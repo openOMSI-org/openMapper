@@ -60,7 +60,7 @@ ureq = { version = "3.4", default-features = false, features = ["rustls"] }
 # the Lua syntax check of the map scripts (src/scripting.rs), Lua 5.4 as openOMSI runs
 full_moon = { version = "3.0.0", default-features = false, features = ["lua54"] }
 # the map's scripts run in the editor to test and debug them: Lua 5.4 as openOMSI runs it
-mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
+mlua = { version = "0.12", features = ["lua54", "vendored", "serialize"] }
 # compiled map scripts (.oop, Lua or Rust): the compiler of the openOMSI Development Tools
 oopc = { git = "https://github.com/openOMSI-org/openOMSI-Development-Tools", rev = "433930ba365833b70724c3f648c92fb24f3f1875" }
 oop-format = { git = "https://github.com/openOMSI-org/openOMSI-Development-Tools", rev = "433930ba365833b70724c3f648c92fb24f3f1875" }
