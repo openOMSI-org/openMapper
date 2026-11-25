@@ -250,11 +250,12 @@ fn file_of(source: &str) -> Option<&str> {
 /// Where the script that called a Rust function is (`print` from scripts/x.lua line 4).
 fn caller(lua: &Lua) -> Option<(String, usize)> {
     (1..6).find_map(|level| {
-        let d = lua.inspect_stack(level)?;
-        let src = d.source();
-        let f = file_of(src.source.as_deref()?)?.to_string();
-        let line = d.curr_line();
-        (line > 0).then(|| (f, line as usize))
+        lua.inspect_stack(level, |d| {
+            let src = d.source();
+            let f = file_of(src.source.as_deref()?)?.to_string();
+            let line = d.current_line()?;
+            (line > 0).then_some((f, line))
+        })?
     })
 }
 
@@ -464,7 +465,7 @@ fn run(setup: Setup, rx: Receiver<Cmd>, tx: Sender<Out>, wake: Option<egui::Cont
         let eval = eval.clone();
         lua.set_hook(HookTriggers::new().every_line().every_nth_instruction(10_000), move |lua, d| {
             match d.event() {
-                mlua::DebugEvent::Count => {
+                mlua::debug::DebugEvent::Count => {
                     for cmd in c.rx.try_iter().collect::<Vec<_>>() {
                         match cmd {
                             Cmd::Stop => c.dbg.borrow_mut().stop = true,
@@ -483,10 +484,10 @@ fn run(setup: Setup, rx: Receiver<Cmd>, tx: Sender<Out>, wake: Option<egui::Cont
                     }
                     Ok(VmState::Continue)
                 }
-                mlua::DebugEvent::Line => {
+                mlua::debug::DebugEvent::Line => {
                     let src = d.source();
                     let Some(file) = src.source.as_deref().and_then(file_of).map(str::to_string) else { return Ok(VmState::Continue) };
-                    let line = d.curr_line().max(0) as usize;
+                    let line = d.current_line().unwrap_or(0);
                     let reason = {
                         let dbg = c.dbg.borrow();
                         if dbg.pause {
@@ -509,7 +510,7 @@ fn run(setup: Setup, rx: Receiver<Cmd>, tx: Sender<Out>, wake: Option<egui::Cont
                 }
                 _ => Ok(VmState::Continue),
             }
-        });
+        })?;
     }
 
     // the main chunk
@@ -710,7 +711,7 @@ fn civil(z: i64) -> (i64, i64, i64) {
 
 fn depth(lua: &Lua) -> usize {
     let mut n = 0;
-    while lua.inspect_stack(n).is_some() {
+    while lua.inspect_stack(n, |_| ()).is_some() {
         n += 1;
     }
     n
