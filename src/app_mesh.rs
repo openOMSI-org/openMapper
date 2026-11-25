@@ -48,7 +48,7 @@ impl App {
             _ => false,
         };
         if !keep {
-            self.drop_mesh_session();
+            self.drop_mesh_session(false);
             if let Some((rel, s)) = want {
                 self.ed.mesh = Session::open(&roots, &rel, s);
             }
@@ -189,7 +189,9 @@ impl App {
     /// copy of its own made only to read the mesh is taken away again. (Leaving is not itself a
     /// change: marking it dirty rewrote the object and dropped its model, so the mesh vanished
     /// until the files were read again.)
-    fn drop_mesh_session(&mut self) {
+    /// `stay`: the session is kept (out of the edit mode) when it was written, as a Tab out of
+    /// the edit mode keeps the object's mesh at hand; else it is let go.
+    fn drop_mesh_session(&mut self, stay: bool) {
         let Some(mut m) = self.ed.mesh.take() else { return };
         if let (Some(rel), false) = (m.made.clone(), m.dirty) {
             // (the map object never pointed at that copy, so there is nothing to undo either)
@@ -200,7 +202,9 @@ impl App {
             return;
         }
         self.write_mesh(&mut m, true);
-        self.ed.mesh = Some(m);
+        if stay {
+            self.ed.mesh = Some(m);
+        }
     }
 
     /// Into the edit mode of the selected object (reading a copy of its own if it is not one of
@@ -210,7 +214,7 @@ impl App {
         if let Some(m) = self.ed.mesh.as_mut().filter(|m| m.editing) {
             m.cancel();
             m.editing = false;
-            self.drop_mesh_session();
+            self.drop_mesh_session(true);
             return;
         }
         let Some(sel @ Sel::Object(..)) = self.ed.selected else {
