@@ -2269,7 +2269,7 @@ impl App {
                 self.ed.cancel_edge_snap();
             } else if std::mem::take(&mut self.ed.cutting) {
                 // (only the knife goes, the selection stays)
-            } else if self.ed.link_pick.take().is_some() {
+            } else if self.ed.link_pick.take().is_some() | self.ed.link_pick_many.take().is_some() {
                 // (only the linking is called off, the object stays selected)
             } else if self.ed.take_path_connect() {
                 // (only the path connect is called off, the point stays picked)
