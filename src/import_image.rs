@@ -92,6 +92,7 @@ pub fn standee(img: &image::RgbaImage, width: f32, height: f32) -> Mesh {
 }
 
 pub fn import_image(path: &Path, content: &Path) -> anyhow::Result<Report> {
+    let provenance = crate::provenance::Source::capture(path)?;
     let mut img = crate::models::picture(None, Some(path)).ok_or_else(|| anyhow::anyhow!("{}", tr("The picture cannot be read", "Картинку не удалось прочитать")))?;
     // (a picture too large for a game's texture is brought down; OMSI textures are powers of two best, but any size works)
     let longest = img.width().max(img.height());
@@ -118,6 +119,7 @@ pub fn import_image(path: &Path, content: &Path) -> anyhow::Result<Report> {
     src.model.materials = vec![material];
     src.model.parts.push(openmapper_mesh::Part::new(&safe, mesh));
     crate::editable::save(&roots, &rel, &src)?;
+    provenance.record(content, &dir)?;
     let what = if cut_out { tr("Picture made into a standee:", "Картинка стала фигурой по контуру:") } else { tr("Picture made into a sign:", "Картинка стала табличкой:") };
     Ok(Report { copied: 1, objects: vec![rel], message: format!("{what} {stem}") })
 }

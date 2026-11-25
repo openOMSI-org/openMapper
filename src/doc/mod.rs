@@ -12,7 +12,7 @@ pub mod dds;
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{atomic::{AtomicU64, Ordering}, Arc};
 
 use glam::{DVec2, DVec3};
 use omsi_map::{GlobalCfg, GroundTex, MapObject, MapSpline, SplineAttachment, Terrain, Tile, TERRAIN_SAMPLES};
@@ -196,6 +196,8 @@ pub enum Sel {
 
 /// The map.
 pub struct Document {
+    pub(crate) _publisher_mounts: Arc<omsi_cfg::publisher::DependencyMounts>,
+    pub(crate) _publisher_protected_source: bool,
     pub global: GlobalCfg,
     pub tiles: BTreeMap<TileKey, TileDoc>,
     /// The `[map]` list in file order: entry points and repeaters name tiles by their place
@@ -250,6 +252,8 @@ impl Document {
         omsi_map::set_tile_size(omsi_map::TILE_SIZE);
         let mut doc = Document {
             global,
+            _publisher_mounts: Arc::new(Default::default()),
+            _publisher_protected_source: false,
             tiles: BTreeMap::new(),
             order: Vec::new(),
             dir: roots.content.join("maps").join(folder),
@@ -278,6 +282,9 @@ impl Document {
     /// stays as it is).
     pub fn load(roots: &crate::install::Roots, cfg: &Path, mut progress: impl FnMut(f32)) -> anyhow::Result<Document> {
         let started = std::time::Instant::now();
+        let publisher_mounts = Arc::new(omsi_cfg::publisher::validate_map(cfg.parent().unwrap_or(Path::new(".")))
+            .map_err(|e| anyhow::anyhow!("publisher dependencies: {e}"))?);
+        let publisher_protected_source = omsi_cfg::vfs::is_sealed(cfg);
         let file = omsi_cfg::CfgFile::read(cfg).map_err(|e| anyhow::anyhow!("{e}"))?;
         let mut global = GlobalCfg::parse(&file);
         let global_extra = save::foreign_blocks(&file.lines);
@@ -350,6 +357,8 @@ impl Document {
         crate::render::profile::log_time(&format!("read {} tiles", tiles.len()), started);
         let mut doc = Document {
             global,
+            _publisher_mounts: publisher_mounts,
+            _publisher_protected_source: publisher_protected_source,
             tiles,
             order,
             dir,
@@ -417,11 +426,18 @@ impl Document {
         dirs.len()
     }
 
+    /// A signed publisher alias, through the dependency mounts of the folder the map was read from.
+    pub fn resolve_alias(&self, rel: &str) -> Option<PathBuf> {
+        self._publisher_mounts.resolve_map_alias(self.source.as_deref().unwrap_or(&self.dir), rel)
+    }
+
     /// A copy to read on another thread (the map check): the tiles without their painting
     /// and chrono patches, which take room and are not looked at.
     pub fn for_reading(&self) -> Document {
         Document {
             global: self.global.clone(),
+            _publisher_mounts: self._publisher_mounts.clone(),
+            _publisher_protected_source: self._publisher_protected_source,
             tiles: self.tiles.iter().map(|(k, t)| (*k, TileDoc { tile: t.tile.clone(), terrain: t.terrain.clone(), masks: Vec::new(), chrono: Vec::new(), water: t.water, terrain_rev: t.terrain_rev, mask_rev: t.mask_rev, content_rev: t.content_rev, dirty: t.dirty })).collect(),
             order: self.order.clone(),
             dir: self.dir.clone(),

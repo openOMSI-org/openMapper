@@ -208,7 +208,7 @@ pub fn make_cut(c: &CutInput) -> CutDone {
         }
         _ => None,
     };
-    let walls = c.terrain.as_ref().map(|t| omsi_geometry::terrain_hole_walls_with_roads(&rims, t, &surf.drive)).filter(|m| !m.indices.is_empty());
+    let walls = c.terrain.as_ref().map(|t| omsi_geometry::terrain_hole_walls_with_roads(&rims, t, &surf.drive, &[])).filter(|m| !m.indices.is_empty());
     let terrain_at = |x: f32, y: f32| c.terrain.as_ref().map(|t| t.sample(x, y)).unwrap_or(0.0);
     let rgba = if any && surf.cuts_anything(&terrain_at, super::FLUSH) { surf.mask_image(&terrain_at, super::FLUSH) } else { vec![255u8; super::CUT * super::CUT * 4] };
     CutDone { rgba, walls, fitted: fitted_ground }
