@@ -67,6 +67,10 @@ pub struct Session {
     /// The object's file, and the map object it is edited on.
     pub rel: String,
     pub inst: Sel,
+    /// A copy of its own made only so that the mesh could be read, which the map object does
+    /// not point at yet: it is handed the copy at the first change, and the copy goes when the
+    /// edit mode is left before anything was changed.
+    pub made: Option<String>,
     pub src: Source,
     /// The part being edited.
     pub part: usize,
@@ -106,6 +110,7 @@ impl Session {
         Some(Session {
             rel: rel.to_string(),
             inst,
+            made: None,
             src,
             part: 0,
             mode: SelectMode::Vertex,
