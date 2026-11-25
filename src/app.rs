@@ -2343,6 +2343,9 @@ impl App {
             KeyCode::Enter | KeyCode::NumpadEnter => {
                 self.ed.rot_confirm();
             }
+            KeyCode::KeyX => self.ed.rot_axis(0),
+            KeyCode::KeyY => self.ed.rot_axis(1),
+            KeyCode::KeyZ => self.ed.rot_axis(2),
             KeyCode::Backspace => self.ed.rot_backspace(),
             KeyCode::Minus | KeyCode::NumpadSubtract => self.ed.rot_type('-'),
             KeyCode::Period | KeyCode::Comma | KeyCode::NumpadDecimal => self.ed.rot_type('.'),
