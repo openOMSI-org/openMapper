@@ -4497,11 +4497,14 @@ impl Editor {
             target = start.pos.truncate() + roads::dir(snap_deg(roads::heading_of(d), self.angle_step)) * d.length();
         }
         let mut end_anchor = if laid_on.is_some() { None } else { snap };
-        // into a junction plate: to its centre (it is cut back to the edge and becomes an arm)
+        // into a junction plate: it is cut back to the edge and becomes an arm. Aimed at the
+        // middle, to its centre; aimed a few metres beside it, straight on where it is aimed,
+        // an arm of its own off the middle: streets that meet a road a little apart are not
+        // bent round into one crossing (#142)
         self.road_plate_end = None;
         if snap.is_none() && !self.drawing_paths() && joins {
             if let Some(p) = self.plate_at(assets, c.truncate()) {
-                target = p.1.truncate();
+                target = plate_entry(start.pos.truncate(), c.truncate(), p.1.truncate(), p.2);
                 self.road_plate_end = Some(p);
             }
         }
@@ -12103,6 +12106,25 @@ fn relink_start(doc: &mut Document, hist: &mut crate::history::History, pk: Tile
 }
 
 /// The splines linked on after the one spline in `sels`, where they stand now.
+/// Where a road drawn from `from` towards `to` runs into a junction plate round `centre`
+/// (its arms reach `r`): the centre when the road is aimed at it, else the point of the road's
+/// line nearest the centre, so the road comes in straight, an arm a few metres off the middle.
+/// A line that only grazes the plate still goes to the centre.
+fn plate_entry(from: DVec2, to: DVec2, centre: DVec2, r: f64) -> DVec2 {
+    let d = to - from;
+    let len2 = d.length_squared();
+    if len2 < 1e-6 {
+        return centre;
+    }
+    let foot = from + d * ((centre - from).dot(d) / len2).max(0.0);
+    let off = (foot - centre).length();
+    if off < 1.5 || off > r {
+        centre
+    } else {
+        foot
+    }
+}
+
 fn spline_tail(doc: &Document, sels: &[Sel]) -> Vec<Origin> {
     let Sel::Spline(_, id) = (if sels.len() == 1 { sels[0] } else { return Vec::new() }) else { return Vec::new() };
     reshape::chain_after(doc, id).into_iter().filter_map(|(k, sid)| selection::origin_of(doc, Sel::Spline(k, sid))).collect()
@@ -17451,6 +17473,75 @@ mod tests {
             eprintln!("to {to}: {j} junctions, {ends} free ends, {} splines", doc.tiles[&(0, 0)].tile.splines.len());
             assert_eq!(j, 1);
             assert_eq!(ends, 4, "a fourth arm");
+            ed.undo();
+        }
+        let _ = std::fs::remove_dir_all(content);
+    }
+
+    /// A street drawn into a T junction's open side a few metres off its middle (the street
+    /// across is offset, as in many towns) runs in straight as an arm of its own, not bent
+    /// round to the junction's centre (#142).
+    #[test]
+    fn a_road_meeting_a_junction_off_its_middle_comes_in_straight() {
+        let road = "Splines\\Marcel\\str_3spur_12m_Stresowstr2.sli";
+        let Some(omsi) = crate::install::find_omsi_root(&Default::default()) else { return };
+        let content = std::env::temp_dir().join(format!("om-tjoff-{}", std::process::id()));
+        std::fs::create_dir_all(&content).unwrap();
+        let mut assets = Assets::new(omsi, content.clone());
+        for _ in 0..500 { if assets.spline(road).is_some() { break; } assets.poll(); std::thread::sleep(std::time::Duration::from_millis(10)); }
+        if assets.spline(road).is_none() { return }
+        let mut doc = flat_map(1);
+        doc.dir = content.join("maps").join("TJOFF");
+        let mut ed = Editor::default();
+        ed.content_dir = Some(content.clone());
+        ed.open(doc);
+        ed.set_tool(Tool::Roads);
+        ed.road_type = Some(road.into());
+        ed.snap_angle = false;
+        let lib = Library::default();
+        let click = |ed: &mut Editor, a: &mut Assets, x: f64, y: f64| {
+            ed.cursor = Some(DVec3::new(x, y, 0.0));
+            ed.plan_road(a);
+            ed.road_click(a, &lib);
+            ed.tick(a, 0.0, false);
+        };
+        click(&mut ed, &mut assets, 52.6, 150.0);
+        click(&mut ed, &mut assets, 247.4, 150.0);
+        ed.right_click();
+        click(&mut ed, &mut assets, 150.0, 265.2);
+        click(&mut ed, &mut assets, 150.0, 150.0);
+        ed.right_click();
+        for _ in 0..50 { assets.poll(); ed.tick(&mut assets, 0.0, false); std::thread::sleep(std::time::Duration::from_millis(10)); }
+        let centre = {
+            let doc = ed.doc.as_ref().unwrap();
+            let o = doc.tiles[&(0, 0)].tile.objects.iter().find(|o| o.file.contains("junction_")).expect("a junction");
+            DVec2::new(o.pos[0], o.pos[1])
+        };
+        let r = {
+            let mut r = None;
+            for _ in 0..500 { assets.poll(); ed.tick(&mut assets, 0.0, false); r = ed.plate_at(&mut assets, centre).map(|p| p.2); if r.is_some() { break; } std::thread::sleep(std::time::Duration::from_millis(10)); }
+            r.expect("the plate")
+        };
+        eprintln!("plate at {centre:?} r {r}");
+        for dx in [4.0, 7.0, 10.0] {
+            // (from the south, straight north, aimed at the road across beside the junction)
+            click(&mut ed, &mut assets, centre.x + dx, centre.y - 90.0);
+            click(&mut ed, &mut assets, centre.x + dx, centre.y - 2.0);
+            ed.right_click();
+            for _ in 0..50 { assets.poll(); ed.tick(&mut assets, 0.0, false); std::thread::sleep(std::time::Duration::from_millis(10)); }
+            let doc = ed.doc.as_ref().unwrap();
+            let j = doc.tiles[&(0, 0)].tile.objects.iter().filter(|o| o.file.contains("junction_")).count();
+            let ends = crate::selection::tests::free_ends_near(doc, centre, r + 15.0);
+            // the new street: straight north all the way, where it was drawn
+            let new: Vec<(f64, f64)> = doc.tiles[&(0, 0)].tile.splines.iter().filter(|s| !s.deleted && s.pos[1] < centre.y - 1.0).map(|s| (s.pos[0], s.heading)).collect();
+            eprintln!("dx {dx}: {j} junctions, {ends} free ends, new street {new:?}");
+            assert_eq!(j, 1, "one junction");
+            assert_eq!(ends, 4, "a fourth arm");
+            assert!(!new.is_empty());
+            for (x, h) in new {
+                assert!((x - (centre.x + dx)).abs() < 0.5, "drawn where it was aimed: x {x}");
+                assert!(crate::roads::norm_deg(h).min(360.0 - crate::roads::norm_deg(h)) < 1.0, "straight north, not bent round: {h}");
+            }
             ed.undo();
         }
         let _ = std::fs::remove_dir_all(content);
