@@ -4,6 +4,21 @@ Releases are tagged `v<version>`; the downloads are on the
 [Releases](https://github.com/openOMSI-org/openMapper/releases) page, each with the notes of its
 version from this file.
 
+## 0.2.4 - 2026-11-25
+
+### Added
+- **Turn an object about the axis pressed after R** (#143): X turns its pitch, Y its bank, Z (or no key) its heading as before; the same key again goes back to the heading. The object stays where it stands.
+- **Link a whole selection to one object at once** (#144): with several objects selected, "Linked objects" sets the object they all take their state from (`[varparent]`), a row of signal heads on one crossing or the displays of one stop, in one step, and unlinks them at once too.
+
+### Changed
+- **The crossing editor opens on an object that has no path yet** (#146): it is where the first one is drawn.
+- **A Tab pressed on an object by mistake leaves nothing behind** (#145): the copy of its own made to read its mesh is handed to the map object only at the first change, and goes again if there was none.
+
+### Fixed
+- **Streets that meet a road a few metres apart each get their own arm** (#142): a road drawn into a junction a little off its middle was bent round to the junction's centre. It now comes in straight where it is aimed, an arm of its own.
+- **Junctions a chrono scenario puts in have lanes** (#147): the line editor and the AI lanes view read a tile without the chrono scenarios active today, which the view draws, so on maps that build their roads through chrono (Grande Porto 2022) no lanes showed there and a line's way could not be picked through them.
+- Scripts run on mlua 0.12, and `url` is at 2.5.9 (RUSTSEC-2026-0592).
+
 ## 0.2.3 - 2026-11-23
 
 ### Added
